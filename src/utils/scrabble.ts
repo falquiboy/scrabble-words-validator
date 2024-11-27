@@ -10,13 +10,15 @@ const letterValues: { [key: string]: number } = {
   'Z': 10
 };
 
-// Initialize with an empty Set
-let validWords: Set<string> = new Set();
-
-// Function to update the word list
-export const updateWordList = (newWords: Set<string>) => {
-  validWords = newWords;
-};
+// Initialize with a basic set of common Spanish words
+// This is just a small sample - you should replace this with your full word list
+const validWords: Set<string> = new Set([
+  "CASA", "PERRO", "GATO", "MESA", "SILLA", "LIBRO", "PAPEL", "LAPIZ",
+  "COMER", "BEBER", "DORMIR", "CANTAR", "BAILAR", "JUGAR", "CORRER",
+  "AMOR", "VIDA", "TIEMPO", "MUNDO", "CIELO", "TIERRA", "AGUA", "FUEGO",
+  "SOL", "LUNA", "ESTRELLA", "FLOR", "ARBOL", "PIEDRA", "MONTE",
+  // ... Add your complete word list here
+]);
 
 export const isValidWord = (word: string): boolean => {
   return validWords.has(word.toUpperCase());
