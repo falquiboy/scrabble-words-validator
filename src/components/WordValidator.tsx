@@ -2,8 +2,9 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { isValidWord, calculateWordScore } from "@/utils/scrabble";
-import { Check, X } from "lucide-react";
+import { isValidWord, calculateWordScore, updateWordList } from "@/utils/scrabble";
+import { loadWordList } from "@/utils/wordList";
+import { Check, X, Upload } from "lucide-react";
 
 const WordValidator = () => {
   const [word, setWord] = useState("");
@@ -13,6 +14,7 @@ const WordValidator = () => {
     checked: boolean;
   }>({ isValid: false, score: 0, checked: false });
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleValidate = () => {
     if (!word.trim()) {
@@ -36,6 +38,29 @@ const WordValidator = () => {
         : `La palabra "${word}" no está en el diccionario`,
       variant: isValid ? "default" : "destructive",
     });
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsLoading(true);
+    try {
+      const words = await loadWordList(file);
+      updateWordList(words);
+      toast({
+        title: "¡Diccionario cargado!",
+        description: `Se han cargado ${words.size.toLocaleString()} palabras`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo cargar el diccionario",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -72,9 +97,27 @@ const WordValidator = () => {
             <Button 
               onClick={handleValidate}
               className="bg-scrabble-green hover:bg-scrabble-green/90"
+              disabled={isLoading}
             >
               Validar
             </Button>
+          </div>
+
+          <div className="flex items-center justify-center gap-2 p-4 border-2 border-dashed rounded-lg border-gray-300 bg-gray-50">
+            <Input
+              type="file"
+              accept=".txt"
+              onChange={handleFileUpload}
+              className="hidden"
+              id="wordlist"
+            />
+            <label
+              htmlFor="wordlist"
+              className="flex items-center gap-2 cursor-pointer text-sm text-gray-600 hover:text-gray-800"
+            >
+              <Upload size={20} />
+              {isLoading ? "Cargando diccionario..." : "Cargar diccionario"}
+            </label>
           </div>
 
           {result.checked && (

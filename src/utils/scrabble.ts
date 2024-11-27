@@ -10,8 +10,13 @@ const letterValues: { [key: string]: number } = {
   'Z': 10
 };
 
-// This is a placeholder - you'll need to replace this with your actual word list
-const validWords = new Set(['CASA', 'PERRO', 'GATO']);
+// Initialize with an empty Set
+let validWords: Set<string> = new Set();
+
+// Function to update the word list
+export const updateWordList = (newWords: Set<string>) => {
+  validWords = newWords;
+};
 
 export const isValidWord = (word: string): boolean => {
   return validWords.has(word.toUpperCase());
