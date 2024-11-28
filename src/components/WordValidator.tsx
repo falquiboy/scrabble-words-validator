@@ -66,7 +66,7 @@ const WordValidator = () => {
               placeholder="Escribe una palabra..."
               value={word}
               onChange={(e) => {
-                setWord(e.target.value.toLowerCase());
+                setWord(e.target.value.toUpperCase());
                 if (result.checked) {
                   setResult({ ...result, checked: false });
                 }
