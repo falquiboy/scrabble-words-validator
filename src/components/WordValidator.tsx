@@ -7,6 +7,7 @@ import { Check, X } from "lucide-react";
 
 const WordValidator = () => {
   const [word, setWord] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<{
     isValid: boolean;
     score: number;
@@ -14,7 +15,7 @@ const WordValidator = () => {
   }>({ isValid: false, score: 0, checked: false });
   const { toast } = useToast();
 
-  const handleValidate = () => {
+  const handleValidate = async () => {
     if (!word.trim()) {
       toast({
         title: "Error",
@@ -24,18 +25,29 @@ const WordValidator = () => {
       return;
     }
 
-    const isValid = isValidWord(word);
-    const score = isValid ? calculateWordScore(word) : 0;
+    setIsLoading(true);
+    try {
+      const isValid = await isValidWord(word);
+      const score = isValid ? calculateWordScore(word) : 0;
 
-    setResult({ isValid, score, checked: true });
-    
-    toast({
-      title: isValid ? "¡Palabra válida!" : "Palabra no válida",
-      description: isValid 
-        ? `La palabra "${word}" vale ${score} puntos` 
-        : `La palabra "${word}" no está en el diccionario`,
-      variant: isValid ? "default" : "destructive",
-    });
+      setResult({ isValid, score, checked: true });
+      
+      toast({
+        title: isValid ? "¡Palabra válida!" : "Palabra no válida",
+        description: isValid 
+          ? `La palabra "${word}" vale ${score} puntos` 
+          : `La palabra "${word}" no está en el diccionario`,
+        variant: isValid ? "default" : "destructive",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Hubo un error al validar la palabra",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -72,8 +84,9 @@ const WordValidator = () => {
             <Button 
               onClick={handleValidate}
               className="bg-scrabble-green hover:bg-scrabble-green/90"
+              disabled={isLoading}
             >
-              Validar
+              {isLoading ? "Validando..." : "Validar"}
             </Button>
           </div>
 
