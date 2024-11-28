@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { isValidWord } from "@/utils/scrabble";
-import { initializeWordCache, isCacheInitialized } from "@/utils/wordCache";
+import { initializeWordCache } from "@/utils/wordCache";
 import { Check, X, Wifi, WifiOff } from "lucide-react";
 
 const WordValidator = () => {
@@ -32,6 +32,23 @@ const WordValidator = () => {
     };
 
     initCache();
+
+    // Add online/offline event listeners
+    const handleOnline = () => {
+      initCache();
+    };
+
+    const handleOffline = () => {
+      setIsOffline(true);
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, []);
 
   const handleValidate = async () => {
@@ -72,11 +89,13 @@ const WordValidator = () => {
         });
       }
     } catch (error) {
+      console.error('Error validating word:', error);
       toast({
         title: "Error",
         description: "Hubo un error al validar la palabra",
         variant: "destructive",
       });
+      setIsOffline(true);
     } finally {
       setIsLoading(false);
     }
