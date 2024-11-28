@@ -1,3 +1,5 @@
+import { supabase } from "@/integrations/supabase/client";
+
 const CACHE_KEY = 'scrabble_words';
 const CACHE_VERSION_KEY = 'scrabble_words_version';
 const CURRENT_VERSION = '1';
