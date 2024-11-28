@@ -10,19 +10,18 @@ export const isValidWord = async (word: string): Promise<boolean> => {
   }
   
   // Fallback to online validation
-  try {
-    const { data, error } = await supabase
-      .from('FILE2')
-      .select('PALABRA')
-      .eq('PALABRA', word.toUpperCase())
-      .maybeSingle();
+  const { data, error } = await supabase
+    .from('FILE2')
+    .select('PALABRA')
+    .eq('PALABRA', word.toUpperCase())
+    .maybeSingle();
 
-    if (error) throw error;
-    return data !== null;
-  } catch (error) {
+  if (error) {
     console.error('Error checking word:', error);
-    throw error;
+    return false;
   }
+
+  return data !== null;
 };
 
 export const countWords = async (): Promise<number> => {
