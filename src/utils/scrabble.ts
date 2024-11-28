@@ -29,3 +29,9 @@ export const countWords = async (): Promise<number> => {
 
   return count || 0;
 };
+
+// Add a quick console log to help us confirm the count
+(async () => {
+  const totalWords = await countWords();
+  console.log(`Total words in the list: ${totalWords}`);
+})();
