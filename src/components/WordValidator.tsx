@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { isValidWord } from "@/utils/scrabble";
-import { Check, X, X as ClearIcon } from "lucide-react";
+import { Check, X, Brush } from "lucide-react";
 
 const WordValidator = () => {
   const [word, setWord] = useState("");
@@ -112,7 +112,7 @@ const WordValidator = () => {
                 className="text-scrabble-dark hover:bg-gray-100"
                 title="Limpiar"
               >
-                <ClearIcon className="h-5 w-5" />
+                <Brush className="h-5 w-5" />
               </Button>
             )}
           </div>
