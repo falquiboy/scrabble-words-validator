@@ -1,15 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
-import { getWordFromCache, isCacheInitialized } from "./wordCache";
 
 export const isValidWord = async (word: string): Promise<boolean> => {
   if (!word.trim()) return false;
   
-  // If cache is initialized, use it for validation
-  if (isCacheInitialized()) {
-    return getWordFromCache(word);
-  }
-  
-  // Fallback to online validation
   const { data, error } = await supabase
     .from('FILE2')
     .select('PALABRA')
@@ -25,13 +18,6 @@ export const isValidWord = async (word: string): Promise<boolean> => {
 };
 
 export const countWords = async (): Promise<number> => {
-  if (isCacheInitialized()) {
-    const cachedWords = localStorage.getItem('scrabble_words');
-    if (cachedWords) {
-      return JSON.parse(cachedWords).length;
-    }
-  }
-
   const { count, error } = await supabase
     .from('FILE2')
     .select('PALABRA', { count: 'exact' });
@@ -43,3 +29,9 @@ export const countWords = async (): Promise<number> => {
 
   return count || 0;
 };
+
+// Add a quick console log to help us confirm the count
+(async () => {
+  const totalWords = await countWords();
+  console.log(`Total words in the list: ${totalWords}`);
+})();

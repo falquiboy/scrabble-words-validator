@@ -1,37 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { isValidWord } from "@/utils/scrabble";
-import { initializeWordCache, isCacheInitialized } from "@/utils/wordCache";
-import { Check, X, Wifi, WifiOff } from "lucide-react";
+import { Check, X } from "lucide-react";
 
 const WordValidator = () => {
   const [word, setWord] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isCacheLoading, setIsCacheLoading] = useState(true);
-  const [isOffline, setIsOffline] = useState(false);
   const [result, setResult] = useState<{
     isValid: boolean;
     checked: boolean;
   }>({ isValid: false, checked: false });
   const { toast } = useToast();
-
-  useEffect(() => {
-    const initCache = async () => {
-      setIsCacheLoading(true);
-      try {
-        await initializeWordCache();
-        setIsOffline(isCacheInitialized());
-      } catch (error) {
-        console.error('Error initializing cache:', error);
-      } finally {
-        setIsCacheLoading(false);
-      }
-    };
-
-    initCache();
-  }, []);
 
   const handleValidate = async () => {
     if (!word.trim()) {
@@ -81,28 +62,13 @@ const WordValidator = () => {
     }
   };
 
-  if (isCacheLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-scrabble-wood/20 to-scrabble-wood/5 flex flex-col items-center justify-center p-4">
-        <div className="animate-pulse text-lg">Cargando diccionario...</div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-scrabble-wood/20 to-scrabble-wood/5 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <h1 className="text-4xl font-bold text-scrabble-dark">
-              Validador de Scrabble
-            </h1>
-            {isOffline ? (
-              <WifiOff className="text-gray-500" size={24} />
-            ) : (
-              <Wifi className="text-green-500" size={24} />
-            )}
-          </div>
+          <h1 className="text-4xl font-bold text-scrabble-dark mb-2">
+            Validador de Scrabble
+          </h1>
           <p className="text-scrabble-dark/80">
             Verifica si tus palabras son válidas para Scrabble en español
           </p>
