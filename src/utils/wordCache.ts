@@ -9,20 +9,22 @@ export const initializeWordCache = async () => {
   
   if (cachedVersion !== CURRENT_VERSION) {
     console.log('Initializing word cache...');
-    const { data: words, error } = await supabase
-      .from('FILE2')
-      .select('PALABRA');
-    
-    if (error) {
+    try {
+      const { data: words, error } = await supabase
+        .from('FILE2')
+        .select('PALABRA');
+      
+      if (error) throw error;
+      
+      const wordList = words.map(w => w.PALABRA);
+      localStorage.setItem(CACHE_KEY, JSON.stringify(wordList));
+      localStorage.setItem(CACHE_VERSION_KEY, CURRENT_VERSION);
+      console.log('Word cache initialized with', wordList.length, 'words');
+      return true;
+    } catch (error) {
       console.error('Error fetching words:', error);
       return false;
     }
-    
-    const wordList = words.map(w => w.PALABRA);
-    localStorage.setItem(CACHE_KEY, JSON.stringify(wordList));
-    localStorage.setItem(CACHE_VERSION_KEY, CURRENT_VERSION);
-    console.log('Word cache initialized with', wordList.length, 'words');
-    return true;
   }
   
   return true;
@@ -37,5 +39,7 @@ export const getWordFromCache = (word: string): boolean => {
 };
 
 export const isCacheInitialized = (): boolean => {
-  return localStorage.getItem(CACHE_VERSION_KEY) === CURRENT_VERSION;
+  const cachedVersion = localStorage.getItem(CACHE_VERSION_KEY);
+  const cachedWords = localStorage.getItem(CACHE_KEY);
+  return cachedVersion === CURRENT_VERSION && !!cachedWords;
 };

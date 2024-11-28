@@ -21,10 +21,11 @@ const WordValidator = () => {
     const initCache = async () => {
       setIsCacheLoading(true);
       try {
-        await initializeWordCache();
-        setIsOffline(isCacheInitialized());
+        const success = await initializeWordCache();
+        setIsOffline(!success);
       } catch (error) {
         console.error('Error initializing cache:', error);
+        setIsOffline(true);
       } finally {
         setIsCacheLoading(false);
       }
