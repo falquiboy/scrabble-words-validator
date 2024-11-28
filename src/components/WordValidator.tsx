@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { isValidWord, calculateWordScore } from "@/utils/scrabble";
+import { isValidWord } from "@/utils/scrabble";
 import { Check, X } from "lucide-react";
 
 const WordValidator = () => {
@@ -10,9 +10,8 @@ const WordValidator = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<{
     isValid: boolean;
-    score: number;
     checked: boolean;
-  }>({ isValid: false, score: 0, checked: false });
+  }>({ isValid: false, checked: false });
   const { toast } = useToast();
 
   const handleValidate = async () => {
@@ -28,14 +27,12 @@ const WordValidator = () => {
     setIsLoading(true);
     try {
       const isValid = await isValidWord(word);
-      const score = isValid ? calculateWordScore(word) : 0;
-
-      setResult({ isValid, score, checked: true });
+      setResult({ isValid, checked: true });
       
       toast({
         title: isValid ? "¡Palabra válida!" : "Palabra no válida",
         description: isValid 
-          ? `La palabra "${word}" vale ${score} puntos` 
+          ? `La palabra "${word}" es válida` 
           : `La palabra "${word}" no está en el diccionario`,
         variant: isValid ? "default" : "destructive",
       });
@@ -96,22 +93,15 @@ const WordValidator = () => {
                 ? "bg-scrabble-valid/10 border border-scrabble-valid" 
                 : "bg-scrabble-invalid/10 border border-scrabble-invalid"
               } animate-tile-bounce`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {result.isValid ? (
-                    <Check className="text-scrabble-valid" />
-                  ) : (
-                    <X className="text-scrabble-invalid" />
-                  )}
-                  <span className={result.isValid ? "text-scrabble-valid" : "text-scrabble-invalid"}>
-                    {result.isValid ? "Palabra válida" : "Palabra no válida"}
-                  </span>
-                </div>
-                {result.isValid && (
-                  <div className="text-scrabble-valid font-bold">
-                    {result.score} puntos
-                  </div>
+              <div className="flex items-center gap-2">
+                {result.isValid ? (
+                  <Check className="text-scrabble-valid" />
+                ) : (
+                  <X className="text-scrabble-invalid" />
                 )}
+                <span className={result.isValid ? "text-scrabble-valid" : "text-scrabble-invalid"}>
+                  {result.isValid ? "Palabra válida" : "Palabra no válida"}
+                </span>
               </div>
             </div>
           )}
