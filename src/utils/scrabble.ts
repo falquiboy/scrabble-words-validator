@@ -13,6 +13,8 @@ const letterValues: { [key: string]: number } = {
 };
 
 export const isValidWord = async (word: string): Promise<boolean> => {
+  if (!word.trim()) return false;
+  
   const { data, error } = await supabase
     .from('FILE2')
     .select('PALABRA')
