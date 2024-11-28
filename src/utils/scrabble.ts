@@ -17,7 +17,7 @@ export const isValidWord = async (word: string): Promise<boolean> => {
     .from('FILE2')
     .select('PALABRA')
     .eq('PALABRA', word.toUpperCase())
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error('Error checking word:', error);
