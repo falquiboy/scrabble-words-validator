@@ -26,16 +26,31 @@ const WordValidator = () => {
 
     setIsLoading(true);
     try {
-      const isValid = await isValidWord(word);
+      const words = word.trim().split(" ");
+      const validationResults = await Promise.all(
+        words.map((w) => isValidWord(w))
+      );
+      
+      const isValid = validationResults.every((result) => result === true);
       setResult({ isValid, checked: true });
       
-      toast({
-        title: isValid ? "¡Palabra válida!" : "Palabra no válida",
-        description: isValid 
-          ? `La palabra "${word}" es válida` 
-          : `La palabra "${word}" no está en el diccionario`,
-        variant: isValid ? "default" : "destructive",
-      });
+      if (words.length > 1) {
+        toast({
+          title: isValid ? "¡Jugada válida!" : "Jugada no válida",
+          description: isValid 
+            ? "Todas las palabras son válidas" 
+            : "Una o más palabras no están en el diccionario",
+          variant: isValid ? "default" : "destructive",
+        });
+      } else {
+        toast({
+          title: isValid ? "¡Palabra válida!" : "Palabra no válida",
+          description: isValid 
+            ? `La palabra "${word}" es válida` 
+            : `La palabra "${word}" no está en el diccionario`,
+          variant: isValid ? "default" : "destructive",
+        });
+      }
     } catch (error) {
       toast({
         title: "Error",
@@ -55,7 +70,7 @@ const WordValidator = () => {
             Validador de Scrabble
           </h1>
           <p className="text-scrabble-dark/80">
-            Verifica si tu palabra es válida para Scrabble en español
+            Verifica si tus palabras son válidas para Scrabble en español
           </p>
         </div>
 
@@ -63,7 +78,7 @@ const WordValidator = () => {
           <div className="flex gap-2">
             <Input
               type="text"
-              placeholder="Escribe una palabra..."
+              placeholder="Escribe una o más palabras..."
               value={word}
               onChange={(e) => {
                 setWord(e.target.value.toUpperCase());
@@ -100,7 +115,9 @@ const WordValidator = () => {
                   <X className="text-scrabble-invalid" />
                 )}
                 <span className={result.isValid ? "text-scrabble-valid" : "text-scrabble-invalid"}>
-                  {result.isValid ? "Palabra válida" : "Palabra no válida"}
+                  {word.includes(" ") 
+                    ? (result.isValid ? "Jugada válida" : "Jugada no válida")
+                    : (result.isValid ? "Palabra válida" : "Palabra no válida")}
                 </span>
               </div>
             </div>
