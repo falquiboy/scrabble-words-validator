@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { isValidWord } from "@/utils/scrabble";
-import { Check, X, Brush } from "lucide-react";
+import { Check, X } from "lucide-react";
 
 const WordValidator = () => {
   const [word, setWord] = useState("");
@@ -13,6 +13,12 @@ const WordValidator = () => {
     checked: boolean;
   }>({ isValid: false, checked: false });
   const { toast } = useToast();
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    // Keep focus on input
+    inputRef.current?.focus();
+  }, []);
 
   const handleValidate = async () => {
     if (!word.trim()) {
@@ -59,29 +65,29 @@ const WordValidator = () => {
       });
     } finally {
       setIsLoading(false);
+      inputRef.current?.focus();
     }
   };
 
   const handleClear = () => {
     setWord("");
     setResult({ isValid: false, checked: false });
+    inputRef.current?.focus();
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-scrabble-wood/20 to-scrabble-wood/5 flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-8">
+    <div className="fixed inset-0 bg-gradient-to-b from-scrabble-wood/20 to-scrabble-wood/5 flex flex-col items-center overflow-hidden">
+      <div className="w-full max-w-md space-y-4 p-4 mt-4">
         <div className="text-center">
           <h1 className="text-4xl font-bold text-scrabble-dark mb-2">
-            Validador de Scrabble
+            Juez de Léxico
           </h1>
-          <p className="text-scrabble-dark/80">
-            Verifica si tus palabras son válidas para Scrabble en español
-          </p>
         </div>
 
         <div className="space-y-4">
           <div className="flex gap-2">
             <Input
+              ref={inputRef}
               type="text"
               placeholder="Escribe una o más palabras..."
               value={word}
@@ -91,12 +97,13 @@ const WordValidator = () => {
                   setResult({ ...result, checked: false });
                 }
               }}
-              className="text-lg"
+              className="text-xl"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   handleValidate();
                 }
               }}
+              autoFocus
             />
             <Button 
               onClick={handleValidate}
@@ -105,17 +112,15 @@ const WordValidator = () => {
             >
               {isLoading ? "Validando..." : "Validar"}
             </Button>
-            {word && (
-              <Button 
-                onClick={handleClear}
-                variant="outline"
-                className="text-scrabble-dark hover:bg-gray-100"
-                title="Limpiar"
-              >
-                <Brush className="h-5 w-5" />
-              </Button>
-            )}
           </div>
+
+          <Button 
+            onClick={handleClear}
+            variant="outline"
+            className="w-full text-scrabble-dark hover:bg-gray-100 text-lg"
+          >
+            Limpiar
+          </Button>
 
           {result.checked && (
             <div className={`p-4 rounded-lg ${
@@ -125,11 +130,11 @@ const WordValidator = () => {
               } animate-tile-bounce`}>
               <div className="flex items-center gap-2">
                 {result.isValid ? (
-                  <Check className="text-scrabble-valid" />
+                  <Check className="text-scrabble-valid h-6 w-6" />
                 ) : (
-                  <X className="text-scrabble-invalid" />
+                  <X className="text-scrabble-invalid h-6 w-6" />
                 )}
-                <span className={result.isValid ? "text-scrabble-valid" : "text-scrabble-invalid"}>
+                <span className={`${result.isValid ? "text-scrabble-valid" : "text-scrabble-invalid"} text-xl`}>
                   {word.includes(" ") 
                     ? (result.isValid ? "Jugada válida" : "Jugada no válida")
                     : (result.isValid ? "Palabra válida" : "Palabra no válida")}
