@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { isValidWord } from "@/utils/scrabble";
-import { Check, X } from "lucide-react";
+import { Check, X, Gavel } from "lucide-react";
 
 const WordValidator = () => {
   const [word, setWord] = useState("");
@@ -16,7 +16,6 @@ const WordValidator = () => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Keep focus on input
     inputRef.current?.focus();
   }, []);
 
@@ -79,48 +78,51 @@ const WordValidator = () => {
     <div className="fixed inset-0 bg-gradient-to-b from-scrabble-wood/20 to-scrabble-wood/5 flex flex-col items-center overflow-hidden">
       <div className="w-full max-w-md space-y-4 p-4 mt-4">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-scrabble-dark mb-2">
-            Juez de Léxico
-          </h1>
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Gavel className="h-8 w-8 text-scrabble-dark" />
+            <h1 className="text-4xl font-bold text-scrabble-dark">
+              Juez de Léxico
+            </h1>
+          </div>
         </div>
 
         <div className="space-y-4">
-          <div className="flex gap-2">
-            <Input
-              ref={inputRef}
-              type="text"
-              placeholder="Escribe una o más palabras..."
-              value={word}
-              onChange={(e) => {
-                setWord(e.target.value.toUpperCase());
-                if (result.checked) {
-                  setResult({ ...result, checked: false });
-                }
-              }}
-              className="text-xl"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  handleValidate();
-                }
-              }}
-              autoFocus
-            />
+          <Input
+            ref={inputRef}
+            type="text"
+            placeholder="Escribe una o más palabras..."
+            value={word}
+            onChange={(e) => {
+              setWord(e.target.value.toUpperCase());
+              if (result.checked) {
+                setResult({ ...result, checked: false });
+              }
+            }}
+            className="text-2xl font-bold h-16 text-center"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                handleValidate();
+              }
+            }}
+            autoFocus
+          />
+
+          <div className="flex justify-center gap-4">
+            <Button 
+              onClick={handleClear}
+              variant="outline"
+              className="text-scrabble-dark hover:bg-gray-100 text-lg px-8"
+            >
+              Limpiar
+            </Button>
             <Button 
               onClick={handleValidate}
-              className="bg-scrabble-green hover:bg-scrabble-green/90"
+              className="bg-scrabble-green hover:bg-scrabble-green/90 text-lg px-8"
               disabled={isLoading}
             >
               {isLoading ? "Validando..." : "Validar"}
             </Button>
           </div>
-
-          <Button 
-            onClick={handleClear}
-            variant="outline"
-            className="w-full text-scrabble-dark hover:bg-gray-100 text-lg"
-          >
-            Limpiar
-          </Button>
 
           {result.checked && (
             <div className={`p-4 rounded-lg ${

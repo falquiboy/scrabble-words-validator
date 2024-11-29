@@ -1,0 +1,18 @@
+{
+  "name": "Juez de Léxico",
+  "short_name": "Juez Léxico",
+  "description": "Validador de palabras para juegos de mesa",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#C3A07C",
+  "theme_color": "#C3A07C",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/gavel-icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
