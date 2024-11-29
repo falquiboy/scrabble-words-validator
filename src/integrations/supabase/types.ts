@@ -9,6 +9,27 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      alphagrams: {
+        Row: {
+          alphagram: string
+          id: number
+          word: string
+          word_length: number
+        }
+        Insert: {
+          alphagram: string
+          id?: number
+          word: string
+          word_length: number
+        }
+        Update: {
+          alphagram?: string
+          id?: number
+          word?: string
+          word_length?: number
+        }
+        Relationships: []
+      }
       FILE2: {
         Row: {
           PALABRA: string
