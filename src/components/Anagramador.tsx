@@ -14,9 +14,9 @@ const Anagramador = () => {
   // Process digraphs (CH, LL, RR)
   const processDigraphs = (input: string) => {
     let processed = input.toUpperCase();
-    processed = processed.replace(/CH/g, "Ç"); // Use Ç as placeholder for CH
-    processed = processed.replace(/LL/g, "K"); // Use K as placeholder for LL
-    processed = processed.replace(/RR/g, "W"); // Use W as placeholder for RR
+    processed = processed.replace(/CH/g, "Ç");
+    processed = processed.replace(/LL/g, "K");
+    processed = processed.replace(/RR/g, "W");
     return processed;
   };
 
@@ -43,18 +43,21 @@ const Anagramador = () => {
       if (error) throw error;
       return data?.map(d => d.word) || [];
     },
-    enabled: searchTerm.length > 0
+    enabled: Boolean(searchTerm)
   });
 
   // Handle input changes
   const handleInputChange = (value: string) => {
-    setLetters(value.toUpperCase());
-    setProcessedLetters(processDigraphs(value));
+    const sanitizedValue = value.replace(/[^a-zA-Z]/g, '');
+    setLetters(sanitizedValue.toUpperCase());
+    setProcessedLetters(processDigraphs(sanitizedValue));
   };
 
   // Handle search
   const handleSearch = () => {
-    setSearchTerm(processedLetters);
+    if (processedLetters.trim()) {
+      setSearchTerm(processedLetters);
+    }
   };
 
   // Handle key press
@@ -85,6 +88,7 @@ const Anagramador = () => {
           onClick={handleSearch}
           className="h-16 px-6"
           variant="default"
+          disabled={!letters.trim()}
         >
           <Search className="h-6 w-6" />
         </Button>
