@@ -33,14 +33,17 @@ const Anagramador = () => {
     queryFn: async () => {
       if (!searchTerm) return [];
       
-      const alphagram = generateAlphagram(searchTerm);
       const { data, error } = await supabase
         .from("alphagrams")
         .select("word")
-        .eq("alphagram", alphagram)
-        .eq("word_length", searchTerm.length);
+        .eq("alphagram", generateAlphagram(searchTerm))
+        .order('word');
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase error:", error);
+        return [];
+      }
+      
       return data?.map(d => d.word) || [];
     },
     enabled: Boolean(searchTerm)
