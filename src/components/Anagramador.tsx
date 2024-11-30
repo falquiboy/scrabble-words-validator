@@ -7,44 +7,35 @@ import { Loader, Search } from "lucide-react";
 
 const Anagramador = () => {
   const [letters, setLetters] = useState("");
-  const [processedLetters, setProcessedLetters] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Process digraphs (CH, LL, RR)
-  const processDigraphs = (input: string) => {
-    let processed = input.toUpperCase();
-    processed = processed.replace(/CH/g, "Ç");
-    processed = processed.replace(/LL/g, "K");
-    processed = processed.replace(/RR/g, "W");
-    return processed;
-  };
-
-  // Generate alphagram from input
-  const generateAlphagram = (input: string) => {
-    const vowels = input.match(/[AEIOU]/g) || [];
-    const consonants = input.match(/[^AEIOU]/g) || [];
-    return [...vowels].sort().join("") + [...consonants].sort().join("");
-  };
-
-  // Query for anagrams
-  const { data: anagrams, isLoading } = useQuery({
-    queryKey: ["anagrams", searchTerm],
+  // Query for words
+  const { data: words, isLoading } = useQuery({
+    queryKey: ["words", searchTerm],
     queryFn: async () => {
       if (!searchTerm) return [];
       
+      const chars = [...searchTerm.toUpperCase()].sort().join('');
       const { data, error } = await supabase
-        .from("alphagrams")
-        .select("word")
-        .eq("alphagram", generateAlphagram(searchTerm))
-        .order('word');
+        .from("FILE2")
+        .select("PALABRA")
+        .textSearch('PALABRA', searchTerm.toUpperCase(), {
+          type: 'plain',
+          config: 'spanish'
+        });
 
       if (error) {
         console.error("Supabase error:", error);
         return [];
       }
       
-      return data?.map(d => d.word) || [];
+      // Filter results to only include actual anagrams
+      const results = data
+        ?.map(d => d.PALABRA)
+        .filter(word => [...word].sort().join('') === chars) || [];
+      
+      return results;
     },
     enabled: Boolean(searchTerm)
   });
@@ -53,13 +44,12 @@ const Anagramador = () => {
   const handleInputChange = (value: string) => {
     const sanitizedValue = value.replace(/[^a-zA-Z]/g, '');
     setLetters(sanitizedValue.toUpperCase());
-    setProcessedLetters(processDigraphs(sanitizedValue));
   };
 
   // Handle search
   const handleSearch = () => {
-    if (processedLetters.trim()) {
-      setSearchTerm(processedLetters);
+    if (letters.trim()) {
+      setSearchTerm(letters);
     }
   };
 
@@ -102,13 +92,13 @@ const Anagramador = () => {
             <Loader className="h-4 w-4 animate-spin" />
             Buscando anagramas...
           </div>
-        ) : anagrams && anagrams.length > 0 ? (
+        ) : words && words.length > 0 ? (
           <div className="space-y-2">
             <h3 className="font-semibold">
-              {anagrams.length} {anagrams.length === 1 ? "anagrama" : "anagramas"} encontrados:
+              {words.length} {words.length === 1 ? "anagrama" : "anagramas"} encontrados:
             </h3>
             <p className="text-gray-700">
-              {anagrams.join(", ")}
+              {words.join(", ")}
             </p>
           </div>
         ) : searchTerm ? (
