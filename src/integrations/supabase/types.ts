@@ -47,7 +47,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_alphagram: {
+        Args: {
+          word: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
