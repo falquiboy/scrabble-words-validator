@@ -37,54 +37,19 @@ const Anagramador = () => {
       // Query wildcard matches (one letter longer)
       const { data: wildcardData, error: wildcardError } = await supabase
         .from("words")
-        .select("word, alphagram")
-        .eq('lenght', inputLength + 1);
+        .select("word")
+        .eq('lenght', inputLength + 1)
+        .ilike('alphagram', `%${targetAlphagram}%`);
 
       if (wildcardError) {
         console.error("Supabase error (wildcard):", wildcardError);
         return { exactMatches: exactData?.map(d => toDisplayFormat(d.word)) || [], wildcardMatches: [] };
       }
-
-      // Filter wildcard matches manually to ensure we catch all valid combinations
-      const wildcardMatches = wildcardData?.filter(({ alphagram }) => {
-        // Convert both alphagrams to arrays for comparison
-        const targetChars = targetAlphagram.split('');
-        const wordChars = alphagram.split('');
-        
-        // Count letters in the word's alphagram
-        const wordLetterCount = new Map<string, number>();
-        wordChars.forEach(char => {
-          wordLetterCount.set(char, (wordLetterCount.get(char) || 0) + 1);
-        });
-        
-        // Count letters in the target alphagram
-        const targetLetterCount = new Map<string, number>();
-        targetChars.forEach(char => {
-          targetLetterCount.set(char, (targetLetterCount.get(char) || 0) + 1);
-        });
-        
-        // Check if word contains all target letters
-        for (const [char, count] of targetLetterCount) {
-          const wordCount = wordLetterCount.get(char) || 0;
-          if (wordCount < count) {
-            return false;
-          }
-        }
-        
-        // Calculate total difference in letter counts
-        let extraLetters = 0;
-        for (const [char, count] of wordLetterCount) {
-          const targetCount = targetLetterCount.get(char) || 0;
-          extraLetters += Math.max(0, count - targetCount);
-        }
-        
-        // Valid wildcard match should have exactly one extra letter
-        return extraLetters === 1;
-      });
-
+      
+      // Convert results back to display format
       return {
         exactMatches: exactData?.map(d => toDisplayFormat(d.word)) || [],
-        wildcardMatches: wildcardMatches?.map(d => toDisplayFormat(d.word)) || []
+        wildcardMatches: wildcardData?.map(d => toDisplayFormat(d.word)) || []
       };
     },
     enabled: Boolean(searchTerm)
