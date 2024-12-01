@@ -35,7 +35,6 @@ const Anagramador = () => {
       }
 
       // Query wildcard matches (one letter longer)
-      // This time we'll use a more sophisticated approach
       const { data: wildcardData, error: wildcardError } = await supabase
         .from("words")
         .select("word, alphagram")
@@ -52,35 +51,37 @@ const Anagramador = () => {
         const targetChars = targetAlphagram.split('');
         const wordChars = alphagram.split('');
         
-        // Count how many extra letters the word has
-        let extraLetters = 0;
-        const charCount = new Map<string, number>();
-        
-        // Count letters in the word
+        // Count letters in the word's alphagram
+        const wordLetterCount = new Map<string, number>();
         wordChars.forEach(char => {
-          charCount.set(char, (charCount.get(char) || 0) + 1);
+          wordLetterCount.set(char, (wordLetterCount.get(char) || 0) + 1);
         });
         
-        // Subtract target letters from count
+        // Count letters in the target alphagram
+        const targetLetterCount = new Map<string, number>();
         targetChars.forEach(char => {
-          const count = charCount.get(char);
-          if (count) {
-            if (count === 1) {
-              charCount.delete(char);
-            } else {
-              charCount.set(char, count - 1);
-            }
-          } else {
-            // If a target letter isn't in the word, it's not a valid match
+          targetLetterCount.set(char, (targetLetterCount.get(char) || 0) + 1);
+        });
+        
+        // Check if word contains all target letters
+        for (const [char, count] of targetLetterCount) {
+          const wordCount = wordLetterCount.get(char) || 0;
+          if (wordCount < count) {
             return false;
           }
-        });
+        }
         
-        // Sum remaining counts - should be exactly 1 for a valid wildcard match
-        extraLetters = Array.from(charCount.values()).reduce((sum, count) => sum + count, 0);
+        // Calculate total difference in letter counts
+        let extraLetters = 0;
+        for (const [char, count] of wordLetterCount) {
+          const targetCount = targetLetterCount.get(char) || 0;
+          extraLetters += Math.max(0, count - targetCount);
+        }
+        
+        // Valid wildcard match should have exactly one extra letter
         return extraLetters === 1;
       });
-      
+
       return {
         exactMatches: exactData?.map(d => toDisplayFormat(d.word)) || [],
         wildcardMatches: wildcardMatches?.map(d => toDisplayFormat(d.word)) || []
