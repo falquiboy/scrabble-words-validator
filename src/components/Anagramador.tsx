@@ -39,9 +39,7 @@ const Anagramador = () => {
         .from("words")
         .select("word")
         .eq('lenght', inputLength + 1)
-        .textSearch('alphagram', targetAlphagram, {
-          config: 'simple'
-        });
+        .ilike('alphagram', `%${targetAlphagram}%`);
 
       if (wildcardError) {
         console.error("Supabase error (wildcard):", wildcardError);
