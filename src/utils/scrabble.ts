@@ -4,9 +4,9 @@ export const isValidWord = async (word: string): Promise<boolean> => {
   if (!word.trim()) return false;
   
   const { data, error } = await supabase
-    .from('FILE2')
-    .select('PALABRA')
-    .eq('PALABRA', word.toUpperCase())
+    .from('words')
+    .select('word')
+    .eq('word', word.toUpperCase())
     .maybeSingle();
 
   if (error) {
@@ -19,8 +19,8 @@ export const isValidWord = async (word: string): Promise<boolean> => {
 
 export const countWords = async (): Promise<number> => {
   const { count, error } = await supabase
-    .from('FILE2')
-    .select('PALABRA', { count: 'exact' });
+    .from('words')
+    .select('word', { count: 'exact' });
 
   if (error) {
     console.error('Error counting words:', error);
