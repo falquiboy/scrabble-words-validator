@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader, Search } from "lucide-react";
+import { processDigraphs, generateAlphagram, toDisplayFormat } from "@/utils/digraphs";
 
 const Anagramador = () => {
   const [letters, setLetters] = useState("");
@@ -16,26 +17,25 @@ const Anagramador = () => {
     queryFn: async () => {
       if (!searchTerm) return [];
       
-      const chars = [...searchTerm.toUpperCase()].sort().join('');
+      // Process input with digraphs and generate alphagram
+      const processedInput = processDigraphs(searchTerm);
+      const targetAlphagram = generateAlphagram(processedInput);
+      const inputLength = processedInput.length;
+
+      // Query by length and alphagram
       const { data, error } = await supabase
-        .from("FILE2")
-        .select("PALABRA")
-        .textSearch('PALABRA', searchTerm.toUpperCase(), {
-          type: 'plain',
-          config: 'spanish'
-        });
+        .from("words")
+        .select("word")
+        .eq('lenght', inputLength)
+        .eq('alphagram', targetAlphagram);
 
       if (error) {
         console.error("Supabase error:", error);
         return [];
       }
       
-      // Filter results to only include actual anagrams
-      const results = data
-        ?.map(d => d.PALABRA)
-        .filter(word => [...word].sort().join('') === chars) || [];
-      
-      return results;
+      // Convert results back to display format
+      return data?.map(d => toDisplayFormat(d.word)) || [];
     },
     enabled: Boolean(searchTerm)
   });
