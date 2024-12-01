@@ -35,21 +35,55 @@ const Anagramador = () => {
       }
 
       // Query wildcard matches (one letter longer)
+      // This time we'll use a more sophisticated approach
       const { data: wildcardData, error: wildcardError } = await supabase
         .from("words")
-        .select("word")
-        .eq('lenght', inputLength + 1)
-        .ilike('alphagram', `%${targetAlphagram}%`);
+        .select("word, alphagram")
+        .eq('lenght', inputLength + 1);
 
       if (wildcardError) {
         console.error("Supabase error (wildcard):", wildcardError);
         return { exactMatches: exactData?.map(d => toDisplayFormat(d.word)) || [], wildcardMatches: [] };
       }
+
+      // Filter wildcard matches manually to ensure we catch all valid combinations
+      const wildcardMatches = wildcardData?.filter(({ alphagram }) => {
+        // Convert both alphagrams to arrays for comparison
+        const targetChars = targetAlphagram.split('');
+        const wordChars = alphagram.split('');
+        
+        // Count how many extra letters the word has
+        let extraLetters = 0;
+        const charCount = new Map<string, number>();
+        
+        // Count letters in the word
+        wordChars.forEach(char => {
+          charCount.set(char, (charCount.get(char) || 0) + 1);
+        });
+        
+        // Subtract target letters from count
+        targetChars.forEach(char => {
+          const count = charCount.get(char);
+          if (count) {
+            if (count === 1) {
+              charCount.delete(char);
+            } else {
+              charCount.set(char, count - 1);
+            }
+          } else {
+            // If a target letter isn't in the word, it's not a valid match
+            return false;
+          }
+        });
+        
+        // Sum remaining counts - should be exactly 1 for a valid wildcard match
+        extraLetters = Array.from(charCount.values()).reduce((sum, count) => sum + count, 0);
+        return extraLetters === 1;
+      });
       
-      // Convert results back to display format
       return {
         exactMatches: exactData?.map(d => toDisplayFormat(d.word)) || [],
-        wildcardMatches: wildcardData?.map(d => toDisplayFormat(d.word)) || []
+        wildcardMatches: wildcardMatches?.map(d => toDisplayFormat(d.word)) || []
       };
     },
     enabled: Boolean(searchTerm)
