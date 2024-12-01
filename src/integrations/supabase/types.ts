@@ -11,34 +11,34 @@ export type Database = {
     Tables: {
       alphagrams: {
         Row: {
-          alphagram: string
-          id: number
-          word: string
-          word_length: number
+          alphagram: string | null
+          lenght: number | null
         }
         Insert: {
-          alphagram: string
-          id?: number
-          word: string
-          word_length: number
+          alphagram?: string | null
+          lenght?: number | null
         }
         Update: {
-          alphagram?: string
-          id?: number
-          word?: string
-          word_length?: number
+          alphagram?: string | null
+          lenght?: number | null
         }
         Relationships: []
       }
-      FILE2: {
+      words: {
         Row: {
-          PALABRA: string
+          alphagram: string | null
+          lenght: number | null
+          word: string | null
         }
         Insert: {
-          PALABRA: string
+          alphagram?: string | null
+          lenght?: number | null
+          word?: string | null
         }
         Update: {
-          PALABRA?: string
+          alphagram?: string | null
+          lenght?: number | null
+          word?: string | null
         }
         Relationships: []
       }
