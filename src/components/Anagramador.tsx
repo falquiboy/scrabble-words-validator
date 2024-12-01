@@ -12,30 +12,47 @@ const Anagramador = () => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Query for words
-  const { data: words, isLoading } = useQuery({
+  const { data: results, isLoading } = useQuery({
     queryKey: ["words", searchTerm],
     queryFn: async () => {
-      if (!searchTerm) return [];
+      if (!searchTerm) return { exactMatches: [], wildcardMatches: [] };
       
       // Process input with digraphs and generate alphagram
       const processedInput = processDigraphs(searchTerm);
       const targetAlphagram = generateAlphagram(processedInput);
       const inputLength = processedInput.length;
 
-      // Query by length and alphagram
-      const { data, error } = await supabase
+      // Query exact matches
+      const { data: exactData, error: exactError } = await supabase
         .from("words")
         .select("word")
         .eq('lenght', inputLength)
         .eq('alphagram', targetAlphagram);
 
-      if (error) {
-        console.error("Supabase error:", error);
-        return [];
+      if (exactError) {
+        console.error("Supabase error (exact):", exactError);
+        return { exactMatches: [], wildcardMatches: [] };
+      }
+
+      // Query wildcard matches (one letter longer)
+      const { data: wildcardData, error: wildcardError } = await supabase
+        .from("words")
+        .select("word")
+        .eq('lenght', inputLength + 1)
+        .textSearch('alphagram', targetAlphagram, {
+          config: 'simple'
+        });
+
+      if (wildcardError) {
+        console.error("Supabase error (wildcard):", wildcardError);
+        return { exactMatches: exactData?.map(d => toDisplayFormat(d.word)) || [], wildcardMatches: [] };
       }
       
       // Convert results back to display format
-      return data?.map(d => toDisplayFormat(d.word)) || [];
+      return {
+        exactMatches: exactData?.map(d => toDisplayFormat(d.word)) || [],
+        wildcardMatches: wildcardData?.map(d => toDisplayFormat(d.word)) || []
+      };
     },
     enabled: Boolean(searchTerm)
   });
@@ -86,23 +103,37 @@ const Anagramador = () => {
           <Search className="h-6 w-6" />
         </Button>
       </div>
-      <div className="min-h-[100px] text-left">
+      <div className="min-h-[100px] text-left space-y-4">
         {isLoading ? (
           <div className="flex items-center gap-2 text-gray-500">
             <Loader className="h-4 w-4 animate-spin" />
             Buscando anagramas...
           </div>
-        ) : words && words.length > 0 ? (
-          <div className="space-y-2">
-            <h3 className="font-semibold">
-              {words.length} {words.length === 1 ? "anagrama" : "anagramas"} encontrados:
-            </h3>
-            <p className="text-gray-700">
-              {words.join(", ")}
-            </p>
-          </div>
+        ) : results && (results.exactMatches.length > 0 || results.wildcardMatches.length > 0) ? (
+          <>
+            {results.exactMatches.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="font-semibold">
+                  {results.exactMatches.length} {results.exactMatches.length === 1 ? "anagrama" : "anagramas"} encontrados:
+                </h3>
+                <p className="text-gray-700">
+                  {results.exactMatches.join(", ")}
+                </p>
+              </div>
+            )}
+            {results.wildcardMatches.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="font-semibold">
+                  {results.wildcardMatches.length} {results.wildcardMatches.length === 1 ? "palabra" : "palabras"} encontradas usando una letra adicional:
+                </h3>
+                <p className="text-gray-700">
+                  {results.wildcardMatches.join(", ")}
+                </p>
+              </div>
+            )}
+          </>
         ) : searchTerm ? (
-          <p className="text-gray-500">0 anagramas encontrados.</p>
+          <p className="text-gray-500">No se encontraron palabras.</p>
         ) : null}
       </div>
     </div>
