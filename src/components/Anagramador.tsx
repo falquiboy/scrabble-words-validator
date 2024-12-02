@@ -101,18 +101,38 @@ const Anagramador = () => {
     inputRef.current?.focus();
   };
 
-  // Highlight last instance of wildcard letter
+  // Highlight the additional letter (wildcard)
   const highlightWildcardLetter = (word: string, originalWord: string) => {
     if (word.length <= originalWord.length) return word;
     
-    const extraLetter = word[word.length - 1];
-    const lastIndex = word.lastIndexOf(extraLetter);
+    // Find the letter that's not in the original word
+    const wordLetters = word.split('');
+    const originalLetters = originalWord.split('');
+    
+    // Create a copy of original letters to track what's been matched
+    let remainingOriginal = [...originalLetters];
+    
+    // Find which letter in word is the extra one
+    let extraLetter = '';
+    let extraLetterLastIndex = -1;
+    
+    wordLetters.forEach((letter, index) => {
+      const matchIndex = remainingOriginal.indexOf(letter);
+      if (matchIndex === -1) {
+        // This letter wasn't found in remaining original letters
+        extraLetter = letter;
+        extraLetterLastIndex = word.lastIndexOf(letter);
+      } else {
+        // Remove the matched letter from remaining original letters
+        remainingOriginal.splice(matchIndex, 1);
+      }
+    });
     
     return (
       <>
-        {word.slice(0, lastIndex)}
-        <span className="text-blue-500">{word[lastIndex]}</span>
-        {word.slice(lastIndex + 1)}
+        {word.slice(0, extraLetterLastIndex)}
+        <span className="text-blue-500">{word[extraLetterLastIndex]}</span>
+        {word.slice(extraLetterLastIndex + 1)}
       </>
     );
   };
@@ -169,7 +189,7 @@ const Anagramador = () => {
                   <h3 className="font-semibold">
                     {results.exactMatches.length} {results.exactMatches.length === 1 ? "anagrama" : "anagramas"} encontrados:
                   </h3>
-                  <div className="space-y-3">
+                  <div>
                     {results.exactMatches.map((word, index) => (
                       <a
                         key={`exact-${index}`}
@@ -189,7 +209,7 @@ const Anagramador = () => {
                   <h3 className="font-semibold">
                     {results.wildcardMatches.length} {results.wildcardMatches.length === 1 ? "palabra" : "palabras"} encontradas usando una letra adicional:
                   </h3>
-                  <div className="space-y-3">
+                  <div>
                     {results.wildcardMatches.map((word, index) => (
                       <a
                         key={`wildcard-${index}`}
