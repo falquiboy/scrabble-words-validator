@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader, Search } from "lucide-react";
+import { Loader, Search, X } from "lucide-react";
 import { processDigraphs, generateAlphagram, toDisplayFormat } from "@/utils/digraphs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Spanish alphabet including digraphs in specified order
 const SPANISH_LETTERS = ["A", "E", "I", "O", "U", "B", "C", "Ç", "D", "F", "G", "H", "J", "L", "K", "M", "N", "Ñ", "P", "Q", "R", "W", "S", "T", "V", "X", "Y", "Z"];
@@ -93,6 +94,29 @@ const Anagramador = () => {
     }
   };
 
+  // Clear search
+  const handleClear = () => {
+    setLetters("");
+    setSearchTerm("");
+    inputRef.current?.focus();
+  };
+
+  // Highlight last instance of wildcard letter
+  const highlightWildcardLetter = (word: string, originalWord: string) => {
+    if (word.length <= originalWord.length) return word;
+    
+    const extraLetter = word[word.length - 1];
+    const lastIndex = word.lastIndexOf(extraLetter);
+    
+    return (
+      <>
+        {word.slice(0, lastIndex)}
+        <span className="text-blue-500">{word[lastIndex]}</span>
+        {word.slice(lastIndex + 1)}
+      </>
+    );
+  };
+
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
@@ -100,16 +124,28 @@ const Anagramador = () => {
   return (
     <div className="w-full max-w-md space-y-4">
       <div className="flex gap-2">
-        <Input
-          ref={inputRef}
-          type="text"
-          placeholder="Ingresa letras..."
-          value={letters}
-          onChange={(e) => handleInputChange(e.target.value)}
-          onKeyPress={handleKeyPress}
-          className="text-2xl font-bold h-16 text-left"
-          autoFocus
-        />
+        <div className="relative flex-1">
+          <Input
+            ref={inputRef}
+            type="text"
+            placeholder="Ingresa letras..."
+            value={letters}
+            onChange={(e) => handleInputChange(e.target.value)}
+            onKeyPress={handleKeyPress}
+            className="text-2xl font-bold h-16 text-left pr-12"
+            autoFocus
+          />
+          {letters && (
+            <Button
+              onClick={handleClear}
+              variant="ghost"
+              className="absolute right-2 top-1/2 -translate-y-1/2 h-12 w-12 p-0"
+              type="button"
+            >
+              <X className="h-6 w-6" />
+            </Button>
+          )}
+        </div>
         <Button 
           onClick={handleSearch}
           className="h-16 px-6"
@@ -119,39 +155,61 @@ const Anagramador = () => {
           <Search className="h-6 w-6" />
         </Button>
       </div>
-      <div className="min-h-[100px] text-left space-y-4">
-        {isLoading ? (
-          <div className="flex items-center gap-2 text-gray-500">
-            <Loader className="h-4 w-4 animate-spin" />
-            Buscando anagramas...
-          </div>
-        ) : results && (results.exactMatches.length > 0 || results.wildcardMatches.length > 0) ? (
-          <>
-            {results.exactMatches.length > 0 && (
-              <div className="space-y-2">
-                <h3 className="font-semibold">
-                  {results.exactMatches.length} {results.exactMatches.length === 1 ? "anagrama" : "anagramas"} encontrados:
-                </h3>
-                <p className="text-gray-700">
-                  {results.exactMatches.join(", ")}
-                </p>
-              </div>
-            )}
-            {results.wildcardMatches.length > 0 && (
-              <div className="space-y-2">
-                <h3 className="font-semibold">
-                  {results.wildcardMatches.length} {results.wildcardMatches.length === 1 ? "palabra" : "palabras"} encontradas usando una letra adicional:
-                </h3>
-                <p className="text-gray-700">
-                  {results.wildcardMatches.join(", ")}
-                </p>
-              </div>
-            )}
-          </>
-        ) : searchTerm ? (
-          <p className="text-gray-500">No se encontraron palabras.</p>
-        ) : null}
-      </div>
+      <ScrollArea className="h-[60vh]">
+        <div className="space-y-4 pr-4">
+          {isLoading ? (
+            <div className="flex items-center gap-2 text-gray-500">
+              <Loader className="h-4 w-4 animate-spin" />
+              Buscando anagramas...
+            </div>
+          ) : results && (results.exactMatches.length > 0 || results.wildcardMatches.length > 0) ? (
+            <>
+              {results.exactMatches.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="font-semibold">
+                    {results.exactMatches.length} {results.exactMatches.length === 1 ? "anagrama" : "anagramas"} encontrados:
+                  </h3>
+                  <div className="space-y-3">
+                    {results.exactMatches.map((word, index) => (
+                      <a
+                        key={`exact-${index}`}
+                        href={`https://dle.rae.es/?w=${word}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block hover:bg-gray-100 p-2 rounded transition-colors"
+                      >
+                        {word}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {results.wildcardMatches.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="font-semibold">
+                    {results.wildcardMatches.length} {results.wildcardMatches.length === 1 ? "palabra" : "palabras"} encontradas usando una letra adicional:
+                  </h3>
+                  <div className="space-y-3">
+                    {results.wildcardMatches.map((word, index) => (
+                      <a
+                        key={`wildcard-${index}`}
+                        href={`https://dle.rae.es/?w=${word}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block hover:bg-gray-100 p-2 rounded transition-colors"
+                      >
+                        {highlightWildcardLetter(word, searchTerm)}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          ) : searchTerm ? (
+            <p className="text-gray-500">No se encontraron palabras.</p>
+          ) : null}
+        </div>
+      </ScrollArea>
     </div>
   );
 };
