@@ -6,6 +6,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader, Search } from "lucide-react";
 import { processDigraphs, generateAlphagram, toDisplayFormat } from "@/utils/digraphs";
 
+// Spanish alphabet including digraphs in specified order
+const SPANISH_LETTERS = ["A", "E", "I", "O", "U", "B", "C", "Ç", "D", "F", "G", "H", "J", "L", "K", "M", "N", "Ñ", "P", "Q", "R", "W", "S", "T", "V", "X", "Y", "Z"];
+
 const Anagramador = () => {
   const [letters, setLetters] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -34,22 +37,37 @@ const Anagramador = () => {
         return { exactMatches: [], wildcardMatches: [] };
       }
 
-      // Query wildcard matches (one letter longer)
-      const { data: wildcardData, error: wildcardError } = await supabase
-        .from("words")
-        .select("word")
-        .eq('lenght', inputLength + 1)
-        .ilike('alphagram', `%${targetAlphagram}%`);
+      // Generate all possible combinations with one additional letter
+      const wildcardPromises = SPANISH_LETTERS.map(async (letter) => {
+        const combinedLetters = processedInput + letter;
+        const wildcardAlphagram = generateAlphagram(combinedLetters);
+        
+        const { data, error } = await supabase
+          .from("words")
+          .select("word")
+          .eq('lenght', inputLength + 1)
+          .eq('alphagram', wildcardAlphagram);
 
-      if (wildcardError) {
-        console.error("Supabase error (wildcard):", wildcardError);
-        return { exactMatches: exactData?.map(d => toDisplayFormat(d.word)) || [], wildcardMatches: [] };
-      }
+        if (error) {
+          console.error(`Supabase error (wildcard - ${letter}):`, error);
+          return [];
+        }
+
+        return data?.map(d => d.word) || [];
+      });
+
+      // Wait for all wildcard queries to complete
+      const wildcardResults = await Promise.all(wildcardPromises);
+      
+      // Flatten and deduplicate wildcard results
+      const uniqueWildcardMatches = Array.from(new Set(
+        wildcardResults.flat()
+      ));
       
       // Convert results back to display format
       return {
         exactMatches: exactData?.map(d => toDisplayFormat(d.word)) || [],
-        wildcardMatches: wildcardData?.map(d => toDisplayFormat(d.word)) || []
+        wildcardMatches: uniqueWildcardMatches.map(word => toDisplayFormat(word))
       };
     },
     enabled: Boolean(searchTerm)
