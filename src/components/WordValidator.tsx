@@ -59,13 +59,13 @@ const WordValidator = () => {
   const getValidationMessage = () => {
     if (!result.checked) return "";
     if (result.words.length === 1) {
-      return `${result.words[0]} ${result.isValid ? "es válida" : "no es válida"}.`;
+      return `Palabra ${result.isValid ? "válida" : "inválida"}. Palabra consultada: ${result.words[0]}.`;
     }
-    return `${result.words.join(", ")} ${result.isValid ? "son válidas" : "no son válidas"}.`;
+    return `Jugada ${result.isValid ? "válida" : "inválida"}. Palabras consultadas: ${result.words.join(", ")}.`;
   };
 
   return (
-    <div className="w-full max-w-md space-y-4">
+    <div className="w-full max-w-md space-y-4 px-4">
       <div className="text-center mb-8">
         <div className="flex items-center justify-center gap-2 mb-2">
           <Gavel className="h-8 w-8 text-scrabble-dark" />
