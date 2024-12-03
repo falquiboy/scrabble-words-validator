@@ -14,7 +14,7 @@ interface ResultsListProps {
 const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }: ResultsListProps) => {
   return (
     <ScrollArea className="h-[calc(100vh-12rem)]">
-      <div className="space-y-4 pr-4">
+      <div className="space-y-4 px-4">
         {isLoading ? (
           <div className="flex items-center gap-2 text-gray-500">
             <Loader className="h-4 w-4 animate-spin" />

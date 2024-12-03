@@ -70,7 +70,7 @@ const Anagramador = () => {
   }, []);
 
   return (
-    <div className="w-full max-w-md space-y-4">
+    <div className="w-full max-w-md space-y-4 px-4">
       <SearchInput
         letters={letters}
         onInputChange={handleInputChange}
