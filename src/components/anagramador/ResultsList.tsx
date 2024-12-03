@@ -1,0 +1,74 @@
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Loader } from "lucide-react";
+
+interface ResultsListProps {
+  isLoading: boolean;
+  searchTerm: string;
+  results: {
+    exactMatches: string[];
+    wildcardMatches: string[];
+  } | undefined;
+  highlightWildcardLetter: (word: string, originalWord: string) => React.ReactNode;
+}
+
+const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }: ResultsListProps) => {
+  return (
+    <ScrollArea className="h-[calc(100vh-12rem)]">
+      <div className="space-y-4 pr-4">
+        {isLoading ? (
+          <div className="flex items-center gap-2 text-gray-500">
+            <Loader className="h-4 w-4 animate-spin" />
+            Buscando anagramas...
+          </div>
+        ) : results && (results.exactMatches.length > 0 || results.wildcardMatches.length > 0) ? (
+          <>
+            {results.exactMatches.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="font-semibold text-lg">
+                  {results.exactMatches.length} {results.exactMatches.length === 1 ? "anagrama" : "anagramas"} encontrados:
+                </h3>
+                <div>
+                  {results.exactMatches.map((word, index) => (
+                    <a
+                      key={`exact-${index}`}
+                      href={`https://dle.rae.es/?w=${word}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block hover:bg-gray-100 p-1.5 rounded transition-colors text-lg"
+                    >
+                      {word}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+            {results.wildcardMatches.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="font-semibold text-lg">
+                  {results.wildcardMatches.length} {results.wildcardMatches.length === 1 ? "palabra" : "palabras"} encontradas usando una letra adicional:
+                </h3>
+                <div>
+                  {results.wildcardMatches.map((word, index) => (
+                    <a
+                      key={`wildcard-${index}`}
+                      href={`https://dle.rae.es/?w=${word}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block hover:bg-gray-100 p-1.5 rounded transition-colors text-lg"
+                    >
+                      {highlightWildcardLetter(word, searchTerm)}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        ) : searchTerm ? (
+          <p className="text-gray-500 text-lg">No se encontraron palabras.</p>
+        ) : null}
+      </div>
+    </ScrollArea>
+  );
+};
+
+export default ResultsList;
