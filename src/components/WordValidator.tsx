@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { isValidWord } from "@/utils/scrabble";
 import { Check, X, Gavel } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { processDigraphs, toDisplayFormat } from "@/utils/digraphs";
 
 const WordValidator = () => {
   const [word, setWord] = useState("");
@@ -24,12 +25,23 @@ const WordValidator = () => {
     setIsLoading(true);
     try {
       const words = word.trim().split(" ");
-      const validationResults = await Promise.all(
-        words.map((w) => isValidWord(w))
-      );
+      const processedWords = words.map(w => processDigraphs(w));
       
-      const isValid = validationResults.every((result) => result === true);
-      setResult({ isValid, checked: true, words });
+      const { data: validWords, error } = await supabase
+        .from('words')
+        .select('word')
+        .in('word', processedWords);
+
+      if (error) throw error;
+
+      const validWordSet = new Set(validWords?.map(w => w.word) || []);
+      const isValid = processedWords.every(w => validWordSet.has(w));
+      
+      setResult({ 
+        isValid, 
+        checked: true, 
+        words: words.map(w => w.toUpperCase()) 
+      });
     } catch (error) {
       console.error(error);
     } finally {
@@ -64,42 +76,48 @@ const WordValidator = () => {
       </div>
 
       <div className="space-y-4">
-        <Input
-          ref={inputRef}
-          type="text"
-          placeholder="Escribe una o más palabras..."
-          value={word}
-          onChange={(e) => {
-            setWord(e.target.value.toUpperCase());
-            if (result.checked) {
-              setResult({ ...result, checked: false });
-            }
-          }}
-          className="text-2xl font-bold h-16 text-left"
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              handleValidate();
-            }
-          }}
-          autoFocus
-        />
-
-        <div className="flex justify-center gap-4">
-          <Button 
-            onClick={handleClear}
-            variant="outline"
-            className="text-scrabble-dark hover:bg-gray-100 text-lg px-8"
-          >
-            Limpiar
-          </Button>
-          <Button 
-            onClick={handleValidate}
-            className="bg-scrabble-green hover:bg-scrabble-green/90 text-lg px-8"
-            disabled={isLoading}
-          >
-            {isLoading ? "Validando..." : "Validar"}
-          </Button>
+        <div className="relative">
+          <Input
+            ref={inputRef}
+            type="text"
+            placeholder="Escribe una o más palabras..."
+            value={word}
+            onChange={(e) => {
+              setWord(e.target.value.toUpperCase());
+              if (result.checked) {
+                setResult({ ...result, checked: false });
+              }
+            }}
+            className="text-2xl font-bold h-16 text-left pr-12"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                handleValidate();
+              }
+            }}
+            autoFocus
+            spellCheck={false}
+            autoCorrect="off"
+            autoCapitalize="off"
+          />
+          {word && (
+            <Button
+              onClick={handleClear}
+              variant="ghost"
+              className="absolute right-2 top-1/2 -translate-y-1/2 h-12 w-12 p-0 hover:bg-transparent"
+              type="button"
+            >
+              <X className="h-6 w-6 text-gray-400 hover:text-gray-600" />
+            </Button>
+          )}
         </div>
+
+        <Button 
+          onClick={handleValidate}
+          className="w-full bg-scrabble-green hover:bg-scrabble-green/90 text-lg px-8 h-16"
+          disabled={isLoading}
+        >
+          {isLoading ? "Validando..." : "Validar"}
+        </Button>
 
         {result.checked && (
           <div className={`p-4 rounded-lg ${
