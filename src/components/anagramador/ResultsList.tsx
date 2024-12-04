@@ -30,8 +30,8 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
                 <h3 className="font-semibold text-lg">
                   {wildcardCount > 0 ? (
                     wildcardCount === 2 ? 
-                      "Palabras encontradas con dos comodines:" :
-                      "Palabras encontradas con un comodín:"
+                      `${results.exactMatches.length} ${results.exactMatches.length === 1 ? "Palabra encontrada" : "Palabras encontradas"} con dos comodines:` :
+                      `${results.exactMatches.length} ${results.exactMatches.length === 1 ? "Palabra encontrada" : "Palabras encontradas"} con un comodín:`
                   ) : (
                     `${results.exactMatches.length} ${results.exactMatches.length === 1 ? "anagrama" : "anagramas"} encontrados:`
                   )}
@@ -54,7 +54,7 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
             {results.wildcardMatches.length > 0 && wildcardCount > 0 && (
               <div className="space-y-2">
                 <h3 className="font-semibold text-lg">
-                  Palabras encontradas con un comodín y una letra adicional:
+                  {`${results.wildcardMatches.length} ${results.wildcardMatches.length === 1 ? "Palabra encontrada" : "Palabras encontradas"} con un comodín y una letra adicional:`}
                 </h3>
                 <div className="grid grid-cols-3 gap-2">
                   {results.wildcardMatches.map((word, index) => (
