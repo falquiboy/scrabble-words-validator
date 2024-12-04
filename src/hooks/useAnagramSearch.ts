@@ -24,15 +24,22 @@ export const useAnagramSearch = (searchTerm: string) => {
       const { data: exactData, error: exactError } = await supabase
         .from("words")
         .select("word")
-        .eq('lenght', inputLength + wildcardCount)
-        .textSearch('alphagram', targetAlphagram, {
-          config: 'spanish'
-        });
+        .eq('lenght', inputLength + wildcardCount);
 
       if (exactError) {
         console.error("Supabase error (exact):", exactError);
         return { exactMatches: [], wildcardMatches: [] };
       }
+
+      // Filter exact matches that contain all the letters from the input
+      const exactMatches = exactData?.filter(d => {
+        const wordAlphagram = generateAlphagram(processDigraphs(d.word));
+        const inputLetters = targetAlphagram.split('');
+        return inputLetters.every(letter => 
+          wordAlphagram.includes(letter) && 
+          wordAlphagram.split(letter).length - 1 >= targetAlphagram.split(letter).length - 1
+        );
+      }).map(d => toDisplayFormat(d.word)) || [];
 
       // Generate all possible combinations with one additional letter
       const wildcardPromises = SPANISH_LETTERS.map(async (letter) => {
@@ -42,17 +49,22 @@ export const useAnagramSearch = (searchTerm: string) => {
         const { data, error } = await supabase
           .from("words")
           .select("word")
-          .eq('lenght', inputLength + wildcardCount + 1)
-          .textSearch('alphagram', wildcardAlphagram, {
-            config: 'spanish'
-          });
+          .eq('lenght', inputLength + wildcardCount + 1);
 
         if (error) {
           console.error(`Supabase error (wildcard - ${letter}):`, error);
           return [];
         }
 
-        return data?.map(d => d.word) || [];
+        // Filter wildcard matches that contain all the letters from the input
+        return data?.filter(d => {
+          const wordAlphagram = generateAlphagram(processDigraphs(d.word));
+          const inputLetters = targetAlphagram.split('');
+          return inputLetters.every(letter => 
+            wordAlphagram.includes(letter) && 
+            wordAlphagram.split(letter).length - 1 >= targetAlphagram.split(letter).length - 1
+          );
+        }).map(d => toDisplayFormat(d.word)) || [];
       });
 
       // Wait for all wildcard queries to complete
@@ -63,10 +75,9 @@ export const useAnagramSearch = (searchTerm: string) => {
         wildcardResults.flat()
       ));
       
-      // Convert results back to display format
       return {
-        exactMatches: exactData?.map(d => toDisplayFormat(d.word)) || [],
-        wildcardMatches: uniqueWildcardMatches.map(word => toDisplayFormat(word))
+        exactMatches,
+        wildcardMatches: uniqueWildcardMatches
       };
     },
     enabled: Boolean(searchTerm)
