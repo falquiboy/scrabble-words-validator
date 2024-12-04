@@ -31,7 +31,7 @@ const Anagramador = () => {
     }
   };
 
-  // Clear search
+  // Handle clear
   const handleClear = () => {
     setLetters("");
     setSearchTerm("");
@@ -44,8 +44,7 @@ const Anagramador = () => {
     
     const digraphs = ['CH', 'LL', 'RR'];
     let result = word;
-    let offset = 0;
-
+    
     // First, find the position of the wildcard in the original word
     const wildcardIndex = originalWord.indexOf('*');
     
@@ -56,11 +55,13 @@ const Anagramador = () => {
       
       // Remove all letters from the original word from remainingWord
       originalLetters.forEach(letter => {
-        remainingWord = remainingWord.replace(letter, '');
+        const index = remainingWord.indexOf(letter);
+        if (index !== -1) {
+          remainingWord = remainingWord.slice(0, index) + remainingWord.slice(index + 1);
+        }
       });
       
-      // Now remainingWord should contain only the letters that were added
-      // (usually should be just one letter or one digraph)
+      // Now remainingWord should contain only the letter that was added
       if (remainingWord) {
         const letterIndex = word.indexOf(remainingWord[0]);
         if (letterIndex !== -1) {
@@ -68,16 +69,14 @@ const Anagramador = () => {
           const possibleDigraph = word.substr(letterIndex, 2);
           if (digraphs.includes(possibleDigraph)) {
             // Wrap both letters of the digraph
-            const before = result.slice(0, letterIndex + offset);
-            const digraph = result.slice(letterIndex + offset, letterIndex + offset + 2);
-            const after = result.slice(letterIndex + offset + 2);
-            result = before + `<span class="font-bold text-blue-500">${digraph}</span>` + after;
+            result = word.slice(0, letterIndex) + 
+                    `<span class="font-bold text-blue-500">${possibleDigraph}</span>` + 
+                    word.slice(letterIndex + 2);
           } else {
             // Wrap single letter
-            const before = result.slice(0, letterIndex + offset);
-            const letter = result.slice(letterIndex + offset, letterIndex + offset + 1);
-            const after = result.slice(letterIndex + offset + 1);
-            result = before + `<span class="font-bold text-blue-500">${letter}</span>` + after;
+            result = word.slice(0, letterIndex) + 
+                    `<span class="font-bold text-blue-500">${remainingWord[0]}</span>` + 
+                    word.slice(letterIndex + 1);
           }
         }
       }
