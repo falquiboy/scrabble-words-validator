@@ -28,12 +28,10 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
             {results.exactMatches.length > 0 && (
               <div className="space-y-2">
                 <h3 className="font-semibold text-lg">
-                  {wildcardCount > 0 ? (
-                    wildcardCount === 2 ? 
-                      `${results.exactMatches.length} ${results.exactMatches.length === 1 ? "Palabra encontrada" : "Palabras encontradas"} con dos comodines:` :
-                      `${results.exactMatches.length} ${results.exactMatches.length === 1 ? "Palabra encontrada" : "Palabras encontradas"} con un comodín:`
+                  {wildcardCount === 0 ? (
+                    `${results.exactMatches.length} ${results.exactMatches.length === 1 ? "anagrama encontrado" : "anagramas encontrados"}:`
                   ) : (
-                    `${results.exactMatches.length} ${results.exactMatches.length === 1 ? "anagrama" : "anagramas"} encontrados:`
+                    `${results.exactMatches.length} ${results.exactMatches.length === 1 ? "Palabra encontrada" : "Palabras encontradas"} con ${wildcardCount} ${wildcardCount === 1 ? "comodín" : "comodines"}:`
                   )}
                 </h3>
                 <div className="grid grid-cols-3 gap-2">
@@ -54,7 +52,7 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
             {results.wildcardMatches.length > 0 && wildcardCount > 0 && (
               <div className="space-y-2">
                 <h3 className="font-semibold text-lg">
-                  {`${results.wildcardMatches.length} ${results.wildcardMatches.length === 1 ? "Palabra encontrada" : "Palabras encontradas"} con ${wildcardCount === 2 ? "tres" : "dos"} comodines:`}
+                  {`${results.wildcardMatches.length} ${results.wildcardMatches.length === 1 ? "Palabra encontrada" : "Palabras encontradas"} con ${wildcardCount + 1} ${wildcardCount + 1 === 1 ? "comodín" : "comodines"}:`}
                 </h3>
                 <div className="grid grid-cols-3 gap-2">
                   {results.wildcardMatches.map((word, index) => (
