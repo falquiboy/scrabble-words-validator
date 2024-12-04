@@ -34,7 +34,7 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
                       href={`https://dle.rae.es/?w=${word}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block hover:bg-gray-100 p-1.5 rounded transition-colors text-lg"
+                      className="block hover:bg-gray-100 p-1.5 rounded transition-colors text-lg w-full text-center"
                     >
                       {word}
                     </a>
@@ -54,7 +54,7 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
                       href={`https://dle.rae.es/?w=${word}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block hover:bg-gray-100 p-1.5 rounded transition-colors text-lg"
+                      className="block hover:bg-gray-100 p-1.5 rounded transition-colors text-lg w-full text-center"
                     >
                       {highlightWildcardLetter(word, searchTerm)}
                     </a>
