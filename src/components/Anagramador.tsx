@@ -38,52 +38,50 @@ const Anagramador = () => {
     inputRef.current?.focus();
   };
 
-  // Highlight both wildcard and additional letters
+  // Highlight only the letter that corresponds to the wildcard and any additional letters
   const highlightWildcardLetter = (word: string, originalWord: string) => {
     if (word.length <= originalWord.length) return word;
     
-    const wordLetters = word.split('');
-    const originalLetters = originalWord.split('');
-    let remainingOriginal = [...originalLetters];
-    let extraLetters: string[] = [];
-    
-    // Find letters in word that aren't in original
-    wordLetters.forEach((letter) => {
-      const matchIndex = remainingOriginal.indexOf(letter);
-      if (matchIndex === -1) {
-        extraLetters.push(letter);
-      } else {
-        remainingOriginal.splice(matchIndex, 1);
-      }
-    });
-
-    // Handle digraphs (CH, LL, RR)
     const digraphs = ['CH', 'LL', 'RR'];
     let result = word;
     let offset = 0;
 
-    extraLetters.forEach(letter => {
-      const letterIndex = word.indexOf(letter);
-      if (letterIndex !== -1) {
-        // Check if this letter is part of a digraph
-        const possibleDigraph = word.substr(letterIndex, 2);
-        if (digraphs.includes(possibleDigraph)) {
-          // Wrap both letters of the digraph
-          const before = result.slice(0, letterIndex + offset);
-          const digraph = result.slice(letterIndex + offset, letterIndex + offset + 2);
-          const after = result.slice(letterIndex + offset + 2);
-          result = before + `<span class="font-bold text-blue-500">${digraph}</span>` + after;
-          offset += 47; // Length of the span tags and classes
-        } else {
-          // Wrap single letter
-          const before = result.slice(0, letterIndex + offset);
-          const letter = result.slice(letterIndex + offset, letterIndex + offset + 1);
-          const after = result.slice(letterIndex + offset + 1);
-          result = before + `<span class="font-bold text-blue-500">${letter}</span>` + after;
-          offset += 46; // Length of the span tags and classes
+    // First, find the position of the wildcard in the original word
+    const wildcardIndex = originalWord.indexOf('*');
+    
+    if (wildcardIndex !== -1) {
+      // Get all letters from the original word (excluding the wildcard)
+      const originalLetters = originalWord.replace('*', '').split('');
+      let remainingWord = word;
+      
+      // Remove all letters from the original word from remainingWord
+      originalLetters.forEach(letter => {
+        remainingWord = remainingWord.replace(letter, '');
+      });
+      
+      // Now remainingWord should contain only the letters that were added
+      // (usually should be just one letter or one digraph)
+      if (remainingWord) {
+        const letterIndex = word.indexOf(remainingWord[0]);
+        if (letterIndex !== -1) {
+          // Check if this letter is part of a digraph
+          const possibleDigraph = word.substr(letterIndex, 2);
+          if (digraphs.includes(possibleDigraph)) {
+            // Wrap both letters of the digraph
+            const before = result.slice(0, letterIndex + offset);
+            const digraph = result.slice(letterIndex + offset, letterIndex + offset + 2);
+            const after = result.slice(letterIndex + offset + 2);
+            result = before + `<span class="font-bold text-blue-500">${digraph}</span>` + after;
+          } else {
+            // Wrap single letter
+            const before = result.slice(0, letterIndex + offset);
+            const letter = result.slice(letterIndex + offset, letterIndex + offset + 1);
+            const after = result.slice(letterIndex + offset + 1);
+            result = before + `<span class="font-bold text-blue-500">${letter}</span>` + after;
+          }
         }
       }
-    });
+    }
 
     return <span dangerouslySetInnerHTML={{ __html: result }} />;
   };
