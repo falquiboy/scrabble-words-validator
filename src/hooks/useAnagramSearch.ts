@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { processDigraphs, generateAlphagram, toDisplayFormat } from "@/utils/digraphs";
 
 // Spanish alphabet including digraphs in specified order
-const SPANISH_LETTERS = ["A", "E", "I", "O", "U", "B", "C", "Ç", "D", "F", "G", "H", "J", "L", "K", "M", "N", "Ñ", "P", "Q", "R", "W", "S", "T", "V", "X", "Y", "Z"];
+const SPANISH_LETTERS = ["A", "B", "C", "CH", "D", "E", "F", "G", "H", "I", "J", "K", "L", "LL", "M", "N", "Ñ", "O", "P", "Q", "R", "RR", "S", "T", "U", "V", "W", "X", "Y", "Z"];
 
 export const useAnagramSearch = (searchTerm: string) => {
   return useQuery({
@@ -11,62 +11,86 @@ export const useAnagramSearch = (searchTerm: string) => {
     queryFn: async () => {
       if (!searchTerm) return { exactMatches: [], wildcardMatches: [] };
       
-      // Count wildcards
+      console.log('Search term:', searchTerm);
+      
+      // Count wildcards and get base letters
       const wildcardCount = (searchTerm.match(/\*/g) || []).length;
       const lettersOnly = searchTerm.replace(/\*/g, '');
+      console.log('Wildcard count:', wildcardCount, 'Letters only:', lettersOnly);
       
       // Process input with digraphs and generate alphagram
       const processedInput = processDigraphs(lettersOnly);
       const targetAlphagram = generateAlphagram(processedInput);
       const inputLength = processedInput.length;
+      
+      console.log('Processed input:', processedInput, 'Target alphagram:', targetAlphagram);
 
-      // Query exact matches (considering wildcards)
-      const { data: exactData, error: exactError } = await supabase
-        .from("words")
-        .select("word")
-        .eq('lenght', inputLength + wildcardCount)
-        .textSearch('alphagram', targetAlphagram, {
-          config: 'spanish'
-        });
-
-      if (exactError) {
-        console.error("Supabase error (exact):", exactError);
-        return { exactMatches: [], wildcardMatches: [] };
-      }
-
-      // Generate all possible combinations with one additional letter
-      const wildcardPromises = SPANISH_LETTERS.map(async (letter) => {
-        const combinedLetters = processedInput + letter;
-        const wildcardAlphagram = generateAlphagram(combinedLetters);
-        
-        const { data, error } = await supabase
+      // Query exact matches first (when no wildcards)
+      let exactMatches: string[] = [];
+      if (wildcardCount === 0) {
+        const { data: exactData, error: exactError } = await supabase
           .from("words")
           .select("word")
-          .eq('lenght', inputLength + wildcardCount + 1)
-          .textSearch('alphagram', wildcardAlphagram, {
-            config: 'spanish'
-          });
+          .eq('lenght', inputLength)
+          .eq('alphagram', targetAlphagram);
 
-        if (error) {
-          console.error(`Supabase error (wildcard - ${letter}):`, error);
-          return [];
+        if (exactError) {
+          console.error("Supabase error (exact):", exactError);
+        } else {
+          exactMatches = exactData?.map(d => toDisplayFormat(d.word)) || [];
+        }
+      }
+
+      // For wildcard searches, we need to try all possible letter combinations
+      let wildcardMatches: string[] = [];
+      if (wildcardCount > 0) {
+        // Generate all possible combinations for the wildcard positions
+        const generateCombinations = (current: string[], depth: number): string[] => {
+          if (depth === 0) {
+            return [current.join('')];
+          }
+          
+          const results: string[] = [];
+          for (const letter of SPANISH_LETTERS) {
+            results.push(...generateCombinations([...current, letter], depth - 1));
+          }
+          return results;
+        };
+
+        // Generate all possible combinations for the wildcards
+        const possibleCombinations = generateCombinations([], wildcardCount);
+        console.log(`Generated ${possibleCombinations.length} possible combinations`);
+
+        // Try each combination
+        for (const combination of possibleCombinations) {
+          const testWord = processedInput + combination;
+          const testAlphagram = generateAlphagram(testWord);
+          
+          const { data, error } = await supabase
+            .from("words")
+            .select("word")
+            .eq('lenght', inputLength + wildcardCount)
+            .eq('alphagram', testAlphagram);
+
+          if (error) {
+            console.error(`Supabase error for combination ${combination}:`, error);
+            continue;
+          }
+
+          if (data) {
+            wildcardMatches.push(...data.map(d => toDisplayFormat(d.word)));
+          }
         }
 
-        return data?.map(d => d.word) || [];
-      });
+        // Remove duplicates
+        wildcardMatches = Array.from(new Set(wildcardMatches));
+      }
 
-      // Wait for all wildcard queries to complete
-      const wildcardResults = await Promise.all(wildcardPromises);
+      console.log('Final results:', { exactMatches, wildcardMatches });
       
-      // Flatten and deduplicate wildcard results
-      const uniqueWildcardMatches = Array.from(new Set(
-        wildcardResults.flat()
-      ));
-      
-      // Convert results back to display format
       return {
-        exactMatches: exactData?.map(d => toDisplayFormat(d.word)) || [],
-        wildcardMatches: uniqueWildcardMatches.map(word => toDisplayFormat(word))
+        exactMatches,
+        wildcardMatches
       };
     },
     enabled: Boolean(searchTerm)
