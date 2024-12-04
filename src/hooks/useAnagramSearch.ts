@@ -11,17 +11,23 @@ export const useAnagramSearch = (searchTerm: string) => {
     queryFn: async () => {
       if (!searchTerm) return { exactMatches: [], wildcardMatches: [] };
       
+      // Count wildcards
+      const wildcardCount = (searchTerm.match(/\*/g) || []).length;
+      const lettersOnly = searchTerm.replace(/\*/g, '');
+      
       // Process input with digraphs and generate alphagram
-      const processedInput = processDigraphs(searchTerm);
+      const processedInput = processDigraphs(lettersOnly);
       const targetAlphagram = generateAlphagram(processedInput);
       const inputLength = processedInput.length;
 
-      // Query exact matches
+      // Query exact matches (considering wildcards)
       const { data: exactData, error: exactError } = await supabase
         .from("words")
         .select("word")
-        .eq('lenght', inputLength)
-        .eq('alphagram', targetAlphagram);
+        .eq('lenght', inputLength + wildcardCount)
+        .textSearch('alphagram', targetAlphagram, {
+          config: 'spanish'
+        });
 
       if (exactError) {
         console.error("Supabase error (exact):", exactError);
@@ -36,8 +42,10 @@ export const useAnagramSearch = (searchTerm: string) => {
         const { data, error } = await supabase
           .from("words")
           .select("word")
-          .eq('lenght', inputLength + 1)
-          .eq('alphagram', wildcardAlphagram);
+          .eq('lenght', inputLength + wildcardCount + 1)
+          .textSearch('alphagram', wildcardAlphagram, {
+            config: 'spanish'
+          });
 
         if (error) {
           console.error(`Supabase error (wildcard - ${letter}):`, error);

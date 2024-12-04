@@ -13,7 +13,7 @@ const Anagramador = () => {
 
   // Handle input changes
   const handleInputChange = (value: string) => {
-    const sanitizedValue = value.replace(/[^a-zA-ZÑñ]/g, '');
+    const sanitizedValue = value.replace(/[^a-zA-ZÑñ*]/g, '');
     setLetters(sanitizedValue.toUpperCase());
   };
 
@@ -38,7 +38,7 @@ const Anagramador = () => {
     inputRef.current?.focus();
   };
 
-  // Highlight the additional letter (wildcard)
+  // Highlight the wildcard matches
   const highlightWildcardLetter = (word: string, originalWord: string) => {
     if (word.length <= originalWord.length) return word;
     
