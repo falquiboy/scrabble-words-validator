@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { processDigraphs, generateAlphagram, toDisplayFormat } from "@/utils/digraphs";
 
 // Spanish alphabet including digraphs in specified order
-const SPANISH_LETTERS = ["A", "B", "C", "CH", "D", "E", "F", "G", "H", "I", "J", "K", "L", "LL", "M", "N", "Ñ", "O", "P", "Q", "R", "RR", "S", "T", "U", "V", "W", "X", "Y", "Z"];
+const SPANISH_LETTERS = ["A", "B", "C", "Ç", "CH", "D", "E", "F", "G", "H", "I", "J", "K", "L", "LL", "M", "N", "Ñ", "O", "P", "Q", "R", "RR", "S", "T", "U", "V", "W", "X", "Y", "Z"];
 
 export const useAnagramSearch = (searchTerm: string) => {
   return useQuery({
