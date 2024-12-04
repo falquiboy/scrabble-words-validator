@@ -12,6 +12,9 @@ interface ResultsListProps {
 }
 
 const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }: ResultsListProps) => {
+  // Count wildcards in search term
+  const wildcardCount = (searchTerm.match(/\*/g) || []).length;
+
   return (
     <ScrollArea className="h-[calc(100vh-12rem)]">
       <div className="space-y-4">
@@ -25,7 +28,11 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
             {results.exactMatches.length > 0 && (
               <div className="space-y-2">
                 <h3 className="font-semibold text-lg">
-                  {results.exactMatches.length} {results.exactMatches.length === 1 ? "anagrama" : "anagramas"} encontrados:
+                  {wildcardCount === 2 ? (
+                    "Palabras encontradas con dos comodines:"
+                  ) : (
+                    `${results.exactMatches.length} ${results.exactMatches.length === 1 ? "anagrama" : "anagramas"} encontrados:`
+                  )}
                 </h3>
                 <div className="grid grid-cols-3 gap-2">
                   {results.exactMatches.map((word, index) => (
