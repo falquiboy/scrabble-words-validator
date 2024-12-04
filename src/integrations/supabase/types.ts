@@ -24,6 +24,51 @@ export type Database = {
         }
         Relationships: []
       }
+      cuadernillo: {
+        Row: {
+          alphagram: string | null
+          conj_const: string | null
+          is_enclitic: string | null
+          kind_id: string | null
+          lenght: number | null
+          root_word: string | null
+          word_group: number | null
+        }
+        Insert: {
+          alphagram?: string | null
+          conj_const?: string | null
+          is_enclitic?: string | null
+          kind_id?: string | null
+          lenght?: number | null
+          root_word?: string | null
+          word_group?: number | null
+        }
+        Update: {
+          alphagram?: string | null
+          conj_const?: string | null
+          is_enclitic?: string | null
+          kind_id?: string | null
+          lenght?: number | null
+          root_word?: string | null
+          word_group?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_cuadernillo_alphagrams"
+            columns: ["alphagram", "lenght"]
+            isOneToOne: false
+            referencedRelation: "alphagrams"
+            referencedColumns: ["alphagram", "lenght"]
+          },
+          {
+            foreignKeyName: "fk_cuadernillo_words"
+            columns: ["root_word", "alphagram", "lenght"]
+            isOneToOne: false
+            referencedRelation: "words"
+            referencedColumns: ["word", "alphagram", "lenght"]
+          },
+        ]
+      }
       words: {
         Row: {
           alphagram: string | null
@@ -47,10 +92,26 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      custom_sort_chars: {
+        Args: {
+          input_str: string
+        }
+        Returns: string
+      }
     }
     Enums: {
-      [_ in never]: never
+      se_property: "admite la terminación -se"
+      sym_property:
+        | "sin tratamiento especial"
+        | "admite género opuesto"
+        | "admite participio femenino"
+        | "admite participio masculino plural"
+        | "no admite terminación -ad, -ed, -id, respectivamente"
+      verb_kind:
+        | "Infinitivo de un verbo transitivo"
+        | "Infinitivo de un verbo intransitivo"
+        | "Infinitivo de un verbo pronominal"
+        | "Entrada directa (palabra no verbal)"
     }
     CompositeTypes: {
       [_ in never]: never
