@@ -27,7 +27,7 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
                 <h3 className="font-semibold text-lg">
                   {results.exactMatches.length} {results.exactMatches.length === 1 ? "anagrama" : "anagramas"} encontrados:
                 </h3>
-                <div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                   {results.exactMatches.map((word, index) => (
                     <a
                       key={`exact-${index}`}
@@ -47,7 +47,7 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
                 <h3 className="font-semibold text-lg">
                   {results.wildcardMatches.length} {results.wildcardMatches.length === 1 ? "palabra" : "palabras"} encontradas usando una letra adicional:
                 </h3>
-                <div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                   {results.wildcardMatches.map((word, index) => (
                     <a
                       key={`wildcard-${index}`}
