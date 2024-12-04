@@ -38,31 +38,54 @@ const Anagramador = () => {
     inputRef.current?.focus();
   };
 
-  // Highlight the wildcard matches
+  // Highlight both wildcard and additional letters
   const highlightWildcardLetter = (word: string, originalWord: string) => {
     if (word.length <= originalWord.length) return word;
     
     const wordLetters = word.split('');
     const originalLetters = originalWord.split('');
     let remainingOriginal = [...originalLetters];
-    let extraLetterLastIndex = -1;
+    let extraLetters: string[] = [];
     
-    wordLetters.forEach((letter, index) => {
+    // Find letters in word that aren't in original
+    wordLetters.forEach((letter) => {
       const matchIndex = remainingOriginal.indexOf(letter);
       if (matchIndex === -1) {
-        extraLetterLastIndex = word.lastIndexOf(letter);
+        extraLetters.push(letter);
       } else {
         remainingOriginal.splice(matchIndex, 1);
       }
     });
-    
-    return (
-      <>
-        {word.slice(0, extraLetterLastIndex)}
-        <span className="font-bold text-blue-500">{word[extraLetterLastIndex]}</span>
-        {word.slice(extraLetterLastIndex + 1)}
-      </>
-    );
+
+    // Handle digraphs (CH, LL, RR)
+    const digraphs = ['CH', 'LL', 'RR'];
+    let result = word;
+    let offset = 0;
+
+    extraLetters.forEach(letter => {
+      const letterIndex = word.indexOf(letter);
+      if (letterIndex !== -1) {
+        // Check if this letter is part of a digraph
+        const possibleDigraph = word.substr(letterIndex, 2);
+        if (digraphs.includes(possibleDigraph)) {
+          // Wrap both letters of the digraph
+          const before = result.slice(0, letterIndex + offset);
+          const digraph = result.slice(letterIndex + offset, letterIndex + offset + 2);
+          const after = result.slice(letterIndex + offset + 2);
+          result = before + `<span class="font-bold text-blue-500">${digraph}</span>` + after;
+          offset += 47; // Length of the span tags and classes
+        } else {
+          // Wrap single letter
+          const before = result.slice(0, letterIndex + offset);
+          const letter = result.slice(letterIndex + offset, letterIndex + offset + 1);
+          const after = result.slice(letterIndex + offset + 1);
+          result = before + `<span class="font-bold text-blue-500">${letter}</span>` + after;
+          offset += 46; // Length of the span tags and classes
+        }
+      }
+    });
+
+    return <span dangerouslySetInnerHTML={{ __html: result }} />;
   };
 
   useEffect(() => {
