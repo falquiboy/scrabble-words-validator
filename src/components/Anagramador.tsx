@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import SearchInput from "./anagramador/SearchInput";
 import ResultsList from "./anagramador/ResultsList";
 import { useAnagramSearch } from "@/hooks/useAnagramSearch";
@@ -6,7 +6,6 @@ import { useAnagramSearch } from "@/hooks/useAnagramSearch";
 const Anagramador = () => {
   const [letters, setLetters] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
 
   // Query for words using custom hook
   const { data: results, isLoading } = useAnagramSearch(searchTerm);
@@ -35,7 +34,6 @@ const Anagramador = () => {
   const handleClear = () => {
     setLetters("");
     setSearchTerm("");
-    inputRef.current?.focus();
   };
 
   // Highlight the letter that corresponds to the wildcard position
@@ -52,10 +50,6 @@ const Anagramador = () => {
       const wordLetters = word.split('');
       
       // Find which letter in the word corresponds to the wildcard
-      let wildcardLetter = '';
-      let wildcardPosition = -1;
-      
-      // Create a copy of wordLetters to mark used letters
       let remainingWordLetters = [...wordLetters];
       
       // First, mark all letters that match the original word (excluding wildcard)
@@ -67,7 +61,7 @@ const Anagramador = () => {
       });
       
       // The first non-marked letter is our wildcard match
-      wildcardPosition = remainingWordLetters.findIndex(letter => letter !== '#');
+      const wildcardPosition = remainingWordLetters.findIndex(letter => letter !== '#');
       
       if (wildcardPosition !== -1) {
         // Check if this letter is part of a digraph
@@ -88,10 +82,6 @@ const Anagramador = () => {
 
     return <span dangerouslySetInnerHTML={{ __html: result }} />;
   };
-
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
 
   return (
     <div className="w-full max-w-md space-y-4 px-4">

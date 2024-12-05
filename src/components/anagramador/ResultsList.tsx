@@ -8,7 +8,7 @@ interface ResultsListProps {
     exactMatches: string[];
     wildcardMatches: string[];
     additionalWildcardMatches: string[];
-  } | undefined;
+  };
   highlightWildcardLetter: (word: string, originalWord: string) => React.ReactNode;
 }
 
