@@ -18,7 +18,7 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
 
   return (
     <ScrollArea className="h-[calc(100vh-12rem)]">
-      <div className="space-y-4">
+      <div className="space-y-2">
         {isLoading ? (
           <div className="flex items-center gap-2 text-gray-500">
             <Loader className="h-4 w-4 animate-spin" />
@@ -27,7 +27,7 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
         ) : results && (results.exactMatches.length > 0 || results.wildcardMatches.length > 0 || results.additionalWildcardMatches.length > 0) ? (
           <>
             {results.exactMatches.length > 0 && (
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <h3 className="font-semibold text-lg">
                   {wildcardCount === 0 ? (
                     `${results.exactMatches.length} ${results.exactMatches.length === 1 ? "anagrama encontrado" : "anagramas encontrados"}:`
@@ -35,14 +35,14 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
                     `${results.exactMatches.length} ${results.exactMatches.length === 1 ? "Palabra encontrada" : "Palabras encontradas"} con ${wildcardCount} ${wildcardCount === 1 ? "comodín" : "comodines"}:`
                   )}
                 </h3>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-1">
                   {results.exactMatches.map((word, index) => (
                     <a
                       key={`exact-${index}`}
                       href={`https://dle.rae.es/?w=${word}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block hover:bg-gray-100 p-1.5 rounded transition-colors text-lg w-full text-left"
+                      className="block hover:bg-gray-100 p-1 rounded transition-colors text-lg w-full text-left"
                     >
                       {wildcardCount > 0 ? highlightWildcardLetter(word, searchTerm) : word}
                     </a>
@@ -52,20 +52,19 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
             )}
             {wildcardCount > 0 && (
               <>
-                {/* First section: Results with user-provided wildcards */}
                 {results.wildcardMatches.length > 0 && (
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <h3 className="font-semibold text-lg">
                       {`${results.wildcardMatches.length} ${results.wildcardMatches.length === 1 ? "Palabra encontrada" : "Palabras encontradas"} con ${wildcardCount} ${wildcardCount === 1 ? "comodín" : "comodines"}:`}
                     </h3>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-3 gap-1">
                       {results.wildcardMatches.map((word, index) => (
                         <a
                           key={`wildcard-${index}`}
                           href={`https://dle.rae.es/?w=${word}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="block hover:bg-gray-100 p-1.5 rounded transition-colors text-lg w-full text-left"
+                          className="block hover:bg-gray-100 p-1 rounded transition-colors text-lg w-full text-left"
                         >
                           {highlightWildcardLetter(word, searchTerm)}
                         </a>
@@ -73,20 +72,19 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
                     </div>
                   </div>
                 )}
-                {/* Second section: Results with one additional wildcard */}
                 {results.additionalWildcardMatches.length > 0 && (
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <h3 className="font-semibold text-lg">
                       {`${results.additionalWildcardMatches.length} ${results.additionalWildcardMatches.length === 1 ? "Palabra encontrada" : "Palabras encontradas"} con ${wildcardCount + 1} ${wildcardCount + 1 === 1 ? "comodín" : "comodines"}:`}
                     </h3>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-3 gap-1">
                       {results.additionalWildcardMatches.map((word, index) => (
                         <a
                           key={`additional-wildcard-${index}`}
                           href={`https://dle.rae.es/?w=${word}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="block hover:bg-gray-100 p-1.5 rounded transition-colors text-lg w-full text-left"
+                          className="block hover:bg-gray-100 p-1 rounded transition-colors text-lg w-full text-left"
                         >
                           {highlightWildcardLetter(word, searchTerm)}
                         </a>
