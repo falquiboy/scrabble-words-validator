@@ -11,12 +11,14 @@ const BATCH_SIZE = 50;
 
 export const useAnagramSearch = (searchTerm: string) => {
   // Memoize the initial processing of the search term
-  const { wildcardCount, processedInput, targetAlphagram, inputLength } = useMemo(() => {
-    const count = (searchTerm.match(/\*/g) || []).length;
-    const lettersOnly = searchTerm.replace(/\*/g, '');
+  const { wildcardCount, questionMarkCount, processedInput, targetAlphagram, inputLength } = useMemo(() => {
+    const starCount = (searchTerm.match(/\*/g) || []).length;
+    const qCount = (searchTerm.match(/\?/g) || []).length;
+    const lettersOnly = searchTerm.replace(/[*?]/g, '');
     const processed = processDigraphs(lettersOnly);
     return {
-      wildcardCount: count,
+      wildcardCount: starCount + qCount,
+      questionMarkCount: qCount,
       processedInput: processed,
       targetAlphagram: generateAlphagram(processed),
       inputLength: processed.length
@@ -28,7 +30,7 @@ export const useAnagramSearch = (searchTerm: string) => {
     queryFn: async () => {
       if (!searchTerm) return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [] };
       
-      console.log('Search term:', searchTerm, 'Wildcard count:', wildcardCount);
+      console.log('Search term:', searchTerm, 'Wildcard count:', wildcardCount, 'Question marks:', questionMarkCount);
 
       // Query exact matches first (when no wildcards)
       let exactMatches: string[] = [];
@@ -87,7 +89,45 @@ export const useAnagramSearch = (searchTerm: string) => {
           }
 
           if (data) {
-            wildcardMatches.push(...data.map(d => toDisplayFormat(d.word)));
+            const words = data.map(d => toDisplayFormat(d.word));
+            
+            // Filter words based on question mark positions if present
+            if (questionMarkCount > 0) {
+              const questionMarkPositions = [];
+              for (let i = 0; i < searchTerm.length; i++) {
+                if (searchTerm[i] === '?') {
+                  questionMarkPositions.push(i);
+                }
+              }
+              
+              words.forEach(word => {
+                let matches = true;
+                const searchLetters = searchTerm.replace(/[*?]/g, '').split('');
+                let wordLetters = word.split('');
+                
+                // First mark matching letters
+                searchLetters.forEach(letter => {
+                  const index = wordLetters.indexOf(letter);
+                  if (index !== -1) {
+                    wordLetters[index] = '#';
+                  }
+                });
+                
+                // Check if remaining letters are in correct positions for ?
+                let remainingPos = 0;
+                questionMarkPositions.forEach(pos => {
+                  if (wordLetters.findIndex((l, i) => l !== '#') !== pos) {
+                    matches = false;
+                  }
+                });
+                
+                if (matches) {
+                  wildcardMatches.push(word);
+                }
+              });
+            } else {
+              wildcardMatches.push(...words);
+            }
           }
         }
 

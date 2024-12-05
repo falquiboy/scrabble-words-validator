@@ -13,7 +13,8 @@ const Anagramador = () => {
 
   // Handle input changes
   const handleInputChange = (value: string) => {
-    const sanitizedValue = value.replace(/[^a-zA-ZÑñ*]/g, '');
+    // Allow letters, *, and ? wildcards
+    const sanitizedValue = value.replace(/[^a-zA-ZÑñ*?]/g, '');
     setLetters(sanitizedValue.toUpperCase());
   };
 
@@ -43,22 +44,23 @@ const Anagramador = () => {
     const digraphs = ['CH', 'LL', 'RR'];
     let result = word;
     
-    // First, find the position of the wildcard in the original word
-    const wildcardIndex = originalWord.indexOf('*');
+    // Find positions of both * and ? wildcards
+    const wildcardPositions = [];
+    for (let i = 0; i < originalWord.length; i++) {
+      if (originalWord[i] === '*' || originalWord[i] === '?') {
+        wildcardPositions.push({ pos: i, type: originalWord[i] });
+      }
+    }
     
-    if (wildcardIndex !== -1) {
+    if (wildcardPositions.length > 0) {
       // Create arrays of letters for comparison
-      const originalLetters = originalWord.replace('*', '').split('');
+      const originalLetters = originalWord.replace(/[*?]/g, '').split('');
       const wordLetters = word.split('');
-      
-      // Find which letter in the word corresponds to the wildcard
-      let wildcardLetter = '';
-      let wildcardPosition = -1;
       
       // Create a copy of wordLetters to mark used letters
       let remainingWordLetters = [...wordLetters];
       
-      // First, mark all letters that match the original word (excluding wildcard)
+      // First, mark all letters that match the original word (excluding wildcards)
       originalLetters.forEach(letter => {
         const index = remainingWordLetters.indexOf(letter);
         if (index !== -1) {
@@ -66,24 +68,41 @@ const Anagramador = () => {
         }
       });
       
-      // The first non-marked letter is our wildcard match
-      wildcardPosition = remainingWordLetters.findIndex(letter => letter !== '#');
+      // Find positions of wildcard matches
+      let wildcardMatches = [];
+      let currentPos = 0;
       
-      if (wildcardPosition !== -1) {
-        // Check if this letter is part of a digraph
-        const possibleDigraph = word.substr(wildcardPosition, 2);
-        if (digraphs.includes(possibleDigraph)) {
-          // Wrap both letters of the digraph
-          result = word.slice(0, wildcardPosition) + 
-                  `<span class="font-bold text-blue-500">${possibleDigraph}</span>` + 
-                  word.slice(wildcardPosition + 2);
-        } else {
-          // Wrap single letter
-          result = word.slice(0, wildcardPosition) + 
-                  `<span class="font-bold text-blue-500">${word[wildcardPosition]}</span>` + 
-                  word.slice(wildcardPosition + 1);
+      remainingWordLetters.forEach((letter, index) => {
+        if (letter !== '#') {
+          // Check if this letter is part of a digraph
+          const possibleDigraph = word.substr(index, 2);
+          if (digraphs.includes(possibleDigraph)) {
+            wildcardMatches.push({
+              pos: index,
+              length: 2,
+              text: possibleDigraph,
+              type: wildcardPositions[currentPos]?.type || '*'
+            });
+          } else {
+            wildcardMatches.push({
+              pos: index,
+              length: 1,
+              text: letter,
+              type: wildcardPositions[currentPos]?.type || '*'
+            });
+          }
+          currentPos++;
         }
-      }
+      });
+
+      // Apply highlights with different colors based on wildcard type
+      let offset = 0;
+      wildcardMatches.sort((a, b) => b.pos - a.pos).forEach(match => {
+        const color = match.type === '?' ? 'text-purple-500' : 'text-blue-500';
+        const before = result.slice(0, match.pos);
+        const after = result.slice(match.pos + match.length);
+        result = before + `<span class="font-bold ${color}">${match.text}</span>` + after;
+      });
     }
 
     return <span dangerouslySetInnerHTML={{ __html: result }} />;
