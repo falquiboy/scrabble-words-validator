@@ -1,29 +1,34 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { processDigraphs, generateAlphagram, toDisplayFormat } from "@/utils/digraphs";
+import { useMemo } from "react";
 
 // Spanish alphabet including digraphs in specified order
 const SPANISH_LETTERS = ["A", "B", "C", "Ç", "CH", "D", "E", "F", "G", "H", "I", "J", "K", "L", "LL", "M", "N", "Ñ", "O", "P", "Q", "R", "RR", "S", "T", "U", "V", "W", "X", "Y", "Z"];
 
+// Maximum number of combinations to try
+const MAX_COMBINATIONS = 500;
+
 export const useAnagramSearch = (searchTerm: string) => {
+  // Memoize the initial processing of the search term
+  const { wildcardCount, processedInput, targetAlphagram, inputLength } = useMemo(() => {
+    const count = (searchTerm.match(/\*/g) || []).length;
+    const lettersOnly = searchTerm.replace(/\*/g, '');
+    const processed = processDigraphs(lettersOnly);
+    return {
+      wildcardCount: count,
+      processedInput: processed,
+      targetAlphagram: generateAlphagram(processed),
+      inputLength: processed.length
+    };
+  }, [searchTerm]);
+
   return useQuery({
     queryKey: ["words", searchTerm],
     queryFn: async () => {
       if (!searchTerm) return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [] };
       
-      console.log('Search term:', searchTerm);
-      
-      // Count wildcards and get base letters
-      const wildcardCount = (searchTerm.match(/\*/g) || []).length;
-      const lettersOnly = searchTerm.replace(/\*/g, '');
-      console.log('Wildcard count:', wildcardCount, 'Letters only:', lettersOnly);
-      
-      // Process input with digraphs and generate alphagram
-      const processedInput = processDigraphs(lettersOnly);
-      const targetAlphagram = generateAlphagram(processedInput);
-      const inputLength = processedInput.length;
-      
-      console.log('Processed input:', processedInput, 'Target alphagram:', targetAlphagram);
+      console.log('Search term:', searchTerm, 'Wildcard count:', wildcardCount);
 
       // Query exact matches first (when no wildcards)
       let exactMatches: string[] = [];
@@ -44,37 +49,42 @@ export const useAnagramSearch = (searchTerm: string) => {
       // For wildcard searches, we need to try all possible letter combinations
       let wildcardMatches: string[] = [];
       let additionalWildcardMatches: string[] = [];
+      
       if (wildcardCount > 0) {
-        // Generate all possible combinations for the wildcard positions
-        const generateCombinations = (current: string[], depth: number): string[] => {
-          if (depth === 0) {
-            return [current.join('')];
-          }
+        // Generate combinations more efficiently
+        const generateCombinations = (depth: number): string[] => {
+          if (depth === 0) return [''];
           
           const results: string[] = [];
-          for (const letter of SPANISH_LETTERS) {
-            results.push(...generateCombinations([...current, letter], depth - 1));
+          const previousCombinations = generateCombinations(depth - 1);
+          
+          for (const prev of previousCombinations) {
+            for (const letter of SPANISH_LETTERS) {
+              if (results.length >= MAX_COMBINATIONS) return results;
+              results.push(prev + letter);
+            }
           }
           return results;
         };
 
-        // Generate combinations for current wildcard count
-        const possibleCombinations = generateCombinations([], wildcardCount);
-        console.log(`Generated ${possibleCombinations.length} possible combinations for current wildcards`);
+        // Get combinations for current wildcard count
+        const possibleCombinations = generateCombinations(wildcardCount).slice(0, MAX_COMBINATIONS);
+        console.log(`Generated ${possibleCombinations.length} combinations for current wildcards`);
 
-        // Try each combination for current wildcard count
-        for (const combination of possibleCombinations) {
-          const testWord = processedInput + combination;
-          const testAlphagram = generateAlphagram(testWord);
+        // Batch the combinations into groups of 10 for fewer database calls
+        const batchSize = 10;
+        for (let i = 0; i < possibleCombinations.length; i += batchSize) {
+          const batch = possibleCombinations.slice(i, i + batchSize);
+          const alphagrams = batch.map(combo => generateAlphagram(processedInput + combo));
           
           const { data, error } = await supabase
             .from("words")
             .select("word")
             .eq('lenght', inputLength + wildcardCount)
-            .eq('alphagram', testAlphagram);
+            .in('alphagram', alphagrams);
 
           if (error) {
-            console.error(`Supabase error for combination ${combination}:`, error);
+            console.error(`Supabase error for batch ${i}:`, error);
             continue;
           }
 
@@ -83,28 +93,30 @@ export const useAnagramSearch = (searchTerm: string) => {
           }
         }
 
-        // Generate combinations for additional wildcard
-        const additionalCombinations = generateCombinations([], wildcardCount + 1);
-        console.log(`Generated ${additionalCombinations.length} possible combinations for additional wildcard`);
-
-        // Try each combination for additional wildcard
-        for (const combination of additionalCombinations) {
-          const testWord = processedInput + combination;
-          const testAlphagram = generateAlphagram(testWord);
+        // Only generate additional wildcard matches if we haven't hit our limit
+        if (wildcardMatches.length < MAX_COMBINATIONS) {
+          const additionalCombinations = generateCombinations(wildcardCount + 1)
+            .slice(0, MAX_COMBINATIONS - wildcardMatches.length);
           
-          const { data, error } = await supabase
-            .from("words")
-            .select("word")
-            .eq('lenght', inputLength + wildcardCount + 1)
-            .eq('alphagram', testAlphagram);
+          // Batch these combinations as well
+          for (let i = 0; i < additionalCombinations.length; i += batchSize) {
+            const batch = additionalCombinations.slice(i, i + batchSize);
+            const alphagrams = batch.map(combo => generateAlphagram(processedInput + combo));
+            
+            const { data, error } = await supabase
+              .from("words")
+              .select("word")
+              .eq('lenght', inputLength + wildcardCount + 1)
+              .in('alphagram', alphagrams);
 
-          if (error) {
-            console.error(`Supabase error for additional combination ${combination}:`, error);
-            continue;
-          }
+            if (error) {
+              console.error(`Supabase error for additional batch ${i}:`, error);
+              continue;
+            }
 
-          if (data) {
-            additionalWildcardMatches.push(...data.map(d => toDisplayFormat(d.word)));
+            if (data) {
+              additionalWildcardMatches.push(...data.map(d => toDisplayFormat(d.word)));
+            }
           }
         }
 
@@ -113,7 +125,11 @@ export const useAnagramSearch = (searchTerm: string) => {
         additionalWildcardMatches = Array.from(new Set(additionalWildcardMatches));
       }
 
-      console.log('Final results:', { exactMatches, wildcardMatches, additionalWildcardMatches });
+      console.log('Results count:', {
+        exact: exactMatches.length,
+        wildcard: wildcardMatches.length,
+        additional: additionalWildcardMatches.length
+      });
       
       return {
         exactMatches,
