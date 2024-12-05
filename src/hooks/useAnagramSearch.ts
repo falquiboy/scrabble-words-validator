@@ -6,11 +6,8 @@ import { useMemo } from "react";
 // Spanish alphabet including digraphs in specified order
 const SPANISH_LETTERS = ["A", "B", "C", "Ç", "CH", "D", "E", "F", "G", "H", "I", "J", "K", "L", "LL", "M", "N", "Ñ", "O", "P", "Q", "R", "RR", "S", "T", "U", "V", "W", "X", "Y", "Z"];
 
-// Increased maximum number of combinations to try
-const MAX_COMBINATIONS = 1000;
-
 // Increased batch size for more efficient querying
-const BATCH_SIZE = 20;
+const BATCH_SIZE = 50;
 
 export const useAnagramSearch = (searchTerm: string) => {
   // Memoize the initial processing of the search term
@@ -63,7 +60,6 @@ export const useAnagramSearch = (searchTerm: string) => {
           
           for (const prev of previousCombinations) {
             for (const letter of SPANISH_LETTERS) {
-              if (results.length >= MAX_COMBINATIONS) return results;
               results.push(prev + letter);
             }
           }
@@ -95,30 +91,28 @@ export const useAnagramSearch = (searchTerm: string) => {
           }
         }
 
-        // Generate additional wildcard matches if we haven't hit our limit
-        if (wildcardMatches.length < MAX_COMBINATIONS) {
-          const additionalCombinations = generateCombinations(wildcardCount + 1)
-            .slice(0, MAX_COMBINATIONS - wildcardMatches.length);
+        // Generate combinations for additional wildcard
+        const additionalCombinations = generateCombinations(wildcardCount + 1);
+        console.log(`Generated ${additionalCombinations.length} combinations for additional wildcard`);
+        
+        // Process additional combinations in batches
+        for (let i = 0; i < additionalCombinations.length; i += BATCH_SIZE) {
+          const batch = additionalCombinations.slice(i, i + BATCH_SIZE);
+          const alphagrams = batch.map(combo => generateAlphagram(processedInput + combo));
           
-          // Process additional combinations in batches
-          for (let i = 0; i < additionalCombinations.length; i += BATCH_SIZE) {
-            const batch = additionalCombinations.slice(i, i + BATCH_SIZE);
-            const alphagrams = batch.map(combo => generateAlphagram(processedInput + combo));
-            
-            const { data, error } = await supabase
-              .from("words")
-              .select("word")
-              .eq('lenght', inputLength + wildcardCount + 1)
-              .in('alphagram', alphagrams);
+          const { data, error } = await supabase
+            .from("words")
+            .select("word")
+            .eq('lenght', inputLength + wildcardCount + 1)
+            .in('alphagram', alphagrams);
 
-            if (error) {
-              console.error(`Supabase error for additional batch ${i}:`, error);
-              continue;
-            }
+          if (error) {
+            console.error(`Supabase error for additional batch ${i}:`, error);
+            continue;
+          }
 
-            if (data) {
-              additionalWildcardMatches.push(...data.map(d => toDisplayFormat(d.word)));
-            }
+          if (data) {
+            additionalWildcardMatches.push(...data.map(d => toDisplayFormat(d.word)));
           }
         }
 
