@@ -52,7 +52,6 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
             )}
             {wildcardCount > 0 && (
               <>
-                {/* First section: Results with user-provided wildcards */}
                 {results.wildcardMatches.length > 0 && (
                   <div className="space-y-2">
                     <h3 className="font-semibold text-lg">
@@ -73,7 +72,6 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
                     </div>
                   </div>
                 )}
-                {/* Second section: Results with one additional wildcard */}
                 {results.additionalWildcardMatches.length > 0 && (
                   <div className="space-y-2">
                     <h3 className="font-semibold text-lg">

@@ -1,7 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, X } from "lucide-react";
-import { useRef } from "react";
 
 interface SearchInputProps {
   letters: string;
@@ -12,13 +11,10 @@ interface SearchInputProps {
 }
 
 const SearchInput = ({ letters, onInputChange, onSearch, onClear, onKeyPress }: SearchInputProps) => {
-  const inputRef = useRef<HTMLInputElement>(null);
-
   return (
     <div className="flex gap-2">
       <div className="relative flex-1">
         <Input
-          ref={inputRef}
           type="text"
           placeholder="Ingresa letras..."
           value={letters}
