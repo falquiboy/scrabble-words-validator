@@ -20,6 +20,7 @@ const Anagramador = () => {
 
   // Handle search
   const handleSearch = () => {
+    console.log('Search triggered with letters:', letters);
     if (letters.trim()) {
       setSearchTerm(letters);
     }
