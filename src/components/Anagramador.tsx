@@ -105,7 +105,11 @@ const Anagramador = () => {
       <ResultsList
         isLoading={isLoading}
         searchTerm={searchTerm}
-        results={results}
+        results={{
+          exactMatches: results?.exactMatches || [],
+          wildcardMatches: results?.wildcardMatches || [],
+          additionalWildcardMatches: results?.additionalWildcardMatches || []
+        }}
         highlightWildcardLetter={highlightWildcardLetter}
       />
     </div>

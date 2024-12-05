@@ -50,24 +50,36 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
               </div>
             )}
             {wildcardCount > 0 && (
-              <div className="space-y-2">
-                <h3 className="font-semibold text-lg">
-                  {`${results.wildcardMatches.length} ${results.wildcardMatches.length === 1 ? "Palabra encontrada" : "Palabras encontradas"} con ${wildcardCount + 1} ${wildcardCount + 1 === 1 ? "comodín" : "comodines"}:`}
-                </h3>
-                <div className="grid grid-cols-3 gap-2">
-                  {results.wildcardMatches.map((word, index) => (
-                    <a
-                      key={`wildcard-${index}`}
-                      href={`https://dle.rae.es/?w=${word}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block hover:bg-gray-100 p-1.5 rounded transition-colors text-lg w-full text-left"
-                    >
-                      {highlightWildcardLetter(word, searchTerm)}
-                    </a>
-                  ))}
+              <>
+                {/* First section: Results with user-provided wildcards */}
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-lg">
+                    {`${results.wildcardMatches.length} ${results.wildcardMatches.length === 1 ? "Palabra encontrada" : "Palabras encontradas"} con ${wildcardCount} ${wildcardCount === 1 ? "comodín" : "comodines"}:`}
+                  </h3>
+                  <div className="grid grid-cols-3 gap-2">
+                    {results.wildcardMatches.map((word, index) => (
+                      <a
+                        key={`wildcard-${index}`}
+                        href={`https://dle.rae.es/?w=${word}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block hover:bg-gray-100 p-1.5 rounded transition-colors text-lg w-full text-left"
+                      >
+                        {highlightWildcardLetter(word, searchTerm)}
+                      </a>
+                    ))}
+                  </div>
                 </div>
-              </div>
+                {/* Second section: Results with one additional wildcard */}
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-lg">
+                    {`Resultados con ${wildcardCount + 1} ${wildcardCount + 1 === 1 ? "comodín" : "comodines"}:`}
+                  </h3>
+                  <div className="grid grid-cols-3 gap-2">
+                    {/* We'll need to implement the additional wildcard matches logic */}
+                  </div>
+                </div>
+              </>
             )}
           </>
         ) : searchTerm ? (

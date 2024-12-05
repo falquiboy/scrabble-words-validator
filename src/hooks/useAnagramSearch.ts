@@ -9,7 +9,7 @@ export const useAnagramSearch = (searchTerm: string) => {
   return useQuery({
     queryKey: ["words", searchTerm],
     queryFn: async () => {
-      if (!searchTerm) return { exactMatches: [], wildcardMatches: [] };
+      if (!searchTerm) return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [] };
       
       console.log('Search term:', searchTerm);
       
@@ -43,6 +43,7 @@ export const useAnagramSearch = (searchTerm: string) => {
 
       // For wildcard searches, we need to try all possible letter combinations
       let wildcardMatches: string[] = [];
+      let additionalWildcardMatches: string[] = [];
       if (wildcardCount > 0) {
         // Generate all possible combinations for the wildcard positions
         const generateCombinations = (current: string[], depth: number): string[] => {
@@ -57,11 +58,11 @@ export const useAnagramSearch = (searchTerm: string) => {
           return results;
         };
 
-        // Generate all possible combinations for the wildcards
+        // Generate combinations for current wildcard count
         const possibleCombinations = generateCombinations([], wildcardCount);
-        console.log(`Generated ${possibleCombinations.length} possible combinations`);
+        console.log(`Generated ${possibleCombinations.length} possible combinations for current wildcards`);
 
-        // Try each combination
+        // Try each combination for current wildcard count
         for (const combination of possibleCombinations) {
           const testWord = processedInput + combination;
           const testAlphagram = generateAlphagram(testWord);
@@ -82,15 +83,42 @@ export const useAnagramSearch = (searchTerm: string) => {
           }
         }
 
+        // Generate combinations for additional wildcard
+        const additionalCombinations = generateCombinations([], wildcardCount + 1);
+        console.log(`Generated ${additionalCombinations.length} possible combinations for additional wildcard`);
+
+        // Try each combination for additional wildcard
+        for (const combination of additionalCombinations) {
+          const testWord = processedInput + combination;
+          const testAlphagram = generateAlphagram(testWord);
+          
+          const { data, error } = await supabase
+            .from("words")
+            .select("word")
+            .eq('lenght', inputLength + wildcardCount + 1)
+            .eq('alphagram', testAlphagram);
+
+          if (error) {
+            console.error(`Supabase error for additional combination ${combination}:`, error);
+            continue;
+          }
+
+          if (data) {
+            additionalWildcardMatches.push(...data.map(d => toDisplayFormat(d.word)));
+          }
+        }
+
         // Remove duplicates
         wildcardMatches = Array.from(new Set(wildcardMatches));
+        additionalWildcardMatches = Array.from(new Set(additionalWildcardMatches));
       }
 
-      console.log('Final results:', { exactMatches, wildcardMatches });
+      console.log('Final results:', { exactMatches, wildcardMatches, additionalWildcardMatches });
       
       return {
         exactMatches,
-        wildcardMatches
+        wildcardMatches,
+        additionalWildcardMatches
       };
     },
     enabled: Boolean(searchTerm)
