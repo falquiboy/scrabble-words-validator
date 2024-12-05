@@ -11,17 +11,24 @@ const BATCH_SIZE = 50;
 
 export const useAnagramSearch = (searchTerm: string) => {
   // Memoize the initial processing of the search term
-  const { wildcardCount, questionMarkCount, processedInput, targetAlphagram, inputLength } = useMemo(() => {
+  const { wildcardCount, questionMarkCount, processedInput, targetAlphagram, inputLength, questionMarkPositions } = useMemo(() => {
     const starCount = (searchTerm.match(/\*/g) || []).length;
     const qCount = (searchTerm.match(/\?/g) || []).length;
     const lettersOnly = searchTerm.replace(/[*?]/g, '');
     const processed = processDigraphs(lettersOnly);
+    
+    // Get positions of question marks
+    const qPositions = searchTerm.split('').map((char, index) => 
+      char === '?' ? index : null
+    ).filter((pos): pos is number => pos !== null);
+
     return {
       wildcardCount: starCount + qCount,
       questionMarkCount: qCount,
       processedInput: processed,
       targetAlphagram: generateAlphagram(processed),
-      inputLength: processed.length
+      inputLength: processed.length,
+      questionMarkPositions: qPositions
     };
   }, [searchTerm]);
 
@@ -93,35 +100,30 @@ export const useAnagramSearch = (searchTerm: string) => {
             
             // Filter words based on question mark positions if present
             if (questionMarkCount > 0) {
-              const questionMarkPositions = [];
-              for (let i = 0; i < searchTerm.length; i++) {
-                if (searchTerm[i] === '?') {
-                  questionMarkPositions.push(i);
-                }
-              }
-              
               words.forEach(word => {
-                let matches = true;
-                const searchLetters = searchTerm.replace(/[*?]/g, '').split('');
-                let wordLetters = word.split('');
-                
-                // First mark matching letters
-                searchLetters.forEach(letter => {
-                  const index = wordLetters.indexOf(letter);
-                  if (index !== -1) {
-                    wordLetters[index] = '#';
-                  }
-                });
-                
-                // Check if remaining letters are in correct positions for ?
-                let remainingPos = 0;
+                // Check if the word matches the pattern with question marks
+                let isMatch = true;
+                const searchLetters = searchTerm.split('');
+                const wordLetters = word.split('');
+
+                // Check each question mark position
                 questionMarkPositions.forEach(pos => {
-                  if (wordLetters.findIndex((l, i) => l !== '#') !== pos) {
-                    matches = false;
+                  if (pos < wordLetters.length) {
+                    // For question marks, we only need to verify that the position
+                    // doesn't contain the same letter as in the search term at non-wildcard positions
+                    const searchLetterAtPos = searchLetters
+                      .filter((_, i) => i !== pos && searchLetters[i] !== '*' && searchLetters[i] !== '?')
+                      .find(l => l === wordLetters[pos]);
+                    
+                    if (searchLetterAtPos) {
+                      isMatch = false;
+                    }
+                  } else {
+                    isMatch = false;
                   }
                 });
-                
-                if (matches) {
+
+                if (isMatch) {
                   wildcardMatches.push(word);
                 }
               });
@@ -156,7 +158,7 @@ export const useAnagramSearch = (searchTerm: string) => {
           }
         }
 
-        // Remove duplicates
+        // Remove duplicates and filter out invalid matches
         wildcardMatches = Array.from(new Set(wildcardMatches));
         additionalWildcardMatches = Array.from(new Set(additionalWildcardMatches));
       }

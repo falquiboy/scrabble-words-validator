@@ -44,65 +44,67 @@ const Anagramador = () => {
     const digraphs = ['CH', 'LL', 'RR'];
     let result = word;
     
-    // Find positions of both * and ? wildcards
-    const wildcardPositions = [];
-    for (let i = 0; i < originalWord.length; i++) {
-      if (originalWord[i] === '*' || originalWord[i] === '?') {
-        wildcardPositions.push({ pos: i, type: originalWord[i] });
+    // Find positions of wildcards
+    const wildcardPositions = originalWord.split('').map((char, index) => {
+      if (char === '*' || char === '?') {
+        return { pos: index, type: char };
       }
-    }
+      return null;
+    }).filter(Boolean);
     
     if (wildcardPositions.length > 0) {
       // Create arrays of letters for comparison
       const originalLetters = originalWord.replace(/[*?]/g, '').split('');
       const wordLetters = word.split('');
       
-      // Create a copy of wordLetters to mark used letters
-      let remainingWordLetters = [...wordLetters];
+      // For ? wildcards, we need to match the exact position
+      const questionMarkPositions = wildcardPositions
+        .filter(wp => wp?.type === '?')
+        .map(wp => wp?.pos);
       
-      // First, mark all letters that match the original word (excluding wildcards)
-      originalLetters.forEach(letter => {
-        const index = remainingWordLetters.indexOf(letter);
-        if (index !== -1) {
-          remainingWordLetters[index] = '#'; // Mark as used
-        }
-      });
-      
-      // Find positions of wildcard matches
-      let wildcardMatches = [];
-      let currentPos = 0;
-      
-      remainingWordLetters.forEach((letter, index) => {
-        if (letter !== '#') {
-          // Check if this letter is part of a digraph
-          const possibleDigraph = word.substr(index, 2);
+      // For each question mark position, highlight the corresponding letter
+      questionMarkPositions.forEach(pos => {
+        if (pos !== undefined && pos < word.length) {
+          const color = 'text-purple-500';
+          const letter = wordLetters[pos];
+          // Check if it's part of a digraph
+          const possibleDigraph = pos < word.length - 1 ? word.substr(pos, 2) : '';
           if (digraphs.includes(possibleDigraph)) {
-            wildcardMatches.push({
-              pos: index,
-              length: 2,
-              text: possibleDigraph,
-              type: wildcardPositions[currentPos]?.type || '*'
-            });
+            result = result.slice(0, pos) + 
+                    `<span class="font-bold ${color}">${possibleDigraph}</span>` + 
+                    result.slice(pos + 2);
           } else {
-            wildcardMatches.push({
-              pos: index,
-              length: 1,
-              text: letter,
-              type: wildcardPositions[currentPos]?.type || '*'
-            });
+            result = result.slice(0, pos) + 
+                    `<span class="font-bold ${color}">${letter}</span>` + 
+                    result.slice(pos + 1);
           }
-          currentPos++;
         }
       });
-
-      // Apply highlights with different colors based on wildcard type
-      let offset = 0;
-      wildcardMatches.sort((a, b) => b.pos - a.pos).forEach(match => {
-        const color = match.type === '?' ? 'text-purple-500' : 'text-blue-500';
-        const before = result.slice(0, match.pos);
-        const after = result.slice(match.pos + match.length);
-        result = before + `<span class="font-bold ${color}">${match.text}</span>` + after;
-      });
+      
+      // Handle * wildcards
+      const starPositions = wildcardPositions
+        .filter(wp => wp?.type === '*')
+        .map(wp => wp?.pos);
+      
+      if (starPositions.length > 0) {
+        // Find letters that haven't been matched yet
+        const remainingLetters = word.split('').map((letter, index) => {
+          if (!result.includes(`<span class="font-bold text-purple-500">${letter}</span>`)) {
+            return { letter, index };
+          }
+          return null;
+        }).filter(Boolean);
+        
+        // Highlight remaining unmatched letters in blue
+        remainingLetters.forEach(item => {
+          if (item && !originalLetters.includes(item.letter)) {
+            const color = 'text-blue-500';
+            result = result.slice(0, item.index) + 
+                    `<span class="font-bold ${color}">${item.letter}</span>` + 
+                    result.slice(item.index + 1);
+          }
+        });
+      }
     }
 
     return <span dangerouslySetInnerHTML={{ __html: result }} />;
