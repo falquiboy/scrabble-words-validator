@@ -1,3 +1,5 @@
+import { supabase } from "@/integrations/supabase/client";
+
 class TrieNode {
   children: Map<string, TrieNode>;
   isEndOfWord: boolean;
