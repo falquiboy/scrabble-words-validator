@@ -13,14 +13,12 @@ const Anagramador = () => {
 
   // Handle input changes
   const handleInputChange = (value: string) => {
-    // Allow letters, *, and ? wildcards
-    const sanitizedValue = value.replace(/[^a-zA-ZÑñ*?]/g, '');
+    const sanitizedValue = value.replace(/[^a-zA-ZÑñ*]/g, '');
     setLetters(sanitizedValue.toUpperCase());
   };
 
   // Handle search
   const handleSearch = () => {
-    console.log('Search triggered with letters:', letters);
     if (letters.trim()) {
       setSearchTerm(letters);
     }
@@ -45,66 +43,46 @@ const Anagramador = () => {
     const digraphs = ['CH', 'LL', 'RR'];
     let result = word;
     
-    // Find positions of wildcards
-    const wildcardPositions = originalWord.split('').map((char, index) => {
-      if (char === '*' || char === '?') {
-        return { pos: index, type: char };
-      }
-      return null;
-    }).filter(Boolean);
+    // First, find the position of the wildcard in the original word
+    const wildcardIndex = originalWord.indexOf('*');
     
-    if (wildcardPositions.length > 0) {
+    if (wildcardIndex !== -1) {
       // Create arrays of letters for comparison
-      const originalLetters = originalWord.replace(/[*?]/g, '').split('');
+      const originalLetters = originalWord.replace('*', '').split('');
       const wordLetters = word.split('');
       
-      // For ? wildcards, we need to match the exact position
-      const questionMarkPositions = wildcardPositions
-        .filter(wp => wp?.type === '?')
-        .map(wp => wp?.pos);
+      // Find which letter in the word corresponds to the wildcard
+      let wildcardLetter = '';
+      let wildcardPosition = -1;
       
-      // For each question mark position, highlight the corresponding letter
-      questionMarkPositions.forEach(pos => {
-        if (pos !== undefined && pos < word.length) {
-          const color = 'text-purple-500';
-          const letter = wordLetters[pos];
-          // Check if it's part of a digraph
-          const possibleDigraph = pos < word.length - 1 ? word.substr(pos, 2) : '';
-          if (digraphs.includes(possibleDigraph)) {
-            result = result.slice(0, pos) + 
-                    `<span class="font-bold ${color}">${possibleDigraph}</span>` + 
-                    result.slice(pos + 2);
-          } else {
-            result = result.slice(0, pos) + 
-                    `<span class="font-bold ${color}">${letter}</span>` + 
-                    result.slice(pos + 1);
-          }
+      // Create a copy of wordLetters to mark used letters
+      let remainingWordLetters = [...wordLetters];
+      
+      // First, mark all letters that match the original word (excluding wildcard)
+      originalLetters.forEach(letter => {
+        const index = remainingWordLetters.indexOf(letter);
+        if (index !== -1) {
+          remainingWordLetters[index] = '#'; // Mark as used
         }
       });
       
-      // Handle * wildcards
-      const starPositions = wildcardPositions
-        .filter(wp => wp?.type === '*')
-        .map(wp => wp?.pos);
+      // The first non-marked letter is our wildcard match
+      wildcardPosition = remainingWordLetters.findIndex(letter => letter !== '#');
       
-      if (starPositions.length > 0) {
-        // Find letters that haven't been matched yet
-        const remainingLetters = word.split('').map((letter, index) => {
-          if (!result.includes(`<span class="font-bold text-purple-500">${letter}</span>`)) {
-            return { letter, index };
-          }
-          return null;
-        }).filter(Boolean);
-        
-        // Highlight remaining unmatched letters in blue
-        remainingLetters.forEach(item => {
-          if (item && !originalLetters.includes(item.letter)) {
-            const color = 'text-blue-500';
-            result = result.slice(0, item.index) + 
-                    `<span class="font-bold ${color}">${item.letter}</span>` + 
-                    result.slice(item.index + 1);
-          }
-        });
+      if (wildcardPosition !== -1) {
+        // Check if this letter is part of a digraph
+        const possibleDigraph = word.substr(wildcardPosition, 2);
+        if (digraphs.includes(possibleDigraph)) {
+          // Wrap both letters of the digraph
+          result = word.slice(0, wildcardPosition) + 
+                  `<span class="font-bold text-blue-500">${possibleDigraph}</span>` + 
+                  word.slice(wildcardPosition + 2);
+        } else {
+          // Wrap single letter
+          result = word.slice(0, wildcardPosition) + 
+                  `<span class="font-bold text-blue-500">${word[wildcardPosition]}</span>` + 
+                  word.slice(wildcardPosition + 1);
+        }
       }
     }
 

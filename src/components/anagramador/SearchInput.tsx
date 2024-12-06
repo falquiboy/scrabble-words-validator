@@ -23,7 +23,7 @@ const SearchInput = ({ letters, onInputChange, onSearch, onClear, onKeyPress }: 
           placeholder="Ingresa letras..."
           value={letters}
           onChange={(e) => onInputChange(e.target.value)}
-          onKeyDown={onKeyPress}
+          onKeyPress={onKeyPress}
           className="text-xl h-12 text-left pr-12"
           autoFocus
           spellCheck={false}

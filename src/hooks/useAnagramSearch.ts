@@ -11,33 +11,15 @@ const BATCH_SIZE = 50;
 
 export const useAnagramSearch = (searchTerm: string) => {
   // Memoize the initial processing of the search term
-  const { wildcardCount, questionMarkCount, processedInput, targetAlphagram, inputLength, questionMarkPositions } = useMemo(() => {
-    const starCount = (searchTerm.match(/\*/g) || []).length;
-    const qCount = (searchTerm.match(/\?/g) || []).length;
-    const lettersOnly = searchTerm.replace(/[*?]/g, '');
+  const { wildcardCount, processedInput, targetAlphagram, inputLength } = useMemo(() => {
+    const count = (searchTerm.match(/\*/g) || []).length;
+    const lettersOnly = searchTerm.replace(/\*/g, '');
     const processed = processDigraphs(lettersOnly);
-    
-    // Get positions of question marks
-    const qPositions = searchTerm.split('').map((char, index) => 
-      char === '?' ? index : null
-    ).filter((pos): pos is number => pos !== null);
-
-    console.log('Search term processing:', {
-      searchTerm,
-      starCount,
-      qCount,
-      lettersOnly,
-      processed,
-      qPositions
-    });
-
     return {
-      wildcardCount: starCount + qCount,
-      questionMarkCount: qCount,
+      wildcardCount: count,
       processedInput: processed,
       targetAlphagram: generateAlphagram(processed),
-      inputLength: processed.length + starCount + qCount, // Include wildcards in length
-      questionMarkPositions: qPositions
+      inputLength: processed.length
     };
   }, [searchTerm]);
 
@@ -46,15 +28,7 @@ export const useAnagramSearch = (searchTerm: string) => {
     queryFn: async () => {
       if (!searchTerm) return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [] };
       
-      console.log('Starting search with:', {
-        searchTerm,
-        wildcardCount,
-        questionMarkCount,
-        processedInput,
-        targetAlphagram,
-        inputLength,
-        questionMarkPositions
-      });
+      console.log('Search term:', searchTerm, 'Wildcard count:', wildcardCount);
 
       // Query exact matches first (when no wildcards)
       let exactMatches: string[] = [];
@@ -69,7 +43,6 @@ export const useAnagramSearch = (searchTerm: string) => {
           console.error("Supabase error (exact):", exactError);
         } else {
           exactMatches = exactData?.map(d => toDisplayFormat(d.word)) || [];
-          console.log('Exact matches:', exactMatches);
         }
       }
 
@@ -78,73 +51,82 @@ export const useAnagramSearch = (searchTerm: string) => {
       let additionalWildcardMatches: string[] = [];
       
       if (wildcardCount > 0) {
-        // Query words with the same length for wildcard matches
-        const { data: wildcardData, error: wildcardError } = await supabase
-          .from("words")
-          .select("word")
-          .eq('lenght', inputLength);
-
-        if (wildcardError) {
-          console.error("Supabase error (wildcard):", wildcardError);
-        } else if (wildcardData) {
-          console.log(`Found ${wildcardData.length} potential matches to filter`);
+        // Generate combinations more efficiently
+        const generateCombinations = (depth: number): string[] => {
+          if (depth === 0) return [''];
           
-          // Filter matches based on pattern
-          const pattern = searchTerm.split('').map(char => {
-            if (char === '?') return '.';
-            if (char === '*') return '[A-ZÑÇÁÉÍÓÚ]';
-            return char;
-          }).join('');
+          const results: string[] = [];
+          const previousCombinations = generateCombinations(depth - 1);
           
-          const regex = new RegExp(`^${pattern}$`);
-          console.log('Using regex pattern:', pattern);
+          for (const prev of previousCombinations) {
+            for (const letter of SPANISH_LETTERS) {
+              results.push(prev + letter);
+            }
+          }
+          return results;
+        };
 
-          wildcardMatches = wildcardData
-            .map(d => toDisplayFormat(d.word))
-            .filter(word => {
-              const matches = regex.test(word);
-              console.log(`Testing ${word} against pattern:`, matches);
-              return matches;
-            });
+        // Get combinations for current wildcard count
+        const possibleCombinations = generateCombinations(wildcardCount);
+        console.log(`Generated ${possibleCombinations.length} combinations for current wildcards`);
 
-          console.log('Filtered wildcard matches:', wildcardMatches);
-        }
-
-        // Query words with length + 1 for additional wildcard matches
-        if (wildcardCount > 0) {
-          const { data: additionalData, error: additionalError } = await supabase
+        // Process combinations in batches
+        for (let i = 0; i < possibleCombinations.length; i += BATCH_SIZE) {
+          const batch = possibleCombinations.slice(i, i + BATCH_SIZE);
+          const alphagrams = batch.map(combo => generateAlphagram(processedInput + combo));
+          
+          const { data, error } = await supabase
             .from("words")
             .select("word")
-            .eq('lenght', inputLength + 1);
+            .eq('lenght', inputLength + wildcardCount)
+            .in('alphagram', alphagrams);
 
-          if (additionalError) {
-            console.error("Supabase error (additional):", additionalError);
-          } else if (additionalData) {
-            console.log(`Found ${additionalData.length} potential additional matches to filter`);
-            
-            // Add an extra wildcard to the pattern for additional matches
-            const additionalPattern = searchTerm.split('').map(char => {
-              if (char === '?') return '.';
-              if (char === '*') return '[A-ZÑÇÁÉÍÓÚ]';
-              return char;
-            }).join('');
-            
-            const additionalRegex = new RegExp(`^${additionalPattern}[A-ZÑÇÁÉÍÓÚ]$`);
-            console.log('Using additional regex pattern:', additionalPattern + '[A-ZÑÇÁÉÍÓÚ]');
+          if (error) {
+            console.error(`Supabase error for batch ${i}:`, error);
+            continue;
+          }
 
-            additionalWildcardMatches = additionalData
-              .map(d => toDisplayFormat(d.word))
-              .filter(word => {
-                const matches = additionalRegex.test(word);
-                console.log(`Testing ${word} against additional pattern:`, matches);
-                return matches;
-              });
-
-            console.log('Filtered additional wildcard matches:', additionalWildcardMatches);
+          if (data) {
+            wildcardMatches.push(...data.map(d => toDisplayFormat(d.word)));
           }
         }
+
+        // Generate combinations for additional wildcard
+        const additionalCombinations = generateCombinations(wildcardCount + 1);
+        console.log(`Generated ${additionalCombinations.length} combinations for additional wildcard`);
+        
+        // Process additional combinations in batches
+        for (let i = 0; i < additionalCombinations.length; i += BATCH_SIZE) {
+          const batch = additionalCombinations.slice(i, i + BATCH_SIZE);
+          const alphagrams = batch.map(combo => generateAlphagram(processedInput + combo));
+          
+          const { data, error } = await supabase
+            .from("words")
+            .select("word")
+            .eq('lenght', inputLength + wildcardCount + 1)
+            .in('alphagram', alphagrams);
+
+          if (error) {
+            console.error(`Supabase error for additional batch ${i}:`, error);
+            continue;
+          }
+
+          if (data) {
+            additionalWildcardMatches.push(...data.map(d => toDisplayFormat(d.word)));
+          }
+        }
+
+        // Remove duplicates
+        wildcardMatches = Array.from(new Set(wildcardMatches));
+        additionalWildcardMatches = Array.from(new Set(additionalWildcardMatches));
       }
 
+      console.log('Results count:', {
+        exact: exactMatches.length,
+        wildcard: wildcardMatches.length,
+        additional: additionalWildcardMatches.length
+      });
+      
       return {
         exactMatches,
         wildcardMatches,
