@@ -113,7 +113,7 @@ const WordValidator = () => {
 
         <Button 
           onClick={handleValidate}
-          className="w-full bg-scrabble-green hover:bg-scrabble-green/90 text-lg px-8 h-16"
+          className="w-full bg-gray-500 hover:bg-gray-600 text-lg px-8 h-16"
           disabled={isLoading}
         >
           {isLoading ? "Validando..." : "Validar"}
@@ -122,16 +122,16 @@ const WordValidator = () => {
         {result.checked && (
           <div className={`p-4 rounded-lg ${
             result.isValid 
-              ? "bg-scrabble-valid/10 border border-scrabble-valid" 
-              : "bg-scrabble-invalid/10 border border-scrabble-invalid"
+              ? "bg-emerald-500 text-white font-bold" 
+              : "bg-red-500 text-white font-bold"
             } animate-tile-bounce`}>
             <div className="flex items-center gap-2">
               {result.isValid ? (
-                <Check className="text-scrabble-valid h-6 w-6" />
+                <Check className="text-white h-6 w-6" />
               ) : (
-                <X className="text-scrabble-invalid h-6 w-6" />
+                <X className="text-white h-6 w-6" />
               )}
-              <span className={`${result.isValid ? "text-scrabble-valid" : "text-scrabble-invalid"} text-xl`}>
+              <span className="text-xl">
                 {getValidationMessage()}
               </span>
             </div>
