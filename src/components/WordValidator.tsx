@@ -113,7 +113,7 @@ const WordValidator = () => {
 
         <Button 
           onClick={handleValidate}
-          className="w-full bg-gray-500 hover:bg-gray-600 text-lg px-8 h-16"
+          className="w-full bg-blue-500 hover:bg-blue-600 text-lg px-8 h-16"
           disabled={isLoading}
         >
           {isLoading ? "Validando..." : "Validar"}
