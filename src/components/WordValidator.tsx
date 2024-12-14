@@ -62,14 +62,6 @@ const WordValidator = () => {
     }
   };
 
-  const getValidationMessage = () => {
-    if (!result.checked) return "";
-    if (result.words.length === 1) {
-      return `Palabra ${result.isValid ? "válida" : "inválida"}. Palabra consultada: ${result.words[0]}.`;
-    }
-    return `Jugada ${result.isValid ? "válida" : "inválida"}. Palabras consultadas: ${result.words.join(", ")}.`;
-  };
-
   const getInputBackground = () => {
     if (!result.checked) return "bg-white";
     return result.isValid ? "bg-emerald-100" : "bg-red-100";
@@ -128,25 +120,6 @@ const WordValidator = () => {
             </Button>
           )}
         </div>
-
-        {result.checked && (
-          <div className={`p-4 rounded-lg ${
-            result.isValid 
-              ? "bg-emerald-500 text-white font-bold" 
-              : "bg-red-500 text-white font-bold"
-            } animate-tile-bounce`}>
-            <div className="flex items-center gap-2">
-              {result.isValid ? (
-                <Check className="text-white h-6 w-6" />
-              ) : (
-                <X className="text-white h-6 w-6" />
-              )}
-              <span className="text-xl">
-                {getValidationMessage()}
-              </span>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
