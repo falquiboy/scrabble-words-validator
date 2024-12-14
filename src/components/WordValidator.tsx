@@ -63,8 +63,10 @@ const WordValidator = () => {
   };
 
   const getInputBackground = () => {
-    if (!result.checked) return "bg-white";
-    return result.isValid ? "bg-emerald-100" : "bg-red-100";
+    if (!result.checked) return "bg-white text-black";
+    return result.isValid 
+      ? "bg-scrabble-valid text-white" 
+      : "bg-scrabble-invalid text-white";
   };
 
   return (
