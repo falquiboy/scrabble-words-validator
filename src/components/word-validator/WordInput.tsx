@@ -65,17 +65,18 @@ const WordInput = ({
     const input = e.target;
     const cursorPosition = input.selectionStart || 0;
     
-    // Convert to uppercase while preserving Ñ
     let value = input.value
       .split('')
       .map(char => {
-        // Special handling for Ñ/ñ - preserve them exactly as they are
-        if (char === 'Ñ' || char === 'ñ') return 'Ñ';
-        
-        // For all other characters, convert to uppercase first
+        // Convert to uppercase first
         const upperChar = char.toUpperCase();
         
-        // Then remove accents from non-Ñ characters
+        // If it's Ñ/ñ, keep it as Ñ without any normalization
+        if (upperChar === 'Ñ' || upperChar === 'ñ') {
+          return 'Ñ';
+        }
+        
+        // For all other characters, remove accents
         return upperChar
           .normalize('NFD')
           .replace(/[\u0300-\u036f]/g, '')
