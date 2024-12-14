@@ -65,17 +65,20 @@ const WordInput = ({
     const input = e.target;
     const cursorPosition = input.selectionStart || 0;
     
-    // First, convert to uppercase
-    const upperValue = input.value.toUpperCase();
+    // First convert to uppercase, preserving Ñ
+    let value = input.value.toUpperCase();
     
-    // Remove accents EXCEPT Ñ
-    const normalized = upperValue
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '') // Remove accents
-      .normalize('NFC');  // Recompose characters
-    
-    // Clean up but preserve Ñ
-    const value = normalized
+    // Handle all characters except Ñ
+    value = value
+      .split('')
+      .map(char => {
+        if (char === 'Ñ' || char === 'ñ') return 'Ñ';  // Preserve Ñ/ñ
+        return char
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')  // Remove accents for other characters
+          .normalize('NFC');
+      })
+      .join('')
       .replace(/[^A-ZÑ\s]/g, '')  // Only allow uppercase letters, Ñ, and spaces
       .replace(/[KW]/g, '');      // Remove K and W
     
