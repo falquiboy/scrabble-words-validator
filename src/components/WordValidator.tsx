@@ -70,7 +70,18 @@ const WordValidator = () => {
   };
 
   const formatDisplayText = (text: string) => {
-    return text.length > 9 ? text.slice(0, Math.ceil(text.length / 2)) + '\n' + text.slice(Math.ceil(text.length / 2)) : text;
+    if (text.length <= 9) return text;
+    
+    const words = text.split(' ');
+    if (words.length > 1) {
+      // For multiple words, put each word on its own line
+      const midPoint = Math.ceil(words.length / 2);
+      return words.slice(0, midPoint).join(' ') + '\n' + words.slice(midPoint).join(' ');
+    } else {
+      // For single long word, split in half
+      const midPoint = Math.ceil(text.length / 2);
+      return text.slice(0, midPoint) + '\n' + text.slice(midPoint);
+    }
   };
 
   return (
@@ -90,7 +101,7 @@ const WordValidator = () => {
             ref={inputRef}
             type="text"
             placeholder="Escribe una o más palabras..."
-            value={word}
+            value={formatDisplayText(word)}
             onChange={(e) => {
               setWord(e.target.value.toUpperCase());
               if (result.checked) {
