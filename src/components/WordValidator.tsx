@@ -80,9 +80,13 @@ const WordValidator = () => {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Only allow Spanish alphabet characters (including Ñ)
-    const sanitizedValue = e.target.value.replace(/[^A-Za-zÑñ\s]/g, '');
-    setWord(sanitizedValue.toUpperCase());
+    // Replace accented characters with their unaccented equivalents
+    const unaccentedValue = e.target.value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // Remove diacritics
+      .replace(/[^A-Za-zÑñ\s]/g, ''); // Only allow Spanish alphabet characters (including Ñ)
+    
+    setWord(unaccentedValue.toUpperCase());
     if (result.checked) {
       setResult({ ...result, checked: false });
     }
