@@ -28,26 +28,26 @@ const WordValidator = () => {
     try {
       const words = word.trim().split(" ");
       const processedWords = words.map(w => {
-        // First convert to uppercase and handle Ñ
+        // First convert to uppercase
         const upperWord = w.toUpperCase();
         
-        // Replace Ñ with temporary token
-        const withToken = upperWord.replace(/Ñ/g, '__NTILDE__');
-        
-        // Remove accents while preserving base characters
-        const normalized = withToken
+        // Process special characters (Ñ and accents)
+        const processed = upperWord
           .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '');
+          .replace(/[\u0300-\u036f]/g, '')  // Remove accents
+          .replace(/[^A-ZÑ\s]/g, '')        // Only allow uppercase letters, Ñ, and spaces
+          .replace(/[KW]/g, '');            // Remove K and W as per requirements
         
-        // Clean up and restore Ñ
-        return normalized
-          .replace(/[^A-Z\s__NTILDE__]/g, '')
-          .replace(/[KW]/g, '')
-          .replace(/__NTILDE__/g, 'Ñ');
+        return processed;
       });
       
       // Use Trie for fast validation
-      const isValid = processedWords.every(w => wordTrie.search(w));
+      const isValid = processedWords.every(w => {
+        console.log('Validating word:', w); // Debug log
+        const result = wordTrie.search(w);
+        console.log('Validation result:', result); // Debug log
+        return result;
+      });
       
       setResult({ 
         isValid, 
@@ -56,7 +56,7 @@ const WordValidator = () => {
       });
       setIsEditing(false);
     } catch (error) {
-      console.error(error);
+      console.error('Validation error:', error);
     } finally {
       setIsLoading(false);
     }
