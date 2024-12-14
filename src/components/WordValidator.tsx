@@ -69,6 +69,10 @@ const WordValidator = () => {
       : "bg-scrabble-invalid text-white";
   };
 
+  const formatDisplayText = (text: string) => {
+    return text.length > 9 ? text.slice(0, Math.ceil(text.length / 2)) + '\n' + text.slice(Math.ceil(text.length / 2)) : text;
+  };
+
   return (
     <div className="w-full max-w-md space-y-4 px-4">
       <div className="text-center mb-8">
@@ -93,7 +97,7 @@ const WordValidator = () => {
                 setResult({ ...result, checked: false });
               }
             }}
-            className={`text-[32px] leading-normal font-bold min-h-[8rem] text-left pr-12 transition-colors whitespace-normal break-words ${getInputBackground()}`}
+            className={`text-[32px] leading-normal font-bold min-h-[8rem] text-left pr-12 transition-colors whitespace-pre-wrap break-words ${getInputBackground()}`}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 handleClear();
@@ -103,7 +107,10 @@ const WordValidator = () => {
             spellCheck={false}
             autoCorrect="off"
             autoCapitalize="off"
-            style={{ wordSpacing: '0.5em' }}
+            style={{ 
+              wordSpacing: '0.5em',
+              whiteSpace: 'pre-wrap'
+            }}
           />
           {word && (
             <Button
