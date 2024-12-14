@@ -132,14 +132,16 @@ const WordValidator = () => {
           />
           <h1 className="text-3xl font-bold text-white uppercase tracking-wide" style={{
             textShadow: `
-              2px 0 #F97316,
-              -2px 0 #F97316,
-              0 2px #F97316,
-              0 -2px #F97316,
-              1px 1px #F97316,
-              -1px -1px #F97316,
-              1px -1px #F97316,
-              -1px 1px #F97316
+              3px 0 0 #F97316,
+              -3px 0 0 #F97316,
+              0 3px 0 #F97316,
+              0 -3px 0 #F97316,
+              2px 2px 0 #F97316,
+              -2px -2px 0 #F97316,
+              2px -2px 0 #F97316,
+              -2px 2px 0 #F97316,
+              4px 4px 0 #943107,
+              5px 5px 0 #4A1903
             `
           }}>
             Juez de Léxico
