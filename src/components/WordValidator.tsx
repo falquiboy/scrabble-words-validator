@@ -93,7 +93,7 @@ const WordValidator = () => {
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "") // Remove diacritics
       .replace(/[^A-Za-z\s__NTILDE_UPPER____NTILDE_LOWER__]/g, '')
-    .replace(/[KkWw]/g, ''); // Only allow letters and our placeholders
+      .replace(/[KkWw]/g, ''); // Only allow letters and our placeholders
     
     // Restore Ñ/ñ
     const finalValue = unaccentedValue
@@ -125,7 +125,7 @@ const WordValidator = () => {
   return (
     <div className="w-full max-w-md space-y-4 px-4">
       <div className="text-center mb-8">
-        <div className="flex items-center justify-center gap-2 mb-2">
+        <div className="flex items-center justify-center gap-2 mb-2 bg-[#16417C] p-2 rounded-md">
           <img 
             src="/lovable-uploads/ca9a9ae9-40fb-4d60-a8f9-1ab45c41ee96.png" 
             alt="File Logo" 
@@ -189,7 +189,7 @@ const WordValidator = () => {
               ) : result.checked ? (
                 <X className="h-6 w-6 text-white hover:text-gray-200" />
               ) : (
-                <Check className="h-6 w-6 text-white hover:text-gray-200" />
+                <Check className="h-6 w-6 text-scrabble-valid hover:text-scrabble-valid/80" />
               )}
             </Button>
           )}
