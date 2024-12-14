@@ -1,12 +1,11 @@
-import { useState, useEffect, useRef } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Check, X } from "lucide-react";
-import { processDigraphs, toDisplayFormat } from "@/utils/digraphs";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { useState } from "react";
+import { processDigraphs } from "@/utils/digraphs";
 import { useWordDatabase } from "@/hooks/useWordDatabase";
 import { useWordTrie } from "@/hooks/useWordTrie";
 import { wordTrie } from "@/utils/trie";
+import LoadingState from "./word-validator/LoadingState";
+import Header from "./word-validator/Header";
+import WordInput from "./word-validator/WordInput";
 
 const WordValidator = () => {
   const [word, setWord] = useState("");
@@ -17,15 +16,10 @@ const WordValidator = () => {
     words: string[];
   }>({ isValid: false, checked: false, words: [] });
   const [isEditing, setIsEditing] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   // Initialize both IndexedDB and Trie
   const { isLoading: isDBLoading } = useWordDatabase();
   const { isLoading: isTrieLoading } = useWordTrie();
-
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
 
   const handleValidate = async () => {
     if (!word.trim()) return;
@@ -48,7 +42,6 @@ const WordValidator = () => {
       console.error(error);
     } finally {
       setIsLoading(false);
-      inputRef.current?.focus();
     }
   };
 
@@ -61,149 +54,36 @@ const WordValidator = () => {
       setWord("");
       setResult({ isValid: false, checked: false, words: [] });
       setIsEditing(false);
-      inputRef.current?.focus();
     }
   };
 
-  const getInputBackground = () => {
-    if (!result.checked) return "bg-white text-black";
-    return result.isValid 
-      ? "bg-scrabble-valid text-white" 
-      : "bg-scrabble-invalid text-white";
-  };
-
-  const handleInputClick = () => {
-    if (result.checked) {
-      setIsEditing(true);
-    }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.target;
-    const cursorPosition = input.selectionStart || 0;
-    
-    // First preserve Ñ/ñ by replacing them temporarily
-    const preserveN = input.value
-      .replace(/Ñ/g, '__NTILDE_UPPER__')
-      .replace(/ñ/g, '__NTILDE_LOWER__');
-    
-    // Remove diacritics and non-allowed characters
-    const unaccentedValue = preserveN
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "") // Remove diacritics
-      .replace(/[^A-Za-z\s__NTILDE_UPPER____NTILDE_LOWER__]/g, '')
-      .replace(/[KkWw]/g, ''); // Only allow letters and our placeholders
-    
-    // Restore Ñ/ñ
-    const finalValue = unaccentedValue
-      .replace(/__NTILDE_UPPER__/g, 'Ñ')
-      .replace(/__NTILDE_LOWER__/g, 'ñ')
-      .toUpperCase();
-    
-    setWord(finalValue);
+  const handleWordChange = (newWord: string) => {
+    setWord(newWord);
     if (result.checked) {
       setResult({ ...result, checked: false });
-    }
-
-    // Set cursor position in the next tick after React updates the input
-    setTimeout(() => {
-      input.setSelectionRange(cursorPosition, cursorPosition);
-    }, 0);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      handleValidate();
-    } else if (e.key === "Escape") {
-      setWord("");
-      setResult({ isValid: false, checked: false, words: [] });
-      setIsEditing(false);
     }
   };
 
   // Show loading state while initializing
   if (isDBLoading || isTrieLoading) {
-    return (
-      <div className="w-full max-w-md space-y-4 px-4">
-        <div className="text-center">
-          <p className="text-white">Cargando diccionario...</p>
-        </div>
-      </div>
-    );
+    return <LoadingState />;
   }
 
   return (
     <div className="w-full max-w-md space-y-4 px-4">
-      <div className="text-center mb-8">
-        <div className="flex items-center justify-center gap-2 mb-2 bg-[#16417C] p-2 rounded-md">
-          <img 
-            src="/lovable-uploads/ca9a9ae9-40fb-4d60-a8f9-1ab45c41ee96.png" 
-            alt="File Logo" 
-            className="h-10 w-10 object-contain"
-          />
-          <h1 className="text-3xl font-bold text-white uppercase tracking-wide [text-shadow:_2px_2px_0_#F97316] border-[#F97316]">
-            Juez de Léxico
-          </h1>
-        </div>
-      </div>
-
+      <Header />
       <div className="space-y-4">
-        <div className="relative">
-          <ScrollArea className={`h-32 rounded-md ${getInputBackground()}`}>
-            <div className={`p-3 min-h-full ${getInputBackground()}`}>
-              {result.checked && !isEditing ? (
-                <div 
-                  className="relative" 
-                  onClick={handleInputClick}
-                >
-                  <div className="flex flex-wrap gap-2">
-                    {word.split(" ").map((w, i) => (
-                      <span key={i} className="text-2xl font-bold">
-                        {w}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <input
-                  ref={inputRef}
-                  type="text"
-                  placeholder={!result.checked ? "Escribe una o más palabras..." : ""}
-                  value={word}
-                  onChange={handleInputChange}
-                  onKeyDown={handleKeyDown}
-                  className={`w-full text-2xl font-bold bg-transparent outline-none placeholder:text-gray-400`}
-                  onBlur={() => {
-                    if (result.checked && !word.trim()) {
-                      setIsEditing(false);
-                    }
-                  }}
-                  autoFocus
-                  spellCheck={false}
-                  autoCorrect="off"
-                  autoCapitalize="off"
-                />
-              )}
-            </div>
-          </ScrollArea>
-          {word && (
-            <Button
-              onClick={handleClear}
-              variant="ghost"
-              className="absolute right-2 top-1/2 -translate-y-1/2 h-12 w-12 p-0 hover:bg-transparent"
-              type="button"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-600" />
-              ) : result.checked ? (
-                <X className="h-6 w-6 text-white hover:text-gray-200" />
-              ) : (
-                <Check className="h-6 w-6 text-scrabble-valid hover:text-scrabble-valid/80" />
-              )}
-            </Button>
-          )}
-        </div>
+        <WordInput
+          word={word}
+          isLoading={isLoading}
+          result={result}
+          isEditing={isEditing}
+          onWordChange={handleWordChange}
+          onValidate={handleValidate}
+          onClear={handleClear}
+          onEditStart={() => setIsEditing(true)}
+          onEditEnd={() => setIsEditing(false)}
+        />
       </div>
     </div>
   );
