@@ -181,6 +181,15 @@ export type Database = {
         }
         Returns: string
       }
+      get_words_batch: {
+        Args: {
+          batch_size: number
+          last_word?: string
+        }
+        Returns: {
+          word: string
+        }[]
+      }
     }
     Enums: {
       se_property: "admite la terminación -se"

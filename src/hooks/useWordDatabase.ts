@@ -10,8 +10,7 @@ export const useWordDatabase = () => {
 
   useEffect(() => {
     let mounted = true;
-    let pageSize = 10000; // Increased page size for better performance
-    let lastId: string | null = null;
+    let batchSize = 10000;
 
     const initDB = async () => {
       try {
@@ -33,22 +32,17 @@ export const useWordDatabase = () => {
         // If no words exist, start fetching from Supabase
         let hasMore = true;
         let totalWords = 0;
+        let lastWord: string | null = null;
         let retryCount = 0;
         const maxRetries = 3;
 
         while (hasMore && mounted) {
           try {
-            let query = supabase
-              .from('words')
-              .select('word')
-              .order('word')
-              .limit(pageSize);
-
-            if (lastId) {
-              query = query.gt('word', lastId);
-            }
-
-            const { data: words, error: fetchError } = await query;
+            const { data: words, error: fetchError } = await supabase
+              .rpc('get_words_batch', {
+                batch_size: batchSize,
+                last_word: lastWord
+              });
 
             if (fetchError) {
               console.error('Error fetching words:', fetchError);
@@ -66,10 +60,9 @@ export const useWordDatabase = () => {
 
             if (mounted) {
               // Store this batch in IndexedDB
-              const wordsToStore = words.map(w => w.word);
-              await wordDB.addWords(wordsToStore);
+              await wordDB.addWords(words.map(w => w.word));
               totalWords += words.length;
-              lastId = words[words.length - 1].word;
+              lastWord = words[words.length - 1].word;
 
               // Update progress every 50,000 words
               if (totalWords % 50000 === 0) {
