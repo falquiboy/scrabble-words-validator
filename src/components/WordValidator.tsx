@@ -69,21 +69,6 @@ const WordValidator = () => {
       : "bg-scrabble-invalid text-white";
   };
 
-  const formatDisplayText = (text: string) => {
-    if (text.length <= 9) return text;
-    
-    const words = text.split(' ');
-    if (words.length > 1) {
-      // For multiple words, put each word on its own line
-      const midPoint = Math.ceil(words.length / 2);
-      return words.slice(0, midPoint).join(' ') + '\n' + words.slice(midPoint).join(' ');
-    } else {
-      // For single long word, split in half
-      const midPoint = Math.ceil(text.length / 2);
-      return text.slice(0, midPoint) + '\n' + text.slice(midPoint);
-    }
-  };
-
   return (
     <div className="w-full max-w-md space-y-4 px-4">
       <div className="text-center mb-8">
@@ -101,14 +86,14 @@ const WordValidator = () => {
             ref={inputRef}
             type="text"
             placeholder="Escribe una o más palabras..."
-            value={formatDisplayText(word)}
+            value={word}
             onChange={(e) => {
               setWord(e.target.value.toUpperCase());
               if (result.checked) {
                 setResult({ ...result, checked: false });
               }
             }}
-            className={`text-[32px] leading-normal font-bold min-h-[8rem] text-left pr-12 transition-colors whitespace-pre-wrap break-words ${getInputBackground()}`}
+            className={`text-2xl font-bold h-16 text-left pr-12 transition-colors ${getInputBackground()}`}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 handleClear();
@@ -118,10 +103,6 @@ const WordValidator = () => {
             spellCheck={false}
             autoCorrect="off"
             autoCapitalize="off"
-            style={{ 
-              wordSpacing: '0.5em',
-              whiteSpace: 'pre-wrap'
-            }}
           />
           {word && (
             <Button
