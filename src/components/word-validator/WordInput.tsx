@@ -47,10 +47,21 @@ const WordInput = ({
     const input = e.target;
     const cursorPosition = input.selectionStart || 0;
     
-    // Convert input to uppercase and remove unwanted characters
-    const value = input.value.toUpperCase()
-      .replace(/[^A-ZÑ\s]/g, '')  // Only allow uppercase letters, Ñ, and spaces
-      .replace(/[KW]/g, '');      // Remove K and W as they're not used in Spanish
+    // First preserve Ñ with a special token
+    const preserveN = input.value
+      .replace(/Ñ/g, '__NTILDE__');
+    
+    // Normalize accented characters and remove diacritics
+    const normalized = preserveN
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toUpperCase();
+    
+    // Clean up unwanted characters and restore Ñ
+    const value = normalized
+      .replace(/[^A-Z\s__NTILDE__]/g, '')  // Only allow uppercase letters, spaces, and our Ñ token
+      .replace(/[KW]/g, '')                 // Remove K and W as they're not used in Spanish
+      .replace(/__NTILDE__/g, 'Ñ');        // Restore Ñ
     
     onWordChange(value);
 
