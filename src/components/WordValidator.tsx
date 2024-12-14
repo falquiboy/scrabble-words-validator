@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Check, X, Gavel } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { processDigraphs, toDisplayFormat } from "@/utils/digraphs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const WordValidator = () => {
   const [word, setWord] = useState("");
@@ -82,28 +83,30 @@ const WordValidator = () => {
 
       <div className="space-y-4">
         <div className="relative">
-          <Input
-            ref={inputRef}
-            type="text"
-            placeholder="Escribe una o más palabras..."
-            value={word}
-            onChange={(e) => {
-              setWord(e.target.value.toUpperCase());
-              if (result.checked) {
-                setResult({ ...result, checked: false });
-              }
-            }}
-            className={`text-2xl font-bold h-16 text-left pr-12 transition-colors ${getInputBackground()}`}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                handleClear();
-              }
-            }}
-            autoFocus
-            spellCheck={false}
-            autoCorrect="off"
-            autoCapitalize="off"
-          />
+          <ScrollArea className={`h-32 rounded-md ${getInputBackground()}`}>
+            <Input
+              ref={inputRef}
+              type="text"
+              placeholder="Escribe una o más palabras..."
+              value={word}
+              onChange={(e) => {
+                setWord(e.target.value.toUpperCase());
+                if (result.checked) {
+                  setResult({ ...result, checked: false });
+                }
+              }}
+              className={`text-2xl font-bold h-full text-left pr-12 transition-colors border-none focus-visible:ring-0 ${getInputBackground()}`}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleClear();
+                }
+              }}
+              autoFocus
+              spellCheck={false}
+              autoCorrect="off"
+              autoCapitalize="off"
+            />
+          </ScrollArea>
           {word && (
             <Button
               onClick={handleClear}
