@@ -29,7 +29,22 @@ export const useWordTrie = () => {
           wordTrie.insert(word, word);
         });
 
+        // Debug logging
         console.log('Trie built with', words.length, 'words');
+        console.log('Sample of first 10 words:', words.slice(0, 10));
+        
+        // Log all words in Trie for verification
+        const trieWords = wordTrie.getAllWords();
+        console.log('First 10 words in Trie:', trieWords.slice(0, 10));
+        console.log('Total words in Trie:', trieWords.length);
+        
+        // Specific word check
+        const testWords = ['CONTRATO', 'CASA', 'PERRO'];
+        testWords.forEach(word => {
+          console.log(`Is "${word}" in Trie?`, wordTrie.search(word));
+          console.log(`Words starting with "${word}":`, Array.from(wordTrie.getWordsStartingWith(word)));
+        });
+
         setIsLoading(false);
       } catch (err) {
         console.error('Error initializing trie:', err);
