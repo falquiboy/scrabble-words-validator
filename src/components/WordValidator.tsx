@@ -93,7 +93,7 @@ const WordValidator = () => {
                 setResult({ ...result, checked: false });
               }
             }}
-            className={`text-2xl font-bold h-16 text-left pr-12 transition-colors ${getInputBackground()}`}
+            className={`text-[32px] leading-normal font-bold min-h-[4rem] text-left pr-12 transition-colors whitespace-normal break-words ${getInputBackground()}`}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 handleClear();
@@ -103,6 +103,7 @@ const WordValidator = () => {
             spellCheck={false}
             autoCorrect="off"
             autoCapitalize="off"
+            style={{ wordSpacing: '0.5em' }}
           />
           {word && (
             <Button
