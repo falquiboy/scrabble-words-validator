@@ -17,6 +17,10 @@ export class Trie {
     this.root = new TrieNode();
   }
 
+  clear(): void {
+    this.root = new TrieNode();
+  }
+
   insert(word: string, originalWord: string): void {
     let current = this.root;
     

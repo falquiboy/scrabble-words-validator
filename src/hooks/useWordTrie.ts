@@ -16,14 +16,17 @@ export const useWordTrie = () => {
         // Initialize database first
         await wordDB.init();
         
-        // Get processed words from IndexedDB
-        const words = await wordDB.getProcessedWords();
+        // Get all words from IndexedDB
+        const words = await wordDB.getAllWords();
         
         if (!mounted) return;
 
-        // Build trie with both processed and original words
-        words.forEach(({ original, processed }) => {
-          wordTrie.insert(processed, original);
+        // Clear trie before rebuilding
+        wordTrie.clear();
+
+        // Build trie with words
+        words.forEach(word => {
+          wordTrie.insert(word, word);
         });
 
         console.log('Trie built with', words.length, 'words');
