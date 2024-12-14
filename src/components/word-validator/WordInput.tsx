@@ -76,8 +76,14 @@ const WordInput = ({
     if (e.key === "Enter") {
       onValidate();
     } else if (e.key === "Escape") {
-      onWordChange("");
-      onEditEnd();
+      e.preventDefault(); // Prevent any default ESC behavior
+      if (word.trim()) {
+        onWordChange(""); // Clear the input
+      }
+      onEditEnd(); // Exit edit mode
+      if (inputRef.current) {
+        inputRef.current.blur(); // Remove focus from input
+      }
     }
   };
 
@@ -108,7 +114,7 @@ const WordInput = ({
               onKeyDown={handleKeyDown}
               className={`w-full text-2xl font-bold bg-transparent outline-none placeholder:text-gray-400`}
               onBlur={() => {
-                if (result.checked && !word.trim()) {
+                if (!word.trim()) {
                   onEditEnd();
                 }
               }}
