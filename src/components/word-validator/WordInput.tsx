@@ -47,25 +47,26 @@ const WordInput = ({
     const input = e.target;
     const cursorPosition = input.selectionStart || 0;
     
-    // First preserve Ñ with a special token
-    const preserveN = input.value
-      .replace(/Ñ/g, '__NTILDE__');
+    // First, convert to uppercase and preserve Ñ
+    const upperValue = input.value.toUpperCase();
     
-    // Normalize accented characters and remove diacritics
-    const normalized = preserveN
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toUpperCase();
+    // Replace Ñ with a temporary token
+    const withToken = upperValue.replace(/Ñ/g, '__NTILDE__');
     
-    // Clean up unwanted characters and restore Ñ
+    // Remove accents while preserving base characters
+    const normalized = withToken
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+    
+    // Clean up and restore Ñ
     const value = normalized
-      .replace(/[^A-Z\s__NTILDE__]/g, '')  // Only allow uppercase letters, spaces, and our Ñ token
-      .replace(/[KW]/g, '')                 // Remove K and W as they're not used in Spanish
+      .replace(/[^A-Z\s__NTILDE__]/g, '')  // Only allow uppercase letters, spaces, and our token
+      .replace(/[KW]/g, '')                 // Remove K and W
       .replace(/__NTILDE__/g, 'Ñ');        // Restore Ñ
     
     onWordChange(value);
-
-    // Restore cursor position
+    
+    // Restore cursor position after the change
     setTimeout(() => {
       input.setSelectionRange(cursorPosition, cursorPosition);
     }, 0);
