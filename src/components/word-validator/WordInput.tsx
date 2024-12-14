@@ -47,23 +47,14 @@ const WordInput = ({
     const input = e.target;
     const cursorPosition = input.selectionStart || 0;
     
-    const preserveN = input.value
-      .replace(/Ñ/g, '__NTILDE_UPPER__')
-      .replace(/ñ/g, '__NTILDE_LOWER__');
+    // Convert input to uppercase and remove unwanted characters
+    const value = input.value.toUpperCase()
+      .replace(/[^A-ZÑ\s]/g, '')  // Only allow uppercase letters, Ñ, and spaces
+      .replace(/[KW]/g, '');      // Remove K and W as they're not used in Spanish
     
-    const unaccentedValue = preserveN
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^A-Za-z\s__NTILDE_UPPER____NTILDE_LOWER__]/g, '')
-      .replace(/[KkWw]/g, '');
-    
-    const finalValue = unaccentedValue
-      .replace(/__NTILDE_UPPER__/g, 'Ñ')
-      .replace(/__NTILDE_LOWER__/g, 'ñ')
-      .toUpperCase();
-    
-    onWordChange(finalValue);
+    onWordChange(value);
 
+    // Restore cursor position
     setTimeout(() => {
       input.setSelectionRange(cursorPosition, cursorPosition);
     }, 0);
