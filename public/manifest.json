@@ -4,14 +4,14 @@
   "description": "Validador de palabras para juegos de mesa",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#C3A07C",
-  "theme_color": "#C3A07C",
+  "background_color": "#16417C",
+  "theme_color": "#16417C",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/gavel-icon.svg",
+      "src": "/lovable-uploads/ca9a9ae9-40fb-4d60-a8f9-1ab45c41ee96.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]
