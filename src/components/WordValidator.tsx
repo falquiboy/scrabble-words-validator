@@ -28,11 +28,14 @@ const WordValidator = () => {
     try {
       const words = word.trim().split(" ");
       const processedWords = words.map(w => {
-        // First convert to uppercase
+        // First convert to uppercase and preserve Ñ
         let processed = w.toUpperCase();
         
-        // Remove accents while preserving base letters
-        processed = processed.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        // Remove accents EXCEPT Ñ
+        processed = processed
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '') // Remove accents
+          .normalize('NFC');  // Recompose characters
         
         // Process digraphs (CH -> Ç, LL -> K, RR -> W)
         processed = processDigraphs(processed);
