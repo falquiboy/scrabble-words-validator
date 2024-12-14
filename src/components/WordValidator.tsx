@@ -51,9 +51,15 @@ const WordValidator = () => {
   };
 
   const handleClear = () => {
-    setWord("");
-    setResult({ isValid: false, checked: false, words: [] });
-    inputRef.current?.focus();
+    if (isLoading) return;
+    
+    if (word && !result.checked) {
+      handleValidate();
+    } else {
+      setWord("");
+      setResult({ isValid: false, checked: false, words: [] });
+      inputRef.current?.focus();
+    }
   };
 
   const getValidationMessage = () => {
@@ -62,6 +68,11 @@ const WordValidator = () => {
       return `Palabra ${result.isValid ? "válida" : "inválida"}. Palabra consultada: ${result.words[0]}.`;
     }
     return `Jugada ${result.isValid ? "válida" : "inválida"}. Palabras consultadas: ${result.words.join(", ")}.`;
+  };
+
+  const getInputBackground = () => {
+    if (!result.checked) return "bg-white";
+    return result.isValid ? "bg-emerald-100" : "bg-red-100";
   };
 
   return (
@@ -88,10 +99,10 @@ const WordValidator = () => {
                 setResult({ ...result, checked: false });
               }
             }}
-            className="text-2xl font-bold h-16 text-left pr-12"
+            className={`text-2xl font-bold h-16 text-left pr-12 transition-colors ${getInputBackground()}`}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
-                handleValidate();
+                handleClear();
               }
             }}
             autoFocus
@@ -105,19 +116,18 @@ const WordValidator = () => {
               variant="ghost"
               className="absolute right-2 top-1/2 -translate-y-1/2 h-12 w-12 p-0 hover:bg-transparent"
               type="button"
+              disabled={isLoading}
             >
-              <X className="h-6 w-6 text-gray-400 hover:text-gray-600" />
+              {isLoading ? (
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-600" />
+              ) : result.checked ? (
+                <X className="h-6 w-6 text-gray-400 hover:text-gray-600" />
+              ) : (
+                <Check className="h-6 w-6 text-gray-400 hover:text-gray-600" />
+              )}
             </Button>
           )}
         </div>
-
-        <Button 
-          onClick={handleValidate}
-          className="w-full bg-blue-500 hover:bg-blue-600 text-lg px-8 h-16"
-          disabled={isLoading}
-        >
-          {isLoading ? "Validando..." : "Validar"}
-        </Button>
 
         {result.checked && (
           <div className={`p-4 rounded-lg ${

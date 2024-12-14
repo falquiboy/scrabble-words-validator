@@ -32,6 +32,7 @@ export type Database = {
           kind_id: string | null
           lenght: number | null
           root_word: string | null
+          seq: number | null
           word_group: number | null
         }
         Insert: {
@@ -41,6 +42,7 @@ export type Database = {
           kind_id?: string | null
           lenght?: number | null
           root_word?: string | null
+          seq?: number | null
           word_group?: number | null
         }
         Update: {
@@ -50,6 +52,7 @@ export type Database = {
           kind_id?: string | null
           lenght?: number | null
           root_word?: string | null
+          seq?: number | null
           word_group?: number | null
         }
         Relationships: [
@@ -119,6 +122,33 @@ export type Database = {
           id?: string
           updated_at?: string
           username?: string | null
+        }
+        Relationships: []
+      }
+      user_progress: {
+        Row: {
+          id: string
+          last_group: number
+          last_word_index: number
+          solved_words: string[] | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          last_group?: number
+          last_word_index?: number
+          solved_words?: string[] | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          last_group?: number
+          last_word_index?: number
+          solved_words?: string[] | null
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
