@@ -161,9 +161,9 @@ const WordValidator = () => {
               {isLoading ? (
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-600" />
               ) : result.checked ? (
-                <X className="h-6 w-6 text-gray-400 hover:text-gray-600" />
+                <X className="h-6 w-6 text-white hover:text-gray-200" />
               ) : (
-                <Check className="h-6 w-6 text-gray-400 hover:text-gray-600" />
+                <Check className="h-6 w-6 text-white hover:text-gray-200" />
               )}
             </Button>
           )}
