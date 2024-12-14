@@ -92,7 +92,8 @@ const WordValidator = () => {
     const unaccentedValue = preserveN
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "") // Remove diacritics
-      .replace(/[^A-Za-z\s__NTILDE_UPPER____NTILDE_LOWER__]/g, ''); // Only allow letters and our placeholders
+      .replace(/[^A-Za-z\s__NTILDE_UPPER____NTILDE_LOWER__]/g, '')
+    .replace(/[KkWw]/g, ''); // Only allow letters and our placeholders
     
     // Restore Ñ/ñ
     const finalValue = unaccentedValue
