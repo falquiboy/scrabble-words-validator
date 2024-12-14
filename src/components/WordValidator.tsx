@@ -28,14 +28,15 @@ const WordValidator = () => {
     try {
       const words = word.trim().split(" ");
       const processedWords = words.map(w => {
-        // First convert to uppercase
+        // First convert to uppercase and process digraphs
         const upperWord = w.toUpperCase();
+        const withDigraphs = processDigraphs(upperWord);
         
         // Process special characters (Ñ and accents)
-        const processed = upperWord
+        const processed = withDigraphs
           .normalize('NFD')
           .replace(/[\u0300-\u036f]/g, '')  // Remove accents
-          .replace(/[^A-ZÑ\s]/g, '')        // Only allow uppercase letters, Ñ, and spaces
+          .replace(/[^A-ZÑÇ\s]/g, '')       // Only allow uppercase letters, Ñ, Ç and spaces
           .replace(/[KW]/g, '');            // Remove K and W as per requirements
         
         return processed;
@@ -44,9 +45,9 @@ const WordValidator = () => {
       // Use Trie for fast validation
       const isValid = processedWords.every(w => {
         if (!w) return false; // Skip empty strings
-        console.log('Validating word:', w); // Debug log
+        console.log('Processing word for validation:', w); // Debug log
         const result = wordTrie.search(w);
-        console.log('Validation result:', result); // Debug log
+        console.log('Validation result for', w, ':', result); // Debug log
         return result;
       });
       
