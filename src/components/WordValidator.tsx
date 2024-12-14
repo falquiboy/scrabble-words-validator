@@ -85,7 +85,7 @@ const WordValidator = () => {
         <div className="relative">
           <ScrollArea className={`h-32 rounded-md ${getInputBackground()}`}>
             <div className={`p-3 min-h-full ${getInputBackground()}`}>
-              {word ? (
+              {result.checked ? (
                 <div className="flex flex-wrap gap-2">
                   {word.split(" ").map((w, i) => (
                     <span key={i} className="text-2xl font-bold">
