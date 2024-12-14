@@ -84,28 +84,40 @@ const WordValidator = () => {
       <div className="space-y-4">
         <div className="relative">
           <ScrollArea className={`h-32 rounded-md ${getInputBackground()}`}>
-            <Input
-              ref={inputRef}
-              type="text"
-              placeholder="Escribe una o más palabras..."
-              value={word}
-              onChange={(e) => {
-                setWord(e.target.value.toUpperCase());
-                if (result.checked) {
-                  setResult({ ...result, checked: false });
-                }
-              }}
-              className={`text-2xl font-bold h-full text-left pr-12 transition-colors border-none focus-visible:ring-0 ${getInputBackground()}`}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  handleClear();
-                }
-              }}
-              autoFocus
-              spellCheck={false}
-              autoCorrect="off"
-              autoCapitalize="off"
-            />
+            <div className={`p-3 min-h-full ${getInputBackground()}`}>
+              {word ? (
+                <div className="flex flex-wrap gap-2">
+                  {word.split(" ").map((w, i) => (
+                    <span key={i} className="text-2xl font-bold">
+                      {w}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <input
+                  ref={inputRef}
+                  type="text"
+                  placeholder="Escribe una o más palabras..."
+                  value={word}
+                  onChange={(e) => {
+                    setWord(e.target.value.toUpperCase());
+                    if (result.checked) {
+                      setResult({ ...result, checked: false });
+                    }
+                  }}
+                  className={`w-full text-2xl font-bold bg-transparent outline-none placeholder:text-gray-400`}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleClear();
+                    }
+                  }}
+                  autoFocus
+                  spellCheck={false}
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                />
+              )}
+            </div>
           </ScrollArea>
           {word && (
             <Button
