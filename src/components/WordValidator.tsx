@@ -43,6 +43,7 @@ const WordValidator = () => {
       
       // Use Trie for fast validation
       const isValid = processedWords.every(w => {
+        if (!w) return false; // Skip empty strings
         console.log('Validating word:', w); // Debug log
         const result = wordTrie.search(w);
         console.log('Validation result:', result); // Debug log
@@ -57,6 +58,11 @@ const WordValidator = () => {
       setIsEditing(false);
     } catch (error) {
       console.error('Validation error:', error);
+      setResult({
+        isValid: false,
+        checked: true,
+        words: []
+      });
     } finally {
       setIsLoading(false);
     }
