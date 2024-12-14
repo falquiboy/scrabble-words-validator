@@ -10,7 +10,7 @@ export const useWordDatabase = () => {
 
   useEffect(() => {
     let mounted = true;
-    let pageSize = 1000; // Fetch 1000 words at a time
+    let pageSize = 10000; // Increased page size for better performance
     let lastId: string | null = null;
 
     const initDB = async () => {
@@ -22,6 +22,8 @@ export const useWordDatabase = () => {
 
         // Check if we already have words
         const existingWords = await wordDB.getAllWords();
+        console.log('Checking existing words in IndexedDB:', existingWords.length);
+        
         if (existingWords.length > 0) {
           console.log('Words already in IndexedDB:', existingWords.length);
           setIsLoading(false);
@@ -31,36 +33,63 @@ export const useWordDatabase = () => {
         // If no words exist, start fetching from Supabase
         let hasMore = true;
         let totalWords = 0;
+        let retryCount = 0;
+        const maxRetries = 3;
 
         while (hasMore && mounted) {
-          let query = supabase
-            .from('words')
-            .select('word')
-            .order('word')
-            .limit(pageSize);
+          try {
+            let query = supabase
+              .from('words')
+              .select('word')
+              .order('word')
+              .limit(pageSize);
 
-          if (lastId) {
-            query = query.gt('word', lastId);
-          }
-
-          const { data: words, error } = await query;
-
-          if (error) throw error;
-          if (!words || words.length === 0) {
-            hasMore = false;
-            continue;
-          }
-
-          if (mounted) {
-            // Store this batch in IndexedDB
-            await wordDB.addWords(words.map(w => w.word));
-            totalWords += words.length;
-            lastId = words[words.length - 1].word;
-
-            // Update progress every 10,000 words
-            if (totalWords % 10000 === 0) {
-              console.log('Words loaded:', totalWords);
+            if (lastId) {
+              query = query.gt('word', lastId);
             }
+
+            const { data: words, error: fetchError } = await query;
+
+            if (fetchError) {
+              console.error('Error fetching words:', fetchError);
+              if (retryCount < maxRetries) {
+                retryCount++;
+                continue;
+              }
+              throw fetchError;
+            }
+
+            if (!words || words.length === 0) {
+              hasMore = false;
+              continue;
+            }
+
+            if (mounted) {
+              // Store this batch in IndexedDB
+              const wordsToStore = words.map(w => w.word);
+              await wordDB.addWords(wordsToStore);
+              totalWords += words.length;
+              lastId = words[words.length - 1].word;
+
+              // Update progress every 50,000 words
+              if (totalWords % 50000 === 0) {
+                console.log('Words loaded:', totalWords);
+                // Show a toast every 100k words
+                if (totalWords % 100000 === 0) {
+                  toast({
+                    title: "Cargando diccionario...",
+                    description: `${totalWords.toLocaleString()} palabras cargadas.`,
+                  });
+                }
+              }
+            }
+          } catch (err) {
+            console.error('Error in batch processing:', err);
+            if (retryCount < maxRetries) {
+              retryCount++;
+              continue;
+            }
+            throw err;
           }
         }
 
