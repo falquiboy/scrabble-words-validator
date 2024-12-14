@@ -36,6 +36,25 @@ const WordInput = ({
     inputRef.current?.focus();
   }, []);
 
+  // Add global ESC key handler
+  useEffect(() => {
+    const handleGlobalEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        if (word) {
+          onWordChange("");
+        }
+        onEditStart(); // Activate edit mode
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 0);
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalEsc);
+    return () => window.removeEventListener('keydown', handleGlobalEsc);
+  }, [word, onWordChange, onEditStart]);
+
   const getInputBackground = () => {
     if (!result.checked) return "bg-white text-black";
     return result.isValid 
@@ -75,13 +94,6 @@ const WordInput = ({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       onValidate();
-    } else if (e.key === "Escape") {
-      e.preventDefault();
-      if (word) {
-        onWordChange("");
-      }
-      onEditEnd();
-      inputRef.current?.blur();
     }
   };
 
