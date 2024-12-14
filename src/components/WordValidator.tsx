@@ -79,6 +79,15 @@ const WordValidator = () => {
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Only allow Spanish alphabet characters (including Ñ)
+    const sanitizedValue = e.target.value.replace(/[^A-Za-zÑñ\s]/g, '');
+    setWord(sanitizedValue.toUpperCase());
+    if (result.checked) {
+      setResult({ ...result, checked: false });
+    }
+  };
+
   return (
     <div className="w-full max-w-md space-y-4 px-4">
       <div className="text-center mb-8">
@@ -117,12 +126,7 @@ const WordValidator = () => {
                   type="text"
                   placeholder={!result.checked ? "Escribe una o más palabras..." : ""}
                   value={word}
-                  onChange={(e) => {
-                    setWord(e.target.value.toUpperCase());
-                    if (result.checked) {
-                      setResult({ ...result, checked: false });
-                    }
-                  }}
+                  onChange={handleInputChange}
                   className={`w-full text-2xl font-bold bg-transparent outline-none placeholder:text-gray-400`}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
