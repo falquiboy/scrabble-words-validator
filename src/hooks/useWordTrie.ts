@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { wordDB } from '@/utils/wordDatabase';
 import { wordTrie } from '@/utils/trie';
 import { useToast } from '@/hooks/use-toast';
+import { processDigraphs } from '@/utils/digraphs';
 
 export const useWordTrie = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -37,7 +38,9 @@ export const useWordTrie = () => {
         for (let i = 0; i < words.length; i += batchSize) {
           const batch = words.slice(i, i + batchSize);
           batch.forEach(word => {
-            wordTrie.insert(word, word);
+            // Process the word the same way as in WordValidator
+            const processedWord = processDigraphs(word.toUpperCase());
+            wordTrie.insert(processedWord, word);
           });
           
           // Log progress every 50k words
@@ -58,10 +61,11 @@ export const useWordTrie = () => {
         // Verify some common words
         const testWords = ['CONTRATO', 'CASA', 'PERRO', 'AMOR', 'VIDA'];
         testWords.forEach(word => {
-          const exists = wordTrie.search(word);
+          const processedWord = processDigraphs(word);
+          const exists = wordTrie.search(processedWord);
           console.log(`Is "${word}" in Trie?`, exists);
           if (!exists) {
-            console.log(`Words starting with "${word}":`, Array.from(wordTrie.getWordsStartingWith(word)));
+            console.log(`Words starting with "${processedWord}":`, Array.from(wordTrie.getWordsStartingWith(processedWord)));
           }
         });
 
