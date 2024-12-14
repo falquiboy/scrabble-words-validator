@@ -86,23 +86,32 @@ const WordValidator = () => {
           <ScrollArea className={`h-32 rounded-md ${getInputBackground()}`}>
             <div className={`p-3 min-h-full ${getInputBackground()}`}>
               {result.checked ? (
-                <input
-                  type="text"
-                  value={word}
-                  onChange={(e) => {
-                    setWord(e.target.value.toUpperCase());
-                    setResult({ ...result, checked: false });
-                  }}
-                  className={`w-full text-2xl font-bold bg-transparent outline-none`}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      handleValidate();
-                    }
-                  }}
-                  spellCheck={false}
-                  autoCorrect="off"
-                  autoCapitalize="off"
-                />
+                <div className="relative">
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {word.split(" ").map((w, i) => (
+                      <span key={i} className="text-2xl font-bold whitespace-nowrap">
+                        {w}
+                      </span>
+                    ))}
+                  </div>
+                  <input
+                    type="text"
+                    value={word}
+                    onChange={(e) => {
+                      setWord(e.target.value.toUpperCase());
+                      setResult({ ...result, checked: false });
+                    }}
+                    className="w-full text-2xl font-bold bg-transparent outline-none absolute top-0 left-0 opacity-0"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        handleValidate();
+                      }
+                    }}
+                    spellCheck={false}
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                  />
+                </div>
               ) : (
                 <input
                   ref={inputRef}
