@@ -7,7 +7,7 @@ const Index = () => {
   const [activeModule, setActiveModule] = useState<'judge' | 'anagram'>('judge');
 
   return (
-    <div className="fixed inset-0 bg-[#F1F1F1] flex flex-col items-center pt-20">
+    <div className="fixed inset-0 bg-gray-200 flex flex-col items-center pt-20">
       <ModuleSelector activeModule={activeModule} onModuleChange={setActiveModule} />
       <div className="mt-8">
         {activeModule === 'judge' ? <WordValidator /> : <Anagramador />}
