@@ -100,7 +100,7 @@ const WordValidator = () => {
             <div className={`p-3 min-h-full ${getInputBackground()}`}>
               {result.checked && !isEditing ? (
                 <div 
-                  className="relative cursor-text" 
+                  className="relative" 
                   onClick={handleInputClick}
                 >
                   <div className="flex flex-wrap gap-2">
