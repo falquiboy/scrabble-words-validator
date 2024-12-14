@@ -49,6 +49,28 @@ export class Trie {
     return current;
   }
 
+  // Helper method to get all words starting with a prefix
+  getWordsStartingWith(prefix: string): Set<string> {
+    const node = this.findNode(prefix);
+    const words = new Set<string>();
+    
+    if (node) {
+      this.collectWords(node, words);
+    }
+    
+    return words;
+  }
+
+  private collectWords(node: TrieNode, words: Set<string>): void {
+    if (node.isEndOfWord) {
+      words.add(node.word);
+    }
+
+    for (const [, child] of node.children) {
+      this.collectWords(child, words);
+    }
+  }
+
   // Helper method to get all valid words
   getAllWords(): string[] {
     const words: string[] = [];

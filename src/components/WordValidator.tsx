@@ -37,11 +37,20 @@ const WordValidator = () => {
           .replace(/[\u0300-\u036f]/g, '') // Remove accents
           .normalize('NFC');  // Recompose characters
         
+        // Log the state of the word before digraph processing
+        console.log('Word before digraph processing:', processed);
+        
         // Process digraphs (CH -> Ç, LL -> K, RR -> W)
         processed = processDigraphs(processed);
         
         console.log('Original word:', w);
-        console.log('Processed word:', processed);
+        console.log('Final processed word:', processed);
+        
+        // Log the actual Trie content for debugging
+        console.log('Words in Trie containing this word:', 
+          Array.from(wordTrie.getWordsStartingWith(processed))
+        );
+        
         return processed;
       });
       
