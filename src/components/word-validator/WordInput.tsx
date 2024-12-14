@@ -36,7 +36,6 @@ const WordInput = ({
     inputRef.current?.focus();
   }, []);
 
-  // Add global ESC key handler
   useEffect(() => {
     const handleGlobalEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -44,7 +43,7 @@ const WordInput = ({
         if (word) {
           onWordChange("");
         }
-        onEditStart(); // Activate edit mode
+        onEditStart();
         setTimeout(() => {
           inputRef.current?.focus();
         }, 0);
@@ -66,22 +65,19 @@ const WordInput = ({
     const input = e.target;
     const cursorPosition = input.selectionStart || 0;
     
-    // First, convert to uppercase and preserve Ñ
+    // First, convert to uppercase
     const upperValue = input.value.toUpperCase();
     
-    // Replace Ñ with a temporary token
-    const withToken = upperValue.replace(/Ñ/g, '__NTILDE__');
-    
-    // Remove accents while preserving base characters
-    const normalized = withToken
+    // Remove accents EXCEPT Ñ
+    const normalized = upperValue
       .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '');
+      .replace(/[\u0300-\u036f]/g, '') // Remove accents
+      .normalize('NFC');  // Recompose characters
     
-    // Clean up and restore Ñ
+    // Clean up but preserve Ñ
     const value = normalized
-      .replace(/[^A-Z\s__NTILDE__]/g, '')  // Only allow uppercase letters, spaces, and our token
-      .replace(/[KW]/g, '')                 // Remove K and W
-      .replace(/__NTILDE__/g, 'Ñ');        // Restore Ñ
+      .replace(/[^A-ZÑ\s]/g, '')  // Only allow uppercase letters, Ñ, and spaces
+      .replace(/[KW]/g, '');      // Remove K and W
     
     onWordChange(value);
     
@@ -129,9 +125,12 @@ const WordInput = ({
                 }
               }}
               autoFocus
-              spellCheck={false}
+              spellCheck="false"
               autoCorrect="off"
               autoCapitalize="off"
+              autoComplete="off"
+              inputMode="text"
+              enterKeyHint="done"
             />
           )}
         </div>
