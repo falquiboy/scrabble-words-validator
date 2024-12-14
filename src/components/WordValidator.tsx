@@ -2,9 +2,11 @@ import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Check, X } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { processDigraphs, toDisplayFormat } from "@/utils/digraphs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useWordDatabase } from "@/hooks/useWordDatabase";
+import { useWordTrie } from "@/hooks/useWordTrie";
+import { wordTrie } from "@/utils/trie";
 
 const WordValidator = () => {
   const [word, setWord] = useState("");
@@ -16,6 +18,10 @@ const WordValidator = () => {
   }>({ isValid: false, checked: false, words: [] });
   const [isEditing, setIsEditing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Initialize both IndexedDB and Trie
+  const { isLoading: isDBLoading } = useWordDatabase();
+  const { isLoading: isTrieLoading } = useWordTrie();
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -29,15 +35,8 @@ const WordValidator = () => {
       const words = word.trim().split(" ");
       const processedWords = words.map(w => processDigraphs(w));
       
-      const { data: validWords, error } = await supabase
-        .from('words')
-        .select('word')
-        .in('word', processedWords);
-
-      if (error) throw error;
-
-      const validWordSet = new Set(validWords?.map(w => w.word) || []);
-      const isValid = processedWords.every(w => validWordSet.has(w));
+      // Use Trie for fast validation
+      const isValid = processedWords.every(w => wordTrie.search(w));
       
       setResult({ 
         isValid, 
@@ -121,6 +120,17 @@ const WordValidator = () => {
       setIsEditing(false);
     }
   };
+
+  // Show loading state while initializing
+  if (isDBLoading || isTrieLoading) {
+    return (
+      <div className="w-full max-w-md space-y-4 px-4">
+        <div className="text-center">
+          <p className="text-white">Cargando diccionario...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-md space-y-4 px-4">
