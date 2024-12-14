@@ -31,11 +31,15 @@ const WordValidator = () => {
         // First convert to uppercase and preserve Ñ
         let processed = w.toUpperCase();
         
-        // Remove accents EXCEPT Ñ
-        processed = processed
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '') // Remove accents
-          .normalize('NFC');  // Recompose characters
+        // Special handling for Ñ - preserve it exactly as is
+        processed = processed.split('').map(char => {
+          if (char === 'Ñ' || char === 'ñ') return 'Ñ';
+          // For non-Ñ characters, remove accents
+          return char
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .normalize('NFC');
+        }).join('');
         
         // Log the state of the word before digraph processing
         console.log('Word before digraph processing:', processed);
