@@ -14,6 +14,7 @@ const WordValidator = () => {
     checked: boolean;
     words: string[];
   }>({ isValid: false, checked: false, words: [] });
+  const [isEditing, setIsEditing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -43,6 +44,7 @@ const WordValidator = () => {
         checked: true, 
         words: words.map(w => w.toUpperCase()) 
       });
+      setIsEditing(false);
     } catch (error) {
       console.error(error);
     } finally {
@@ -59,6 +61,7 @@ const WordValidator = () => {
     } else {
       setWord("");
       setResult({ isValid: false, checked: false, words: [] });
+      setIsEditing(false);
       inputRef.current?.focus();
     }
   };
@@ -68,6 +71,12 @@ const WordValidator = () => {
     return result.isValid 
       ? "bg-scrabble-valid text-white" 
       : "bg-scrabble-invalid text-white";
+  };
+
+  const handleInputClick = () => {
+    if (result.checked) {
+      setIsEditing(true);
+    }
   };
 
   return (
@@ -85,38 +94,24 @@ const WordValidator = () => {
         <div className="relative">
           <ScrollArea className={`h-32 rounded-md ${getInputBackground()}`}>
             <div className={`p-3 min-h-full ${getInputBackground()}`}>
-              {result.checked ? (
-                <div className="relative">
-                  <div className="flex flex-wrap gap-2 mb-2">
+              {result.checked && !isEditing ? (
+                <div 
+                  className="relative cursor-text" 
+                  onClick={handleInputClick}
+                >
+                  <div className="flex flex-wrap gap-2">
                     {word.split(" ").map((w, i) => (
-                      <span key={i} className="text-2xl font-bold whitespace-nowrap">
+                      <span key={i} className="text-2xl font-bold">
                         {w}
                       </span>
                     ))}
                   </div>
-                  <input
-                    type="text"
-                    value={word}
-                    onChange={(e) => {
-                      setWord(e.target.value.toUpperCase());
-                      setResult({ ...result, checked: false });
-                    }}
-                    className="w-full text-2xl font-bold bg-transparent outline-none absolute top-0 left-0 opacity-0"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        handleValidate();
-                      }
-                    }}
-                    spellCheck={false}
-                    autoCorrect="off"
-                    autoCapitalize="off"
-                  />
                 </div>
               ) : (
                 <input
                   ref={inputRef}
                   type="text"
-                  placeholder="Escribe una o más palabras..."
+                  placeholder={!result.checked ? "Escribe una o más palabras..." : ""}
                   value={word}
                   onChange={(e) => {
                     setWord(e.target.value.toUpperCase());
@@ -127,7 +122,12 @@ const WordValidator = () => {
                   className={`w-full text-2xl font-bold bg-transparent outline-none placeholder:text-gray-400`}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
-                      handleClear();
+                      handleValidate();
+                    }
+                  }}
+                  onBlur={() => {
+                    if (result.checked && !word.trim()) {
+                      setIsEditing(false);
                     }
                   }}
                   autoFocus
