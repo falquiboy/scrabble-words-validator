@@ -80,8 +80,11 @@ const WordValidator = () => {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target;
+    const cursorPosition = input.selectionStart || 0;
+    
     // First preserve Ñ/ñ by replacing them temporarily
-    const preserveN = e.target.value
+    const preserveN = input.value
       .replace(/Ñ/g, '__NTILDE_UPPER__')
       .replace(/ñ/g, '__NTILDE_LOWER__');
     
@@ -94,12 +97,18 @@ const WordValidator = () => {
     // Restore Ñ/ñ
     const finalValue = unaccentedValue
       .replace(/__NTILDE_UPPER__/g, 'Ñ')
-      .replace(/__NTILDE_LOWER__/g, 'ñ');
+      .replace(/__NTILDE_LOWER__/g, 'ñ')
+      .toUpperCase();
     
-    setWord(finalValue.toUpperCase());
+    setWord(finalValue);
     if (result.checked) {
       setResult({ ...result, checked: false });
     }
+
+    // Set cursor position in the next tick after React updates the input
+    setTimeout(() => {
+      input.setSelectionRange(cursorPosition, cursorPosition);
+    }, 0);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
