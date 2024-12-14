@@ -92,6 +92,16 @@ const WordValidator = () => {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleValidate();
+    } else if (e.key === "Escape") {
+      setWord("");
+      setResult({ isValid: false, checked: false, words: [] });
+      setIsEditing(false);
+    }
+  };
+
   return (
     <div className="w-full max-w-md space-y-4 px-4">
       <div className="text-center mb-8">
@@ -131,12 +141,8 @@ const WordValidator = () => {
                   placeholder={!result.checked ? "Escribe una o más palabras..." : ""}
                   value={word}
                   onChange={handleInputChange}
+                  onKeyDown={handleKeyDown}
                   className={`w-full text-2xl font-bold bg-transparent outline-none placeholder:text-gray-400`}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      handleValidate();
-                    }
-                  }}
                   onBlur={() => {
                     if (result.checked && !word.trim()) {
                       setIsEditing(false);
