@@ -1,3 +1,5 @@
+import { processDigraphs, toDisplayFormat } from '@/utils/digraphs';
+
 const DB_NAME = 'scrabbleDB';
 const DB_VERSION = 1;
 const STORE_NAME = 'words';
@@ -18,7 +20,9 @@ export class WordDatabase {
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
         if (!db.objectStoreNames.contains(STORE_NAME)) {
-          db.createObjectStore(STORE_NAME, { keyPath: 'word' });
+          const store = db.createObjectStore(STORE_NAME, { keyPath: 'word' });
+          // Add an index for the processed word (with digraphs handled)
+          store.createIndex('processedWord', 'processedWord', { unique: true });
         }
       };
     });
@@ -35,7 +39,11 @@ export class WordDatabase {
       transaction.oncomplete = () => resolve();
 
       words.forEach(word => {
-        store.put({ word: word.toUpperCase() });
+        const upperWord = word.toUpperCase();
+        store.put({
+          word: upperWord,
+          processedWord: processDigraphs(upperWord)
+        });
       });
     });
   }
@@ -46,7 +54,8 @@ export class WordDatabase {
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(STORE_NAME, 'readonly');
       const store = transaction.objectStore(STORE_NAME);
-      const request = store.get(word.toUpperCase());
+      const processedWordIndex = store.index('processedWord');
+      const request = processedWordIndex.get(processDigraphs(word.toUpperCase()));
 
       request.onerror = () => reject(request.error);
       request.onsuccess = () => resolve(request.result !== undefined);
@@ -63,7 +72,8 @@ export class WordDatabase {
 
       request.onerror = () => reject(request.error);
       request.onsuccess = () => {
-        resolve(request.result.map(record => record.word));
+        // Return the display format of the words
+        resolve(request.result.map(record => toDisplayFormat(record.word)));
       };
     });
   }
@@ -78,6 +88,25 @@ export class WordDatabase {
 
       request.onerror = () => reject(request.error);
       request.onsuccess = () => resolve();
+    });
+  }
+
+  // Helper method to get processed words for trie building
+  async getProcessedWords(): Promise<{ original: string; processed: string }[]> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(STORE_NAME, 'readonly');
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.getAll();
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        resolve(request.result.map(record => ({
+          original: record.word,
+          processed: record.processedWord
+        })));
+      };
     });
   }
 }
