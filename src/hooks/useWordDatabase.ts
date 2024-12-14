@@ -23,13 +23,15 @@ export const useWordDatabase = () => {
         const existingWords = await wordDB.getAllWords();
         console.log('Checking existing words in IndexedDB:', existingWords.length);
         
-        if (existingWords.length > 0) {
+        // Only proceed with loading if we have less than 100,000 words
+        // This is a safety check since we expect around 640,000 words
+        if (existingWords.length > 100000) {
           console.log('Words already in IndexedDB:', existingWords.length);
           setIsLoading(false);
           return;
         }
 
-        // If no words exist, start fetching from Supabase
+        // If insufficient words exist, start fetching from Supabase
         let hasMore = true;
         let totalWords = 0;
         let lastWord: string | null = null;
@@ -38,6 +40,7 @@ export const useWordDatabase = () => {
 
         while (hasMore && mounted) {
           try {
+            console.log('Fetching batch starting after word:', lastWord);
             const { data: words, error: fetchError } = await supabase
               .rpc('get_words_batch', {
                 batch_size: batchSize,
@@ -54,9 +57,12 @@ export const useWordDatabase = () => {
             }
 
             if (!words || words.length === 0) {
+              console.log('No more words to fetch');
               hasMore = false;
               continue;
             }
+
+            console.log(`Fetched ${words.length} words in this batch`);
 
             if (mounted) {
               // Store this batch in IndexedDB
