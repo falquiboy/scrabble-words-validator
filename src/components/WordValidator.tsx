@@ -93,7 +93,7 @@ const WordValidator = () => {
                 setResult({ ...result, checked: false });
               }
             }}
-            className={`text-[32px] leading-normal font-bold min-h-[4rem] text-left pr-12 transition-colors whitespace-normal break-words ${getInputBackground()}`}
+            className={`text-[32px] leading-normal font-bold min-h-[8rem] text-left pr-12 transition-colors whitespace-normal break-words ${getInputBackground()}`}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 handleClear();
