@@ -76,14 +76,12 @@ const WordInput = ({
     if (e.key === "Enter") {
       onValidate();
     } else if (e.key === "Escape") {
-      e.preventDefault(); // Prevent any default ESC behavior
-      if (word.trim()) {
-        onWordChange(""); // Clear the input
+      e.preventDefault();
+      if (word) {
+        onWordChange("");
       }
-      onEditEnd(); // Exit edit mode
-      if (inputRef.current) {
-        inputRef.current.blur(); // Remove focus from input
-      }
+      onEditEnd();
+      inputRef.current?.blur();
     }
   };
 
