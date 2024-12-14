@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { processDigraphs } from "@/utils/digraphs";
+import { processDigraphs, toDisplayFormat } from "@/utils/digraphs";
 import { useWordDatabase } from "@/hooks/useWordDatabase";
 import { useWordTrie } from "@/hooks/useWordTrie";
 import { wordTrie } from "@/utils/trie";
@@ -28,26 +28,29 @@ const WordValidator = () => {
     try {
       const words = word.trim().split(" ");
       const processedWords = words.map(w => {
-        // First convert to uppercase and process digraphs
-        const upperWord = w.toUpperCase();
+        // First convert to uppercase and normalize accents
+        const upperWord = w.toUpperCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, ''); // Remove accents but keep base letters
+        
+        // Process digraphs (CH -> Ç, LL -> K, RR -> W)
         const withDigraphs = processDigraphs(upperWord);
         
-        // Process special characters (Ñ and accents)
+        // Clean up any remaining invalid characters
         const processed = withDigraphs
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')  // Remove accents
-          .replace(/[^A-ZÑÇ\s]/g, '')       // Only allow uppercase letters, Ñ, Ç and spaces
-          .replace(/[KW]/g, '');            // Remove K and W as per requirements
+          .replace(/[^A-ZÑÇ]/g, ''); // Only allow uppercase letters, Ñ, and Ç
         
+        console.log('Original word:', w);
+        console.log('Processed word:', processed);
         return processed;
       });
       
       // Use Trie for fast validation
       const isValid = processedWords.every(w => {
         if (!w) return false; // Skip empty strings
-        console.log('Processing word for validation:', w); // Debug log
+        console.log('Processing word for validation:', w);
         const result = wordTrie.search(w);
-        console.log('Validation result for', w, ':', result); // Debug log
+        console.log('Validation result for', w, ':', result);
         return result;
       });
       
