@@ -27,7 +27,24 @@ const WordValidator = () => {
     setIsLoading(true);
     try {
       const words = word.trim().split(" ");
-      const processedWords = words.map(w => processDigraphs(w));
+      const processedWords = words.map(w => {
+        // First convert to uppercase and handle Ñ
+        const upperWord = w.toUpperCase();
+        
+        // Replace Ñ with temporary token
+        const withToken = upperWord.replace(/Ñ/g, '__NTILDE__');
+        
+        // Remove accents while preserving base characters
+        const normalized = withToken
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '');
+        
+        // Clean up and restore Ñ
+        return normalized
+          .replace(/[^A-Z\s__NTILDE__]/g, '')
+          .replace(/[KW]/g, '')
+          .replace(/__NTILDE__/g, 'Ñ');
+      });
       
       // Use Trie for fast validation
       const isValid = processedWords.every(w => wordTrie.search(w));
