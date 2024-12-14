@@ -123,27 +123,14 @@ const WordValidator = () => {
 
   return (
     <div className="w-full max-w-md space-y-4 px-4">
-      <div className="bg-[#00205B] w-full rounded-2xl mb-8 py-8 shadow-lg">
+      <div className="text-center mb-8">
         <div className="flex items-center justify-center gap-2 mb-2">
           <img 
             src="/lovable-uploads/ca9a9ae9-40fb-4d60-a8f9-1ab45c41ee96.png" 
             alt="File Logo" 
             className="h-10 w-10 object-contain"
           />
-          <h1 className="text-3xl font-bold text-white uppercase tracking-wide" style={{
-            textShadow: `
-              3px 0 0 #F97316,
-              -3px 0 0 #F97316,
-              0 3px 0 #F97316,
-              0 -3px 0 #F97316,
-              2px 2px 0 #F97316,
-              -2px -2px 0 #F97316,
-              2px -2px 0 #F97316,
-              -2px 2px 0 #F97316,
-              4px 4px 0 #943107,
-              5px 5px 0 #4A1903
-            `
-          }}>
+          <h1 className="text-3xl font-bold text-white uppercase tracking-wide [text-shadow:_2px_2px_0_#F97316] border-[#F97316]">
             Juez de Léxico
           </h1>
         </div>
