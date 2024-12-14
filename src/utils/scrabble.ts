@@ -20,18 +20,23 @@ export const isValidWord = async (word: string): Promise<boolean> => {
 export const countWords = async (): Promise<number> => {
   const { count, error } = await supabase
     .from('words')
-    .select('word', { count: 'exact' });
+    .select('*', { count: 'exact', head: true });
 
   if (error) {
     console.error('Error counting words:', error);
-    return 0;
+    throw error;
   }
 
+  console.log('Total words in database:', count);
   return count || 0;
 };
 
 // Add a quick console log to help us confirm the count
 (async () => {
-  const totalWords = await countWords();
-  console.log(`Total words in the list: ${totalWords}`);
+  try {
+    const totalWords = await countWords();
+    console.log(`Total words in the database: ${totalWords}`);
+  } catch (error) {
+    console.error('Error getting word count:', error);
+  }
 })();
