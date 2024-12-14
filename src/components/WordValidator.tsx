@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Check, X, Gavel } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { processDigraphs, toDisplayFormat } from "@/utils/digraphs";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -83,8 +83,12 @@ const WordValidator = () => {
     <div className="w-full max-w-md space-y-4 px-4">
       <div className="text-center mb-8">
         <div className="flex items-center justify-center gap-2 mb-2">
-          <Gavel className="h-8 w-8 text-scrabble-dark" />
-          <h1 className="text-4xl font-bold text-scrabble-dark">
+          <img 
+            src="/lovable-uploads/ca9a9ae9-40fb-4d60-a8f9-1ab45c41ee96.png" 
+            alt="File Logo" 
+            className="h-12 w-12"
+          />
+          <h1 className="text-4xl font-bold text-white [text-shadow:_2px_2px_0_#F97316] border-[#F97316]">
             Juez de Léxico
           </h1>
         </div>
