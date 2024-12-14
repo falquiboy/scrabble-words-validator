@@ -28,17 +28,14 @@ const WordValidator = () => {
     try {
       const words = word.trim().split(" ");
       const processedWords = words.map(w => {
-        // First convert to uppercase and normalize accents
-        const upperWord = w.toUpperCase()
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, ''); // Remove accents but keep base letters
+        // First convert to uppercase
+        let processed = w.toUpperCase();
+        
+        // Remove accents while preserving base letters
+        processed = processed.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
         
         // Process digraphs (CH -> Ç, LL -> K, RR -> W)
-        const withDigraphs = processDigraphs(upperWord);
-        
-        // Clean up any remaining invalid characters
-        const processed = withDigraphs
-          .replace(/[^A-ZÑÇ]/g, ''); // Only allow uppercase letters, Ñ, and Ç
+        processed = processDigraphs(processed);
         
         console.log('Original word:', w);
         console.log('Processed word:', processed);
