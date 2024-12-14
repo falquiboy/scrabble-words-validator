@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { wordDB } from '@/utils/wordDatabase';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 export const useWordDatabase = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -9,11 +9,15 @@ export const useWordDatabase = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+    let mounted = true;
+
     const initDB = async () => {
       try {
         // Initialize IndexedDB
         await wordDB.init();
         
+        if (!mounted) return;
+
         // Check if we already have words
         const existingWords = await wordDB.getAllWords();
         if (existingWords.length > 0) {
@@ -28,7 +32,7 @@ export const useWordDatabase = () => {
 
         if (error) throw error;
 
-        if (words) {
+        if (words && mounted) {
           await wordDB.addWords(words.map(w => w.word));
           toast({
             title: "Diccionario descargado",
@@ -37,6 +41,8 @@ export const useWordDatabase = () => {
         }
       } catch (err) {
         console.error('Error initializing word database:', err);
+        if (!mounted) return;
+        
         setError(err instanceof Error ? err.message : 'Unknown error');
         toast({
           variant: "destructive",
@@ -44,11 +50,17 @@ export const useWordDatabase = () => {
           description: "No se pudo cargar el diccionario.",
         });
       } finally {
-        setIsLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     initDB();
+
+    return () => {
+      mounted = false;
+    };
   }, [toast]);
 
   return { isLoading, error };
