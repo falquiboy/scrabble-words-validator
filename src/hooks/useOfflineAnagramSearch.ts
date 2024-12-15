@@ -10,20 +10,70 @@ export const useOfflineAnagramSearch = (searchTerm: string) => {
 
   const results = useMemo(() => {
     if (!searchTerm || isLoading || error) {
-      return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [] };
+      return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [], patternMatches: [] };
     }
 
-    // Pre-process input
+    // Check if this is a pattern search (contains '/')
+    const isPatternSearch = searchTerm.includes('/');
+    let pattern = '';
+    let rackLetters = '';
+
+    if (isPatternSearch) {
+      [pattern, rackLetters] = searchTerm.split('/').map(s => s.trim().toUpperCase());
+      
+      // Process pattern and rack letters
+      pattern = processDigraphs(pattern);
+      rackLetters = processDigraphs(rackLetters);
+
+      console.log('Pattern search:', {
+        pattern,
+        rackLetters,
+        timestamp: new Date().toISOString()
+      });
+
+      // Early validation
+      if (!pattern || !rackLetters) {
+        return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [], patternMatches: [] };
+      }
+
+      const startTime = performance.now();
+      const patternMatches = new Set<string>();
+
+      // Get all words of the same length as the pattern
+      const potentialMatches = trie.getWordsOfLength(pattern.length);
+
+      // For each potential match, check if it fits the pattern and can be made with rack letters
+      for (const word of potentialMatches) {
+        if (matchesPattern(word, pattern, rackLetters)) {
+          patternMatches.add(word);
+        }
+      }
+
+      const endTime = performance.now();
+      console.log('Pattern search performance:', {
+        matches: patternMatches.size,
+        timeMs: (endTime - startTime).toFixed(2)
+      });
+
+      return {
+        exactMatches: [],
+        wildcardMatches: [],
+        additionalWildcardMatches: [],
+        patternMatches: Array.from(patternMatches)
+      };
+    }
+
+    // Pre-process input for regular search
     const wildcardCount = (searchTerm.match(/\*/g) || []).length;
     if (wildcardCount > 2) {
       console.warn('More than 2 wildcards detected. Only the first 2 will be considered.');
-      return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [] };
+      return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [], patternMatches: [] };
     }
 
     const lettersOnly = searchTerm.replace(/\*/g, '');
     const processedInput = processDigraphs(lettersOnly.toUpperCase());
     const baseLength = processedInput.length;
-    
+
     console.log('Offline search:', {
       searchTerm,
       wildcardCount,
@@ -34,7 +84,7 @@ export const useOfflineAnagramSearch = (searchTerm: string) => {
 
     // Early return for empty input
     if (!processedInput) {
-      return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [] };
+      return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [], patternMatches: [] };
     }
 
     const startTime = performance.now();
@@ -105,7 +155,8 @@ export const useOfflineAnagramSearch = (searchTerm: string) => {
     return {
       exactMatches: Array.from(exactMatches),
       wildcardMatches: Array.from(wildcardMatches),
-      additionalWildcardMatches: Array.from(additionalMatches)
+      additionalWildcardMatches: Array.from(additionalMatches),
+      patternMatches: []
     };
   }, [searchTerm, trie, isLoading, error]);
 
@@ -115,3 +166,31 @@ export const useOfflineAnagramSearch = (searchTerm: string) => {
     error
   };
 };
+
+// Helper function to check if a word matches a pattern and can be made with rack letters
+function matchesPattern(word: string, pattern: string, rackLetters: string): boolean {
+  if (word.length !== pattern.length) return false;
+
+  const rackLettersCopy = rackLetters.split('');
+  const patternArray = pattern.split('');
+
+  // First, check if the word matches the pattern
+  for (let i = 0; i < word.length; i++) {
+    if (patternArray[i] !== '.' && patternArray[i] !== word[i]) {
+      return false;
+    }
+  }
+
+  // Then, check if we can make the word with rack letters
+  for (let i = 0; i < word.length; i++) {
+    if (patternArray[i] === '.') {
+      const letterIndex = rackLettersCopy.indexOf(word[i]);
+      if (letterIndex === -1) {
+        return false;
+      }
+      rackLettersCopy.splice(letterIndex, 1);
+    }
+  }
+
+  return true;
+}

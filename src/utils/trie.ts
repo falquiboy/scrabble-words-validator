@@ -67,6 +67,23 @@ export class Trie {
     return Array.from(results);
   }
 
+  // New method to get all words of a specific length
+  getWordsOfLength(length: number): string[] {
+    const words: string[] = [];
+    this.dfsWithLength(this.root, words, length);
+    return words;
+  }
+
+  private dfsWithLength(node: TrieNode, words: string[], targetLength: number): void {
+    if (node.isEndOfWord && node.word.length === targetLength) {
+      words.push(node.word);
+    }
+
+    for (const [, child] of node.children) {
+      this.dfsWithLength(child, words, targetLength);
+    }
+  }
+
   // Helper method to sort letters consistently
   private sortLetters(letters: string): string {
     return letters.split('').sort().join('');
@@ -150,28 +167,6 @@ export class Trie {
       result += char.repeat(count);
     }
     return result;
-  }
-
-  // Helper method to get all words starting with a prefix
-  getWordsStartingWith(prefix: string): Set<string> {
-    const node = this.findNode(prefix);
-    const words = new Set<string>();
-    
-    if (node) {
-      this.collectWords(node, words);
-    }
-    
-    return words;
-  }
-
-  private collectWords(node: TrieNode, words: Set<string>): void {
-    if (node.isEndOfWord) {
-      words.add(node.word);
-    }
-
-    for (const [, child] of node.children) {
-      this.collectWords(child, words);
-    }
   }
 
   // Helper method to get all valid words
