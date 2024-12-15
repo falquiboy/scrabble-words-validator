@@ -2,27 +2,33 @@ import { useWordTrie } from "./useWordTrie";
 import { useMemo } from "react";
 import { processDigraphs, generateAlphagram } from "@/utils/digraphs";
 
+// Spanish alphabet including digraphs (using internal representation)
+const SPANISH_LETTERS = ["A", "B", "C", "Ç", "D", "E", "F", "G", "H", "I", "J", "L", "K", "M", "N", "Ñ", "O", "P", "Q", "R", "W", "S", "T", "U", "V", "X", "Y", "Z"];
+
 export const useOfflineAnagramSearch = (searchTerm: string) => {
-  // Get access to the Trie with memoized value to prevent unnecessary re-renders
   const { trie, isLoading, error } = useWordTrie();
 
-  // Memoize the search results with optimized processing
   const results = useMemo(() => {
     if (!searchTerm || isLoading || error) {
       return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [] };
     }
 
-    // Pre-process input once for all operations
+    // Pre-process input
     const wildcardCount = (searchTerm.match(/\*/g) || []).length;
+    if (wildcardCount > 2) {
+      console.warn('More than 2 wildcards detected. Only the first 2 will be considered.');
+      return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [] };
+    }
+
     const lettersOnly = searchTerm.replace(/\*/g, '');
     const processedInput = processDigraphs(lettersOnly.toUpperCase());
-    const targetLength = processedInput.length + wildcardCount;
+    const baseLength = processedInput.length;
     
     console.log('Offline search:', {
       searchTerm,
       wildcardCount,
       processedInput,
-      targetLength,
+      baseLength,
       timestamp: new Date().toISOString()
     });
 
@@ -31,52 +37,76 @@ export const useOfflineAnagramSearch = (searchTerm: string) => {
       return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [] };
     }
 
-    // Cache alphagram for non-wildcard searches
-    const alphagram = wildcardCount === 0 ? generateAlphagram(processedInput) : null;
-
-    // For non-wildcard searches, use optimized exact anagram matching
-    if (wildcardCount === 0 && alphagram) {
+    // For non-wildcard searches, use exact matching
+    if (wildcardCount === 0) {
+      const alphagram = generateAlphagram(processedInput);
       const startTime = performance.now();
-      const exactMatches = trie.findAnagrams(alphagram)
-        .filter(word => word.length === targetLength);
+      const exactMatches = trie.findAnagrams(alphagram);
       const endTime = performance.now();
       
       console.log('Exact matches found:', exactMatches.length, `(${(endTime - startTime).toFixed(2)}ms)`);
       
+      // Find words that can be formed with one additional letter
+      const additionalMatches = new Set<string>();
+      for (const letter of SPANISH_LETTERS) {
+        const newAlphagram = generateAlphagram(processedInput + letter);
+        const matches = trie.findAnagrams(newAlphagram);
+        matches.forEach(match => additionalMatches.add(match));
+      }
+
       return {
         exactMatches,
         wildcardMatches: [],
-        additionalWildcardMatches: []
+        additionalWildcardMatches: Array.from(additionalMatches)
       };
     }
 
-    // For wildcard searches, use parallel processing when available
+    // For wildcard searches
     const startTime = performance.now();
+    const wildcardResults = new Set<string>();
+    const additionalResults = new Set<string>();
+
+    // Function to generate all possible combinations with wildcards
+    const generateWildcardCombinations = (base: string, remainingWildcards: number): string[] => {
+      if (remainingWildcards === 0) return [base];
+      
+      const combinations: string[] = [];
+      for (const letter of SPANISH_LETTERS) {
+        const newBase = base + letter;
+        combinations.push(...generateWildcardCombinations(newBase, remainingWildcards - 1));
+      }
+      return combinations;
+    };
+
+    // Generate all possible combinations with the wildcards
+    const combinations = generateWildcardCombinations(processedInput, wildcardCount);
     
-    // Get wildcard matches
-    const wildcardMatches = wildcardCount > 0 
-      ? trie.findWildcardMatches(processedInput, wildcardCount)
-        .filter(word => word.length === targetLength)
-      : [];
-    
-    // Get additional wildcard matches only if we have initial wildcards
-    const additionalWildcardMatches = wildcardCount > 0
-      ? trie.findWildcardMatches(processedInput, wildcardCount + 1)
-        .filter(word => word.length === targetLength + 1)
-      : [];
+    // Find matches for each combination
+    for (const combo of combinations) {
+      const alphagram = generateAlphagram(combo);
+      const matches = trie.findAnagrams(alphagram);
+      matches.forEach(match => wildcardResults.add(match));
+
+      // Find additional matches with one more letter
+      for (const letter of SPANISH_LETTERS) {
+        const newAlphagram = generateAlphagram(combo + letter);
+        const additionalMatches = trie.findAnagrams(newAlphagram);
+        additionalMatches.forEach(match => additionalResults.add(match));
+      }
+    }
 
     const endTime = performance.now();
     
     console.log('Search performance:', {
-      wildcardMatches: wildcardMatches.length,
-      additionalMatches: additionalWildcardMatches.length,
+      wildcardMatches: wildcardResults.size,
+      additionalMatches: additionalResults.size,
       timeMs: (endTime - startTime).toFixed(2)
     });
 
     return {
       exactMatches: [],
-      wildcardMatches,
-      additionalWildcardMatches
+      wildcardMatches: Array.from(wildcardResults),
+      additionalWildcardMatches: Array.from(additionalResults)
     };
   }, [searchTerm, trie, isLoading, error]);
 
