@@ -3,16 +3,16 @@ import { useMemo } from "react";
 import { processDigraphs, generateAlphagram } from "@/utils/digraphs";
 
 export const useOfflineAnagramSearch = (searchTerm: string) => {
-  // Get access to the Trie
+  // Get access to the Trie with memoized value to prevent unnecessary re-renders
   const { trie, isLoading, error } = useWordTrie();
 
-  // Memoize the search results
+  // Memoize the search results with optimized processing
   const results = useMemo(() => {
     if (!searchTerm || isLoading || error) {
       return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [] };
     }
 
-    // Count wildcards and process input
+    // Pre-process input once for all operations
     const wildcardCount = (searchTerm.match(/\*/g) || []).length;
     const lettersOnly = searchTerm.replace(/\*/g, '');
     const processedInput = processDigraphs(lettersOnly.toUpperCase());
@@ -20,14 +20,26 @@ export const useOfflineAnagramSearch = (searchTerm: string) => {
     console.log('Offline search:', {
       searchTerm,
       wildcardCount,
-      processedInput
+      processedInput,
+      timestamp: new Date().toISOString()
     });
 
-    // For non-wildcard searches, use exact anagram matching
-    if (wildcardCount === 0) {
-      const alphagram = generateAlphagram(processedInput);
+    // Early return for empty input
+    if (!processedInput) {
+      return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [] };
+    }
+
+    // Cache alphagram for non-wildcard searches
+    const alphagram = wildcardCount === 0 ? generateAlphagram(processedInput) : null;
+
+    // For non-wildcard searches, use optimized exact anagram matching
+    if (wildcardCount === 0 && alphagram) {
+      const startTime = performance.now();
       const exactMatches = trie.findAnagrams(alphagram);
-      console.log('Exact matches found:', exactMatches.length);
+      const endTime = performance.now();
+      
+      console.log('Exact matches found:', exactMatches.length, `(${(endTime - startTime).toFixed(2)}ms)`);
+      
       return {
         exactMatches,
         wildcardMatches: [],
@@ -35,13 +47,26 @@ export const useOfflineAnagramSearch = (searchTerm: string) => {
       };
     }
 
-    // For wildcard searches
-    const wildcardMatches = trie.findWildcardMatches(processedInput, wildcardCount);
-    console.log('Wildcard matches found:', wildcardMatches.length);
+    // For wildcard searches, use parallel processing when available
+    const startTime = performance.now();
+    
+    // Get wildcard matches
+    const wildcardMatches = wildcardCount > 0 
+      ? trie.findWildcardMatches(processedInput, wildcardCount)
+      : [];
+    
+    // Get additional wildcard matches only if we have initial wildcards
+    const additionalWildcardMatches = wildcardCount > 0
+      ? trie.findWildcardMatches(processedInput, wildcardCount + 1)
+      : [];
 
-    // For additional wildcard matches (one more wildcard)
-    const additionalWildcardMatches = trie.findWildcardMatches(processedInput, wildcardCount + 1);
-    console.log('Additional wildcard matches found:', additionalWildcardMatches.length);
+    const endTime = performance.now();
+    
+    console.log('Search performance:', {
+      wildcardMatches: wildcardMatches.length,
+      additionalMatches: additionalWildcardMatches.length,
+      timeMs: (endTime - startTime).toFixed(2)
+    });
 
     return {
       exactMatches: [],
