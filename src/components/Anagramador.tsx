@@ -1,15 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 import SearchInput from "./anagramador/SearchInput";
 import ResultsList from "./anagramador/ResultsList";
-import { useAnagramSearch } from "@/hooks/useAnagramSearch";
+import { useOfflineAnagramSearch } from "@/hooks/useOfflineAnagramSearch";
 
 const Anagramador = () => {
   const [letters, setLetters] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Query for words using custom hook
-  const { data: results, isLoading } = useAnagramSearch(searchTerm);
+  // Query for words using offline search hook
+  const { data: results, isLoading } = useOfflineAnagramSearch(searchTerm);
 
   // Handle input changes
   const handleInputChange = (value: string) => {
