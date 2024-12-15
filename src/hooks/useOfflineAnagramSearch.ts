@@ -16,11 +16,13 @@ export const useOfflineAnagramSearch = (searchTerm: string) => {
     const wildcardCount = (searchTerm.match(/\*/g) || []).length;
     const lettersOnly = searchTerm.replace(/\*/g, '');
     const processedInput = processDigraphs(lettersOnly.toUpperCase());
+    const targetLength = processedInput.length + wildcardCount;
     
     console.log('Offline search:', {
       searchTerm,
       wildcardCount,
       processedInput,
+      targetLength,
       timestamp: new Date().toISOString()
     });
 
@@ -35,7 +37,8 @@ export const useOfflineAnagramSearch = (searchTerm: string) => {
     // For non-wildcard searches, use optimized exact anagram matching
     if (wildcardCount === 0 && alphagram) {
       const startTime = performance.now();
-      const exactMatches = trie.findAnagrams(alphagram);
+      const exactMatches = trie.findAnagrams(alphagram)
+        .filter(word => word.length === targetLength);
       const endTime = performance.now();
       
       console.log('Exact matches found:', exactMatches.length, `(${(endTime - startTime).toFixed(2)}ms)`);
@@ -53,11 +56,13 @@ export const useOfflineAnagramSearch = (searchTerm: string) => {
     // Get wildcard matches
     const wildcardMatches = wildcardCount > 0 
       ? trie.findWildcardMatches(processedInput, wildcardCount)
+        .filter(word => word.length === targetLength)
       : [];
     
     // Get additional wildcard matches only if we have initial wildcards
     const additionalWildcardMatches = wildcardCount > 0
       ? trie.findWildcardMatches(processedInput, wildcardCount + 1)
+        .filter(word => word.length === targetLength + 1)
       : [];
 
     const endTime = performance.now();
