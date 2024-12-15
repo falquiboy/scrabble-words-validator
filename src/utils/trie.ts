@@ -53,6 +53,105 @@ export class Trie {
     return current;
   }
 
+  // New method to find exact anagrams
+  findAnagrams(letters: string): string[] {
+    const sortedLetters = this.sortLetters(letters);
+    return this.findAnagramsHelper(this.root, sortedLetters);
+  }
+
+  // New method to find wildcard matches
+  findWildcardMatches(letters: string, wildcardCount: number): string[] {
+    const results = new Set<string>();
+    const lettersArray = letters.replace(/\*/g, '').split('');
+    this.findWildcardMatchesHelper(this.root, lettersArray, wildcardCount, '', results);
+    return Array.from(results);
+  }
+
+  // Helper method to sort letters consistently
+  private sortLetters(letters: string): string {
+    return letters.split('').sort().join('');
+  }
+
+  // Helper method for anagram search
+  private findAnagramsHelper(node: TrieNode, remainingLetters: string): string[] {
+    const results: string[] = [];
+    
+    if (remainingLetters.length === 0 && node.isEndOfWord) {
+      results.push(node.word);
+    }
+
+    // Get frequency map of remaining letters
+    const freqMap = new Map<string, number>();
+    for (const char of remainingLetters) {
+      freqMap.set(char, (freqMap.get(char) || 0) + 1);
+    }
+
+    // Try each remaining letter
+    for (const [char, childNode] of node.children) {
+      if (freqMap.has(char) && freqMap.get(char)! > 0) {
+        // Use the letter
+        freqMap.set(char, freqMap.get(char)! - 1);
+        const newRemaining = this.mapToString(freqMap);
+        results.push(...this.findAnagramsHelper(childNode, newRemaining));
+        // Restore the letter for backtracking
+        freqMap.set(char, freqMap.get(char)! + 1);
+      }
+    }
+
+    return results;
+  }
+
+  // Helper method for wildcard matches
+  private findWildcardMatchesHelper(
+    node: TrieNode,
+    letters: string[],
+    wildcardCount: number,
+    current: string,
+    results: Set<string>
+  ): void {
+    if (node.isEndOfWord) {
+      results.add(node.word);
+      return;
+    }
+
+    // Try each possible next letter
+    for (const [char, childNode] of node.children) {
+      // Case 1: Use a letter from our set
+      const letterIndex = letters.indexOf(char);
+      if (letterIndex !== -1) {
+        const newLetters = [...letters];
+        newLetters.splice(letterIndex, 1);
+        this.findWildcardMatchesHelper(
+          childNode,
+          newLetters,
+          wildcardCount,
+          current + char,
+          results
+        );
+      }
+      
+      // Case 2: Use a wildcard if available
+      if (wildcardCount > 0) {
+        this.findWildcardMatchesHelper(
+          childNode,
+          letters,
+          wildcardCount - 1,
+          current + char,
+          results
+        );
+      }
+    }
+  }
+
+  // Helper method to convert frequency map back to string
+  private mapToString(freqMap: Map<string, number>): string {
+    let result = '';
+    for (const [char, count] of freqMap) {
+      result += char.repeat(count);
+    }
+    return result;
+  }
+
   // Helper method to get all words starting with a prefix
   getWordsStartingWith(prefix: string): Set<string> {
     const node = this.findNode(prefix);
