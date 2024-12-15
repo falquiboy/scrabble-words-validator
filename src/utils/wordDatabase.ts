@@ -1,8 +1,10 @@
 import { processDigraphs, toDisplayFormat } from '@/utils/digraphs';
+import { wordTrie } from './trie';
 
 const DB_NAME = 'scrabbleDB';
-const DB_VERSION = 1;
-const STORE_NAME = 'words';
+const DB_VERSION = 2; // Increased version to handle new store
+const WORDS_STORE = 'words';
+const TRIE_STORE = 'trie';
 
 export class WordDatabase {
   private db: IDBDatabase | null = null;
@@ -28,9 +30,16 @@ export class WordDatabase {
 
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
-        if (!db.objectStoreNames.contains(STORE_NAME)) {
-          const store = db.createObjectStore(STORE_NAME, { keyPath: 'word' });
+        
+        // Create or update words store
+        if (!db.objectStoreNames.contains(WORDS_STORE)) {
+          const store = db.createObjectStore(WORDS_STORE, { keyPath: 'word' });
           store.createIndex('processedWord', 'processedWord', { unique: true });
+        }
+
+        // Create trie store
+        if (!db.objectStoreNames.contains(TRIE_STORE)) {
+          db.createObjectStore(TRIE_STORE, { keyPath: 'id' });
         }
       };
     });
@@ -38,12 +47,40 @@ export class WordDatabase {
     return this.initPromise;
   }
 
+  async getStoredTrie(): Promise<string | null> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(TRIE_STORE, 'readonly');
+      const store = transaction.objectStore(TRIE_STORE);
+      const request = store.get('main');
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        resolve(request.result?.data || null);
+      };
+    });
+  }
+
+  async storeTrie(serializedTrie: string): Promise<void> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(TRIE_STORE, 'readwrite');
+      const store = transaction.objectStore(TRIE_STORE);
+      const request = store.put({ id: 'main', data: serializedTrie });
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve();
+    });
+  }
+
   async addWords(words: string[]): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction(STORE_NAME, 'readwrite');
-      const store = transaction.objectStore(STORE_NAME);
+      const transaction = this.db!.transaction(WORDS_STORE, 'readwrite');
+      const store = transaction.objectStore(WORDS_STORE);
 
       transaction.onerror = () => reject(transaction.error);
       transaction.oncomplete = () => resolve();
@@ -62,8 +99,8 @@ export class WordDatabase {
     if (!this.db) throw new Error('Database not initialized');
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction(STORE_NAME, 'readonly');
-      const store = transaction.objectStore(STORE_NAME);
+      const transaction = this.db!.transaction(WORDS_STORE, 'readonly');
+      const store = transaction.objectStore(WORDS_STORE);
       const processedWordIndex = store.index('processedWord');
       const request = processedWordIndex.get(processDigraphs(word.toUpperCase()));
 
@@ -76,8 +113,8 @@ export class WordDatabase {
     if (!this.db) throw new Error('Database not initialized');
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction(STORE_NAME, 'readonly');
-      const store = transaction.objectStore(STORE_NAME);
+      const transaction = this.db!.transaction(WORDS_STORE, 'readonly');
+      const store = transaction.objectStore(WORDS_STORE);
       const request = store.getAll();
 
       request.onerror = () => reject(request.error);
@@ -92,8 +129,8 @@ export class WordDatabase {
     if (!this.db) throw new Error('Database not initialized');
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction(STORE_NAME, 'readwrite');
-      const store = transaction.objectStore(STORE_NAME);
+      const transaction = this.db!.transaction(WORDS_STORE, 'readwrite');
+      const store = transaction.objectStore(WORDS_STORE);
       const request = store.clear();
 
       request.onerror = () => reject(request.error);
@@ -106,8 +143,8 @@ export class WordDatabase {
     if (!this.db) throw new Error('Database not initialized');
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction(STORE_NAME, 'readonly');
-      const store = transaction.objectStore(STORE_NAME);
+      const transaction = this.db!.transaction(WORDS_STORE, 'readonly');
+      const store = transaction.objectStore(WORDS_STORE);
       const request = store.getAll();
 
       request.onerror = () => reject(request.error);
