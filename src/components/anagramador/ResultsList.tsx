@@ -26,75 +26,65 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
           </div>
         ) : results && (results.exactMatches.length > 0 || results.wildcardMatches.length > 0 || results.additionalWildcardMatches.length > 0) ? (
           <>
-            {results.exactMatches.length > 0 && (
+            {/* First section: Results with exact letters or wildcards */}
+            {(results.exactMatches.length > 0 || results.wildcardMatches.length > 0) && (
               <div className="space-y-2">
                 <h3 className="font-semibold text-lg">
                   {wildcardCount === 0 ? (
-                    `${results.exactMatches.length} ${results.exactMatches.length === 1 ? "anagrama encontrado" : "anagramas encontrados"}:`
+                    `${results.exactMatches.length} ${results.exactMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} usando todas las letras:`
                   ) : (
-                    `${results.exactMatches.length} ${results.exactMatches.length === 1 ? "Palabra encontrada" : "Palabras encontradas"} con ${wildcardCount} ${wildcardCount === 1 ? "comodín" : "comodines"}:`
+                    `${results.wildcardMatches.length} ${results.wildcardMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} usando todas las letras y ${wildcardCount} ${wildcardCount === 1 ? "comodín" : "comodines"}:`
                   )}
                 </h3>
                 <div className="grid grid-cols-3 gap-2">
-                  {results.exactMatches.map((word, index) => (
+                  {wildcardCount === 0 ? (
+                    results.exactMatches.map((word, index) => (
+                      <a
+                        key={`exact-${index}`}
+                        href={`https://dle.rae.es/?w=${word}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block hover:bg-gray-100 p-1.5 rounded transition-colors text-lg w-full text-left"
+                      >
+                        {word}
+                      </a>
+                    ))
+                  ) : (
+                    results.wildcardMatches.map((word, index) => (
+                      <a
+                        key={`wildcard-${index}`}
+                        href={`https://dle.rae.es/?w=${word}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block hover:bg-gray-100 p-1.5 rounded transition-colors text-lg w-full text-left"
+                      >
+                        {highlightWildcardLetter(word, searchTerm)}
+                      </a>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+            {/* Second section: Results with one additional letter */}
+            {results.additionalWildcardMatches.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="font-semibold text-lg">
+                  {`${results.additionalWildcardMatches.length} ${results.additionalWildcardMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} usando todas las letras más una letra adicional:`}
+                </h3>
+                <div className="grid grid-cols-3 gap-2">
+                  {results.additionalWildcardMatches.map((word, index) => (
                     <a
-                      key={`exact-${index}`}
+                      key={`additional-${index}`}
                       href={`https://dle.rae.es/?w=${word}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="block hover:bg-gray-100 p-1.5 rounded transition-colors text-lg w-full text-left"
                     >
-                      {wildcardCount > 0 ? highlightWildcardLetter(word, searchTerm) : word}
+                      {word}
                     </a>
                   ))}
                 </div>
               </div>
-            )}
-            {wildcardCount > 0 && (
-              <>
-                {/* First section: Results with user-provided wildcards */}
-                {results.wildcardMatches.length > 0 && (
-                  <div className="space-y-2">
-                    <h3 className="font-semibold text-lg">
-                      {`${results.wildcardMatches.length} ${results.wildcardMatches.length === 1 ? "Palabra encontrada" : "Palabras encontradas"} con ${wildcardCount} ${wildcardCount === 1 ? "comodín" : "comodines"}:`}
-                    </h3>
-                    <div className="grid grid-cols-3 gap-2">
-                      {results.wildcardMatches.map((word, index) => (
-                        <a
-                          key={`wildcard-${index}`}
-                          href={`https://dle.rae.es/?w=${word}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block hover:bg-gray-100 p-1.5 rounded transition-colors text-lg w-full text-left"
-                        >
-                          {highlightWildcardLetter(word, searchTerm)}
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {/* Second section: Results with one additional wildcard */}
-                {results.additionalWildcardMatches.length > 0 && (
-                  <div className="space-y-2">
-                    <h3 className="font-semibold text-lg">
-                      {`${results.additionalWildcardMatches.length} ${results.additionalWildcardMatches.length === 1 ? "Palabra encontrada" : "Palabras encontradas"} con ${wildcardCount + 1} ${wildcardCount + 1 === 1 ? "comodín" : "comodines"}:`}
-                    </h3>
-                    <div className="grid grid-cols-3 gap-2">
-                      {results.additionalWildcardMatches.map((word, index) => (
-                        <a
-                          key={`additional-wildcard-${index}`}
-                          href={`https://dle.rae.es/?w=${word}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block hover:bg-gray-100 p-1.5 rounded transition-colors text-lg w-full text-left"
-                        >
-                          {highlightWildcardLetter(word, searchTerm)}
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </>
             )}
           </>
         ) : searchTerm ? (

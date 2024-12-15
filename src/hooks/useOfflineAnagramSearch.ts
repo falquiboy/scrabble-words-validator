@@ -37,34 +37,10 @@ export const useOfflineAnagramSearch = (searchTerm: string) => {
       return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [] };
     }
 
-    // For non-wildcard searches, use exact matching
-    if (wildcardCount === 0) {
-      const alphagram = generateAlphagram(processedInput);
-      const startTime = performance.now();
-      const exactMatches = trie.findAnagrams(alphagram);
-      const endTime = performance.now();
-      
-      console.log('Exact matches found:', exactMatches.length, `(${(endTime - startTime).toFixed(2)}ms)`);
-      
-      // Find words that can be formed with one additional letter
-      const additionalMatches = new Set<string>();
-      for (const letter of SPANISH_LETTERS) {
-        const newAlphagram = generateAlphagram(processedInput + letter);
-        const matches = trie.findAnagrams(newAlphagram);
-        matches.forEach(match => additionalMatches.add(match));
-      }
-
-      return {
-        exactMatches,
-        wildcardMatches: [],
-        additionalWildcardMatches: Array.from(additionalMatches)
-      };
-    }
-
-    // For wildcard searches
     const startTime = performance.now();
-    const wildcardResults = new Set<string>();
-    const additionalResults = new Set<string>();
+    const exactMatches = new Set<string>();
+    const wildcardMatches = new Set<string>();
+    const additionalMatches = new Set<string>();
 
     // Function to generate all possible combinations with wildcards
     const generateWildcardCombinations = (base: string, remainingWildcards: number): string[] => {
@@ -78,35 +54,58 @@ export const useOfflineAnagramSearch = (searchTerm: string) => {
       return combinations;
     };
 
-    // Generate all possible combinations with the wildcards
-    const combinations = generateWildcardCombinations(processedInput, wildcardCount);
-    
-    // Find matches for each combination
-    for (const combo of combinations) {
-      const alphagram = generateAlphagram(combo);
+    // Handle base search (with or without wildcards)
+    if (wildcardCount === 0) {
+      // For non-wildcard searches, use exact matching
+      const alphagram = generateAlphagram(processedInput);
       const matches = trie.findAnagrams(alphagram);
-      matches.forEach(match => wildcardResults.add(match));
+      matches.forEach(match => exactMatches.add(match));
+    } else {
+      // Generate all possible combinations with the wildcards
+      const combinations = generateWildcardCombinations(processedInput, wildcardCount);
+      for (const combo of combinations) {
+        const alphagram = generateAlphagram(combo);
+        const matches = trie.findAnagrams(alphagram);
+        matches.forEach(match => wildcardMatches.add(match));
+      }
+    }
 
-      // Find additional matches with one more letter
-      for (const letter of SPANISH_LETTERS) {
-        const newAlphagram = generateAlphagram(combo + letter);
-        const additionalMatches = trie.findAnagrams(newAlphagram);
-        additionalMatches.forEach(match => additionalResults.add(match));
+    // Always search for additional letter combinations
+    // For the base letters (without wildcards)
+    const baseForAdditional = processedInput;
+    for (const letter of SPANISH_LETTERS) {
+      const newBase = baseForAdditional + letter;
+      const alphagram = generateAlphagram(newBase);
+      const matches = trie.findAnagrams(alphagram);
+      matches.forEach(match => additionalMatches.add(match));
+    }
+
+    // If we have wildcards, also search additional combinations
+    if (wildcardCount > 0) {
+      const wildcardCombos = generateWildcardCombinations(processedInput, wildcardCount);
+      for (const combo of wildcardCombos) {
+        for (const letter of SPANISH_LETTERS) {
+          const newCombo = combo + letter;
+          const alphagram = generateAlphagram(newCombo);
+          const matches = trie.findAnagrams(alphagram);
+          matches.forEach(match => additionalMatches.add(match));
+        }
       }
     }
 
     const endTime = performance.now();
     
     console.log('Search performance:', {
-      wildcardMatches: wildcardResults.size,
-      additionalMatches: additionalResults.size,
+      exactMatches: exactMatches.size,
+      wildcardMatches: wildcardMatches.size,
+      additionalMatches: additionalMatches.size,
       timeMs: (endTime - startTime).toFixed(2)
     });
 
     return {
-      exactMatches: [],
-      wildcardMatches: Array.from(wildcardResults),
-      additionalWildcardMatches: Array.from(additionalResults)
+      exactMatches: Array.from(exactMatches),
+      wildcardMatches: Array.from(wildcardMatches),
+      additionalWildcardMatches: Array.from(additionalMatches)
     };
   }, [searchTerm, trie, isLoading, error]);
 
