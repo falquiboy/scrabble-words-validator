@@ -185,6 +185,28 @@ export class Trie {
       this.dfs(child, words);
     }
   }
+
+  getWordsStartingWith(prefix: string): string[] {
+    const node = this.findNode(prefix);
+    if (!node) return [];
+    
+    const words: string[] = [];
+    if (node.isEndOfWord) {
+      words.push(node.word);
+    }
+    
+    this.collectWords(node, words);
+    return words;
+  }
+
+  private collectWords(node: TrieNode, words: string[]): void {
+    for (const [, child] of node.children) {
+      if (child.isEndOfWord) {
+        words.push(child.word);
+      }
+      this.collectWords(child, words);
+    }
+  }
 }
 
 // Create a singleton instance

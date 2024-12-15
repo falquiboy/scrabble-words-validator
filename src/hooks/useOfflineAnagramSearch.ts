@@ -10,7 +10,12 @@ export const useOfflineAnagramSearch = (searchTerm: string) => {
 
   const results = useMemo(() => {
     if (!searchTerm || isLoading || error) {
-      return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [], patternMatches: [] };
+      return { 
+        exactMatches: [], 
+        wildcardMatches: [], 
+        additionalWildcardMatches: [], 
+        patternMatches: [] 
+      };
     }
 
     // Check if this is a pattern search (contains '/')
