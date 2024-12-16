@@ -35,7 +35,16 @@ export const findAdditionalMatches = (baseLetters: string, wildcardCount: number
   const matches = new Set<string>();
   
   // For the base letters (without wildcards)
+  // Only use letters that are valid in our internal representation
+  // This includes regular letters and our special digraph characters (Ç, K, W)
   for (const letter of SPANISH_LETTERS) {
+    // Skip 'C' and 'H' as individual letters when adding to avoid CH formation
+    // Skip 'L' to avoid LL formation
+    // Skip 'R' to avoid RR formation
+    if ((letter === 'C' || letter === 'H' || letter === 'L' || letter === 'R')) {
+      continue;
+    }
+
     const newBase = baseLetters + letter;
     const alphagram = generateAlphagram(newBase);
     const baseMatches = wordTrie.findAnagrams(alphagram);
@@ -47,6 +56,11 @@ export const findAdditionalMatches = (baseLetters: string, wildcardCount: number
     const wildcardCombos = generateWildcardCombinations(baseLetters, wildcardCount);
     for (const combo of wildcardCombos) {
       for (const letter of SPANISH_LETTERS) {
+        // Apply the same digraph rules for wildcard combinations
+        if ((letter === 'C' || letter === 'H' || letter === 'L' || letter === 'R')) {
+          continue;
+        }
+
         const newCombo = combo + letter;
         const alphagram = generateAlphagram(newCombo);
         const comboMatches = wordTrie.findAnagrams(alphagram);
