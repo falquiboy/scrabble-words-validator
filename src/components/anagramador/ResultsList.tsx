@@ -19,6 +19,13 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
   const wildcardCount = (searchTerm.match(/\*/g) || []).length;
   const isPatternSearch = searchTerm.includes('/');
 
+  // Helper function to get grid columns based on word length
+  const getGridCols = (wordLength: number) => {
+    if (wordLength <= 2) return "grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10";
+    if (wordLength <= 4) return "grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8";
+    return "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5";
+  };
+
   // Helper function to render word links
   const renderWordLink = (word: string, index: number, prefix: string) => (
     <a
@@ -58,7 +65,7 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
                 <h3 className="font-semibold text-lg">
                   {`${results.patternMatches.length} ${results.patternMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que coinciden con el patrón:`}
                 </h3>
-                <div className="grid grid-cols-3 gap-2">
+                <div className={`grid ${getGridCols(results.patternMatches[0]?.length || 0)} gap-2`}>
                   {results.patternMatches.map((word, index) => renderWordLink(word, index, 'pattern'))}
                 </div>
               </div>
@@ -77,7 +84,7 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
                         `${results.wildcardMatches.length} ${results.wildcardMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} usando todas las letras y ${wildcardCount} ${wildcardCount === 1 ? "comodín" : "comodines"}:`
                       )}
                     </h3>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className={`grid ${getGridCols((wildcardCount === 0 ? results.exactMatches[0]?.length : results.wildcardMatches[0]?.length) || 0)} gap-2`}>
                       {wildcardCount === 0 ? (
                         results.exactMatches.map((word, index) => renderWordLink(word, index, 'exact'))
                       ) : (
@@ -103,7 +110,7 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
                     <h3 className="font-semibold text-lg">
                       {`${results.additionalWildcardMatches.length} ${results.additionalWildcardMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} usando todas las letras más una letra adicional:`}
                     </h3>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className={`grid ${getGridCols(results.additionalWildcardMatches[0]?.length || 0)} gap-2`}>
                       {results.additionalWildcardMatches.map((word, index) => (
                         <a
                           key={`additional-${index}`}
@@ -124,7 +131,7 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
                   <div className="space-y-4">
                     <h3 className="font-semibold text-lg text-gray-600">
                       {!hasAnyMatches 
-                        ? "No se encontraron palabras usando todas las letras. Aquí hay palabras más cortas que se pueden formar:"
+                        ? "La búsqueda no arrojó resultados, pero aquí hay palabras más cortas que se pueden formar:"
                         : "Palabras más cortas que se pueden formar:"}
                     </h3>
                     {Array.from(results.shorterMatches.entries())
@@ -134,7 +141,7 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
                           <h4 className="font-medium text-gray-600">
                             {`Palabras de ${length} letras:`}
                           </h4>
-                          <div className="grid grid-cols-3 gap-2">
+                          <div className={`grid ${getGridCols(length)} gap-2`}>
                             {Array.from(words).map((word, index) => renderWordLink(word, index, `shorter-${length}`))}
                           </div>
                         </div>
