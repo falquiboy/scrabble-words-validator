@@ -1,19 +1,54 @@
-// Spanish alphabet including digraphs in specified order
-export const SPANISH_LETTERS = [
-  "A", "B", "C", "Ç", "D", "E", "F", "G", "H", "I", "J", "L", "K", "M",
-  "N", "Ñ", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"
-];
+// Special characters used to represent digraphs internally
+const DIGRAPH_CH = 'Ç';
+const DIGRAPH_LL = 'K';
+const DIGRAPH_RR = 'W';
 
-// Process only first instance of each digraph
 export const processDigraphs = (input: string): string => {
   let result = input.toUpperCase();
   
-  // Process only first instance of each digraph
-  result = result.replace(/CH/, 'Ç');  // First CH -> Ç
-  result = result.replace(/LL/, 'K');  // First LL -> K
-  result = result.replace(/RR/, 'W');  // First RR -> W
+  // Process only complete digraphs
+  result = result.replace(/CH/g, DIGRAPH_CH);
+  result = result.replace(/LL/g, DIGRAPH_LL);
+  result = result.replace(/RR/g, DIGRAPH_RR);
+  
+  // Check for adjacent letters that could form invalid digraphs
+  const chars = result.split('');
+  for (let i = 0; i < chars.length - 1; i++) {
+    // Check for potential CH
+    if (chars[i] === 'C' && chars[i + 1] === 'H') {
+      return ''; // Invalid: adjacent C and H would form CH
+    }
+    // Check for potential LL
+    if (chars[i] === 'L' && chars[i + 1] === 'L') {
+      return ''; // Invalid: adjacent Ls would form LL
+    }
+    // Check for potential RR
+    if (chars[i] === 'R' && chars[i + 1] === 'R') {
+      return ''; // Invalid: adjacent Rs would form RR
+    }
+  }
   
   return result;
+};
+
+// Helper function to check if input has adjacent letters that could form a digraph
+export const hasAdjacentDigraphLetters = (input: string): { 
+  hasRR: boolean;
+  hasLL: boolean;
+  hasCH: boolean;
+} => {
+  const chars = input.toUpperCase().split('');
+  let hasRR = false;
+  let hasLL = false;
+  let hasCH = false;
+
+  for (let i = 0; i < chars.length - 1; i++) {
+    if (chars[i] === 'R' && chars[i + 1] === 'R') hasRR = true;
+    if (chars[i] === 'L' && chars[i + 1] === 'L') hasLL = true;
+    if (chars[i] === 'C' && chars[i + 1] === 'H') hasCH = true;
+  }
+
+  return { hasRR, hasLL, hasCH };
 };
 
 // Custom alphabet order for sorting
@@ -36,7 +71,9 @@ export const toDisplayFormat = (word: string): string => {
     .replace(/W/g, 'RR');
 };
 
-// Get the internal length of a word (after processing digraphs)
-export const getInternalLength = (word: string): number => {
-  return processDigraphs(word).length;
+// Export constants for use in other files
+export const DIGRAPHS = {
+  CH: DIGRAPH_CH,
+  LL: DIGRAPH_LL,
+  RR: DIGRAPH_RR
 };
