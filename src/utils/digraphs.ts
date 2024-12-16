@@ -1,54 +1,36 @@
 // Special characters used to represent digraphs internally
-const DIGRAPH_CH = 'Ç';
-const DIGRAPH_LL = 'K';
-const DIGRAPH_RR = 'W';
+export const DIGRAPH_CH = 'Ç';
+export const DIGRAPH_LL = 'K';
+export const DIGRAPH_RR = 'W';
 
+// Spanish alphabet including digraphs in specified order
+export const SPANISH_LETTERS = [
+  'A', 'B', 'C', DIGRAPH_CH, 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'L', 
+  DIGRAPH_LL, 'M', 'N', 'Ñ', 'O', 'P', 'Q', 'R', DIGRAPH_RR, 'S', 'T', 
+  'U', 'V', 'X', 'Y', 'Z'
+];
+
+// Process only first instance of each digraph
 export const processDigraphs = (input: string): string => {
   let result = input.toUpperCase();
   
-  // Process only complete digraphs
-  result = result.replace(/CH/g, DIGRAPH_CH);
-  result = result.replace(/LL/g, DIGRAPH_LL);
-  result = result.replace(/RR/g, DIGRAPH_RR);
+  // Process only first instance of each digraph
+  const firstCH = result.indexOf('CH');
+  if (firstCH !== -1) {
+    result = result.substring(0, firstCH) + DIGRAPH_CH + result.substring(firstCH + 2);
+  }
   
-  // Check for adjacent letters that could form invalid digraphs
-  const chars = result.split('');
-  for (let i = 0; i < chars.length - 1; i++) {
-    // Check for potential CH
-    if (chars[i] === 'C' && chars[i + 1] === 'H') {
-      return ''; // Invalid: adjacent C and H would form CH
-    }
-    // Check for potential LL
-    if (chars[i] === 'L' && chars[i + 1] === 'L') {
-      return ''; // Invalid: adjacent Ls would form LL
-    }
-    // Check for potential RR
-    if (chars[i] === 'R' && chars[i + 1] === 'R') {
-      return ''; // Invalid: adjacent Rs would form RR
-    }
+  const firstLL = result.indexOf('LL');
+  if (firstLL !== -1) {
+    result = result.substring(0, firstLL) + DIGRAPH_LL + result.substring(firstLL + 2);
+  }
+  
+  const firstRR = result.indexOf('RR');
+  if (firstRR !== -1) {
+    result = result.substring(0, firstRR) + DIGRAPH_RR + result.substring(firstRR + 2);
   }
   
   return result;
-};
-
-// Helper function to check if input has adjacent letters that could form a digraph
-export const hasAdjacentDigraphLetters = (input: string): { 
-  hasRR: boolean;
-  hasLL: boolean;
-  hasCH: boolean;
-} => {
-  const chars = input.toUpperCase().split('');
-  let hasRR = false;
-  let hasLL = false;
-  let hasCH = false;
-
-  for (let i = 0; i < chars.length - 1; i++) {
-    if (chars[i] === 'R' && chars[i + 1] === 'R') hasRR = true;
-    if (chars[i] === 'L' && chars[i + 1] === 'L') hasLL = true;
-    if (chars[i] === 'C' && chars[i + 1] === 'H') hasCH = true;
-  }
-
-  return { hasRR, hasLL, hasCH };
 };
 
 // Custom alphabet order for sorting
@@ -71,9 +53,27 @@ export const toDisplayFormat = (word: string): string => {
     .replace(/W/g, 'RR');
 };
 
-// Export constants for use in other files
-export const DIGRAPHS = {
-  CH: DIGRAPH_CH,
-  LL: DIGRAPH_LL,
-  RR: DIGRAPH_RR
+// Helper function to check if input has adjacent letters that could form a digraph
+export const hasAdjacentDigraphLetters = (input: string): { 
+  hasRR: boolean;
+  hasLL: boolean;
+  hasCH: boolean;
+} => {
+  const chars = input.toUpperCase().split('');
+  let hasRR = false;
+  let hasLL = false;
+  let hasCH = false;
+
+  for (let i = 0; i < chars.length - 1; i++) {
+    if (chars[i] === 'R' && chars[i + 1] === 'R') hasRR = true;
+    if (chars[i] === 'L' && chars[i + 1] === 'L') hasLL = true;
+    if (chars[i] === 'C' && chars[i + 1] === 'H') hasCH = true;
+  }
+
+  return { hasRR, hasLL, hasCH };
+};
+
+// Get internal length of a word (considering digraphs)
+export const getInternalLength = (word: string): number => {
+  return processDigraphs(word).length;
 };
