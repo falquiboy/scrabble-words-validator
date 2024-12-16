@@ -1,9 +1,18 @@
+// Spanish alphabet including digraphs in specified order
+export const SPANISH_LETTERS = [
+  "A", "B", "C", "Ç", "D", "E", "F", "G", "H", "I", "J", "L", "K", "M",
+  "N", "Ñ", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"
+];
+
+// Process only first instance of each digraph
 export const processDigraphs = (input: string): string => {
   let result = input.toUpperCase();
+  
   // Process only first instance of each digraph
-  result = result.replace(/CH/, 'Ç');
-  result = result.replace(/LL/, 'K');
-  result = result.replace(/RR/, 'W');
+  result = result.replace(/CH/, 'Ç');  // First CH -> Ç
+  result = result.replace(/LL/, 'K');  // First LL -> K
+  result = result.replace(/RR/, 'W');  // First RR -> W
+  
   return result;
 };
 
@@ -25,4 +34,9 @@ export const toDisplayFormat = (word: string): string => {
     .replace(/Ç/g, 'CH')
     .replace(/K/g, 'LL')
     .replace(/W/g, 'RR');
+};
+
+// Get the internal length of a word (after processing digraphs)
+export const getInternalLength = (word: string): number => {
+  return processDigraphs(word).length;
 };

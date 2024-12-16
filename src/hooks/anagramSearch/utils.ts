@@ -1,17 +1,4 @@
-import { SPANISH_LETTERS } from './constants';
-import { processDigraphs, generateAlphagram } from '@/utils/digraphs';
-import { wordTrie } from '@/utils/trie';
-
-export const generateWildcardCombinations = (base: string, remainingWildcards: number): string[] => {
-  if (remainingWildcards === 0) return [base];
-  
-  const combinations: string[] = [];
-  for (const letter of SPANISH_LETTERS) {
-    const newBase = base + letter;
-    combinations.push(...generateWildcardCombinations(newBase, remainingWildcards - 1));
-  }
-  return combinations;
-};
+import { SPANISH_LETTERS, processDigraphs, generateAlphagram, toDisplayFormat } from '@/utils/digraphs';
 
 export const findExactMatches = (processedInput: string): Set<string> => {
   const alphagram = generateAlphagram(processedInput);
@@ -60,7 +47,7 @@ export const findAdditionalMatches = (baseLetters: string, wildcardCount: number
 
 export const findShorterWords = (processedInput: string): Map<number, Set<string>> => {
   const results = new Map<number, Set<string>>();
-  const minLength = 2; // Changed from Math.max(2, processedInput.length - 2) to allow all words >= 2 letters
+  const minLength = 2;
   
   // Generate all possible combinations of letters for each length
   for (let len = processedInput.length - 1; len >= minLength; len--) {
@@ -88,4 +75,15 @@ export const findShorterWords = (processedInput: string): Map<number, Set<string
   }
   
   return results;
+};
+
+const generateWildcardCombinations = (base: string, remainingWildcards: number): string[] => {
+  if (remainingWildcards === 0) return [base];
+  
+  const combinations: string[] = [];
+  for (const letter of SPANISH_LETTERS) {
+    const newBase = base + letter;
+    combinations.push(...generateWildcardCombinations(newBase, remainingWildcards - 1));
+  }
+  return combinations;
 };

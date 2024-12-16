@@ -4,6 +4,7 @@ import ResultsList from "./anagramador/ResultsList";
 import { useOfflineAnagramSearch } from "@/hooks/useOfflineAnagramSearch";
 import { highlightWildcardLetter } from "@/utils/wildcardHighlighting";
 import { useGlobalTrie } from "@/hooks/useGlobalTrie";
+import { processDigraphs, toDisplayFormat, getInternalLength } from "@/utils/digraphs";
 
 const Anagramador = () => {
   const [letters, setLetters] = useState("");
@@ -24,7 +25,9 @@ const Anagramador = () => {
   // Handle search
   const handleSearch = () => {
     if (letters.trim()) {
-      setSearchTerm(letters);
+      const processedLetters = processDigraphs(letters);
+      console.log('Search term:', letters, 'Internal representation:', processedLetters, 'Internal length:', getInternalLength(letters));
+      setSearchTerm(processedLetters);
     }
   };
 
@@ -44,7 +47,8 @@ const Anagramador = () => {
 
   // Create a wrapper function to handle the HTML dangerously
   const renderHighlightedWord = (word: string, originalWord: string) => {
-    const highlightedHtml = highlightWildcardLetter(word, originalWord);
+    const displayWord = toDisplayFormat(word);
+    const highlightedHtml = highlightWildcardLetter(displayWord, originalWord);
     return <span dangerouslySetInnerHTML={{ __html: highlightedHtml }} />;
   };
 
@@ -72,11 +76,15 @@ const Anagramador = () => {
         isLoading={isSearchLoading}
         searchTerm={searchTerm}
         results={{
-          exactMatches: results?.exactMatches || [],
-          wildcardMatches: results?.wildcardMatches || [],
-          additionalWildcardMatches: results?.additionalWildcardMatches || [],
-          patternMatches: results?.patternMatches || [],
-          shorterMatches: results?.shorterMatches || new Map()
+          exactMatches: results?.exactMatches.map(toDisplayFormat) || [],
+          wildcardMatches: results?.wildcardMatches.map(toDisplayFormat) || [],
+          additionalWildcardMatches: results?.additionalWildcardMatches.map(toDisplayFormat) || [],
+          patternMatches: results?.patternMatches.map(toDisplayFormat) || [],
+          shorterMatches: new Map(
+            Array.from(results?.shorterMatches || new Map()).map(
+              ([length, words]) => [length, new Set(Array.from(words).map(toDisplayFormat))]
+            )
+          )
         }}
         highlightWildcardLetter={renderHighlightedWord}
       />
