@@ -59,12 +59,26 @@ export const findAdditionalMatches = (baseLetters: string, wildcardCount: number
 };
 
 const shouldExcludeWord = (word: string, inputDigraphs: ReturnType<typeof hasAdjacentDigraphLetters>): boolean => {
-  // If the input has RR, allow words with RR. Otherwise, exclude them.
-  if (!inputDigraphs.hasRR && word.includes('RR')) return true;
-  // If the input has LL, allow words with LL. Otherwise, exclude them.
-  if (!inputDigraphs.hasLL && word.includes('LL')) return true;
-  // If the input has CH, allow words with CH. Otherwise, exclude them.
-  if (!inputDigraphs.hasCH && word.includes('CH')) return true;
+  // Only exclude words with digraphs if the input explicitly has those digraphs
+  // For single R/L/C/H letters, we should allow them in any position
+  if (word.includes('RR') && !inputDigraphs.hasRR) {
+    // Check if it's actually a digraph and not just two Rs in different positions
+    for (let i = 0; i < word.length - 1; i++) {
+      if (word[i] === 'R' && word[i + 1] === 'R') return true;
+    }
+  }
+  if (word.includes('LL') && !inputDigraphs.hasLL) {
+    // Check if it's actually a digraph and not just two Ls in different positions
+    for (let i = 0; i < word.length - 1; i++) {
+      if (word[i] === 'L' && word[i + 1] === 'L') return true;
+    }
+  }
+  if (word.includes('CH') && !inputDigraphs.hasCH) {
+    // Check if it's actually a digraph and not just C and H in different positions
+    for (let i = 0; i < word.length - 1; i++) {
+      if (word[i] === 'C' && word[i + 1] === 'H') return true;
+    }
+  }
   
   return false;
 };
