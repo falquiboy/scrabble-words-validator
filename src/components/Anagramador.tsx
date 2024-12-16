@@ -19,7 +19,8 @@ const Anagramador = () => {
   const { data: results, isLoading: isSearchLoading } = useOfflineAnagramSearch(searchTerm);
 
   const handleInputChange = (value: string) => {
-    const sanitizedValue = value.replace(/[^a-zA-ZÑñ*/.]/g, '');
+    // Updated regex to allow hyphens along with letters and wildcards
+    const sanitizedValue = value.replace(/[^a-zA-ZÑñ*\-/.]/g, '');
     setLetters(sanitizedValue.toUpperCase());
   };
 
