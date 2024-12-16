@@ -3,16 +3,19 @@ import SearchInput from "./anagramador/SearchInput";
 import ResultsList from "./anagramador/ResultsList";
 import { useOfflineAnagramSearch } from "@/hooks/useOfflineAnagramSearch";
 import { highlightWildcardLetter } from "@/utils/wildcardHighlighting";
+import { useGlobalTrie } from "@/hooks/useGlobalTrie";
 
 const Anagramador = () => {
   const [letters, setLetters] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Query for words using offline search hook
-  const { data: results, isLoading } = useOfflineAnagramSearch(searchTerm);
+  // Use global Trie
+  const { isLoading: isTrieLoading } = useGlobalTrie();
 
-  // Handle input changes
+  // Query for words using offline search hook
+  const { data: results, isLoading: isSearchLoading } = useOfflineAnagramSearch(searchTerm);
+
   const handleInputChange = (value: string) => {
     const sanitizedValue = value.replace(/[^a-zA-ZÑñ*/.]/g, '');
     setLetters(sanitizedValue.toUpperCase());
@@ -49,6 +52,12 @@ const Anagramador = () => {
     inputRef.current?.focus();
   }, []);
 
+  if (isTrieLoading) {
+    return <div className="flex items-center justify-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+    </div>;
+  }
+
   return (
     <div className="w-full max-w-md space-y-4 px-4">
       <SearchInput
@@ -60,7 +69,7 @@ const Anagramador = () => {
         inputRef={inputRef}
       />
       <ResultsList
-        isLoading={isLoading}
+        isLoading={isSearchLoading}
         searchTerm={searchTerm}
         results={{
           exactMatches: results?.exactMatches || [],

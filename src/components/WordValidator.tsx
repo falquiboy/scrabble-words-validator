@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { processDigraphs, toDisplayFormat } from "@/utils/digraphs";
-import { useWordDatabase } from "@/hooks/useWordDatabase";
-import { useWordTrie } from "@/hooks/useWordTrie";
+import { processDigraphs } from "@/utils/digraphs";
+import { useGlobalTrie } from "@/hooks/useGlobalTrie";
 import { wordTrie } from "@/utils/trie";
 import LoadingState from "./word-validator/LoadingState";
 import Header from "./word-validator/Header";
@@ -17,9 +16,8 @@ const WordValidator = () => {
   }>({ isValid: false, checked: false, words: [] });
   const [isEditing, setIsEditing] = useState(false);
 
-  // Initialize both IndexedDB and Trie
-  const { isLoading: isDBLoading } = useWordDatabase();
-  const { isLoading: isTrieLoading } = useWordTrie();
+  // Use global Trie
+  const { isLoading: isTrieLoading } = useGlobalTrie();
 
   const handleValidate = async () => {
     if (!word.trim()) return;
@@ -28,29 +26,20 @@ const WordValidator = () => {
     try {
       const words = word.trim().split(" ");
       const processedWords = words.map(w => {
-        // First convert to uppercase and preserve Ñ
         let processed = w.toUpperCase();
         
-        // Special handling for Ñ - preserve it exactly as is
         processed = processed.split('').map(char => {
           if (char === 'Ñ' || char === 'ñ') return 'Ñ';
-          // For non-Ñ characters, remove accents
           return char
             .normalize('NFD')
             .replace(/[\u0300-\u036f]/g, '')
             .normalize('NFC');
         }).join('');
         
-        // Log the state of the word before digraph processing
         console.log('Word before digraph processing:', processed);
-        
-        // Process digraphs (CH -> Ç, LL -> K, RR -> W)
         processed = processDigraphs(processed);
-        
         console.log('Original word:', w);
         console.log('Final processed word:', processed);
-        
-        // Log the actual Trie content for debugging
         console.log('Words in Trie containing this word:', 
           Array.from(wordTrie.getWordsStartingWith(processed))
         );
@@ -58,9 +47,8 @@ const WordValidator = () => {
         return processed;
       });
       
-      // Use Trie for fast validation
       const isValid = processedWords.every(w => {
-        if (!w) return false; // Skip empty strings
+        if (!w) return false;
         console.log('Processing word for validation:', w);
         const result = wordTrie.search(w);
         console.log('Validation result for', w, ':', result);
@@ -105,7 +93,7 @@ const WordValidator = () => {
   };
 
   // Show loading state while initializing
-  if (isDBLoading || isTrieLoading) {
+  if (isTrieLoading) {
     return <LoadingState />;
   }
 
