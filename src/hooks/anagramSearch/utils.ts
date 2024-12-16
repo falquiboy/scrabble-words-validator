@@ -1,4 +1,5 @@
 import { SPANISH_LETTERS, processDigraphs, generateAlphagram, toDisplayFormat } from '@/utils/digraphs';
+import { wordTrie } from '@/utils/trie';
 
 export const findExactMatches = (processedInput: string): Set<string> => {
   const alphagram = generateAlphagram(processedInput);
