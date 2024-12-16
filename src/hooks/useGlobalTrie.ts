@@ -3,6 +3,7 @@ import { wordDB } from "@/utils/wordDatabase";
 import { wordTrie } from "@/utils/trie";
 import { processDigraphs } from "@/utils/digraphs";
 import { useToast } from "@/hooks/use-toast";
+import { useWordDatabase } from "./useWordDatabase";
 
 const initializeTrie = async () => {
   // Initialize database first
@@ -30,7 +31,8 @@ const initializeTrie = async () => {
   const words = await wordDB.getAllWords();
   
   if (words.length === 0) {
-    throw new Error('No words found in IndexedDB');
+    console.log('No words in IndexedDB, waiting for words to be loaded...');
+    return { trie: wordTrie, wordCount: 0, needsWords: true };
   }
   
   // Clear trie before rebuilding
@@ -73,18 +75,29 @@ const initializeTrie = async () => {
 
 export const useGlobalTrie = () => {
   const { toast } = useToast();
+  const { isLoading: isLoadingWords } = useWordDatabase();
   
-  return useQuery({
+  const { data, isLoading: isLoadingTrie, error } = useQuery({
     queryKey: ['globalTrie'],
     queryFn: initializeTrie,
-    staleTime: Infinity, // Never mark as stale
-    gcTime: Infinity,   // Changed from cacheTime to gcTime
+    staleTime: Infinity,
+    gcTime: Infinity,
+    enabled: !isLoadingWords, // Only run after words are loaded
+    retry: (failureCount, error) => {
+      // Retry if we need words and they're still loading
+      if (error?.needsWords && isLoadingWords) {
+        return true;
+      }
+      return failureCount < 3;
+    },
     meta: {
       onSuccess: (data: { trie: typeof wordTrie; wordCount: number }) => {
-        toast({
-          title: "Diccionario cargado",
-          description: `${data.wordCount.toLocaleString()} palabras disponibles para búsqueda.`,
-        });
+        if (data.wordCount > 0) {
+          toast({
+            title: "Diccionario cargado",
+            description: `${data.wordCount.toLocaleString()} palabras disponibles para búsqueda.`,
+          });
+        }
       },
       onError: () => {
         toast({
@@ -95,4 +108,11 @@ export const useGlobalTrie = () => {
       }
     }
   });
+
+  return {
+    trie: data?.trie || wordTrie,
+    wordCount: data?.wordCount || 0,
+    isLoading: isLoadingTrie || isLoadingWords,
+    error
+  };
 };
