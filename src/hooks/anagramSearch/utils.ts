@@ -59,11 +59,11 @@ export const findAdditionalMatches = (baseLetters: string, wildcardCount: number
 };
 
 const shouldExcludeWord = (word: string, inputDigraphs: ReturnType<typeof hasAdjacentDigraphLetters>): boolean => {
-  // If the input doesn't have adjacent RR but the word contains RR, exclude it
+  // If the input has RR, allow words with RR. Otherwise, exclude them.
   if (!inputDigraphs.hasRR && word.includes('RR')) return true;
-  // If the input doesn't have adjacent LL but the word contains LL, exclude it
+  // If the input has LL, allow words with LL. Otherwise, exclude them.
   if (!inputDigraphs.hasLL && word.includes('LL')) return true;
-  // If the input doesn't have adjacent CH but the word contains CH, exclude it
+  // If the input has CH, allow words with CH. Otherwise, exclude them.
   if (!inputDigraphs.hasCH && word.includes('CH')) return true;
   
   return false;
@@ -72,6 +72,8 @@ const shouldExcludeWord = (word: string, inputDigraphs: ReturnType<typeof hasAdj
 export const findShorterWords = (processedInput: string): Map<number, Set<string>> => {
   const results = new Map<number, Set<string>>();
   const minLength = 2;
+  
+  // Check for digraphs in the original input (before processing)
   const inputDigraphs = hasAdjacentDigraphLetters(processedInput);
   
   // Generate all possible combinations of letters for each length
