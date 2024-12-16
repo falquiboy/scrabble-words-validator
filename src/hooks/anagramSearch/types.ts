@@ -3,11 +3,10 @@ export interface SearchResults {
   wildcardMatches: string[];
   additionalWildcardMatches: string[];
   patternMatches: string[];
-  shorterMatches: Map<number, Set<string>>;
 }
 
 export interface SearchState {
   data: SearchResults;
   isLoading: boolean;
-  error: Error | null;
+  error: string | null;
 }
