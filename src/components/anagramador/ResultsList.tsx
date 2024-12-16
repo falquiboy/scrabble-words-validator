@@ -32,6 +32,14 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
     </a>
   );
 
+  // Check if we have any matches at all
+  const hasExactMatches = results?.exactMatches.length > 0;
+  const hasWildcardMatches = results?.wildcardMatches.length > 0;
+  const hasAdditionalMatches = results?.additionalWildcardMatches.length > 0;
+  const hasPatternMatches = results?.patternMatches.length > 0;
+  const hasShorterMatches = results?.shorterMatches.size > 0;
+  const hasAnyMatches = hasExactMatches || hasWildcardMatches || hasAdditionalMatches || hasPatternMatches;
+
   return (
     <ScrollArea className="h-[calc(100vh-12rem)]">
       <div className="space-y-4">
@@ -41,15 +49,11 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
             Buscando anagramas...
           </div>
         ) : results && (
-          results.patternMatches.length > 0 || 
-          results.exactMatches.length > 0 || 
-          results.wildcardMatches.length > 0 || 
-          results.additionalWildcardMatches.length > 0 ||
-          results.shorterMatches.size > 0
+          hasPatternMatches || hasAnyMatches || hasShorterMatches
         ) ? (
           <>
             {/* Pattern matches section */}
-            {isPatternSearch && results.patternMatches.length > 0 && (
+            {isPatternSearch && hasPatternMatches && (
               <div className="space-y-2">
                 <h3 className="font-semibold text-lg">
                   {`${results.patternMatches.length} ${results.patternMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que coinciden con el patrón:`}
@@ -64,7 +68,7 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
             {!isPatternSearch && (
               <>
                 {/* First section: Results with exact letters or wildcards */}
-                {(results.exactMatches.length > 0 || results.wildcardMatches.length > 0) && (
+                {(hasExactMatches || hasWildcardMatches) && (
                   <div className="space-y-2">
                     <h3 className="font-semibold text-lg">
                       {wildcardCount === 0 ? (
@@ -94,7 +98,7 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
                 )}
 
                 {/* Second section: Results with one additional letter */}
-                {results.additionalWildcardMatches.length > 0 && (
+                {hasAdditionalMatches && (
                   <div className="space-y-2">
                     <h3 className="font-semibold text-lg">
                       {`${results.additionalWildcardMatches.length} ${results.additionalWildcardMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} usando todas las letras más una letra adicional:`}
@@ -116,10 +120,12 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
                 )}
 
                 {/* Third section: Shorter words */}
-                {results.shorterMatches.size > 0 && (
+                {hasShorterMatches && (
                   <div className="space-y-4">
                     <h3 className="font-semibold text-lg text-gray-600">
-                      Palabras más cortas que se pueden formar:
+                      {!hasAnyMatches 
+                        ? "No se encontraron palabras usando todas las letras. Aquí hay palabras más cortas que se pueden formar:"
+                        : "Palabras más cortas que se pueden formar:"}
                     </h3>
                     {Array.from(results.shorterMatches.entries())
                       .sort(([lenA], [lenB]) => lenB - lenA) // Sort by length descending

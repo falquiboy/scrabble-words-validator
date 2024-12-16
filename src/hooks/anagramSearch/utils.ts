@@ -60,7 +60,7 @@ export const findAdditionalMatches = (baseLetters: string, wildcardCount: number
 
 export const findShorterWords = (processedInput: string): Map<number, Set<string>> => {
   const results = new Map<number, Set<string>>();
-  const minLength = Math.max(2, processedInput.length - 2); // Don't go shorter than 2 letters
+  const minLength = 2; // Changed from Math.max(2, processedInput.length - 2) to allow all words >= 2 letters
   
   // Generate all possible combinations of letters for each length
   for (let len = processedInput.length - 1; len >= minLength; len--) {
