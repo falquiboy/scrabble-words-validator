@@ -23,9 +23,9 @@ export const useWordDatabase = () => {
         const existingWords = await wordDB.getAllWords();
         console.log('Checking existing words in IndexedDB:', existingWords.length);
         
-        // Only proceed with loading if we have less than 100,000 words
+        // Only proceed with loading if we have less than 600,000 words
         // This is a safety check since we expect around 640,000 words
-        if (existingWords.length > 100000) {
+        if (existingWords.length > 600000) {
           console.log('Words already in IndexedDB:', existingWords.length);
           setIsLoading(false);
           return;
