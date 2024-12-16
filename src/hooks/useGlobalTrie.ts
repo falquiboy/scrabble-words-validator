@@ -5,6 +5,11 @@ import { processDigraphs } from "@/utils/digraphs";
 import { useToast } from "@/hooks/use-toast";
 import { useWordDatabase } from "./useWordDatabase";
 
+// Custom error type for Trie initialization
+interface TrieInitError extends Error {
+  needsWords?: boolean;
+}
+
 const initializeTrie = async () => {
   // Initialize database first
   await wordDB.init();
@@ -32,7 +37,9 @@ const initializeTrie = async () => {
   
   if (words.length === 0) {
     console.log('No words in IndexedDB, waiting for words to be loaded...');
-    return { trie: wordTrie, wordCount: 0, needsWords: true };
+    const error = new Error('No words available') as TrieInitError;
+    error.needsWords = true;
+    throw error;
   }
   
   // Clear trie before rebuilding
@@ -84,8 +91,10 @@ export const useGlobalTrie = () => {
     gcTime: Infinity,
     enabled: !isLoadingWords, // Only run after words are loaded
     retry: (failureCount, error) => {
+      // Type assertion for our custom error
+      const trieError = error as TrieInitError;
       // Retry if we need words and they're still loading
-      if (error?.needsWords && isLoadingWords) {
+      if (trieError.needsWords && isLoadingWords) {
         return true;
       }
       return failureCount < 3;
