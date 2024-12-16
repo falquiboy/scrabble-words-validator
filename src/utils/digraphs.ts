@@ -31,6 +31,26 @@ export const processDigraphs = (input: string): string => {
   return result;
 };
 
+// Helper function to check if input has adjacent letters that could form a digraph
+export const hasAdjacentDigraphLetters = (input: string): { 
+  hasRR: boolean;
+  hasLL: boolean;
+  hasCH: boolean;
+} => {
+  const chars = input.toUpperCase().split('');
+  let hasRR = false;
+  let hasLL = false;
+  let hasCH = false;
+
+  for (let i = 0; i < chars.length - 1; i++) {
+    if (chars[i] === 'R' && chars[i + 1] === 'R') hasRR = true;
+    if (chars[i] === 'L' && chars[i + 1] === 'L') hasLL = true;
+    if (chars[i] === 'C' && chars[i + 1] === 'H') hasCH = true;
+  }
+
+  return { hasRR, hasLL, hasCH };
+};
+
 // Custom alphabet order for sorting
 const CUSTOM_ALPHABET = "AEIOUBCÇDFGHJLKMNÑPQRWSTVXYZ";
 

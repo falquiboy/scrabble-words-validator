@@ -1,5 +1,5 @@
 import { SPANISH_LETTERS } from './constants';
-import { processDigraphs, generateAlphagram } from '@/utils/digraphs';
+import { processDigraphs, generateAlphagram, hasAdjacentDigraphLetters } from '@/utils/digraphs';
 import { wordTrie } from '@/utils/trie';
 
 export const generateWildcardCombinations = (base: string, remainingWildcards: number): string[] => {
@@ -58,9 +58,21 @@ export const findAdditionalMatches = (baseLetters: string, wildcardCount: number
   return matches;
 };
 
+const shouldExcludeWord = (word: string, inputDigraphs: ReturnType<typeof hasAdjacentDigraphLetters>): boolean => {
+  // If the input doesn't have adjacent RR but the word contains RR, exclude it
+  if (!inputDigraphs.hasRR && word.includes('RR')) return true;
+  // If the input doesn't have adjacent LL but the word contains LL, exclude it
+  if (!inputDigraphs.hasLL && word.includes('LL')) return true;
+  // If the input doesn't have adjacent CH but the word contains CH, exclude it
+  if (!inputDigraphs.hasCH && word.includes('CH')) return true;
+  
+  return false;
+};
+
 export const findShorterWords = (processedInput: string): Map<number, Set<string>> => {
   const results = new Map<number, Set<string>>();
-  const minLength = 2; // Changed from Math.max(2, processedInput.length - 2) to allow all words >= 2 letters
+  const minLength = 2;
+  const inputDigraphs = hasAdjacentDigraphLetters(processedInput);
   
   // Generate all possible combinations of letters for each length
   for (let len = processedInput.length - 1; len >= minLength; len--) {
@@ -71,7 +83,12 @@ export const findShorterWords = (processedInput: string): Map<number, Set<string
       if (current.length === length) {
         const alphagram = generateAlphagram(current);
         const words = wordTrie.findAnagrams(alphagram);
-        words.forEach(word => matches.add(word));
+        words.forEach(word => {
+          // Only add the word if it doesn't contain unwanted digraphs
+          if (!shouldExcludeWord(word, inputDigraphs)) {
+            matches.add(word);
+          }
+        });
         return;
       }
       
