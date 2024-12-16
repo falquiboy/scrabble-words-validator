@@ -1,6 +1,3 @@
-import { TrieNode } from './types';
-import { findNode } from './nodeOperations';
-
 export const searchExact = (root: TrieNode, word: string): boolean => {
   const node = findNode(root, word);
   return node !== null && node.isEndOfWord;
@@ -62,8 +59,8 @@ const canMakeWordWithRack = (word: string, rackLetters: string, pattern: string)
       }
     }
 
-    // For dots or positions we need to check
-    if (patternArray[i] === '.' || isHyphenPattern) {
+    // For question marks or positions we need to check
+    if (patternArray[i] === '?' || isHyphenPattern) {
       const letterIndex = rackLettersCopy.indexOf(word[i]);
       if (letterIndex === -1) {
         return false;
