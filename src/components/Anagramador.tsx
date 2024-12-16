@@ -75,7 +75,8 @@ const Anagramador = () => {
           exactMatches: results?.exactMatches || [],
           wildcardMatches: results?.wildcardMatches || [],
           additionalWildcardMatches: results?.additionalWildcardMatches || [],
-          patternMatches: results?.patternMatches || []
+          patternMatches: results?.patternMatches || [],
+          shorterMatches: results?.shorterMatches || new Map()
         }}
         highlightWildcardLetter={renderHighlightedWord}
       />

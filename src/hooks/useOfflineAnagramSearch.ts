@@ -114,6 +114,6 @@ export const useOfflineAnagramSearch = (searchTerm: string): SearchState => {
   return {
     data: results,
     isLoading,
-    error
+    error: error instanceof Error ? error : new Error(String(error))
   };
 };
