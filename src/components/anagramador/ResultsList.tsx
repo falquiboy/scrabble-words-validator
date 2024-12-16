@@ -9,6 +9,7 @@ interface ResultsListProps {
     wildcardMatches: string[];
     additionalWildcardMatches: string[];
     patternMatches: string[];
+    shorterMatches: Map<number, Set<string>>;
   } | undefined;
   highlightWildcardLetter: (word: string, originalWord: string) => React.ReactNode;
 }
@@ -17,6 +18,19 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
   // Count wildcards in search term
   const wildcardCount = (searchTerm.match(/\*/g) || []).length;
   const isPatternSearch = searchTerm.includes('/');
+
+  // Helper function to render word links
+  const renderWordLink = (word: string, index: number, prefix: string) => (
+    <a
+      key={`${prefix}-${index}`}
+      href={`https://dle.rae.es/?w=${word}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="block hover:bg-gray-100 p-1.5 rounded transition-colors text-lg w-full text-left"
+    >
+      {word}
+    </a>
+  );
 
   return (
     <ScrollArea className="h-[calc(100vh-12rem)]">
@@ -30,7 +44,8 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
           results.patternMatches.length > 0 || 
           results.exactMatches.length > 0 || 
           results.wildcardMatches.length > 0 || 
-          results.additionalWildcardMatches.length > 0
+          results.additionalWildcardMatches.length > 0 ||
+          results.shorterMatches.size > 0
         ) ? (
           <>
             {/* Pattern matches section */}
@@ -40,17 +55,7 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
                   {`${results.patternMatches.length} ${results.patternMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que coinciden con el patrón:`}
                 </h3>
                 <div className="grid grid-cols-3 gap-2">
-                  {results.patternMatches.map((word, index) => (
-                    <a
-                      key={`pattern-${index}`}
-                      href={`https://dle.rae.es/?w=${word}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block hover:bg-gray-100 p-1.5 rounded transition-colors text-lg w-full text-left"
-                    >
-                      {word}
-                    </a>
-                  ))}
+                  {results.patternMatches.map((word, index) => renderWordLink(word, index, 'pattern'))}
                 </div>
               </div>
             )}
@@ -70,17 +75,7 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
                     </h3>
                     <div className="grid grid-cols-3 gap-2">
                       {wildcardCount === 0 ? (
-                        results.exactMatches.map((word, index) => (
-                          <a
-                            key={`exact-${index}`}
-                            href={`https://dle.rae.es/?w=${word}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block hover:bg-gray-100 p-1.5 rounded transition-colors text-lg w-full text-left"
-                          >
-                            {word}
-                          </a>
-                        ))
+                        results.exactMatches.map((word, index) => renderWordLink(word, index, 'exact'))
                       ) : (
                         results.wildcardMatches.map((word, index) => (
                           <a
@@ -117,6 +112,27 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
                         </a>
                       ))}
                     </div>
+                  </div>
+                )}
+
+                {/* Third section: Shorter words */}
+                {results.shorterMatches.size > 0 && (
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-lg text-gray-600">
+                      Palabras más cortas que se pueden formar:
+                    </h3>
+                    {Array.from(results.shorterMatches.entries())
+                      .sort(([lenA], [lenB]) => lenB - lenA) // Sort by length descending
+                      .map(([length, words]) => (
+                        <div key={`shorter-${length}`} className="space-y-2">
+                          <h4 className="font-medium text-gray-600">
+                            {`Palabras de ${length} letras:`}
+                          </h4>
+                          <div className="grid grid-cols-3 gap-2">
+                            {Array.from(words).map((word, index) => renderWordLink(word, index, `shorter-${length}`))}
+                          </div>
+                        </div>
+                      ))}
                   </div>
                 )}
               </>

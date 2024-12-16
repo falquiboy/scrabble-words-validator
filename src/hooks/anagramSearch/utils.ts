@@ -57,3 +57,35 @@ export const findAdditionalMatches = (baseLetters: string, wildcardCount: number
   
   return matches;
 };
+
+export const findShorterWords = (processedInput: string): Map<number, Set<string>> => {
+  const results = new Map<number, Set<string>>();
+  const minLength = Math.max(2, processedInput.length - 2); // Don't go shorter than 2 letters
+  
+  // Generate all possible combinations of letters for each length
+  for (let len = processedInput.length - 1; len >= minLength; len--) {
+    const matches = new Set<string>();
+    
+    // Generate all possible combinations of the given length
+    const generateCombinations = (str: string, length: number, current: string = '', start: number = 0) => {
+      if (current.length === length) {
+        const alphagram = generateAlphagram(current);
+        const words = wordTrie.findAnagrams(alphagram);
+        words.forEach(word => matches.add(word));
+        return;
+      }
+      
+      for (let i = start; i < str.length; i++) {
+        generateCombinations(str, length, current + str[i], i + 1);
+      }
+    };
+    
+    generateCombinations(processedInput, len);
+    
+    if (matches.size > 0) {
+      results.set(len, matches);
+    }
+  }
+  
+  return results;
+};
