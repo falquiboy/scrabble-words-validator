@@ -79,18 +79,20 @@ export const useGlobalTrie = () => {
     queryFn: initializeTrie,
     staleTime: Infinity, // Never mark as stale
     gcTime: Infinity,   // Changed from cacheTime to gcTime
-    onSuccess: (data) => {
-      toast({
-        title: "Diccionario cargado",
-        description: `${data.wordCount.toLocaleString()} palabras disponibles para búsqueda.`,
-      });
-    },
-    onError: () => {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "No se pudo inicializar el validador.",
-      });
-    },
+    meta: {
+      onSuccess: (data: { trie: typeof wordTrie; wordCount: number }) => {
+        toast({
+          title: "Diccionario cargado",
+          description: `${data.wordCount.toLocaleString()} palabras disponibles para búsqueda.`,
+        });
+      },
+      onError: () => {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "No se pudo inicializar el validador.",
+        });
+      }
+    }
   });
 };
