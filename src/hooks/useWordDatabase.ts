@@ -11,6 +11,7 @@ export const useWordDatabase = () => {
   useEffect(() => {
     let mounted = true;
     let batchSize = 10000;
+    let maxRetries = 3;
 
     const initDB = async () => {
       try {
@@ -35,10 +36,8 @@ export const useWordDatabase = () => {
         let hasMore = true;
         let totalWords = 0;
         let lastWord: string | null = null;
-        let retryCount = 0;
-        const maxRetries = 3;
 
-        while (hasMore && mounted) {
+        const fetchBatchWithRetry = async (retryCount = 0): Promise<string[]> => {
           try {
             console.log('Fetching batch starting after word:', lastWord);
             const { data: words, error: fetchError } = await supabase
@@ -47,15 +46,27 @@ export const useWordDatabase = () => {
                 last_word: lastWord
               });
 
-            if (fetchError) {
-              console.error('Error fetching words:', fetchError);
-              if (retryCount < maxRetries) {
-                retryCount++;
-                continue;
-              }
-              throw fetchError;
+            if (fetchError) throw fetchError;
+            if (!words) return [];
+            
+            return words.map(w => w.word);
+          } catch (error) {
+            console.error(`Batch fetch error (attempt ${retryCount + 1}):`, error);
+            
+            if (retryCount < maxRetries) {
+              // Exponential backoff
+              const delay = Math.min(1000 * Math.pow(2, retryCount), 10000);
+              await new Promise(resolve => setTimeout(resolve, delay));
+              return fetchBatchWithRetry(retryCount + 1);
             }
+            throw error;
+          }
+        };
 
+        while (hasMore && mounted) {
+          try {
+            const words = await fetchBatchWithRetry();
+            
             if (!words || words.length === 0) {
               console.log('No more words to fetch');
               hasMore = false;
@@ -66,9 +77,9 @@ export const useWordDatabase = () => {
 
             if (mounted) {
               // Store this batch in IndexedDB
-              await wordDB.addWords(words.map(w => w.word));
+              await wordDB.addWords(words);
               totalWords += words.length;
-              lastWord = words[words.length - 1].word;
+              lastWord = words[words.length - 1];
 
               // Update progress every 50,000 words
               if (totalWords % 50000 === 0) {
@@ -84,8 +95,13 @@ export const useWordDatabase = () => {
             }
           } catch (err) {
             console.error('Error in batch processing:', err);
-            if (retryCount < maxRetries) {
-              retryCount++;
+            // If we've loaded some words, we can continue from the last successful point
+            if (totalWords > 0) {
+              toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Error al cargar algunas palabras. Reintentando...",
+              });
               continue;
             }
             throw err;
