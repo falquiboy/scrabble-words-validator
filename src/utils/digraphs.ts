@@ -11,13 +11,21 @@ export const processDigraphs = (input: string): string => {
   result = result.replace(/LL/g, DIGRAPH_LL);
   result = result.replace(/RR/g, DIGRAPH_RR);
   
-  // Validate that remaining letters can't form invalid digraphs
-  if (
-    result.includes('C') && result.includes('H') || // Can't form CH
-    (result.match(/L/g) || []).length >= 2 ||       // Can't form LL
-    (result.match(/R/g) || []).length >= 2          // Can't form RR
-  ) {
-    return ''; // Return empty string to indicate invalid word
+  // Check for adjacent letters that could form invalid digraphs
+  const chars = result.split('');
+  for (let i = 0; i < chars.length - 1; i++) {
+    // Check for potential CH
+    if (chars[i] === 'C' && chars[i + 1] === 'H') {
+      return ''; // Invalid: adjacent C and H would form CH
+    }
+    // Check for potential LL
+    if (chars[i] === 'L' && chars[i + 1] === 'L') {
+      return ''; // Invalid: adjacent Ls would form LL
+    }
+    // Check for potential RR
+    if (chars[i] === 'R' && chars[i + 1] === 'R') {
+      return ''; // Invalid: adjacent Rs would form RR
+    }
   }
   
   return result;
