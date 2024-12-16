@@ -12,10 +12,10 @@ import {
 import { searchPattern } from "@/utils/trie/search";
 
 export const useOfflineAnagramSearch = (searchTerm: string): SearchState => {
-  const { trie, isLoading, error } = useWordTrie();
+  const { trie, isLoading, error: trieError } = useWordTrie();
 
   const results = useMemo(() => {
-    if (!searchTerm || isLoading || error) {
+    if (!searchTerm || isLoading || trieError) {
       return { 
         exactMatches: [], 
         wildcardMatches: [], 
@@ -109,11 +109,11 @@ export const useOfflineAnagramSearch = (searchTerm: string): SearchState => {
     });
 
     return results;
-  }, [searchTerm, trie, isLoading, error]);
+  }, [searchTerm, trie, isLoading, trieError]);
 
   return {
     data: results,
     isLoading,
-    error: error instanceof Error ? error : new Error(String(error))
+    error: trieError ? new Error(String(trieError)) : null
   };
 };
