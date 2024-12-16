@@ -9,6 +9,7 @@ interface ResultsListProps {
     wildcardMatches: string[];
     additionalWildcardMatches: string[];
     patternMatches: string[];
+    shorterMatches: Map<number, Set<string>>;
   } | undefined;
   highlightWildcardLetter: (word: string, originalWord: string) => React.ReactNode;
 }
@@ -17,6 +18,34 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
   // Count wildcards in search term
   const wildcardCount = (searchTerm.match(/\*/g) || []).length;
   const isPatternSearch = searchTerm.includes('/');
+
+  // Helper function to get grid columns based on word length
+  const getGridCols = (wordLength: number) => {
+    if (wordLength <= 2) return "grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10";
+    if (wordLength <= 4) return "grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8";
+    return "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5";
+  };
+
+  // Helper function to render word links
+  const renderWordLink = (word: string, index: number, prefix: string) => (
+    <a
+      key={`${prefix}-${index}`}
+      href={`https://dle.rae.es/?w=${word}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="block hover:bg-gray-100 p-1.5 rounded transition-colors text-lg w-full text-left"
+    >
+      {word}
+    </a>
+  );
+
+  // Check if we have any matches at all
+  const hasExactMatches = results?.exactMatches.length > 0;
+  const hasWildcardMatches = results?.wildcardMatches.length > 0;
+  const hasAdditionalMatches = results?.additionalWildcardMatches.length > 0;
+  const hasPatternMatches = results?.patternMatches.length > 0;
+  const hasShorterMatches = results?.shorterMatches.size > 0;
+  const hasAnyMatches = hasExactMatches || hasWildcardMatches || hasAdditionalMatches || hasPatternMatches;
 
   return (
     <ScrollArea className="h-[calc(100vh-12rem)]">
@@ -27,30 +56,17 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
             Buscando anagramas...
           </div>
         ) : results && (
-          results.patternMatches.length > 0 || 
-          results.exactMatches.length > 0 || 
-          results.wildcardMatches.length > 0 || 
-          results.additionalWildcardMatches.length > 0
+          hasPatternMatches || hasAnyMatches || hasShorterMatches
         ) ? (
           <>
             {/* Pattern matches section */}
-            {isPatternSearch && results.patternMatches.length > 0 && (
+            {isPatternSearch && hasPatternMatches && (
               <div className="space-y-2">
                 <h3 className="font-semibold text-lg">
                   {`${results.patternMatches.length} ${results.patternMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que coinciden con el patrón:`}
                 </h3>
-                <div className="grid grid-cols-3 gap-2">
-                  {results.patternMatches.map((word, index) => (
-                    <a
-                      key={`pattern-${index}`}
-                      href={`https://dle.rae.es/?w=${word}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block hover:bg-gray-100 p-1.5 rounded transition-colors text-lg w-full text-left"
-                    >
-                      {word}
-                    </a>
-                  ))}
+                <div className={`grid ${getGridCols(results.patternMatches[0]?.length || 0)} gap-2`}>
+                  {results.patternMatches.map((word, index) => renderWordLink(word, index, 'pattern'))}
                 </div>
               </div>
             )}
@@ -59,7 +75,7 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
             {!isPatternSearch && (
               <>
                 {/* First section: Results with exact letters or wildcards */}
-                {(results.exactMatches.length > 0 || results.wildcardMatches.length > 0) && (
+                {(hasExactMatches || hasWildcardMatches) && (
                   <div className="space-y-2">
                     <h3 className="font-semibold text-lg">
                       {wildcardCount === 0 ? (
@@ -68,19 +84,9 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
                         `${results.wildcardMatches.length} ${results.wildcardMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} usando todas las letras y ${wildcardCount} ${wildcardCount === 1 ? "comodín" : "comodines"}:`
                       )}
                     </h3>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className={`grid ${getGridCols((wildcardCount === 0 ? results.exactMatches[0]?.length : results.wildcardMatches[0]?.length) || 0)} gap-2`}>
                       {wildcardCount === 0 ? (
-                        results.exactMatches.map((word, index) => (
-                          <a
-                            key={`exact-${index}`}
-                            href={`https://dle.rae.es/?w=${word}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block hover:bg-gray-100 p-1.5 rounded transition-colors text-lg w-full text-left"
-                          >
-                            {word}
-                          </a>
-                        ))
+                        results.exactMatches.map((word, index) => renderWordLink(word, index, 'exact'))
                       ) : (
                         results.wildcardMatches.map((word, index) => (
                           <a
@@ -99,12 +105,12 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
                 )}
 
                 {/* Second section: Results with one additional letter */}
-                {results.additionalWildcardMatches.length > 0 && (
+                {hasAdditionalMatches && (
                   <div className="space-y-2">
                     <h3 className="font-semibold text-lg">
                       {`${results.additionalWildcardMatches.length} ${results.additionalWildcardMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} usando todas las letras más una letra adicional:`}
                     </h3>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className={`grid ${getGridCols(results.additionalWildcardMatches[0]?.length || 0)} gap-2`}>
                       {results.additionalWildcardMatches.map((word, index) => (
                         <a
                           key={`additional-${index}`}
@@ -117,6 +123,29 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
                         </a>
                       ))}
                     </div>
+                  </div>
+                )}
+
+                {/* Third section: Shorter words */}
+                {hasShorterMatches && (
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-lg text-gray-600">
+                      {!hasAnyMatches 
+                        ? "La búsqueda no arrojó resultados, pero aquí hay palabras más cortas que se pueden formar:"
+                        : "Palabras más cortas que se pueden formar:"}
+                    </h3>
+                    {Array.from(results.shorterMatches.entries())
+                      .sort(([lenA], [lenB]) => lenB - lenA) // Sort by length descending
+                      .map(([length, words]) => (
+                        <div key={`shorter-${length}`} className="space-y-2">
+                          <h4 className="font-medium text-gray-600">
+                            {`Palabras de ${length} letras:`}
+                          </h4>
+                          <div className={`grid ${getGridCols(length)} gap-2`}>
+                            {Array.from(words).map((word, index) => renderWordLink(word, index, `shorter-${length}`))}
+                          </div>
+                        </div>
+                      ))}
                   </div>
                 )}
               </>
