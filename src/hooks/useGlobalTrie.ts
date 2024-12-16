@@ -78,7 +78,7 @@ export const useGlobalTrie = () => {
     queryKey: ['globalTrie'],
     queryFn: initializeTrie,
     staleTime: Infinity, // Never mark as stale
-    cacheTime: Infinity, // Never remove from cache
+    gcTime: Infinity,   // Changed from cacheTime to gcTime
     onSuccess: (data) => {
       toast({
         title: "Diccionario cargado",
