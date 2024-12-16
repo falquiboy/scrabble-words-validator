@@ -1,5 +1,5 @@
 import { SPANISH_LETTERS } from './constants';
-import { processDigraphs, generateAlphagram, hasAdjacentDigraphLetters } from '@/utils/digraphs';
+import { processDigraphs, generateAlphagram } from '@/utils/digraphs';
 import { wordTrie } from '@/utils/trie';
 
 export const generateWildcardCombinations = (base: string, remainingWildcards: number): string[] => {
@@ -35,16 +35,7 @@ export const findAdditionalMatches = (baseLetters: string, wildcardCount: number
   const matches = new Set<string>();
   
   // For the base letters (without wildcards)
-  // Only use letters that are valid in our internal representation
-  // This includes regular letters and our special digraph characters (Ç, K, W)
   for (const letter of SPANISH_LETTERS) {
-    // Skip 'C' and 'H' as individual letters when adding to avoid CH formation
-    // Skip 'L' to avoid LL formation
-    // Skip 'R' to avoid RR formation
-    if ((letter === 'C' || letter === 'H' || letter === 'L' || letter === 'R')) {
-      continue;
-    }
-
     const newBase = baseLetters + letter;
     const alphagram = generateAlphagram(newBase);
     const baseMatches = wordTrie.findAnagrams(alphagram);
@@ -56,11 +47,6 @@ export const findAdditionalMatches = (baseLetters: string, wildcardCount: number
     const wildcardCombos = generateWildcardCombinations(baseLetters, wildcardCount);
     for (const combo of wildcardCombos) {
       for (const letter of SPANISH_LETTERS) {
-        // Apply the same digraph rules for wildcard combinations
-        if ((letter === 'C' || letter === 'H' || letter === 'L' || letter === 'R')) {
-          continue;
-        }
-
         const newCombo = combo + letter;
         const alphagram = generateAlphagram(newCombo);
         const comboMatches = wordTrie.findAnagrams(alphagram);
@@ -72,37 +58,9 @@ export const findAdditionalMatches = (baseLetters: string, wildcardCount: number
   return matches;
 };
 
-const shouldExcludeWord = (word: string, inputDigraphs: ReturnType<typeof hasAdjacentDigraphLetters>): boolean => {
-  // Only exclude words with digraphs if the input explicitly has those digraphs
-  // For single R/L/C/H letters, we should allow them in any position
-  if (word.includes('RR') && !inputDigraphs.hasRR) {
-    // Check if it's actually a digraph and not just two Rs in different positions
-    for (let i = 0; i < word.length - 1; i++) {
-      if (word[i] === 'R' && word[i + 1] === 'R') return true;
-    }
-  }
-  if (word.includes('LL') && !inputDigraphs.hasLL) {
-    // Check if it's actually a digraph and not just two Ls in different positions
-    for (let i = 0; i < word.length - 1; i++) {
-      if (word[i] === 'L' && word[i + 1] === 'L') return true;
-    }
-  }
-  if (word.includes('CH') && !inputDigraphs.hasCH) {
-    // Check if it's actually a digraph and not just C and H in different positions
-    for (let i = 0; i < word.length - 1; i++) {
-      if (word[i] === 'C' && word[i + 1] === 'H') return true;
-    }
-  }
-  
-  return false;
-};
-
 export const findShorterWords = (processedInput: string): Map<number, Set<string>> => {
   const results = new Map<number, Set<string>>();
-  const minLength = 2;
-  
-  // Check for digraphs in the original input (before processing)
-  const inputDigraphs = hasAdjacentDigraphLetters(processedInput);
+  const minLength = 2; // Changed from Math.max(2, processedInput.length - 2) to allow all words >= 2 letters
   
   // Generate all possible combinations of letters for each length
   for (let len = processedInput.length - 1; len >= minLength; len--) {
@@ -113,12 +71,7 @@ export const findShorterWords = (processedInput: string): Map<number, Set<string
       if (current.length === length) {
         const alphagram = generateAlphagram(current);
         const words = wordTrie.findAnagrams(alphagram);
-        words.forEach(word => {
-          // Only add the word if it doesn't contain unwanted digraphs
-          if (!shouldExcludeWord(word, inputDigraphs)) {
-            matches.add(word);
-          }
-        });
+        words.forEach(word => matches.add(word));
         return;
       }
       
