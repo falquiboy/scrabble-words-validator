@@ -26,10 +26,16 @@ export const useWordDatabase = () => {
         
         // Only proceed with loading if we have less than 600,000 words
         // This is a safety check since we expect around 640,000 words
-        if (existingWords.length > 600000) {
-          console.log('Words already in IndexedDB:', existingWords.length);
+        if (existingWords.length >= 639000) {
+          console.log('Full dictionary already in IndexedDB:', existingWords.length);
           setIsLoading(false);
           return;
+        }
+
+        // Clear existing words if we have an incomplete dictionary
+        if (existingWords.length > 0 && existingWords.length < 639000) {
+          console.log('Clearing incomplete dictionary...');
+          await wordDB.clear();
         }
 
         // If insufficient words exist, start fetching from Supabase
@@ -105,6 +111,19 @@ export const useWordDatabase = () => {
               continue;
             }
             throw err;
+          }
+        }
+
+        // Verify final word count
+        const finalWordCount = await wordDB.getAllWords();
+        console.log('Final word count in IndexedDB:', finalWordCount.length);
+        
+        if (finalWordCount.length < 639000) {
+          console.error('Dictionary incomplete, retrying initialization...');
+          if (mounted) {
+            await wordDB.clear();
+            await initDB();
+            return;
           }
         }
 
