@@ -10,7 +10,7 @@ import {
 } from "./anagramSearch/utils";
 import { searchPattern } from "@/utils/trie/search";
 
-export const useOfflineAnagramSearch = (searchTerm: string): SearchState => {
+export const useOfflineAnagramSearch = (searchTerm: string, showShorter: boolean = false): SearchState => {
   const { trie, isLoading, error } = useWordTrie();
 
   const results = useMemo(() => {
@@ -63,17 +63,23 @@ export const useOfflineAnagramSearch = (searchTerm: string): SearchState => {
     let results: SearchResults;
 
     if (wildcardCount === 0) {
+      const exactMatches = Array.from(findExactMatches(processedInput));
+      const shorterMatches = showShorter ? Array.from(findAdditionalMatches(processedInput, 0)) : [];
+      
       results = {
-        exactMatches: Array.from(findExactMatches(processedInput)),
+        exactMatches,
         wildcardMatches: [],
-        additionalWildcardMatches: Array.from(findAdditionalMatches(processedInput, 0)),
+        additionalWildcardMatches: shorterMatches,
         patternMatches: []
       };
     } else {
+      const wildcardMatches = Array.from(findWildcardMatches(processedInput, wildcardCount));
+      const additionalMatches = showShorter ? Array.from(findAdditionalMatches(processedInput, wildcardCount)) : [];
+      
       results = {
         exactMatches: [],
-        wildcardMatches: Array.from(findWildcardMatches(processedInput, wildcardCount)),
-        additionalWildcardMatches: Array.from(findAdditionalMatches(processedInput, wildcardCount)),
+        wildcardMatches,
+        additionalWildcardMatches: additionalMatches,
         patternMatches: []
       };
     }
@@ -87,7 +93,7 @@ export const useOfflineAnagramSearch = (searchTerm: string): SearchState => {
     });
 
     return results;
-  }, [searchTerm, trie, isLoading, error]);
+  }, [searchTerm, trie, isLoading, error, showShorter]);
 
   return {
     data: results,

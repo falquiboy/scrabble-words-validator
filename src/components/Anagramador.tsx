@@ -7,10 +7,11 @@ import { highlightWildcardLetter } from "@/utils/wildcardHighlighting";
 const Anagramador = () => {
   const [letters, setLetters] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [showShorter, setShowShorter] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Query for words using offline search hook
-  const { data: results, isLoading } = useOfflineAnagramSearch(searchTerm);
+  const { data: results, isLoading } = useOfflineAnagramSearch(searchTerm, showShorter);
 
   // Handle input changes
   const handleInputChange = (value: string) => {
@@ -53,10 +54,12 @@ const Anagramador = () => {
     <div className="w-full max-w-md space-y-4 px-4">
       <SearchInput
         letters={letters}
+        showShorter={showShorter}
         onInputChange={handleInputChange}
         onSearch={handleSearch}
         onClear={handleClear}
         onKeyPress={handleKeyPress}
+        onShowShorterChange={setShowShorter}
         inputRef={inputRef}
       />
       <ResultsList
