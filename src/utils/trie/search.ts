@@ -7,10 +7,13 @@ export const searchExact = (root: TrieNode, word: string): boolean => {
 };
 
 export const searchPattern = (words: string[], pattern: string, rackLetters: string): string[] => {
+  console.log('Searching with pattern:', pattern, 'and rack:', rackLetters);
   return words.filter(word => matchesPattern(word, pattern, rackLetters));
 };
 
 export const matchesPattern = (word: string, pattern: string, rackLetters: string): boolean => {
+  console.log('Testing word:', word, 'against pattern:', pattern);
+  
   // Convert pattern to regex
   const regexPattern = pattern
     .split('')
@@ -21,16 +24,22 @@ export const matchesPattern = (word: string, pattern: string, rackLetters: strin
     })
     .join('');
   
-  const regex = new RegExp(`^${regexPattern}$`);
+  console.log('Converted regex pattern:', regexPattern);
   
-  // First check if the word matches the pattern
-  if (!regex.test(word)) {
+  const regex = new RegExp(`^${regexPattern}$`);
+  const patternMatch = regex.test(word);
+  
+  console.log('Pattern match result:', patternMatch);
+  
+  if (!patternMatch) {
     return false;
   }
 
   // Then check if we can make the word with rack letters
   const rackLettersCopy = rackLetters.split('');
   const wordChars = word.split('');
+
+  console.log('Checking if word can be made with rack letters:', rackLettersCopy);
 
   // For each character in the word
   for (const char of wordChars) {
@@ -39,6 +48,7 @@ export const matchesPattern = (word: string, pattern: string, rackLetters: strin
       // Check if we have a wildcard (*) in the rack letters
       const wildcardIndex = rackLettersCopy.indexOf('*');
       if (wildcardIndex === -1) {
+        console.log('Failed to find letter:', char, 'in rack');
         return false;
       }
       // Use the wildcard
@@ -49,5 +59,6 @@ export const matchesPattern = (word: string, pattern: string, rackLetters: strin
     }
   }
 
+  console.log('Word matches pattern and can be made with rack letters');
   return true;
 };
