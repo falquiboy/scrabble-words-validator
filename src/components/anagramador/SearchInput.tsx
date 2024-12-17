@@ -32,9 +32,23 @@ const SearchInput = ({
           <Input
             ref={inputRef}
             type="text"
-            placeholder="Ingresa letras..."
+            placeholder="Ingresa letras o patrón (usa ? para una letra, * para cero o más letras)..."
             value={letters}
-            onChange={(e) => onInputChange(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              // Allow * and ? in pattern (before /) but only * in rack letters (after /)
+              const [pattern, rack] = value.split('/');
+              if (rack) {
+                // If there's a rack part, validate it separately
+                const validRack = rack.replace(/[^A-ZÑ\s*]/g, '');
+                const newValue = `${pattern}/${validRack}`;
+                onInputChange(newValue.toUpperCase());
+              } else {
+                // If no rack part, allow * and ? anywhere
+                const validPattern = value.replace(/[^A-ZÑ\s*?/]/g, '');
+                onInputChange(validPattern.toUpperCase());
+              }
+            }}
             onKeyPress={onKeyPress}
             className="text-xl h-12 text-left pr-12"
             autoFocus
