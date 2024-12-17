@@ -1,44 +1,43 @@
-import { SPANISH_LETTERS } from './constants';
-import { processDigraphs, generateAlphagram, hasAdjacentDigraphLetters } from '@/utils/digraphs';
-import { wordTrie } from '@/utils/trie';
+import { SPANISH_LETTERS } from "./constants";
+import { processDigraphs } from "@/utils/digraphs";
 
-export const generateWildcardCombinations = (base: string, remainingWildcards: { asterisks: number, questionMarks: number }): string[] => {
-  if (remainingWildcards.asterisks === 0 && remainingWildcards.questionMarks === 0) return [base];
+// Helper function to check if a word can be formed from given letters
+const canFormWord = (word: string, letters: string): boolean => {
+  const letterCount = new Map<string, number>();
   
-  const combinations: string[] = [];
-  
-  // Handle asterisk wildcards first (any letter)
-  if (remainingWildcards.asterisks > 0) {
-    for (const letter of SPANISH_LETTERS) {
-      const newBase = base + letter;
-      combinations.push(...generateWildcardCombinations(newBase, {
-        asterisks: remainingWildcards.asterisks - 1,
-        questionMarks: remainingWildcards.questionMarks
-      }));
-    }
-  }
-  // Handle question mark wildcards (must be a letter not in the original word)
-  else if (remainingWildcards.questionMarks > 0) {
-    const usedLetters = new Set(base.split(''));
-    for (const letter of SPANISH_LETTERS) {
-      if (!usedLetters.has(letter)) {
-        const newBase = base + letter;
-        combinations.push(...generateWildcardCombinations(newBase, {
-          asterisks: remainingWildcards.asterisks,
-          questionMarks: remainingWildcards.questionMarks - 1
-        }));
-      }
-    }
+  // Count available letters
+  for (const letter of letters) {
+    letterCount.set(letter, (letterCount.get(letter) || 0) + 1);
   }
   
-  return combinations;
+  // Check if we have enough of each letter
+  for (const letter of word) {
+    const count = letterCount.get(letter) || 0;
+    if (count === 0) return false;
+    letterCount.set(letter, count - 1);
+  }
+  
+  return true;
 };
 
-export const findExactMatches = (processedInput: string): Set<string> => {
-  const alphagram = generateAlphagram(processedInput);
-  return new Set(wordTrie.findAnagrams(alphagram));
+// Find exact matches (no wildcards)
+export const findExactMatches = (letters: string): Set<string> => {
+  const matches = new Set<string>();
+  const processedLetters = processDigraphs(letters);
+  
+  // Get words of the same length
+  const wordsOfLength = window.wordTrie.getWordsOfLength(processedLetters.length);
+  
+  for (const word of wordsOfLength) {
+    if (canFormWord(word, processedLetters)) {
+      matches.add(word);
+    }
+  }
+  
+  return matches;
 };
 
+// Find matches using wildcards
 export const findWildcardMatches = (processedInput: string, wildcardCount: number): Set<string> => {
   const matches = new Set<string>();
   
@@ -51,14 +50,18 @@ export const findWildcardMatches = (processedInput: string, wildcardCount: numbe
   });
   
   for (const combo of combinations) {
-    const alphagram = generateAlphagram(combo);
-    const comboMatches = wordTrie.findAnagrams(alphagram);
-    comboMatches.forEach(match => matches.add(match));
+    const wordsOfLength = window.wordTrie.getWordsOfLength(combo.length);
+    for (const word of wordsOfLength) {
+      if (canFormWord(word, combo)) {
+        matches.add(word);
+      }
+    }
   }
   
   return matches;
 };
 
+// Find matches with one additional letter
 export const findAdditionalMatches = (baseLetters: string, wildcardCount: number): Set<string> => {
   const matches = new Set<string>();
   const processedBase = processDigraphs(baseLetters.replace(/[*?]/g, ''));
@@ -68,9 +71,13 @@ export const findAdditionalMatches = (baseLetters: string, wildcardCount: number
     // Try adding the letter at each position
     for (let i = 0; i <= processedBase.length; i++) {
       const newWord = processedBase.slice(0, i) + letter + processedBase.slice(i);
-      const alphagram = generateAlphagram(newWord);
-      const baseMatches = wordTrie.findAnagrams(alphagram);
-      baseMatches.forEach(match => matches.add(match));
+      const wordsOfLength = window.wordTrie.getWordsOfLength(newWord.length);
+      
+      for (const word of wordsOfLength) {
+        if (canFormWord(word, newWord)) {
+          matches.add(word);
+        }
+      }
     }
   }
   
@@ -81,10 +88,14 @@ export const findAdditionalMatches = (baseLetters: string, wildcardCount: number
       for (const letter of SPANISH_LETTERS) {
         // Try adding the letter at each position
         for (let i = 0; i <= combo.length; i++) {
-          const newCombo = combo.slice(0, i) + letter + combo.slice(i);
-          const alphagram = generateAlphagram(newCombo);
-          const comboMatches = wordTrie.findAnagrams(alphagram);
-          comboMatches.forEach(match => matches.add(match));
+          const newWord = combo.slice(0, i) + letter + combo.slice(i);
+          const wordsOfLength = window.wordTrie.getWordsOfLength(newWord.length);
+          
+          for (const word of wordsOfLength) {
+            if (canFormWord(word, newWord)) {
+              matches.add(word);
+            }
+          }
         }
       }
     }
@@ -93,47 +104,56 @@ export const findAdditionalMatches = (baseLetters: string, wildcardCount: number
   return matches;
 };
 
-const shouldExcludeWord = (word: string, inputDigraphs: ReturnType<typeof hasAdjacentDigraphLetters>): boolean => {
-  if (!inputDigraphs.hasRR && word.includes('RR')) return true;
-  if (!inputDigraphs.hasLL && word.includes('LL')) return true;
-  if (!inputDigraphs.hasCH && word.includes('CH')) return true;
-  return false;
-};
-
-export const findShorterWords = (processedInput: string): Map<number, Set<string>> => {
+// Find shorter words that can be formed
+export const findShorterWords = (letters: string): Map<number, Set<string>> => {
   const results = new Map<number, Set<string>>();
-  const minLength = 2;
-  const inputDigraphs = hasAdjacentDigraphLetters(processedInput);
+  const processedLetters = processDigraphs(letters);
   
-  const generateCombinations = (str: string, length: number, current: string = '', start: number = 0) => {
-    if (current.length === length) {
-      const alphagram = generateAlphagram(current);
-      const words = wordTrie.findAnagrams(alphagram);
-      words.forEach(word => {
-        if (!shouldExcludeWord(word, inputDigraphs)) {
-          if (!results.has(length)) {
-            results.set(length, new Set());
-          }
-          results.get(length)!.add(word);
-        }
-      });
-      return;
+  // For each possible length shorter than the input
+  for (let len = 2; len < processedLetters.length; len++) {
+    const wordsOfLength = window.wordTrie.getWordsOfLength(len);
+    const matches = new Set<string>();
+    
+    for (const word of wordsOfLength) {
+      if (canFormWord(word, processedLetters)) {
+        matches.add(word);
+      }
     }
     
-    // Try each remaining letter
-    for (let i = start; i < str.length; i++) {
-      // Skip duplicates at the same position
-      if (i > start && str[i] === str[i - 1]) continue;
-      generateCombinations(str, length, current + str[i], i + 1);
+    if (matches.size > 0) {
+      results.set(len, matches);
     }
-  };
-  
-  // Generate all possible combinations for each length
-  for (let len = processedInput.length - 1; len >= minLength; len--) {
-    // Sort the input to handle duplicates correctly
-    const sortedInput = [...processedInput].sort().join('');
-    generateCombinations(sortedInput, len);
   }
   
   return results;
+};
+
+// Generate all possible combinations with wildcards
+export const generateWildcardCombinations = (
+  baseLetters: string,
+  { asterisks = 0, questionMarks = 0 }
+): string[] => {
+  const combinations: string[] = [];
+  
+  const generateCombos = (current: string, remainingAsterisks: number, remainingQuestionMarks: number) => {
+    if (remainingAsterisks === 0 && remainingQuestionMarks === 0) {
+      combinations.push(current);
+      return;
+    }
+    
+    if (remainingAsterisks > 0) {
+      for (const letter of SPANISH_LETTERS) {
+        generateCombos(current + letter, remainingAsterisks - 1, remainingQuestionMarks);
+      }
+    }
+    
+    if (remainingQuestionMarks > 0) {
+      for (const letter of SPANISH_LETTERS) {
+        generateCombos(current + letter, remainingAsterisks, remainingQuestionMarks - 1);
+      }
+    }
+  };
+  
+  generateCombos(baseLetters, asterisks, questionMarks);
+  return combinations;
 };
