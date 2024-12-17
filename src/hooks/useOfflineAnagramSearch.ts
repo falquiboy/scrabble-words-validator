@@ -57,7 +57,7 @@ export const useOfflineAnagramSearch = (searchTerm: string): SearchState => {
       return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [], patternMatches: [], shorterMatches: new Map() };
     }
 
-    const processedInput = processDigraphs(searchTerm.replace(/\*/g, '').toUpperCase());
+    const processedInput = processDigraphs(searchTerm.toUpperCase());
     if (!processedInput) {
       return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [], patternMatches: [], shorterMatches: new Map() };
     }

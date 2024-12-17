@@ -41,15 +41,13 @@ export const findExactMatches = (processedInput: string): Set<string> => {
 
 export const findWildcardMatches = (processedInput: string, wildcardCount: number): Set<string> => {
   const matches = new Set<string>();
-  const asteriskCount = wildcardCount;
-  const questionMarkCount = 0;
   
   // Remove wildcards for base processing
-  const baseLetters = processedInput;
+  const baseLetters = processedInput.replace(/[*?]/g, '');
   
   const combinations = generateWildcardCombinations(baseLetters, {
-    asterisks: asteriskCount,
-    questionMarks: questionMarkCount
+    asterisks: wildcardCount,
+    questionMarks: 0
   });
   
   for (const combo of combinations) {
@@ -63,7 +61,7 @@ export const findWildcardMatches = (processedInput: string, wildcardCount: numbe
 
 export const findAdditionalMatches = (baseLetters: string, wildcardCount: number): Set<string> => {
   const matches = new Set<string>();
-  const processedBase = processDigraphs(baseLetters);
+  const processedBase = processDigraphs(baseLetters.replace(/[*?]/g, ''));
   
   // For each possible additional letter
   for (const letter of SPANISH_LETTERS) {
@@ -78,7 +76,7 @@ export const findAdditionalMatches = (baseLetters: string, wildcardCount: number
   
   // If we have wildcards, also search additional combinations
   if (wildcardCount > 0) {
-    const wildcardCombos = generateWildcardCombinations(baseLetters, { asterisks: wildcardCount, questionMarks: 0 });
+    const wildcardCombos = generateWildcardCombinations(baseLetters.replace(/[*?]/g, ''), { asterisks: wildcardCount, questionMarks: 0 });
     for (const combo of wildcardCombos) {
       for (const letter of SPANISH_LETTERS) {
         // Try adding the letter at each position
