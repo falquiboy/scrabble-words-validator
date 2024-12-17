@@ -29,10 +29,10 @@ const WordValidator = () => {
       const words = word.trim().split(" ");
       const processedWords = words.map(w => {
         // First convert to uppercase and preserve Ñ
-        let processed = w.toUpperCase();
+        let upperWord = w.toUpperCase();
         
         // Special handling for Ñ - preserve it exactly as is
-        processed = processed.split('').map(char => {
+        upperWord = upperWord.split('').map(char => {
           if (char === 'Ñ' || char === 'ñ') return 'Ñ';
           // For non-Ñ characters, remove accents
           return char
@@ -41,14 +41,13 @@ const WordValidator = () => {
             .normalize('NFC');
         }).join('');
         
-        // Log the state of the word before digraph processing
-        console.log('Word before digraph processing:', processed);
+        // Log the original word length before digraph processing
+        console.log('Original word:', upperWord, 'length:', upperWord.length);
         
         // Process digraphs (CH -> Ç, LL -> K, RR -> W)
-        processed = processDigraphs(processed);
+        const processed = processDigraphs(upperWord);
         
-        console.log('Original word:', w);
-        console.log('Final processed word:', processed);
+        console.log('Processed word:', processed, 'length:', processed.length);
         
         // Log the actual Trie content for debugging
         console.log('Words in Trie containing this word:', 
