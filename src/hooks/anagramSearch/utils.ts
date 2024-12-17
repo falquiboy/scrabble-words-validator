@@ -21,13 +21,13 @@ export const findExactMatches = (processedInput: string): Set<string> => {
 export const findWildcardMatches = (processedInput: string, wildcardCount: number): Set<string> => {
   const matches = new Set<string>();
   const combinations = generateWildcardCombinations(processedInput, wildcardCount);
-  const minLength = processedInput.length + wildcardCount;
+  const expectedLength = processedInput.length + wildcardCount;
   
   for (const combo of combinations) {
     const alphagram = generateAlphagram(combo);
     const comboMatches = wordTrie.findAnagrams(alphagram);
     comboMatches
-      .filter(word => word.length >= minLength)
+      .filter(word => word.length === expectedLength)
       .forEach(match => matches.add(match));
   }
   
@@ -36,7 +36,7 @@ export const findWildcardMatches = (processedInput: string, wildcardCount: numbe
 
 export const findAdditionalMatches = (baseLetters: string, wildcardCount: number): Set<string> => {
   const matches = new Set<string>();
-  const minLength = baseLetters.length + wildcardCount;
+  const expectedLength = baseLetters.length + wildcardCount + 1; // +1 for the additional letter
   
   // For the base letters (without wildcards)
   for (const letter of SPANISH_LETTERS) {
@@ -44,7 +44,7 @@ export const findAdditionalMatches = (baseLetters: string, wildcardCount: number
     const alphagram = generateAlphagram(newBase);
     const baseMatches = wordTrie.findAnagrams(alphagram);
     baseMatches
-      .filter(word => word.length >= minLength)
+      .filter(word => word.length === expectedLength)
       .forEach(match => matches.add(match));
   }
   
@@ -58,7 +58,7 @@ export const findAdditionalMatches = (baseLetters: string, wildcardCount: number
         const alphagram = generateAlphagram(newCombo);
         const comboMatches = wordTrie.findAnagrams(alphagram);
         comboMatches
-          .filter(word => word.length >= minLength)
+          .filter(word => word.length === expectedLength)
           .forEach(match => matches.add(match));
       }
     }
