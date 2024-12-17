@@ -1,5 +1,7 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader, Copy } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
 interface ResultsListProps {
   isLoading: boolean;
@@ -14,7 +16,7 @@ interface ResultsListProps {
 }
 
 const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }: ResultsListProps) => {
-  // Count wildcards in search term
+  const { toast } = useToast();
   const wildcardCount = (searchTerm.match(/\*/g) || []).length;
   const isPatternSearch = searchTerm.includes('/');
 
@@ -33,6 +35,42 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
     .map(Number)
     .sort((a, b) => b - a);
 
+  const handleCopyAll = () => {
+    if (!results) return;
+
+    let allWords: string[] = [];
+
+    // Collect all words based on search type
+    if (isPatternSearch) {
+      allWords = results.patternMatches;
+    } else {
+      if (wildcardCount === 0) {
+        allWords = [...results.exactMatches];
+      } else {
+        allWords = [...results.wildcardMatches];
+      }
+      // Add shorter words if any
+      if (results.additionalWildcardMatches.length > 0) {
+        allWords = [...allWords, ...results.additionalWildcardMatches];
+      }
+    }
+
+    // Copy to clipboard
+    const text = allWords.join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+      toast({
+        title: "¡Copiado!",
+        description: `${allWords.length} palabras copiadas al portapapeles`,
+      });
+    }).catch(() => {
+      toast({
+        title: "Error",
+        description: "No se pudieron copiar las palabras",
+        variant: "destructive",
+      });
+    });
+  };
+
   return (
     <ScrollArea className="h-[calc(100vh-12rem)]">
       <div className="space-y-4">
@@ -48,6 +86,18 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
           results.additionalWildcardMatches.length > 0
         ) ? (
           <>
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={handleCopyAll}
+              >
+                <Copy className="h-4 w-4" />
+                Copiar todo
+              </Button>
+            </div>
+
             {/* Pattern matches section */}
             {isPatternSearch && results.patternMatches.length > 0 && (
               <div className="space-y-2">
