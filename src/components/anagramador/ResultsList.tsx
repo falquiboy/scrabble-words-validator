@@ -45,7 +45,7 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter, 
   const hasWildcardMatches = results?.wildcardMatches.length > 0;
   const hasAdditionalMatches = results?.additionalWildcardMatches.length > 0;
   const hasPatternMatches = results?.patternMatches.length > 0;
-  const hasShorterMatches = results?.shorterMatches.size > 0;
+  const hasShorterMatches = results?.shorterMatches && results.shorterMatches.size > 0;
   const hasAnyMatches = hasExactMatches || hasWildcardMatches || hasAdditionalMatches || hasPatternMatches;
 
   return (
@@ -127,13 +127,11 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter, 
                   </div>
                 )}
 
-                {/* Third section: Shorter words */}
+                {/* Third section: Shorter words - Show when showShorterWords is true */}
                 {hasShorterMatches && showShorterWords && (
                   <div className="space-y-4">
                     <h3 className="font-semibold text-lg text-gray-600">
-                      {!hasAnyMatches 
-                        ? "La búsqueda no arrojó resultados, pero aquí hay palabras más cortas que se pueden formar:"
-                        : "Palabras más cortas que se pueden formar:"}
+                      Palabras más cortas que se pueden formar:
                     </h3>
                     {Array.from(results.shorterMatches.entries())
                       .sort(([lenA], [lenB]) => lenB - lenA) // Sort by length descending
