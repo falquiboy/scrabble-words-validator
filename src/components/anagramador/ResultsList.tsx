@@ -105,7 +105,7 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter, 
                   </div>
                 )}
 
-                {/* Second section: Results with one additional letter */}
+                {/* Second section: Results with one additional letter - Always show if there are matches */}
                 {hasAdditionalMatches && (
                   <div className="space-y-2">
                     <h3 className="font-semibold text-lg">
