@@ -40,12 +40,12 @@ const SearchInput = ({
               const [pattern, rack] = value.split('/');
               if (rack) {
                 // If there's a rack part, validate it separately
-                const validRack = rack.replace(/[^A-ZÑ\s*]/g, '');
+                const validRack = rack.replace(/[^A-ZÑa-zñ\s*]/g, '');
                 const newValue = `${pattern}/${validRack}`;
                 onInputChange(newValue.toUpperCase());
               } else {
                 // If no rack part, allow * and ? anywhere
-                const validPattern = value.replace(/[^A-ZÑ\s*?/]/g, '');
+                const validPattern = value.replace(/[^A-ZÑa-zñ\s*?/]/g, '');
                 onInputChange(validPattern.toUpperCase());
               }
             }}
