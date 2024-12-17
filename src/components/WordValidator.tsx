@@ -41,12 +41,11 @@ const WordValidator = () => {
             .normalize('NFC');
         }).join('');
         
-        // Log the original word length before digraph processing
-        console.log('Original word:', upperWord, 'length:', upperWord.length);
-        
         // Process digraphs (CH -> Ç, LL -> K, RR -> W)
         const processed = processDigraphs(upperWord);
         
+        // Log lengths - after processing digraphs since we want to count them as single letters
+        console.log('Original word:', upperWord);
         console.log('Processed word:', processed, 'length:', processed.length);
         
         // Log the actual Trie content for debugging
