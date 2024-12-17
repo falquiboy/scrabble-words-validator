@@ -18,6 +18,21 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
   const wildcardCount = (searchTerm.match(/\*/g) || []).length;
   const isPatternSearch = searchTerm.includes('/');
 
+  // Group shorter words by length
+  const groupedShorterWords = results?.additionalWildcardMatches.reduce((acc, word) => {
+    const length = word.length;
+    if (!acc[length]) {
+      acc[length] = [];
+    }
+    acc[length].push(word);
+    return acc;
+  }, {} as Record<number, string[]>);
+
+  // Sort lengths in descending order
+  const sortedLengths = Object.keys(groupedShorterWords || {})
+    .map(Number)
+    .sort((a, b) => b - a);
+
   return (
     <ScrollArea className="h-[calc(100vh-12rem)]">
       <div className="space-y-4">
@@ -98,25 +113,32 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
                   </div>
                 )}
 
-                {/* Shorter words section */}
+                {/* Shorter words section - grouped by length */}
                 {results.additionalWildcardMatches.length > 0 && (
-                  <div className="space-y-2">
+                  <div className="space-y-4">
                     <h3 className="font-semibold text-lg">
                       {`${results.additionalWildcardMatches.length} ${results.additionalWildcardMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} usando algunas letras:`}
                     </h3>
-                    <div className="grid grid-cols-3 gap-2">
-                      {results.additionalWildcardMatches.map((word, index) => (
-                        <a
-                          key={`shorter-${index}`}
-                          href={`https://dle.rae.es/?w=${word}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block hover:bg-gray-100 p-1.5 rounded transition-colors text-lg w-full text-left"
-                        >
-                          {word}
-                        </a>
-                      ))}
-                    </div>
+                    {sortedLengths.map(length => (
+                      <div key={`length-${length}`} className="space-y-2">
+                        <h4 className="font-medium text-gray-600">
+                          {`Palabras de ${length} ${length === 1 ? 'letra' : 'letras'} (${groupedShorterWords![length].length}):`}
+                        </h4>
+                        <div className="grid grid-cols-3 gap-2">
+                          {groupedShorterWords![length].map((word, index) => (
+                            <a
+                              key={`shorter-${length}-${index}`}
+                              href={`https://dle.rae.es/?w=${word}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="block hover:bg-gray-100 p-1.5 rounded transition-colors text-lg w-full text-left"
+                            >
+                              {word}
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </>
