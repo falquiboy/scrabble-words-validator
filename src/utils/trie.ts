@@ -78,63 +78,6 @@ export class Trie {
     return words;
   }
 
-  // New serialization methods
-  serialize(): string {
-    return JSON.stringify(this.serializeNode(this.root));
-  }
-
-  deserialize(data: string): void {
-    const parsed = JSON.parse(data);
-    this.root = this.deserializeNode(parsed);
-    this.rebuildLengthIndex();
-  }
-
-  private serializeNode(node: TrieNode): any {
-    const serialized: any = {
-      isEndOfWord: node.isEndOfWord,
-      word: node.word,
-      children: {}
-    };
-
-    node.children.forEach((childNode, char) => {
-      serialized.children[char] = this.serializeNode(childNode);
-    });
-
-    return serialized;
-  }
-
-  private deserializeNode(data: any): TrieNode {
-    const node = createNode();
-    node.isEndOfWord = data.isEndOfWord;
-    node.word = data.word;
-
-    Object.entries(data.children).forEach(([char, childData]) => {
-      node.children.set(char, this.deserializeNode(childData as any));
-    });
-
-    return node;
-  }
-
-  private rebuildLengthIndex(): void {
-    this.lengthIndex = {};
-    const words = this.getAllWords();
-    
-    words.forEach(word => {
-      const length = word.length;
-      const alphagram = this.sortLetters(word);
-      
-      if (!this.lengthIndex[length]) {
-        this.lengthIndex[length] = {};
-      }
-      
-      if (!this.lengthIndex[length][alphagram]) {
-        this.lengthIndex[length][alphagram] = [];
-      }
-      
-      this.lengthIndex[length][alphagram].push(word);
-    });
-  }
-
   private dfs(node: TrieNode, words: string[]): void {
     collectWords(node, words);
   }
