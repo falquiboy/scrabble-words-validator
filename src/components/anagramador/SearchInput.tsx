@@ -36,16 +36,22 @@ const SearchInput = ({
             value={letters}
             onChange={(e) => {
               const value = e.target.value;
-              // Allow * and ? in pattern (before /) but only * in rack letters (after /)
-              const [pattern, rack] = value.split('/');
-              if (rack) {
-                // If there's a rack part, validate it separately
+              // Split input into pattern and rack parts if "/" is present
+              const parts = value.split('/');
+              
+              if (parts.length > 1) {
+                // Handle pattern and rack separately
+                const pattern = parts[0];
+                const rack = parts[1];
+                // Allow *, ? and letters in pattern
+                const validPattern = pattern.replace(/[^A-ZÑa-zñ\s*?]/g, '');
+                // Only allow * and letters in rack
                 const validRack = rack.replace(/[^A-ZÑa-zñ\s*]/g, '');
-                const newValue = `${pattern}/${validRack}`;
+                const newValue = `${validPattern}/${validRack}`;
                 onInputChange(newValue.toUpperCase());
               } else {
                 // If no rack part, allow *, ? and letters
-                const validPattern = value.replace(/[^A-ZÑa-zñ\s*?/]/g, '');
+                const validPattern = value.replace(/[^A-ZÑa-zñ\s*?]/g, '');
                 onInputChange(validPattern.toUpperCase());
               }
             }}
