@@ -1,7 +1,10 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
-import { Loader, Copy } from "lucide-react";
+import { Loader } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { ResultsHeader } from "./ResultsHeader";
+import { PatternResults } from "./PatternResults";
+import { ExactResults } from "./ExactResults";
+import { ShorterResults } from "./ShorterResults";
 
 interface ResultsListProps {
   isLoading: boolean;
@@ -20,27 +23,11 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
   const wildcardCount = (searchTerm.match(/\*/g) || []).length;
   const isPatternSearch = searchTerm.includes('/');
 
-  // Group shorter words by length
-  const groupedShorterWords = results?.additionalWildcardMatches.reduce((acc, word) => {
-    const length = word.length;
-    if (!acc[length]) {
-      acc[length] = [];
-    }
-    acc[length].push(word);
-    return acc;
-  }, {} as Record<number, string[]>);
-
-  // Sort lengths in descending order
-  const sortedLengths = Object.keys(groupedShorterWords || {})
-    .map(Number)
-    .sort((a, b) => b - a);
-
   const handleCopyAll = () => {
     if (!results) return;
 
     let allWords: string[] = [];
 
-    // Collect all words based on search type
     if (isPatternSearch) {
       allWords = results.patternMatches;
     } else {
@@ -49,15 +36,12 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
       } else {
         allWords = [...results.wildcardMatches];
       }
-      // Add shorter words if any
       if (results.additionalWildcardMatches.length > 0) {
         allWords = [...allWords, ...results.additionalWildcardMatches];
       }
     }
 
-    // Copy to clipboard
-    const text = allWords.join('\n');
-    navigator.clipboard.writeText(text).then(() => {
+    navigator.clipboard.writeText(allWords.join('\n')).then(() => {
       toast({
         title: "¡Copiado!",
         description: `${allWords.length} palabras copiadas al portapapeles`,
@@ -86,111 +70,23 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
           results.additionalWildcardMatches.length > 0
         ) ? (
           <>
-            <div className="flex justify-end">
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2"
-                onClick={handleCopyAll}
-              >
-                <Copy className="h-4 w-4" />
-                Copiar todo
-              </Button>
-            </div>
+            <ResultsHeader onCopyAll={handleCopyAll} />
 
-            {/* Pattern matches section */}
-            {isPatternSearch && results.patternMatches.length > 0 && (
-              <div className="space-y-2">
-                <h3 className="font-semibold text-lg">
-                  {`${results.patternMatches.length} ${results.patternMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que coinciden con el patrón:`}
-                </h3>
-                <div className="grid grid-cols-3 gap-2">
-                  {results.patternMatches.map((word, index) => (
-                    <a
-                      key={`pattern-${index}`}
-                      href={`https://dle.rae.es/?w=${word}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block hover:bg-gray-100 p-1.5 rounded transition-colors text-lg w-full text-left"
-                    >
-                      {word}
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Regular search results sections */}
-            {!isPatternSearch && (
+            {isPatternSearch ? (
+              <PatternResults matches={results.patternMatches} />
+            ) : (
               <>
-                {/* First section: Results with exact letters or wildcards */}
-                {(results.exactMatches.length > 0 || results.wildcardMatches.length > 0) && (
-                  <div className="space-y-2">
-                    <h3 className="font-semibold text-lg">
-                      {wildcardCount === 0 ? (
-                        `${results.exactMatches.length} ${results.exactMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} usando todas las letras:`
-                      ) : (
-                        `${results.wildcardMatches.length} ${results.wildcardMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} usando todas las letras y ${wildcardCount} ${wildcardCount === 1 ? "comodín" : "comodines"}:`
-                      )}
-                    </h3>
-                    <div className="grid grid-cols-3 gap-2">
-                      {wildcardCount === 0 ? (
-                        results.exactMatches.map((word, index) => (
-                          <a
-                            key={`exact-${index}`}
-                            href={`https://dle.rae.es/?w=${word}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block hover:bg-gray-100 p-1.5 rounded transition-colors text-lg w-full text-left"
-                          >
-                            {highlightWildcardLetter(word, searchTerm)}
-                          </a>
-                        ))
-                      ) : (
-                        results.wildcardMatches.map((word, index) => (
-                          <a
-                            key={`wildcard-${index}`}
-                            href={`https://dle.rae.es/?w=${word}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block hover:bg-gray-100 p-1.5 rounded transition-colors text-lg w-full text-left"
-                          >
-                            {highlightWildcardLetter(word, searchTerm)}
-                          </a>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Shorter words section - grouped by length */}
-                {results.additionalWildcardMatches.length > 0 && (
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-lg">
-                      {`${results.additionalWildcardMatches.length} ${results.additionalWildcardMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} usando algunas letras:`}
-                    </h3>
-                    {sortedLengths.map(length => (
-                      <div key={`length-${length}`} className="space-y-2">
-                        <h4 className="font-medium text-gray-600">
-                          {`Palabras de ${length} ${length === 1 ? 'letra' : 'letras'} (${groupedShorterWords![length].length}):`}
-                        </h4>
-                        <div className="grid grid-cols-3 gap-2">
-                          {groupedShorterWords![length].map((word, index) => (
-                            <a
-                              key={`shorter-${length}-${index}`}
-                              href={`https://dle.rae.es/?w=${word}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="block hover:bg-gray-100 p-1.5 rounded transition-colors text-lg w-full text-left"
-                            >
-                              {highlightWildcardLetter(word, searchTerm)}
-                            </a>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <ExactResults
+                  matches={wildcardCount === 0 ? results.exactMatches : results.wildcardMatches}
+                  wildcardCount={wildcardCount}
+                  highlightWildcardLetter={highlightWildcardLetter}
+                  searchTerm={searchTerm}
+                />
+                <ShorterResults
+                  matches={results.additionalWildcardMatches}
+                  highlightWildcardLetter={highlightWildcardLetter}
+                  searchTerm={searchTerm}
+                />
               </>
             )}
           </>
