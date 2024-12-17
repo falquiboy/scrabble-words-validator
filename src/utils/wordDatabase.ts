@@ -2,7 +2,7 @@ import { processDigraphs, toDisplayFormat } from '@/utils/digraphs';
 import { wordTrie } from './trie';
 
 const DB_NAME = 'scrabbleDB';
-const DB_VERSION = 2;
+const DB_VERSION = 2; // Increased version to handle new store
 const WORDS_STORE = 'words';
 const TRIE_STORE = 'trie';
 
@@ -31,11 +31,13 @@ export class WordDatabase {
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
         
+        // Create or update words store
         if (!db.objectStoreNames.contains(WORDS_STORE)) {
           const store = db.createObjectStore(WORDS_STORE, { keyPath: 'word' });
           store.createIndex('processedWord', 'processedWord', { unique: true });
         }
 
+        // Create trie store
         if (!db.objectStoreNames.contains(TRIE_STORE)) {
           db.createObjectStore(TRIE_STORE, { keyPath: 'id' });
         }
@@ -85,10 +87,9 @@ export class WordDatabase {
 
       words.forEach(word => {
         const upperWord = word.toUpperCase();
-        const processedWord = processDigraphs(upperWord);
         store.put({
           word: upperWord,
-          processedWord
+          processedWord: processDigraphs(upperWord)
         });
       });
     });
@@ -118,6 +119,7 @@ export class WordDatabase {
 
       request.onerror = () => reject(request.error);
       request.onsuccess = () => {
+        // Return the display format of the words
         resolve(request.result.map(record => toDisplayFormat(record.word)));
       };
     });
@@ -127,19 +129,17 @@ export class WordDatabase {
     if (!this.db) throw new Error('Database not initialized');
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction([WORDS_STORE, TRIE_STORE], 'readwrite');
-      const wordsStore = transaction.objectStore(WORDS_STORE);
-      const trieStore = transaction.objectStore(TRIE_STORE);
+      const transaction = this.db!.transaction(WORDS_STORE, 'readwrite');
+      const store = transaction.objectStore(WORDS_STORE);
+      const request = store.clear();
 
-      transaction.onerror = () => reject(transaction.error);
-      transaction.oncomplete = () => resolve();
-
-      wordsStore.clear();
-      trieStore.clear();
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve();
     });
   }
 
   async getProcessedWords(): Promise<{ original: string; processed: string }[]> {
+    await this.init(); // Ensure database is initialized
     if (!this.db) throw new Error('Database not initialized');
 
     return new Promise((resolve, reject) => {

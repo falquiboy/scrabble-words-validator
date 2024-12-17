@@ -2,7 +2,6 @@ import { TrieNode, LengthIndexedTrie } from './trie/types';
 import { createNode, findNode, collectWords } from './trie/nodeOperations';
 import { createLengthIndex, findWordsByLength, findWordsByAlphagram } from './trie/indexing';
 import { searchExact, searchPattern } from './trie/search';
-import { processDigraphs, toDisplayFormat, generateAlphagram } from './digraphs';
 
 export class Trie {
   private root: TrieNode;
@@ -19,10 +18,9 @@ export class Trie {
   }
 
   insert(word: string, originalWord: string): void {
-    const processedWord = processDigraphs(word);
     let current = this.root;
     
-    for (const char of processedWord) {
+    for (const char of word) {
       if (!current.children.has(char)) {
         current.children.set(char, createNode());
       }
@@ -33,12 +31,12 @@ export class Trie {
     current.word = originalWord;
 
     // Update length index
-    const length = processedWord.length;
+    const length = word.length;
     if (!this.lengthIndex[length]) {
       this.lengthIndex[length] = {};
     }
     
-    const alphagram = generateAlphagram(processedWord);
+    const alphagram = this.sortLetters(word);
     if (!this.lengthIndex[length][alphagram]) {
       this.lengthIndex[length][alphagram] = [];
     }
@@ -51,28 +49,24 @@ export class Trie {
   }
 
   findAnagrams(letters: string): string[] {
-    const processedLetters = processDigraphs(letters);
-    const length = processedLetters.length;
-    const alphagram = generateAlphagram(processedLetters);
+    const length = letters.length;
+    const alphagram = this.sortLetters(letters);
     
-    return findWordsByAlphagram(this.lengthIndex, length, alphagram)
-      .map(word => toDisplayFormat(word));
+    return findWordsByAlphagram(this.lengthIndex, length, alphagram);
   }
 
   getWordsOfLength(length: number): string[] {
-    return findWordsByLength(this.lengthIndex, length)
-      .map(word => toDisplayFormat(word));
+    return findWordsByLength(this.lengthIndex, length);
   }
 
   getAllWords(): string[] {
     const words: string[] = [];
     this.dfs(this.root, words);
-    return words.map(word => toDisplayFormat(word));
+    return words;
   }
 
   getWordsStartingWith(prefix: string): string[] {
-    const processedPrefix = processDigraphs(prefix);
-    const node = findNode(this.root, processedPrefix);
+    const node = findNode(this.root, prefix);
     if (!node) return [];
     
     const words: string[] = [];
@@ -81,9 +75,10 @@ export class Trie {
     }
     
     collectWords(node, words);
-    return words.map(word => toDisplayFormat(word));
+    return words;
   }
 
+  // New serialization methods
   serialize(): string {
     return JSON.stringify(this.serializeNode(this.root));
   }
@@ -125,9 +120,8 @@ export class Trie {
     const words = this.getAllWords();
     
     words.forEach(word => {
-      const processedWord = processDigraphs(word);
-      const length = processedWord.length;
-      const alphagram = generateAlphagram(processedWord);
+      const length = word.length;
+      const alphagram = this.sortLetters(word);
       
       if (!this.lengthIndex[length]) {
         this.lengthIndex[length] = {};
@@ -143,6 +137,10 @@ export class Trie {
 
   private dfs(node: TrieNode, words: string[]): void {
     collectWords(node, words);
+  }
+
+  private sortLetters(letters: string): string {
+    return letters.split('').sort().join('');
   }
 }
 

@@ -11,7 +11,6 @@ export const useWordDatabase = () => {
   useEffect(() => {
     let mounted = true;
     let batchSize = 10000;
-    let maxRetries = 3;
 
     const initDB = async () => {
       try {
@@ -24,26 +23,22 @@ export const useWordDatabase = () => {
         const existingWords = await wordDB.getAllWords();
         console.log('Checking existing words in IndexedDB:', existingWords.length);
         
-        // Only proceed with loading if we have less than 600,000 words
+        // Only proceed with loading if we have less than 100,000 words
         // This is a safety check since we expect around 640,000 words
-        if (existingWords.length >= 639000) {
-          console.log('Full dictionary already in IndexedDB:', existingWords.length);
+        if (existingWords.length > 100000) {
+          console.log('Words already in IndexedDB:', existingWords.length);
           setIsLoading(false);
           return;
-        }
-
-        // Clear existing words if we have an incomplete dictionary
-        if (existingWords.length > 0 && existingWords.length < 639000) {
-          console.log('Clearing incomplete dictionary...');
-          await wordDB.clear();
         }
 
         // If insufficient words exist, start fetching from Supabase
         let hasMore = true;
         let totalWords = 0;
         let lastWord: string | null = null;
+        let retryCount = 0;
+        const maxRetries = 3;
 
-        const fetchBatchWithRetry = async (retryCount = 0): Promise<string[]> => {
+        while (hasMore && mounted) {
           try {
             console.log('Fetching batch starting after word:', lastWord);
             const { data: words, error: fetchError } = await supabase
@@ -52,27 +47,15 @@ export const useWordDatabase = () => {
                 last_word: lastWord
               });
 
-            if (fetchError) throw fetchError;
-            if (!words) return [];
-            
-            return words.map(w => w.word);
-          } catch (error) {
-            console.error(`Batch fetch error (attempt ${retryCount + 1}):`, error);
-            
-            if (retryCount < maxRetries) {
-              // Exponential backoff
-              const delay = Math.min(1000 * Math.pow(2, retryCount), 10000);
-              await new Promise(resolve => setTimeout(resolve, delay));
-              return fetchBatchWithRetry(retryCount + 1);
+            if (fetchError) {
+              console.error('Error fetching words:', fetchError);
+              if (retryCount < maxRetries) {
+                retryCount++;
+                continue;
+              }
+              throw fetchError;
             }
-            throw error;
-          }
-        };
 
-        while (hasMore && mounted) {
-          try {
-            const words = await fetchBatchWithRetry();
-            
             if (!words || words.length === 0) {
               console.log('No more words to fetch');
               hasMore = false;
@@ -83,9 +66,9 @@ export const useWordDatabase = () => {
 
             if (mounted) {
               // Store this batch in IndexedDB
-              await wordDB.addWords(words);
+              await wordDB.addWords(words.map(w => w.word));
               totalWords += words.length;
-              lastWord = words[words.length - 1];
+              lastWord = words[words.length - 1].word;
 
               // Update progress every 50,000 words
               if (totalWords % 50000 === 0) {
@@ -101,29 +84,11 @@ export const useWordDatabase = () => {
             }
           } catch (err) {
             console.error('Error in batch processing:', err);
-            // If we've loaded some words, we can continue from the last successful point
-            if (totalWords > 0) {
-              toast({
-                variant: "destructive",
-                title: "Error",
-                description: "Error al cargar algunas palabras. Reintentando...",
-              });
+            if (retryCount < maxRetries) {
+              retryCount++;
               continue;
             }
             throw err;
-          }
-        }
-
-        // Verify final word count
-        const finalWordCount = await wordDB.getAllWords();
-        console.log('Final word count in IndexedDB:', finalWordCount.length);
-        
-        if (finalWordCount.length < 639000) {
-          console.error('Dictionary incomplete, retrying initialization...');
-          if (mounted) {
-            await wordDB.clear();
-            await initDB();
-            return;
           }
         }
 
