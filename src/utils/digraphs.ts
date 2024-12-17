@@ -1,9 +1,9 @@
 export const processDigraphs = (input: string): string => {
   let result = input.toUpperCase();
-  // Process only first instance of each digraph
-  result = result.replace(/CH/, 'Ç');
-  result = result.replace(/LL/, 'K');
-  result = result.replace(/RR/, 'W');
+  // Process all instances of each digraph with global flag
+  result = result.replace(/CH/g, 'Ç');
+  result = result.replace(/LL/g, 'K');
+  result = result.replace(/RR/g, 'W');
   return result;
 };
 
