@@ -5,10 +5,13 @@ import { useOfflineAnagramSearch } from "@/hooks/useOfflineAnagramSearch";
 import { highlightWildcardLetter } from "@/utils/wildcardHighlighting";
 import { useGlobalTrie } from "@/hooks/useGlobalTrie";
 import { useToast } from "@/hooks/use-toast";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 const Anagramador = () => {
   const [letters, setLetters] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [showShorterWords, setShowShorterWords] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -71,6 +74,14 @@ const Anagramador = () => {
         onKeyPress={handleKeyPress}
         inputRef={inputRef}
       />
+      <div className="flex items-center space-x-2">
+        <Switch
+          id="show-shorter"
+          checked={showShorterWords}
+          onCheckedChange={setShowShorterWords}
+        />
+        <Label htmlFor="show-shorter">Mostrar palabras más cortas</Label>
+      </div>
       <ResultsList
         isLoading={isSearchLoading}
         searchTerm={searchTerm}
@@ -82,6 +93,7 @@ const Anagramador = () => {
           shorterMatches: results?.shorterMatches || new Map()
         }}
         highlightWildcardLetter={renderHighlightedWord}
+        showShorterWords={showShorterWords}
       />
     </div>
   );

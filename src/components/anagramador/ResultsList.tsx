@@ -12,9 +12,10 @@ interface ResultsListProps {
     shorterMatches: Map<number, Set<string>>;
   } | undefined;
   highlightWildcardLetter: (word: string, originalWord: string) => React.ReactNode;
+  showShorterWords?: boolean;
 }
 
-const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }: ResultsListProps) => {
+const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter, showShorterWords = false }: ResultsListProps) => {
   // Count wildcards in search term
   const wildcardCount = (searchTerm.match(/\*/g) || []).length;
   const isPatternSearch = searchTerm.includes('/');
@@ -56,7 +57,7 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
             Buscando anagramas...
           </div>
         ) : results && (
-          hasPatternMatches || hasAnyMatches || hasShorterMatches
+          hasPatternMatches || hasAnyMatches || (hasShorterMatches && showShorterWords)
         ) ? (
           <>
             {/* Pattern matches section */}
@@ -127,7 +128,7 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
                 )}
 
                 {/* Third section: Shorter words */}
-                {hasShorterMatches && (
+                {hasShorterMatches && showShorterWords && (
                   <div className="space-y-4">
                     <h3 className="font-semibold text-lg text-gray-600">
                       {!hasAnyMatches 
