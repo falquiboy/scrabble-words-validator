@@ -15,7 +15,7 @@ const Anagramador = () => {
 
   // Handle input changes
   const handleInputChange = (value: string) => {
-    const sanitizedValue = value.replace(/[^a-zA-ZÑñ*/.]/g, '');
+    const sanitizedValue = value.replace(/[^a-zA-ZÑñ*?/.]/g, '');
     setLetters(sanitizedValue.toUpperCase());
   };
 
