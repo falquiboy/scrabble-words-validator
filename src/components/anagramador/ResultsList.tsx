@@ -93,7 +93,7 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
                             rel="noopener noreferrer"
                             className="block hover:bg-gray-100 p-1.5 rounded transition-colors text-lg w-full text-left"
                           >
-                            {word}
+                            {highlightWildcardLetter(word, searchTerm)}
                           </a>
                         ))
                       ) : (
@@ -133,7 +133,7 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
                               rel="noopener noreferrer"
                               className="block hover:bg-gray-100 p-1.5 rounded transition-colors text-lg w-full text-left"
                             >
-                              {word}
+                              {highlightWildcardLetter(word, searchTerm)}
                             </a>
                           ))}
                         </div>
