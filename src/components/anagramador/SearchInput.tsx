@@ -44,7 +44,7 @@ const SearchInput = ({
                 const newValue = `${pattern}/${validRack}`;
                 onInputChange(newValue.toUpperCase());
               } else {
-                // If no rack part, allow * and ? anywhere
+                // If no rack part, allow *, ? and letters
                 const validPattern = value.replace(/[^A-ZÑa-zñ\s*?/]/g, '');
                 onInputChange(validPattern.toUpperCase());
               }
