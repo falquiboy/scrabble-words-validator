@@ -74,18 +74,20 @@ export const useOfflineAnagramSearch = (searchTerm: string, showShorter: boolean
       };
     } else if (wildcardCount === 0) {
       const exactMatches = Array.from(findExactMatches(processedInput));
+      const additionalMatches = Array.from(findAdditionalMatches(processedInput, 0));
       results = {
         exactMatches,
         wildcardMatches: [],
-        additionalWildcardMatches: [],
+        additionalWildcardMatches: additionalMatches,
         patternMatches: []
       };
     } else {
       const wildcardMatches = Array.from(findWildcardMatches(processedInput, wildcardCount));
+      const additionalMatches = Array.from(findAdditionalMatches(processedInput, wildcardCount));
       results = {
         exactMatches: [],
         wildcardMatches,
-        additionalWildcardMatches: [],
+        additionalWildcardMatches: additionalMatches,
         patternMatches: []
       };
     }
