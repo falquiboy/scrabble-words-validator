@@ -10,7 +10,7 @@ export const searchPattern = (words: string[], pattern: string, rackLetters: str
   return words.filter(word => matchesPattern(word, pattern, rackLetters));
 };
 
-const matchesPattern = (word: string, pattern: string, rackLetters: string): boolean => {
+export const matchesPattern = (word: string, pattern: string, rackLetters: string): boolean => {
   // Convert pattern to regex
   const regexPattern = pattern
     .split('')
