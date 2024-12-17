@@ -22,9 +22,11 @@ const Anagramador = () => {
   const { data: results, isLoading: isSearchLoading } = useOfflineAnagramSearch(searchTerm);
 
   const handleInputChange = (value: string) => {
-    // Updated regex to allow hyphens along with letters and wildcards
-    const sanitizedValue = value.replace(/[^a-zA-ZÑñ*\-/.]/g, '');
-    setLetters(sanitizedValue.toUpperCase());
+    // Updated regex to allow hyphens, question marks, and asterisks along with letters
+    const sanitizedValue = value.replace(/[^a-zA-ZÑñ*?\-/.]/g, '');
+    // Replace question marks with asterisks for consistency in the search
+    const normalizedValue = sanitizedValue.replace(/\?/g, '*');
+    setLetters(normalizedValue.toUpperCase());
   };
 
   // Handle search
