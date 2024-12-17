@@ -36,14 +36,14 @@ export const highlightWildcardLetter = (word: string, searchTerm: string) => {
         // Check if this letter is part of a digraph
         const possibleDigraph = word.substr(wildcardPosition, 2);
         if (digraphs.includes(possibleDigraph)) {
-          // Wrap both letters of the digraph
+          // Wrap both letters of the digraph in blue (user wildcard)
           result = word.slice(0, wildcardPosition) + 
-                  `<span class="font-bold text-blue-500">${possibleDigraph}</span>` + 
+                  `<span class="text-blue-500 font-bold">${possibleDigraph}</span>` + 
                   word.slice(wildcardPosition + 2);
         } else {
-          // Wrap single letter
+          // Wrap single letter in blue (user wildcard)
           result = word.slice(0, wildcardPosition) + 
-                  `<span class="font-bold text-blue-500">${word[wildcardPosition]}</span>` + 
+                  `<span class="text-blue-500 font-bold">${word[wildcardPosition]}</span>` + 
                   word.slice(wildcardPosition + 1);
         }
       }
@@ -72,14 +72,14 @@ export const highlightWildcardLetter = (word: string, searchTerm: string) => {
       // Check if this letter is part of a digraph
       const possibleDigraph = word.substr(additionalLetterPos, 2);
       if (digraphs.includes(possibleDigraph)) {
-        // Wrap both letters of the digraph in blue
+        // Wrap both letters of the digraph in red (additional letter)
         result = word.slice(0, additionalLetterPos) + 
-                `<span class="text-blue-500 font-bold">${possibleDigraph}</span>` + 
+                `<span class="text-red-500 font-bold">${possibleDigraph}</span>` + 
                 word.slice(additionalLetterPos + 2);
       } else {
-        // Wrap single letter in blue
+        // Wrap single letter in red (additional letter)
         result = word.slice(0, additionalLetterPos) + 
-                `<span class="text-blue-500 font-bold">${word[additionalLetterPos]}</span>` + 
+                `<span class="text-red-500 font-bold">${word[additionalLetterPos]}</span>` + 
                 word.slice(additionalLetterPos + 1);
       }
     }
