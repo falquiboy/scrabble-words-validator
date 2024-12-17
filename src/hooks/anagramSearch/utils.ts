@@ -2,14 +2,35 @@ import { SPANISH_LETTERS } from './constants';
 import { processDigraphs, generateAlphagram, hasAdjacentDigraphLetters } from '@/utils/digraphs';
 import { wordTrie } from '@/utils/trie';
 
-export const generateWildcardCombinations = (base: string, remainingWildcards: number): string[] => {
-  if (remainingWildcards === 0) return [base];
+export const generateWildcardCombinations = (base: string, remainingWildcards: { asterisks: number, questionMarks: number }): string[] => {
+  if (remainingWildcards.asterisks === 0 && remainingWildcards.questionMarks === 0) return [base];
   
   const combinations: string[] = [];
-  for (const letter of SPANISH_LETTERS) {
-    const newBase = base + letter;
-    combinations.push(...generateWildcardCombinations(newBase, remainingWildcards - 1));
+  
+  // Handle asterisk wildcards first (any letter)
+  if (remainingWildcards.asterisks > 0) {
+    for (const letter of SPANISH_LETTERS) {
+      const newBase = base + letter;
+      combinations.push(...generateWildcardCombinations(newBase, {
+        asterisks: remainingWildcards.asterisks - 1,
+        questionMarks: remainingWildcards.questionMarks
+      }));
+    }
   }
+  // Handle question mark wildcards (must be a letter not in the original word)
+  else if (remainingWildcards.questionMarks > 0) {
+    const usedLetters = new Set(base.split(''));
+    for (const letter of SPANISH_LETTERS) {
+      if (!usedLetters.has(letter)) {
+        const newBase = base + letter;
+        combinations.push(...generateWildcardCombinations(newBase, {
+          asterisks: remainingWildcards.asterisks,
+          questionMarks: remainingWildcards.questionMarks - 1
+        }));
+      }
+    }
+  }
+  
   return combinations;
 };
 
@@ -18,9 +39,18 @@ export const findExactMatches = (processedInput: string): Set<string> => {
   return new Set(wordTrie.findAnagrams(alphagram));
 };
 
-export const findWildcardMatches = (processedInput: string, wildcardCount: number): Set<string> => {
+export const findWildcardMatches = (processedInput: string): Set<string> => {
   const matches = new Set<string>();
-  const combinations = generateWildcardCombinations(processedInput, wildcardCount);
+  const asteriskCount = (processedInput.match(/\*/g) || []).length;
+  const questionMarkCount = (processedInput.match(/\?/g) || []).length;
+  
+  // Remove wildcards for base processing
+  const baseLetters = processedInput.replace(/[*?]/g, '');
+  
+  const combinations = generateWildcardCombinations(baseLetters, {
+    asterisks: asteriskCount,
+    questionMarks: questionMarkCount
+  });
   
   for (const combo of combinations) {
     const alphagram = generateAlphagram(combo);
@@ -48,7 +78,7 @@ export const findAdditionalMatches = (baseLetters: string, wildcardCount: number
   
   // If we have wildcards, also search additional combinations
   if (wildcardCount > 0) {
-    const wildcardCombos = generateWildcardCombinations(baseLetters, wildcardCount);
+    const wildcardCombos = generateWildcardCombinations(baseLetters, { asterisks: wildcardCount, questionMarks: 0 });
     for (const combo of wildcardCombos) {
       for (const letter of SPANISH_LETTERS) {
         // Try adding the letter at each position
