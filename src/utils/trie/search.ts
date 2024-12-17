@@ -44,6 +44,23 @@ export const searchPattern = (words: string[], pattern: string, rackLetters: str
           canMakeWordWithRack(word, processedRack, processedPattern)
         )
         .map(toDisplayFormat);
+    } else {
+      // Pattern with hyphen in middle: e.g. ".N-"
+      const parts = processedPattern.split('-');
+      const prefix = parts[0];
+      
+      return words
+        .map(word => processDigraphs(word))
+        .filter(word => {
+          // Check if word starts with the pattern before the hyphen
+          if (!matchesExactPattern(word.slice(0, prefix.length), prefix, processedRack)) {
+            return false;
+          }
+          
+          // Check if remaining letters can be made with rack
+          return canMakeWordWithRack(word.slice(prefix.length), processedRack, '');
+        })
+        .map(toDisplayFormat);
     }
   }
 
@@ -59,33 +76,54 @@ const matchesPattern = (word: string, pattern: string, rackLetters: string): boo
   return canMakeWordWithRack(word, rackLetters, pattern);
 };
 
+const matchesExactPattern = (word: string, pattern: string, rackLetters: string): boolean => {
+  if (word.length !== pattern.length) return false;
+  
+  for (let i = 0; i < pattern.length; i++) {
+    if (pattern[i] === '.') {
+      // For dot, the letter must be in the rack
+      if (!rackLetters.includes(word[i])) return false;
+    } else if (pattern[i] === '?') {
+      // For question mark, the letter must NOT be in the rack
+      if (rackLetters.includes(word[i])) return false;
+    } else {
+      // For normal letters, must match exactly
+      if (pattern[i] !== word[i]) return false;
+    }
+  }
+  
+  return true;
+};
+
 const canMakeWordWithRack = (word: string, rackLetters: string, pattern: string): boolean => {
   const rackLettersCopy = [...rackLetters];
   const patternArray = [...pattern];
-  const isHyphenPattern = pattern.includes('-');
 
-  // For hyphen patterns, we only need to check the non-fixed positions
   for (let i = 0; i < word.length; i++) {
-    if (isHyphenPattern) {
-      // Skip checking positions that are covered by hyphens
-      if (pattern.startsWith('-') && i < pattern.length - 1) continue;
-      if (pattern.endsWith('-') && i >= pattern.indexOf('-')) continue;
-      if (pattern.startsWith('-') && pattern.endsWith('-')) {
-        const substring = pattern.slice(1, -1);
-        const startIdx = word.indexOf(substring);
-        if (i < startIdx || i >= startIdx + substring.length) continue;
+    // Skip pattern checking if we're just validating remaining letters
+    if (pattern && patternArray[i]) {
+      if (patternArray[i] === '.') {
+        // For dot, must use a letter from the rack
+        const letterIndex = rackLettersCopy.indexOf(word[i]);
+        if (letterIndex === -1) return false;
+        rackLettersCopy.splice(letterIndex, 1);
+        continue;
       }
-    }
-
-    // For question marks or positions we need to check
-    if (patternArray[i] === '?' || isHyphenPattern) {
-      const letterIndex = rackLettersCopy.indexOf(word[i]);
-      if (letterIndex === -1) {
+      if (patternArray[i] === '?') {
+        // For question mark, must NOT use a letter from the rack
+        if (rackLettersCopy.includes(word[i])) return false;
+        continue;
+      }
+      if (patternArray[i] !== '-' && patternArray[i] !== word[i]) {
         return false;
       }
+    }
+    
+    // For non-pattern letters or after hyphen, just check if we can make it with rack
+    if (!pattern || patternArray[i] === '-') {
+      const letterIndex = rackLettersCopy.indexOf(word[i]);
+      if (letterIndex === -1) return false;
       rackLettersCopy.splice(letterIndex, 1);
-    } else if (patternArray[i] !== word[i]) {
-      return false;
     }
   }
 
