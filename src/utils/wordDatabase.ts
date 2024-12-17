@@ -1,7 +1,7 @@
 import { processDigraphs, toDisplayFormat } from '@/utils/digraphs';
 
 const DB_NAME = 'scrabbleDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // Updated from 1 to 2 to match existing DB version
 const STORE_NAME = 'words';
 
 export class WordDatabase {
