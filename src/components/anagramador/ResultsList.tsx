@@ -98,22 +98,22 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
                   </div>
                 )}
 
-                {/* Second section: Results with one additional letter */}
+                {/* Shorter words section */}
                 {results.additionalWildcardMatches.length > 0 && (
                   <div className="space-y-2">
                     <h3 className="font-semibold text-lg">
-                      {`${results.additionalWildcardMatches.length} ${results.additionalWildcardMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} usando todas las letras más una letra adicional:`}
+                      {`${results.additionalWildcardMatches.length} ${results.additionalWildcardMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} usando algunas letras:`}
                     </h3>
                     <div className="grid grid-cols-3 gap-2">
                       {results.additionalWildcardMatches.map((word, index) => (
                         <a
-                          key={`additional-${index}`}
+                          key={`shorter-${index}`}
                           href={`https://dle.rae.es/?w=${word}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="block hover:bg-gray-100 p-1.5 rounded transition-colors text-lg w-full text-left"
                         >
-                          {highlightWildcardLetter(word, searchTerm)}
+                          {word}
                         </a>
                       ))}
                     </div>

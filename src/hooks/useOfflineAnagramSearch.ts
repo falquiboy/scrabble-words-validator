@@ -6,7 +6,8 @@ import { SearchResults, SearchState } from "./anagramSearch/types";
 import { 
   findExactMatches, 
   findWildcardMatches, 
-  findAdditionalMatches 
+  findAdditionalMatches,
+  findShorterMatches 
 } from "./anagramSearch/utils";
 import { searchPattern } from "@/utils/trie/search";
 
@@ -62,24 +63,29 @@ export const useOfflineAnagramSearch = (searchTerm: string, showShorter: boolean
     const startTime = performance.now();
     let results: SearchResults;
 
-    if (wildcardCount === 0) {
-      const exactMatches = Array.from(findExactMatches(processedInput));
-      const shorterMatches = showShorter ? Array.from(findAdditionalMatches(processedInput, 0)) : [];
-      
+    // Handle shorter words mode
+    if (showShorter) {
+      const shorterMatches = Array.from(findShorterMatches(processedInput));
       results = {
-        exactMatches,
+        exactMatches: [],
         wildcardMatches: [],
         additionalWildcardMatches: shorterMatches,
         patternMatches: []
       };
+    } else if (wildcardCount === 0) {
+      const exactMatches = Array.from(findExactMatches(processedInput));
+      results = {
+        exactMatches,
+        wildcardMatches: [],
+        additionalWildcardMatches: [],
+        patternMatches: []
+      };
     } else {
       const wildcardMatches = Array.from(findWildcardMatches(processedInput, wildcardCount));
-      const additionalMatches = showShorter ? Array.from(findAdditionalMatches(processedInput, wildcardCount)) : [];
-      
       results = {
         exactMatches: [],
         wildcardMatches,
-        additionalWildcardMatches: additionalMatches,
+        additionalWildcardMatches: [],
         patternMatches: []
       };
     }
