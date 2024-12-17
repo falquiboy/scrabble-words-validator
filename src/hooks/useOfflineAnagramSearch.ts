@@ -67,7 +67,7 @@ export const useOfflineAnagramSearch = (searchTerm: string): SearchState => {
 
     if (wildcardCount === 0) {
       const exactMatches = Array.from(findExactMatches(processedInput));
-      const additionalMatches = Array.from(findAdditionalMatches(processedInput));
+      const additionalMatches = Array.from(findAdditionalMatches(processedInput, wildcardCount));
       
       // Only search for shorter words if no exact or additional matches were found
       const shorterMatches = (exactMatches.length === 0 && additionalMatches.length === 0) 
@@ -83,7 +83,7 @@ export const useOfflineAnagramSearch = (searchTerm: string): SearchState => {
       };
     } else {
       const wildcardMatches = Array.from(findWildcardMatches(processedInput, wildcardCount));
-      const additionalMatches = Array.from(findAdditionalMatches(processedInput));
+      const additionalMatches = Array.from(findAdditionalMatches(processedInput, wildcardCount));
       
       // Only search for shorter words if no wildcard or additional matches were found
       const shorterMatches = (wildcardMatches.length === 0 && additionalMatches.length === 0)

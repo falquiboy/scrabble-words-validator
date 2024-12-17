@@ -39,13 +39,13 @@ export const findExactMatches = (processedInput: string): Set<string> => {
   return new Set(wordTrie.findAnagrams(alphagram));
 };
 
-export const findWildcardMatches = (processedInput: string): Set<string> => {
+export const findWildcardMatches = (processedInput: string, wildcardCount: number): Set<string> => {
   const matches = new Set<string>();
-  const asteriskCount = (processedInput.match(/\*/g) || []).length;
-  const questionMarkCount = (processedInput.match(/\?/g) || []).length;
+  const asteriskCount = wildcardCount;
+  const questionMarkCount = 0;
   
   // Remove wildcards for base processing
-  const baseLetters = processedInput.replace(/[*?]/g, '');
+  const baseLetters = processedInput;
   
   const combinations = generateWildcardCombinations(baseLetters, {
     asterisks: asteriskCount,
