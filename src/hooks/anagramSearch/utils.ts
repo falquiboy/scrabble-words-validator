@@ -1,5 +1,6 @@
 import { SPANISH_LETTERS } from "./constants";
 import { processDigraphs } from "@/utils/digraphs";
+import { wordTrie } from "@/utils/trie";
 
 // Helper function to check if a word can be formed from given letters
 const canFormWord = (word: string, letters: string): boolean => {
@@ -26,7 +27,7 @@ export const findExactMatches = (letters: string): Set<string> => {
   const processedLetters = processDigraphs(letters);
   
   // Get words of the same length
-  const wordsOfLength = window.wordTrie.getWordsOfLength(processedLetters.length);
+  const wordsOfLength = wordTrie.getWordsOfLength(processedLetters.length);
   
   for (const word of wordsOfLength) {
     if (canFormWord(word, processedLetters)) {
@@ -50,7 +51,7 @@ export const findWildcardMatches = (processedInput: string, wildcardCount: numbe
   });
   
   for (const combo of combinations) {
-    const wordsOfLength = window.wordTrie.getWordsOfLength(combo.length);
+    const wordsOfLength = wordTrie.getWordsOfLength(combo.length);
     for (const word of wordsOfLength) {
       if (canFormWord(word, combo)) {
         matches.add(word);
@@ -71,7 +72,7 @@ export const findAdditionalMatches = (baseLetters: string, wildcardCount: number
     // Try adding the letter at each position
     for (let i = 0; i <= processedBase.length; i++) {
       const newWord = processedBase.slice(0, i) + letter + processedBase.slice(i);
-      const wordsOfLength = window.wordTrie.getWordsOfLength(newWord.length);
+      const wordsOfLength = wordTrie.getWordsOfLength(newWord.length);
       
       for (const word of wordsOfLength) {
         if (canFormWord(word, newWord)) {
@@ -89,7 +90,7 @@ export const findAdditionalMatches = (baseLetters: string, wildcardCount: number
         // Try adding the letter at each position
         for (let i = 0; i <= combo.length; i++) {
           const newWord = combo.slice(0, i) + letter + combo.slice(i);
-          const wordsOfLength = window.wordTrie.getWordsOfLength(newWord.length);
+          const wordsOfLength = wordTrie.getWordsOfLength(newWord.length);
           
           for (const word of wordsOfLength) {
             if (canFormWord(word, newWord)) {
@@ -111,7 +112,7 @@ export const findShorterWords = (letters: string): Map<number, Set<string>> => {
   
   // For each possible length shorter than the input
   for (let len = 2; len < processedLetters.length; len++) {
-    const wordsOfLength = window.wordTrie.getWordsOfLength(len);
+    const wordsOfLength = wordTrie.getWordsOfLength(len);
     const matches = new Set<string>();
     
     for (const word of wordsOfLength) {
