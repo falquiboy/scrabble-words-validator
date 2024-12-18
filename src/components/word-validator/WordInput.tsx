@@ -33,34 +33,77 @@ const WordInput = ({
 }: WordInputProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [showKeyboard, setShowKeyboard] = useState(true);
+  const [cursorPosition, setCursorPosition] = useState<number | null>(null);
+
+  // Handle cursor position changes
+  const handleSelectionChange = () => {
+    if (inputRef.current) {
+      setCursorPosition(inputRef.current.selectionStart);
+    }
+  };
 
   useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+    const input = inputRef.current;
+    if (input) {
+      const events = ['click', 'focus', 'select', 'keyup', 'touchend'];
+      events.forEach(event => {
+        input.addEventListener(event, handleSelectionChange);
+      });
 
-  useEffect(() => {
-    const handleGlobalEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        if (word) {
-          onWordChange("");
-        }
-        onEditStart();
-        setTimeout(() => {
-          inputRef.current?.focus();
-        }, 0);
+      return () => {
+        events.forEach(event => {
+          input.removeEventListener(event, handleSelectionChange);
+        });
+      };
+    }
+  }, [inputRef]);
+
+  const handleCustomKeyPress = (key: string) => {
+    const input = inputRef.current;
+    if (!input) return;
+
+    if (key === "Enter") {
+      onValidate();
+      return;
+    }
+
+    const currentValue = word;
+    const pos = cursorPosition !== null ? cursorPosition : currentValue.length;
+
+    if (key === "Backspace") {
+      if (pos > 0) {
+        const newValue = currentValue.slice(0, pos - 1) + currentValue.slice(pos);
+        onWordChange(newValue);
+        
+        // Update cursor position after backspace
+        const newPos = pos - 1;
+        setCursorPosition(newPos);
+        
+        requestAnimationFrame(() => {
+          if (input) {
+            input.focus();
+            input.setSelectionRange(newPos, newPos);
+          }
+        });
       }
-    };
+      return;
+    }
 
-    window.addEventListener('keydown', handleGlobalEsc);
-    return () => window.removeEventListener('keydown', handleGlobalEsc);
-  }, [word, onWordChange, onEditStart]);
-
-  const getInputBackground = () => {
-    if (!result.checked) return "bg-white text-black";
-    return result.isValid 
-      ? "bg-scrabble-valid text-white" 
-      : "bg-scrabble-invalid text-white";
+    // Insert the key at cursor position
+    const newValue = currentValue.slice(0, pos) + key + currentValue.slice(pos);
+    const validValue = newValue.replace(/[^A-ZÑa-zñ\s]/g, '').toUpperCase();
+    onWordChange(validValue);
+    
+    // Update cursor position after insertion
+    const newPos = pos + 1;
+    setCursorPosition(newPos);
+    
+    requestAnimationFrame(() => {
+      if (input) {
+        input.focus();
+        input.setSelectionRange(newPos, newPos);
+      }
+    });
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -80,31 +123,28 @@ const WordInput = ({
           .normalize('NFC');
       })
       .join('')
-      .replace(/[^A-ZÑ\s]/g, '')
-      .replace(/[KW]/g, '');
+      .replace(/[^A-ZÑ\s]/g, '');
     
     onWordChange(value);
     
-    setTimeout(() => {
+    // Maintain cursor position after change
+    requestAnimationFrame(() => {
       input.setSelectionRange(cursorPosition, cursorPosition);
-    }, 0);
+    });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
+      e.preventDefault();
       onValidate();
     }
   };
 
-  const handleCustomKeyPress = (key: string) => {
-    if (key === "Backspace") {
-      onWordChange(word.slice(0, -1));
-      return;
-    }
-    const currentValue = word;
-    const newValue = currentValue + key;
-    const validValue = newValue.replace(/[^A-ZÑ\s]/g, '').toUpperCase();
-    onWordChange(validValue);
+  const getInputBackground = () => {
+    if (!result.checked) return "bg-white text-black";
+    return result.isValid 
+      ? "bg-scrabble-valid text-white" 
+      : "bg-scrabble-invalid text-white";
   };
 
   // Prevent mobile keyboard
@@ -118,7 +158,7 @@ const WordInput = ({
         }
       });
     }
-  }, [inputRef]);
+  }, []);
 
   return (
     <div className="relative">
@@ -156,7 +196,7 @@ const WordInput = ({
               autoCorrect="off"
               autoCapitalize="off"
               autoComplete="off"
-              inputMode="text"
+              inputMode="none"
               enterKeyHint="done"
             />
           )}
