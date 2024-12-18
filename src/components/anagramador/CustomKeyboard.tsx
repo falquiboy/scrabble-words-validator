@@ -63,7 +63,7 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
           </Button>
         </div>
         {/* Bottom row with centered space bar */}
-        <div className="flex justify-center items-center gap-1">
+        <div className="flex justify-between items-center gap-1">
           <Button
             variant="destructive"
             className="h-14 w-14 flex items-center justify-center shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.2)] active:shadow-[inset_0_2px_0_0_rgba(0,0,0,0.2)] active:translate-y-[1px] transition-all"
@@ -73,7 +73,7 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
           </Button>
           <Button
             variant="secondary"
-            className="h-14 w-[40%] text-lg font-bold shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.2)] active:shadow-[inset_0_2px_0_0_rgba(0,0,0,0.2)] active:translate-y-[1px] transition-all bg-white border border-gray-200"
+            className="h-14 w-[60%] text-lg font-bold shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.2)] active:shadow-[inset_0_2px_0_0_rgba(0,0,0,0.2)] active:translate-y-[1px] transition-all bg-white border border-gray-200"
             onClick={() => onKeyPress(" ")}
           >
             Espacio
