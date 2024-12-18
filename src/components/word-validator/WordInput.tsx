@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Check, X } from "lucide-react";
@@ -96,6 +96,10 @@ const WordInput = ({
   };
 
   const handleCustomKeyPress = (key: string) => {
+    if (key === "Backspace") {
+      onWordChange(word.slice(0, -1));
+      return;
+    }
     const currentValue = word;
     const newValue = currentValue + key;
     const validValue = newValue.replace(/[^A-ZÑ\s]/g, '').toUpperCase();
@@ -174,7 +178,10 @@ const WordInput = ({
           )}
         </Button>
       )}
-      <CustomKeyboard onKeyPress={handleCustomKeyPress} onClear={onClear} />
+      <CustomKeyboard 
+        onKeyPress={handleCustomKeyPress} 
+        onClear={onClear} 
+      />
     </div>
   );
 };
