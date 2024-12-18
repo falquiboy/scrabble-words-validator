@@ -2,7 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, X } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { RefObject, useEffect, useState } from "react";
+import { RefObject, useEffect } from "react";
 import CustomKeyboard from "./CustomKeyboard";
 
 interface SearchInputProps {
@@ -42,7 +42,8 @@ const SearchInput = ({
   const handleCustomKeyPress = (key: string) => {
     const currentValue = letters;
     const newValue = currentValue + key;
-    onInputChange(newValue);
+    const validValue = newValue.replace(/[^A-ZÑa-zñ\s*?/]/g, '').toUpperCase();
+    onInputChange(validValue);
   };
 
   return (
