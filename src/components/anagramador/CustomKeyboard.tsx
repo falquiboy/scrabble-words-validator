@@ -40,7 +40,7 @@ const CustomKeyboard = ({ onKeyPress, onClear }: CustomKeyboardProps) => {
             </Button>
           ))}
         </div>
-        {/* Third row with clear button */}
+        {/* Third row with slash button */}
         <div className="flex justify-center gap-1">
           {row3.map((key) => (
             <Button
@@ -54,16 +54,16 @@ const CustomKeyboard = ({ onKeyPress, onClear }: CustomKeyboardProps) => {
           ))}
           <Button
             variant="secondary"
-            className="h-14 w-[9.5%] flex items-center justify-center"
-            onClick={onClear}
+            className="h-14 w-[9.5%] text-xl font-bold"
+            onClick={() => onKeyPress("/")}
           >
-            <CircleX className="h-6 w-6" />
+            /
           </Button>
         </div>
         {/* Bottom row with centered space bar */}
         <div className="flex justify-center items-center gap-1">
-          <div className="w-[9.5%]" /> {/* Left spacer */}
-          <div className="flex-1 max-w-[50%] border-2 border-gray-300 rounded-xl p-1">
+          <div className="w-[15%]" /> {/* Left spacer */}
+          <div className="border-2 border-gray-300 rounded-xl p-1 w-[40%]">
             <Button
               variant="secondary"
               className="h-14 w-full text-lg font-bold"
@@ -73,13 +73,13 @@ const CustomKeyboard = ({ onKeyPress, onClear }: CustomKeyboardProps) => {
             </Button>
           </div>
           <Button
-            variant="secondary"
-            className="h-14 w-[30%] text-lg font-bold"
-            onClick={() => onKeyPress("/")}
+            variant="destructive"
+            className="h-14 w-[9.5%] flex items-center justify-center"
+            onClick={onClear}
           >
-            /
+            <CircleX className="h-6 w-6 text-white" />
           </Button>
-          <div className="w-[9.5%]" /> {/* Right spacer */}
+          <div className="w-[15%]" /> {/* Right spacer */}
         </div>
       </div>
     </div>
