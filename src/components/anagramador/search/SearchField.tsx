@@ -37,11 +37,11 @@ const SearchField = ({
     }
     
     // Update cursor position after onChange
-    setTimeout(() => {
+    requestAnimationFrame(() => {
       if (inputRef.current) {
         setCursorPosition(inputRef.current.selectionStart);
       }
-    }, 0);
+    });
   };
 
   return (
@@ -53,14 +53,7 @@ const SearchField = ({
           placeholder="Ingresa letras o patrón (usa ? para una letra, * para cero o más letras)..."
           value={letters}
           onChange={handleChange}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              onValidate();
-            } else {
-              onKeyPress(e);
-            }
-          }}
+          onKeyDown={onKeyPress}
           className="text-xl h-12 text-left pr-24 caret-blue-500"
           autoCapitalize="off"
           inputMode="none"

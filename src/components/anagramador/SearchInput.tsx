@@ -103,8 +103,7 @@ const SearchInput = ({
 
     // Insert the key at cursor position
     const newValue = currentValue.slice(0, pos) + key + currentValue.slice(pos);
-    const validValue = newValue.replace(/[^A-ZÑa-zñ\s*?/]/g, '').toUpperCase();
-    onInputChange(validValue);
+    onInputChange(newValue.toUpperCase());
     
     // Update cursor position after insertion
     const newPos = pos + 1;
@@ -118,6 +117,15 @@ const SearchInput = ({
     });
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleValidate();
+    } else {
+      onKeyPress(e);
+    }
+  };
+
   return (
     <div className="space-y-2">
       <SearchField
@@ -126,7 +134,7 @@ const SearchInput = ({
         onInputChange={onInputChange}
         onValidate={handleValidate}
         onClear={onClear}
-        onKeyPress={onKeyPress}
+        onKeyPress={handleKeyPress}
         setCursorPosition={setCursorPosition}
       />
       <ShorterWordsToggle
