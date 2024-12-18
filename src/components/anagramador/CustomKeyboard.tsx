@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Trash2, Backspace } from "lucide-react";
+import { Trash2, Delete } from "lucide-react";
 
 interface CustomKeyboardProps {
   onKeyPress: (key: string) => void;
@@ -57,7 +57,7 @@ const CustomKeyboard = ({ onKeyPress, onClear }: CustomKeyboardProps) => {
             className="h-14 w-[20%] text-xl font-bold"
             onClick={() => onKeyPress("Backspace")}
           >
-            <Backspace className="h-6 w-6" />
+            <Delete className="h-6 w-6" />
           </Button>
         </div>
         {/* Bottom row with centered space bar */}
