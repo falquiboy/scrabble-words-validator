@@ -64,22 +64,19 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
         </div>
         {/* Bottom row with centered space bar */}
         <div className="flex justify-center items-center gap-1">
-          <div className="w-[15%]" /> {/* Left spacer */}
-          <div className="border-2 border-gray-300 rounded-xl p-1 w-[40%]">
-            <Button
-              variant="secondary"
-              className="h-10 w-full text-lg font-bold shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.2)] active:shadow-[inset_0_2px_0_0_rgba(0,0,0,0.2)] active:translate-y-[1px] transition-all bg-white border border-gray-200"
-              onClick={() => onKeyPress(" ")}
-            >
-              Espacio
-            </Button>
-          </div>
           <Button
             variant="destructive"
             className="h-14 w-14 flex items-center justify-center shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.2)] active:shadow-[inset_0_2px_0_0_rgba(0,0,0,0.2)] active:translate-y-[1px] transition-all"
             onClick={onClear}
           >
             <Trash2 className="h-6 w-6 text-white" />
+          </Button>
+          <Button
+            variant="secondary"
+            className="h-14 w-[40%] text-lg font-bold shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.2)] active:shadow-[inset_0_2px_0_0_rgba(0,0,0,0.2)] active:translate-y-[1px] transition-all bg-white border border-gray-200"
+            onClick={() => onKeyPress(" ")}
+          >
+            Espacio
           </Button>
           <Button
             onClick={onToggle}
@@ -89,7 +86,6 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
           >
             <Keyboard className={`h-6 w-6 transition-transform ${showKeyboard ? 'rotate-180' : ''}`} />
           </Button>
-          <div className="w-[15%]" /> {/* Right spacer */}
         </div>
       </div>
     </div>
