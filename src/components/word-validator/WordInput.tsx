@@ -32,6 +32,7 @@ const WordInput = ({
   onEditEnd
 }: WordInputProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [showKeyboard, setShowKeyboard] = useState(true);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -180,7 +181,9 @@ const WordInput = ({
       )}
       <CustomKeyboard 
         onKeyPress={handleCustomKeyPress} 
-        onClear={onClear} 
+        onClear={onClear}
+        onToggle={() => setShowKeyboard(!showKeyboard)}
+        showKeyboard={showKeyboard}
       />
     </div>
   );
