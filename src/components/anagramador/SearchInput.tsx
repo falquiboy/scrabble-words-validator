@@ -27,32 +27,85 @@ const SearchInput = ({
   inputRef 
 }: SearchInputProps) => {
   const [showKeyboard, setShowKeyboard] = useState(true);
+  const [cursorPosition, setCursorPosition] = useState<number | null>(null);
 
-  // Prevent mobile keyboard from showing up
+  // Handle cursor position changes
+  const handleSelectionChange = () => {
+    if (inputRef.current) {
+      setCursorPosition(inputRef.current.selectionStart);
+    }
+  };
+
+  // Update cursor position on input focus and click
   useEffect(() => {
     const input = inputRef.current;
     if (input) {
-      input.addEventListener('focus', (e) => {
+      input.addEventListener('click', handleSelectionChange);
+      input.addEventListener('focus', handleSelectionChange);
+      input.addEventListener('select', handleSelectionChange);
+      
+      // Don't prevent focus on mobile anymore
+      input.addEventListener('focus', () => {
         if (window.innerWidth <= 768) {
-          e.preventDefault();
-          input.blur();
           setShowKeyboard(true);
         }
       });
     }
+
+    return () => {
+      if (input) {
+        input.removeEventListener('click', handleSelectionChange);
+        input.removeEventListener('focus', handleSelectionChange);
+        input.removeEventListener('select', handleSelectionChange);
+      }
+    };
   }, [inputRef]);
 
   const handleCustomKeyPress = (key: string) => {
+    const input = inputRef.current;
+    if (!input) return;
+
+    const currentValue = letters;
+    const pos = cursorPosition !== null ? cursorPosition : currentValue.length;
+
     if (key === "Backspace") {
-      // Remove the last character
-      onInputChange(letters.slice(0, -1));
-      return; // Important: return here to prevent further processing
+      if (pos > 0) {
+        const newValue = currentValue.slice(0, pos - 1) + currentValue.slice(pos);
+        onInputChange(newValue);
+        setCursorPosition(pos - 1);
+        
+        // Set cursor position after state update
+        setTimeout(() => {
+          if (input) {
+            input.focus();
+            input.setSelectionRange(pos - 1, pos - 1);
+          }
+        }, 0);
+      }
+      return;
     }
     
-    // Only add the key if it's not a command
-    const newValue = letters + key;
+    if (key === "Enter") {
+      onSearch();
+      return;
+    }
+
+    // Insert the key at cursor position
+    const newValue = currentValue.slice(0, pos) + key + currentValue.slice(pos);
     const validValue = newValue.replace(/[^A-ZÑa-zñ\s*?/]/g, '').toUpperCase();
     onInputChange(validValue);
+    
+    // Update cursor position
+    const newPos = pos + 1;
+    setCursorPosition(newPos);
+    
+    // Set cursor position after state update
+    setTimeout(() => {
+      if (input) {
+        input.focus();
+        input.setSelectionRange(newPos, newPos);
+      }
+    }, 0);
   };
 
   return (
@@ -84,12 +137,16 @@ const SearchInput = ({
                 const validPattern = value.replace(/[^A-ZÑa-zñ\s*?]/g, '');
                 onInputChange(validPattern.toUpperCase());
               }
+              
+              // Update cursor position after onChange
+              setTimeout(() => {
+                if (inputRef.current) {
+                  setCursorPosition(inputRef.current.selectionStart);
+                }
+              }, 0);
             }}
             onKeyPress={onKeyPress}
-            className="text-xl h-12 text-left pr-24"
-            autoFocus
-            spellCheck={false}
-            autoCorrect="off"
+            className="text-xl h-12 text-left pr-24 caret-blue-500"
             autoCapitalize="off"
             inputMode="none"
           />
