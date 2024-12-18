@@ -7,7 +7,7 @@ interface SearchFieldProps {
   letters: string;
   inputRef: RefObject<HTMLInputElement>;
   onInputChange: (value: string) => void;
-  onSearch: () => void;
+  onValidate: () => void;
   onClear: () => void;
   onKeyPress: (e: React.KeyboardEvent) => void;
   setCursorPosition: (position: number | null) => void;
@@ -17,7 +17,7 @@ const SearchField = ({
   letters,
   inputRef,
   onInputChange,
-  onSearch,
+  onValidate,
   onClear,
   onKeyPress,
   setCursorPosition
@@ -44,19 +44,6 @@ const SearchField = ({
     }, 0);
   };
 
-  const handleValidate = () => {
-    onSearch();
-    // Focus input after validation to allow continued typing
-    requestAnimationFrame(() => {
-      if (inputRef.current) {
-        inputRef.current.focus();
-        const length = inputRef.current.value.length;
-        inputRef.current.setSelectionRange(length, length);
-        setCursorPosition(length);
-      }
-    });
-  };
-
   return (
     <div className="flex gap-2">
       <div className="relative flex-1">
@@ -69,7 +56,7 @@ const SearchField = ({
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
-              handleValidate();
+              onValidate();
             } else {
               onKeyPress(e);
             }
@@ -82,7 +69,7 @@ const SearchField = ({
           {letters && (
             <>
               <Button
-                onClick={handleValidate}
+                onClick={onValidate}
                 variant="ghost"
                 className="h-8 w-8 p-0 hover:text-green-600"
                 type="button"
@@ -102,7 +89,7 @@ const SearchField = ({
         </div>
       </div>
       <Button 
-        onClick={handleValidate}
+        onClick={onValidate}
         className="h-12 w-12 p-0"
         variant="default"
         disabled={!letters.trim()}

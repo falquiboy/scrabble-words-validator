@@ -57,21 +57,25 @@ const SearchInput = ({
     }
   }, [inputRef]);
 
+  const handleValidate = () => {
+    onSearch();
+    // Focus input after validation to allow continued typing
+    requestAnimationFrame(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+        const length = inputRef.current.value.length;
+        inputRef.current.setSelectionRange(length, length);
+        setCursorPosition(length);
+      }
+    });
+  };
+
   const handleCustomKeyPress = (key: string) => {
     const input = inputRef.current;
     if (!input) return;
 
     if (key === "Enter") {
-      onSearch();
-      // Focus input after search to allow continued typing
-      requestAnimationFrame(() => {
-        if (input) {
-          input.focus();
-          const length = input.value.length;
-          input.setSelectionRange(length, length);
-          setCursorPosition(length);
-        }
-      });
+      handleValidate();
       return;
     }
 
@@ -120,25 +124,9 @@ const SearchInput = ({
         letters={letters}
         inputRef={inputRef}
         onInputChange={onInputChange}
-        onSearch={onSearch}
+        onValidate={handleValidate}
         onClear={onClear}
-        onKeyPress={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            onSearch();
-            // Focus input after search
-            requestAnimationFrame(() => {
-              if (inputRef.current) {
-                inputRef.current.focus();
-                const length = inputRef.current.value.length;
-                inputRef.current.setSelectionRange(length, length);
-                setCursorPosition(length);
-              }
-            });
-          } else {
-            onKeyPress(e);
-          }
-        }}
+        onKeyPress={onKeyPress}
         setCursorPosition={setCursorPosition}
       />
       <ShorterWordsToggle
