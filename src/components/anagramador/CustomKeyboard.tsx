@@ -6,20 +6,20 @@ interface CustomKeyboardProps {
 }
 
 const CustomKeyboard = ({ onKeyPress, onClear }: CustomKeyboardProps) => {
-  const row1 = ['Q', 'E', 'R', 'T', '*', 'U', 'I', 'O', 'P'];
-  const row2 = ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'L', 'Ñ'];
-  const row3 = ['?', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'Y'];
+  const row1 = ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'];
+  const row2 = ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'Ñ'];
+  const row3 = ['Z', 'X', 'C', 'V', 'B', 'N', 'M', '*', '?'];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-gray-100 p-4 shadow-lg md:hidden">
-      <div className="space-y-3 pb-safe">
+    <div className="fixed bottom-0 left-0 right-0 bg-gray-100 p-2 shadow-lg md:hidden">
+      <div className="space-y-2 pb-safe">
         {/* First row */}
-        <div className="flex justify-center gap-2">
+        <div className="flex justify-center gap-1">
           {row1.map((key) => (
             <Button
               key={key}
               variant="secondary"
-              className="h-14 w-11 text-xl font-semibold"
+              className="h-14 w-[9.5%] text-xl font-bold"
               onClick={() => onKeyPress(key)}
             >
               {key}
@@ -27,12 +27,12 @@ const CustomKeyboard = ({ onKeyPress, onClear }: CustomKeyboardProps) => {
           ))}
         </div>
         {/* Second row */}
-        <div className="flex justify-center gap-2">
+        <div className="flex justify-center gap-1">
           {row2.map((key) => (
             <Button
               key={key}
               variant="secondary"
-              className="h-14 w-11 text-xl font-semibold"
+              className="h-14 w-[9.5%] text-xl font-bold"
               onClick={() => onKeyPress(key)}
             >
               {key}
@@ -40,12 +40,12 @@ const CustomKeyboard = ({ onKeyPress, onClear }: CustomKeyboardProps) => {
           ))}
         </div>
         {/* Third row */}
-        <div className="flex justify-center gap-2">
+        <div className="flex justify-center gap-1">
           {row3.map((key) => (
             <Button
               key={key}
               variant="secondary"
-              className="h-14 w-11 text-xl font-semibold"
+              className="h-14 w-[9.5%] text-xl font-bold"
               onClick={() => onKeyPress(key)}
             >
               {key}
@@ -53,27 +53,27 @@ const CustomKeyboard = ({ onKeyPress, onClear }: CustomKeyboardProps) => {
           ))}
         </div>
         {/* Bottom row */}
-        <div className="flex justify-center gap-2">
+        <div className="flex justify-center gap-1">
           <Button
             variant="secondary"
-            className="h-14 w-24 text-xl font-semibold"
+            className="h-14 w-[30%] text-lg font-bold"
             onClick={() => onKeyPress(" ")}
           >
-            Space
+            Espacio
           </Button>
           <Button
             variant="secondary"
-            className="h-14 w-14 text-xl font-semibold"
+            className="h-14 w-[30%] text-lg font-bold"
             onClick={() => onKeyPress("/")}
           >
             /
           </Button>
           <Button
             variant="secondary"
-            className="h-14 w-24 text-xl font-semibold"
+            className="h-14 w-[30%] text-lg font-bold"
             onClick={onClear}
           >
-            Clear
+            Borrar
           </Button>
         </div>
       </div>
