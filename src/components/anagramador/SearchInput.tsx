@@ -63,6 +63,15 @@ const SearchInput = ({
 
     if (key === "Enter") {
       onSearch();
+      // Focus input after search to allow continued typing
+      requestAnimationFrame(() => {
+        if (input) {
+          input.focus();
+          const length = input.value.length;
+          input.setSelectionRange(length, length);
+          setCursorPosition(length);
+        }
+      });
       return;
     }
 
@@ -117,6 +126,15 @@ const SearchInput = ({
           if (e.key === "Enter") {
             e.preventDefault();
             onSearch();
+            // Focus input after search
+            requestAnimationFrame(() => {
+              if (inputRef.current) {
+                inputRef.current.focus();
+                const length = inputRef.current.value.length;
+                inputRef.current.setSelectionRange(length, length);
+                setCursorPosition(length);
+              }
+            });
           } else {
             onKeyPress(e);
           }

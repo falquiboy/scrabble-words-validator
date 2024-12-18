@@ -1,6 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, X } from "lucide-react";
+import { Search, X, Check } from "lucide-react";
 import { RefObject } from "react";
 
 interface SearchFieldProps {
@@ -67,14 +67,24 @@ const SearchField = ({
         />
         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
           {letters && (
-            <Button
-              onClick={onClear}
-              variant="ghost"
-              className="h-8 w-8 p-0"
-              type="button"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+            <>
+              <Button
+                onClick={onSearch}
+                variant="ghost"
+                className="h-8 w-8 p-0 hover:text-green-600"
+                type="button"
+              >
+                <Check className="h-4 w-4" />
+              </Button>
+              <Button
+                onClick={onClear}
+                variant="ghost"
+                className="h-8 w-8 p-0 hover:text-red-600"
+                type="button"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </>
           )}
         </div>
       </div>
