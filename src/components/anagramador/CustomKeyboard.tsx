@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Trash2, Delete, Keyboard } from "lucide-react";
+import { Enter, Delete } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 interface CustomKeyboardProps {
@@ -55,7 +55,7 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
   };
 
   // Start backspace long press
-  const startBackspaceLongPress = (e: React.MouseEvent | React.TouchEvent) => {
+  const startBackspaceLongPress = (e: React.TouchEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -64,18 +64,15 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
     // Initial backspace press
     handleKeyPress("Backspace");
     
-    // Set up long press timer
+    // Set up long press timer for clear functionality
     longPressTimerRef.current = setTimeout(() => {
       isLongPressActiveRef.current = true;
-      // Start repeating backspace
-      repeatIntervalRef.current = setInterval(() => {
-        handleKeyPress("Backspace");
-      }, REPEAT_INTERVAL);
+      onClear(); // Clear all text when long pressed
     }, INITIAL_DELAY);
   };
 
   // Stop backspace long press
-  const stopBackspaceLongPress = (e: React.MouseEvent | React.TouchEvent) => {
+  const stopBackspaceLongPress = (e: React.TouchEvent) => {
     e.preventDefault();
     e.stopPropagation();
     cleanupTimers();
@@ -141,12 +138,10 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
             className={`h-14 w-[20%] text-xl font-bold transition-all bg-white border border-gray-200 ${
               pressedKey === "Backspace" ? "animate-key-press transform scale-95" : "shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.2)]"
             }`}
-            onMouseDown={startBackspaceLongPress}
-            onMouseUp={stopBackspaceLongPress}
-            onMouseLeave={stopBackspaceLongPress}
             onTouchStart={startBackspaceLongPress}
             onTouchEnd={stopBackspaceLongPress}
             onTouchCancel={stopBackspaceLongPress}
+            onClick={() => handleKeyPress("Backspace")}
             onContextMenu={(e) => e.preventDefault()}
           >
             <Delete className="h-6 w-6" />
@@ -172,11 +167,11 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
             Espacio
           </Button>
           <Button
-            onClick={onClear}
-            variant="destructive"
+            onClick={() => handleKeyPress("Enter")}
+            variant="default"
             className="h-14 w-14 flex items-center justify-center shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.2)] active:shadow-[inset_0_2px_0_0_rgba(0,0,0,0.2)] active:translate-y-[1px] transition-all"
           >
-            <Trash2 className="h-6 w-6 text-white" />
+            <Enter className="h-6 w-6 text-white" />
           </Button>
         </div>
       </div>
