@@ -2,7 +2,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, X } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { RefObject } from "react";
+import { RefObject, useEffect, useState } from "react";
+import CustomKeyboard from "./CustomKeyboard";
 
 interface SearchInputProps {
   letters: string;
@@ -25,6 +26,25 @@ const SearchInput = ({
   onShowShorterChange,
   inputRef 
 }: SearchInputProps) => {
+  // Prevent mobile keyboard from showing up
+  useEffect(() => {
+    const input = inputRef.current;
+    if (input) {
+      input.addEventListener('focus', (e) => {
+        if (window.innerWidth <= 768) {
+          e.preventDefault();
+          input.blur();
+        }
+      });
+    }
+  }, [inputRef]);
+
+  const handleCustomKeyPress = (key: string) => {
+    const currentValue = letters;
+    const newValue = currentValue + key;
+    onInputChange(newValue);
+  };
+
   return (
     <div className="space-y-2">
       <div className="flex gap-2">
@@ -95,6 +115,7 @@ const SearchInput = ({
           Mostrar palabras más cortas
         </label>
       </div>
+      <CustomKeyboard onKeyPress={handleCustomKeyPress} onClear={onClear} />
     </div>
   );
 };
