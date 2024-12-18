@@ -44,6 +44,19 @@ const SearchField = ({
     }, 0);
   };
 
+  const handleValidate = () => {
+    onSearch();
+    // Focus input after validation to allow continued typing
+    requestAnimationFrame(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+        const length = inputRef.current.value.length;
+        inputRef.current.setSelectionRange(length, length);
+        setCursorPosition(length);
+      }
+    });
+  };
+
   return (
     <div className="flex gap-2">
       <div className="relative flex-1">
@@ -56,7 +69,7 @@ const SearchField = ({
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
-              onSearch();
+              handleValidate();
             } else {
               onKeyPress(e);
             }
@@ -69,7 +82,7 @@ const SearchField = ({
           {letters && (
             <>
               <Button
-                onClick={onSearch}
+                onClick={handleValidate}
                 variant="ghost"
                 className="h-8 w-8 p-0 hover:text-green-600"
                 type="button"
@@ -89,7 +102,7 @@ const SearchField = ({
         </div>
       </div>
       <Button 
-        onClick={onSearch}
+        onClick={handleValidate}
         className="h-12 w-12 p-0"
         variant="default"
         disabled={!letters.trim()}
