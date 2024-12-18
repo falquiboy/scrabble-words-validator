@@ -1,8 +1,8 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, X } from "lucide-react";
+import { Search, X, Keyboard } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { RefObject, useEffect } from "react";
+import { RefObject, useEffect, useState } from "react";
 import CustomKeyboard from "./CustomKeyboard";
 
 interface SearchInputProps {
@@ -26,6 +26,8 @@ const SearchInput = ({
   onShowShorterChange,
   inputRef 
 }: SearchInputProps) => {
+  const [showKeyboard, setShowKeyboard] = useState(true);
+
   // Prevent mobile keyboard from showing up
   useEffect(() => {
     const input = inputRef.current;
@@ -34,6 +36,7 @@ const SearchInput = ({
         if (window.innerWidth <= 768) {
           e.preventDefault();
           input.blur();
+          setShowKeyboard(true);
         }
       });
     }
@@ -83,23 +86,33 @@ const SearchInput = ({
               }
             }}
             onKeyPress={onKeyPress}
-            className="text-xl h-12 text-left pr-12"
+            className="text-xl h-12 text-left pr-24"
             autoFocus
             spellCheck={false}
             autoCorrect="off"
             autoCapitalize="off"
             inputMode="none"
           />
-          {letters && (
+          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
+            {letters && (
+              <Button
+                onClick={onClear}
+                variant="ghost"
+                className="h-8 w-8 p-0"
+                type="button"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
             <Button
-              onClick={onClear}
+              onClick={() => setShowKeyboard(!showKeyboard)}
               variant="ghost"
-              className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 p-0"
+              className="h-8 w-8 p-0 md:hidden"
               type="button"
             >
-              <X className="h-4 w-4" />
+              <Keyboard className={`h-4 w-4 transition-transform ${showKeyboard ? 'rotate-180' : ''}`} />
             </Button>
-          )}
+          </div>
         </div>
         <Button 
           onClick={onSearch}
@@ -123,7 +136,7 @@ const SearchInput = ({
           Mostrar palabras más cortas
         </label>
       </div>
-      <CustomKeyboard onKeyPress={handleCustomKeyPress} onClear={onClear} />
+      {showKeyboard && <CustomKeyboard onKeyPress={handleCustomKeyPress} onClear={onClear} />}
     </div>
   );
 };

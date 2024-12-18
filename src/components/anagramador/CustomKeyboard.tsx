@@ -12,7 +12,7 @@ const CustomKeyboard = ({ onKeyPress, onClear }: CustomKeyboardProps) => {
   const row3 = ['/', 'Z', 'X', 'C', 'V', 'B', 'N', 'M'];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-gray-100 p-2 shadow-lg md:hidden">
+    <div className="fixed bottom-0 left-0 right-0 bg-gray-100 p-2 shadow-lg md:hidden" data-custom-keyboard>
       <div className="space-y-2 pb-safe">
         {/* First row */}
         <div className="flex justify-center gap-1">
