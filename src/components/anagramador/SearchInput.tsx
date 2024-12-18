@@ -65,6 +65,11 @@ const SearchInput = ({
     const input = inputRef.current;
     if (!input) return;
 
+    if (key === "Enter") {
+      onSearch();
+      return;
+    }
+
     const currentValue = letters;
     const pos = cursorPosition !== null ? cursorPosition : currentValue.length;
 
@@ -82,11 +87,6 @@ const SearchInput = ({
           }
         }, 0);
       }
-      return;
-    }
-    
-    if (key === "Enter") {
-      onSearch();
       return;
     }
 
@@ -145,7 +145,14 @@ const SearchInput = ({
                 }
               }, 0);
             }}
-            onKeyPress={onKeyPress}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                onSearch();
+              } else {
+                onKeyPress(e);
+              }
+            }}
             className="text-xl h-12 text-left pr-24 caret-blue-500"
             autoCapitalize="off"
             inputMode="none"

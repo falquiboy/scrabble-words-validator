@@ -183,6 +183,7 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
             variant="default"
             className="h-14 w-14 flex items-center justify-center shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.2)] active:shadow-[inset_0_2px_0_0_rgba(0,0,0,0.2)] active:translate-y-[1px] transition-all"
             onClick={() => onKeyPress("Enter")}
+            type="button"
           >
             <CornerDownLeft className="h-6 w-6 text-white" />
           </Button>
