@@ -20,7 +20,7 @@ const CustomKeyboard = ({ onKeyPress, onClear }: CustomKeyboardProps) => {
             <Button
               key={key}
               variant="secondary"
-              className="h-14 w-[9.5%] text-xl font-bold"
+              className="h-14 w-[9.5%] text-xl font-bold shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.2)] active:shadow-[inset_0_2px_0_0_rgba(0,0,0,0.2)] active:translate-y-[1px] transition-all bg-white border border-gray-200"
               onClick={() => onKeyPress(key)}
             >
               {key}
@@ -33,7 +33,7 @@ const CustomKeyboard = ({ onKeyPress, onClear }: CustomKeyboardProps) => {
             <Button
               key={key}
               variant="secondary"
-              className="h-14 w-[9.5%] text-xl font-bold"
+              className="h-14 w-[9.5%] text-xl font-bold shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.2)] active:shadow-[inset_0_2px_0_0_rgba(0,0,0,0.2)] active:translate-y-[1px] transition-all bg-white border border-gray-200"
               onClick={() => onKeyPress(key)}
             >
               {key}
@@ -46,7 +46,7 @@ const CustomKeyboard = ({ onKeyPress, onClear }: CustomKeyboardProps) => {
             <Button
               key={key}
               variant="secondary"
-              className="h-14 w-[9.5%] text-xl font-bold"
+              className="h-14 w-[9.5%] text-xl font-bold shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.2)] active:shadow-[inset_0_2px_0_0_rgba(0,0,0,0.2)] active:translate-y-[1px] transition-all bg-white border border-gray-200"
               onClick={() => onKeyPress(key)}
             >
               {key}
@@ -54,7 +54,7 @@ const CustomKeyboard = ({ onKeyPress, onClear }: CustomKeyboardProps) => {
           ))}
           <Button
             variant="secondary"
-            className="h-14 w-[20%] text-xl font-bold"
+            className="h-14 w-[20%] text-xl font-bold shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.2)] active:shadow-[inset_0_2px_0_0_rgba(0,0,0,0.2)] active:translate-y-[1px] transition-all bg-white border border-gray-200"
             onClick={() => onKeyPress("Backspace")}
           >
             <Delete className="h-6 w-6" />
@@ -66,7 +66,7 @@ const CustomKeyboard = ({ onKeyPress, onClear }: CustomKeyboardProps) => {
           <div className="border-2 border-gray-300 rounded-xl p-1 w-[40%]">
             <Button
               variant="secondary"
-              className="h-10 w-full text-lg font-bold"
+              className="h-10 w-full text-lg font-bold shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.2)] active:shadow-[inset_0_2px_0_0_rgba(0,0,0,0.2)] active:translate-y-[1px] transition-all bg-white border border-gray-200"
               onClick={() => onKeyPress(" ")}
             >
               Espacio
@@ -74,7 +74,7 @@ const CustomKeyboard = ({ onKeyPress, onClear }: CustomKeyboardProps) => {
           </div>
           <Button
             variant="destructive"
-            className="h-14 w-14 flex items-center justify-center"
+            className="h-14 w-14 flex items-center justify-center shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.2)] active:shadow-[inset_0_2px_0_0_rgba(0,0,0,0.2)] active:translate-y-[1px] transition-all"
             onClick={onClear}
           >
             <Trash2 className="h-6 w-6 text-white" />
