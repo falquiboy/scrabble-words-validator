@@ -23,7 +23,7 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
   // Constants for timing
   const INITIAL_DELAY = 500;  // Initial delay before repeat starts
   const REPEAT_INTERVAL = 50; // Interval between repeats
-  const VIBRATION_DURATION = 5; // Reduced from 15 to 5ms for a shorter, crisper vibration
+  const VIBRATION_DURATION = 15; // Standard vibration duration for all interactions
 
   const cleanupTimers = () => {
     if (longPressTimerRef.current) {
@@ -65,7 +65,7 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
       isLongPressActiveRef.current = true;
       onClear(); // Clear all text when long pressed
       try {
-        navigator.vibrate?.(100); // Longer vibration for clear
+        navigator.vibrate?.(VIBRATION_DURATION); // Now using standard vibration duration
       } catch (error) {
         console.log("Vibration not supported");
       }
