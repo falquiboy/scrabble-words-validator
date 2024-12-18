@@ -94,6 +94,14 @@ const SearchInput = ({
             inputMode="none"
           />
           <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
+            <Button
+              onClick={() => setShowKeyboard(!showKeyboard)}
+              variant="ghost"
+              className="h-8 w-8 p-0 md:hidden"
+              type="button"
+            >
+              <Keyboard className={`h-4 w-4 transition-transform ${showKeyboard ? 'rotate-180' : ''}`} />
+            </Button>
             {letters && (
               <Button
                 onClick={onClear}
@@ -104,14 +112,6 @@ const SearchInput = ({
                 <X className="h-4 w-4" />
               </Button>
             )}
-            <Button
-              onClick={() => setShowKeyboard(!showKeyboard)}
-              variant="ghost"
-              className="h-8 w-8 p-0 md:hidden"
-              type="button"
-            >
-              <Keyboard className={`h-4 w-4 transition-transform ${showKeyboard ? 'rotate-180' : ''}`} />
-            </Button>
           </div>
         </div>
         <Button 
