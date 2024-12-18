@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { CircleX } from "lucide-react";
+import { Trash2 } from "lucide-react";
 
 interface CustomKeyboardProps {
   onKeyPress: (key: string) => void;
@@ -66,7 +66,7 @@ const CustomKeyboard = ({ onKeyPress, onClear }: CustomKeyboardProps) => {
           <div className="border-2 border-gray-300 rounded-xl p-1 w-[40%]">
             <Button
               variant="secondary"
-              className="h-14 w-full text-lg font-bold"
+              className="h-10 w-full text-lg font-bold"
               onClick={() => onKeyPress(" ")}
             >
               Espacio
@@ -74,10 +74,10 @@ const CustomKeyboard = ({ onKeyPress, onClear }: CustomKeyboardProps) => {
           </div>
           <Button
             variant="destructive"
-            className="h-14 w-[9.5%] flex items-center justify-center"
+            className="h-14 w-14 flex items-center justify-center"
             onClick={onClear}
           >
-            <CircleX className="h-6 w-6 text-white" />
+            <Trash2 className="h-6 w-6 text-white" />
           </Button>
           <div className="w-[15%]" /> {/* Right spacer */}
         </div>
