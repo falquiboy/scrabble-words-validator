@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Enter, Delete } from "lucide-react";
+import { CornerDownLeft, Delete, KeyboardIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 interface CustomKeyboardProps {
@@ -155,7 +155,7 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
             className="h-14 w-14 flex items-center justify-center md:hidden"
             type="button"
           >
-            <Keyboard className={`h-6 w-6 transition-transform ${showKeyboard ? 'rotate-180' : ''}`} />
+            <KeyboardIcon className={`h-6 w-6 transition-transform ${showKeyboard ? 'rotate-180' : ''}`} />
           </Button>
           <Button
             variant="secondary"
@@ -171,7 +171,7 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
             variant="default"
             className="h-14 w-14 flex items-center justify-center shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.2)] active:shadow-[inset_0_2px_0_0_rgba(0,0,0,0.2)] active:translate-y-[1px] transition-all"
           >
-            <Enter className="h-6 w-6 text-white" />
+            <CornerDownLeft className="h-6 w-6 text-white" />
           </Button>
         </div>
       </div>
