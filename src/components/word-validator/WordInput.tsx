@@ -1,10 +1,12 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Check, X } from "lucide-react";
 import CustomKeyboard from "../anagramador/CustomKeyboard";
 import InputField from './word-input/InputField';
 import DisplayText from './word-input/DisplayText';
+import CursorManager from './word-input/CursorManager';
+import KeyboardHandler from './word-input/KeyboardHandler';
 
 interface WordInputProps {
   word: string;
@@ -37,76 +39,18 @@ const WordInput = ({
   const [showKeyboard, setShowKeyboard] = useState(true);
   const [cursorPosition, setCursorPosition] = useState<number | null>(null);
 
-  const handleSelectionChange = () => {
-    if (inputRef.current) {
-      setCursorPosition(inputRef.current.selectionStart);
-    }
-  };
-
-  useEffect(() => {
-    const input = inputRef.current;
-    if (input) {
-      const events = ['click', 'focus', 'select', 'keyup', 'touchend'];
-      events.forEach(event => {
-        input.addEventListener(event, handleSelectionChange);
-      });
-
-      return () => {
-        events.forEach(event => {
-          input.removeEventListener(event, handleSelectionChange);
-        });
-      };
-    }
-  }, [inputRef]);
-
-  const handleCustomKeyPress = (key: string) => {
-    const input = inputRef.current;
-    if (!input) return;
-
-    if (key === "Enter") {
-      onValidate();
-      return;
-    }
-
-    const currentValue = word;
-    const pos = cursorPosition !== null ? cursorPosition : currentValue.length;
-
-    if (key === "Backspace") {
-      if (pos > 0) {
-        const newValue = currentValue.slice(0, pos - 1) + currentValue.slice(pos);
-        onWordChange(newValue);
-        
-        const newPos = pos - 1;
-        setCursorPosition(newPos);
-        
-        requestAnimationFrame(() => {
-          if (input) {
-            input.focus();
-            input.setSelectionRange(newPos, newPos);
-          }
-        });
-      }
-      return;
-    }
-
-    const newValue = currentValue.slice(0, pos) + key + currentValue.slice(pos);
-    const validValue = newValue.replace(/[^A-ZÑa-zñ\s]/g, '').toUpperCase();
-    onWordChange(validValue);
-    
-    const newPos = pos + 1;
-    setCursorPosition(newPos);
-    
-    requestAnimationFrame(() => {
-      if (input) {
-        input.focus();
-        input.setSelectionRange(newPos, newPos);
-      }
-    });
-  };
+  const { handleCustomKeyPress } = KeyboardHandler({
+    inputRef,
+    word,
+    cursorPosition,
+    onWordChange,
+    onValidate,
+    setCursorPosition
+  });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target;
-    const cursorPosition = input.selectionStart || 0;
+    const cursorPos = input.selectionStart || 0;
     
     let value = input.value
       .split('')
@@ -126,7 +70,7 @@ const WordInput = ({
     onWordChange(value);
     
     requestAnimationFrame(() => {
-      input.setSelectionRange(cursorPosition, cursorPosition);
+      input.setSelectionRange(cursorPos, cursorPos);
     });
   };
 
@@ -144,20 +88,9 @@ const WordInput = ({
       : "bg-scrabble-invalid text-white";
   };
 
-  useEffect(() => {
-    const input = inputRef.current;
-    if (input) {
-      input.addEventListener('focus', (e) => {
-        if (window.innerWidth <= 768) {
-          e.preventDefault();
-          input.blur();
-        }
-      });
-    }
-  }, []);
-
   return (
     <div className="relative">
+      <CursorManager inputRef={inputRef} setCursorPosition={setCursorPosition} />
       <ScrollArea className={`h-24 rounded-md ${getInputBackground()}`}>
         <div className={`p-3 min-h-full ${getInputBackground()}`}>
           {result.checked && !isEditing ? (

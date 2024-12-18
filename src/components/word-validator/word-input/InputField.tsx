@@ -23,18 +23,16 @@ const InputField = ({
       value={word}
       onChange={handleInputChange}
       onKeyDown={handleKeyDown}
-      className={`w-full text-2xl font-bold bg-transparent outline-none placeholder:text-gray-400 caret-current ${
+      className={`w-full text-2xl font-bold bg-transparent outline-none placeholder:text-gray-400 ${
         getInputBackground() === "bg-white text-black" 
           ? "text-black caret-blue-500" 
           : "text-white caret-white"
       }`}
-      autoFocus
-      spellCheck="false"
-      autoCorrect="off"
       autoCapitalize="off"
       autoComplete="off"
+      autoCorrect="off"
+      spellCheck="false"
       inputMode="none"
-      enterKeyHint="done"
     />
   );
 };
