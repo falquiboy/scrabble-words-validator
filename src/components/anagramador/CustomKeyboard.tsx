@@ -1,12 +1,14 @@
 import { Button } from "@/components/ui/button";
-import { Trash2, Delete } from "lucide-react";
+import { Trash2, Delete, Keyboard } from "lucide-react";
 
 interface CustomKeyboardProps {
   onKeyPress: (key: string) => void;
   onClear: () => void;
+  onToggle: () => void;
+  showKeyboard: boolean;
 }
 
-const CustomKeyboard = ({ onKeyPress, onClear }: CustomKeyboardProps) => {
+const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomKeyboardProps) => {
   const row1 = ['Q', '*', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'];
   const row2 = ['A', 'S', 'D', 'F', 'G', 'H', 'J', '?', 'L', 'Ñ'];
   const row3 = ['/', 'Z', 'X', 'C', 'V', 'B', 'N', 'M'];
@@ -78,6 +80,14 @@ const CustomKeyboard = ({ onKeyPress, onClear }: CustomKeyboardProps) => {
             onClick={onClear}
           >
             <Trash2 className="h-6 w-6 text-white" />
+          </Button>
+          <Button
+            onClick={onToggle}
+            variant="ghost"
+            className="h-14 w-14 flex items-center justify-center md:hidden"
+            type="button"
+          >
+            <Keyboard className={`h-6 w-6 transition-transform ${showKeyboard ? 'rotate-180' : ''}`} />
           </Button>
           <div className="w-[15%]" /> {/* Right spacer */}
         </div>

@@ -1,6 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, X, Keyboard } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { RefObject, useEffect, useState } from "react";
 import CustomKeyboard from "./CustomKeyboard";
@@ -129,17 +129,12 @@ const SearchInput = ({
         </label>
       </div>
       {showKeyboard && (
-        <div className="relative">
-          <CustomKeyboard onKeyPress={handleCustomKeyPress} onClear={onClear} />
-          <Button
-            onClick={() => setShowKeyboard(!showKeyboard)}
-            variant="ghost"
-            className="absolute right-2 top-2 h-8 w-8 p-0 md:hidden"
-            type="button"
-          >
-            <Keyboard className={`h-4 w-4 transition-transform ${showKeyboard ? 'rotate-180' : ''}`} />
-          </Button>
-        </div>
+        <CustomKeyboard 
+          onKeyPress={handleCustomKeyPress} 
+          onClear={onClear}
+          onToggle={() => setShowKeyboard(!showKeyboard)}
+          showKeyboard={showKeyboard}
+        />
       )}
     </div>
   );
