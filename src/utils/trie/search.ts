@@ -10,65 +10,73 @@ export const searchPattern = (words: string[], pattern: string, rackLetters: str
   console.log('Searching with pattern:', pattern, 'and rack:', rackLetters);
   
   // Calculate minimum length required by the pattern
-  const minLength = pattern.replace(/\*/g, '').length;
+  const minLength = pattern.replace(/[*]/g, '').length;
   console.log('Minimum length required:', minLength);
   
   // Filter words by minimum length first
   const lengthFilteredWords = words.filter(word => word.length >= minLength);
   console.log('Words after length filtering:', lengthFilteredWords.length);
   
-  return lengthFilteredWords.filter(word => matchesPattern(word, pattern, rackLetters));
-};
-
-export const matchesPattern = (word: string, pattern: string, rackLetters: string): boolean => {
-  console.log('Testing word:', word, 'against pattern:', pattern);
-  
-  // Convert pattern to regex, handling the special case of * at the start
+  // Create a more precise regex pattern
   const regexPattern = pattern
     .split('')
     .map(char => {
-      if (char === '?') return '.';
-      if (char === '*') return '.*';
+      if (char === '?') return '[A-ZÑ]';
+      if (char === '*') return '[A-ZÑ]*';
+      return char;
+    })
+    .join('');
+  
+  const regex = new RegExp(`^${regexPattern}$`);
+  console.log('Using regex pattern:', regex);
+  
+  return lengthFilteredWords.filter(word => {
+    const patternMatch = regex.test(word);
+    if (!patternMatch) return false;
+    
+    // Check if word can be made with rack letters
+    return canMakeWordWithRack(word, rackLetters);
+  });
+};
+
+const canMakeWordWithRack = (word: string, rackLetters: string): boolean => {
+  const rackArray = rackLetters.split('');
+  const wordArray = word.split('');
+  
+  for (const char of wordArray) {
+    const letterIndex = rackArray.indexOf(char);
+    if (letterIndex === -1) {
+      // Try to use a wildcard
+      const wildcardIndex = rackArray.indexOf('*');
+      if (wildcardIndex === -1) {
+        return false;
+      }
+      // Use the wildcard
+      rackArray.splice(wildcardIndex, 1);
+    } else {
+      // Use the matching letter
+      rackArray.splice(letterIndex, 1);
+    }
+  }
+  
+  return true;
+};
+
+export const matchesPattern = (word: string, pattern: string, rackLetters: string): boolean => {
+  // Create regex pattern with proper handling of special characters
+  const regexPattern = pattern
+    .split('')
+    .map(char => {
+      if (char === '?') return '[A-ZÑ]';
+      if (char === '*') return '[A-ZÑ]*';
       return char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     })
     .join('');
   
-  console.log('Converted regex pattern:', regexPattern);
-  
-  // Create regex with proper anchoring
   const regex = new RegExp(`^${regexPattern}$`);
   const patternMatch = regex.test(word);
   
-  console.log('Pattern match result for', word, ':', patternMatch);
+  if (!patternMatch) return false;
   
-  if (!patternMatch) {
-    return false;
-  }
-
-  // Then check if we can make the word with rack letters
-  const rackLettersCopy = rackLetters.split('');
-  const wordChars = word.split('');
-
-  console.log('Checking if word', word, 'can be made with rack letters:', rackLettersCopy);
-
-  // For each character in the word
-  for (const char of wordChars) {
-    const letterIndex = rackLettersCopy.indexOf(char);
-    if (letterIndex === -1) {
-      // Check if we have a wildcard (*) in the rack letters
-      const wildcardIndex = rackLettersCopy.indexOf('*');
-      if (wildcardIndex === -1) {
-        console.log('Failed to find letter:', char, 'in rack');
-        return false;
-      }
-      // Use the wildcard
-      rackLettersCopy.splice(wildcardIndex, 1);
-    } else {
-      // Use the matching letter
-      rackLettersCopy.splice(letterIndex, 1);
-    }
-  }
-
-  console.log('Word', word, 'matches pattern and can be made with rack letters');
-  return true;
+  return canMakeWordWithRack(word, rackLetters);
 };

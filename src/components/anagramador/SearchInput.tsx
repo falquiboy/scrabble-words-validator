@@ -38,24 +38,23 @@ const SearchInput = ({
   useEffect(() => {
     const input = inputRef.current;
     if (input) {
-      input.addEventListener('click', handleSelectionChange);
-      input.addEventListener('focus', handleSelectionChange);
-      input.addEventListener('select', handleSelectionChange);
+      const events = ['click', 'focus', 'select', 'keyup', 'touchend'];
+      events.forEach(event => {
+        input.addEventListener(event, handleSelectionChange);
+      });
       
       input.addEventListener('focus', () => {
         if (window.innerWidth <= 768) {
           setShowKeyboard(true);
         }
       });
-    }
 
-    return () => {
-      if (input) {
-        input.removeEventListener('click', handleSelectionChange);
-        input.removeEventListener('focus', handleSelectionChange);
-        input.removeEventListener('select', handleSelectionChange);
-      }
-    };
+      return () => {
+        events.forEach(event => {
+          input.removeEventListener(event, handleSelectionChange);
+        });
+      };
+    }
   }, [inputRef]);
 
   const handleCustomKeyPress = (key: string) => {
@@ -74,12 +73,15 @@ const SearchInput = ({
       if (pos > 0) {
         const newValue = currentValue.slice(0, pos - 1) + currentValue.slice(pos);
         onInputChange(newValue);
-        setCursorPosition(pos - 1);
+        
+        // Update cursor position after backspace
+        const newPos = pos - 1;
+        setCursorPosition(newPos);
         
         requestAnimationFrame(() => {
           if (input) {
             input.focus();
-            input.setSelectionRange(pos - 1, pos - 1);
+            input.setSelectionRange(newPos, newPos);
           }
         });
       }
@@ -91,7 +93,7 @@ const SearchInput = ({
     const validValue = newValue.replace(/[^A-ZÑa-zñ\s*?/]/g, '').toUpperCase();
     onInputChange(validValue);
     
-    // Update cursor position
+    // Update cursor position after insertion
     const newPos = pos + 1;
     setCursorPosition(newPos);
     
@@ -111,7 +113,14 @@ const SearchInput = ({
         onInputChange={onInputChange}
         onSearch={onSearch}
         onClear={onClear}
-        onKeyPress={onKeyPress}
+        onKeyPress={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            onSearch();
+          } else {
+            onKeyPress(e);
+          }
+        }}
         setCursorPosition={setCursorPosition}
       />
       <ShorterWordsToggle
