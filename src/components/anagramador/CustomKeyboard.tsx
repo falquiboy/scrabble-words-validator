@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Trash2, Backspace } from "lucide-react";
 
 interface CustomKeyboardProps {
   onKeyPress: (key: string) => void;
@@ -9,7 +9,7 @@ interface CustomKeyboardProps {
 const CustomKeyboard = ({ onKeyPress, onClear }: CustomKeyboardProps) => {
   const row1 = ['Q', '*', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'];
   const row2 = ['A', 'S', 'D', 'F', 'G', 'H', 'J', '?', 'L', 'Ñ'];
-  const row3 = ['Z', 'X', 'C', 'V', 'B', 'N', 'M'];
+  const row3 = ['/', 'Z', 'X', 'C', 'V', 'B', 'N', 'M'];
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-gray-100 p-2 shadow-lg md:hidden">
@@ -40,7 +40,7 @@ const CustomKeyboard = ({ onKeyPress, onClear }: CustomKeyboardProps) => {
             </Button>
           ))}
         </div>
-        {/* Third row with slash button */}
+        {/* Third row with backspace button */}
         <div className="flex justify-center gap-1">
           {row3.map((key) => (
             <Button
@@ -54,10 +54,10 @@ const CustomKeyboard = ({ onKeyPress, onClear }: CustomKeyboardProps) => {
           ))}
           <Button
             variant="secondary"
-            className="h-14 w-[9.5%] text-xl font-bold"
-            onClick={() => onKeyPress("/")}
+            className="h-14 w-[20%] text-xl font-bold"
+            onClick={() => onKeyPress("Backspace")}
           >
-            /
+            <Backspace className="h-6 w-6" />
           </Button>
         </div>
         {/* Bottom row with centered space bar */}

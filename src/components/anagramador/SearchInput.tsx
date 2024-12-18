@@ -40,10 +40,16 @@ const SearchInput = ({
   }, [inputRef]);
 
   const handleCustomKeyPress = (key: string) => {
-    const currentValue = letters;
-    const newValue = currentValue + key;
-    const validValue = newValue.replace(/[^A-ZÑa-zñ\s*?/]/g, '').toUpperCase();
-    onInputChange(validValue);
+    if (key === "Backspace") {
+      const currentValue = letters;
+      const newValue = currentValue.slice(0, -1);
+      onInputChange(newValue);
+    } else {
+      const currentValue = letters;
+      const newValue = currentValue + key;
+      const validValue = newValue.replace(/[^A-ZÑa-zñ\s*?/]/g, '').toUpperCase();
+      onInputChange(validValue);
+    }
   };
 
   return (
@@ -82,6 +88,7 @@ const SearchInput = ({
             spellCheck={false}
             autoCorrect="off"
             autoCapitalize="off"
+            inputMode="none"
           />
           {letters && (
             <Button
