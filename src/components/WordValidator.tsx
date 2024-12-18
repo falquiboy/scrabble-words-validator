@@ -86,13 +86,10 @@ const WordValidator = () => {
   const handleClear = () => {
     if (isLoading) return;
     
-    if (word && !result.checked) {
-      handleValidate();
-    } else {
-      setWord("");
-      setResult({ isValid: false, checked: false, words: [] });
-      setIsEditing(false);
-    }
+    // Immediately clear the input and reset the state
+    setWord("");
+    setResult({ isValid: false, checked: false, words: [] });
+    setIsEditing(false);
   };
 
   const handleWordChange = (newWord: string) => {
