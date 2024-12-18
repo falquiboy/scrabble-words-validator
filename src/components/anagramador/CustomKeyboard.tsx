@@ -23,9 +23,8 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
   // Constants for timing
   const INITIAL_DELAY = 500;  // Initial delay before repeat starts
   const REPEAT_INTERVAL = 50; // Interval between repeats
-  const VIBRATION_DURATION = 15;
+  const VIBRATION_DURATION = 5; // Reduced from 15 to 5ms for a shorter, crisper vibration
 
-  // Cleanup function for timers
   const cleanupTimers = () => {
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current);
@@ -54,7 +53,6 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
     }, 150);
   };
 
-  // Start backspace long press
   const startBackspaceLongPress = (e: React.TouchEvent | React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
