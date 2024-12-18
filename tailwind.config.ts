@@ -73,11 +73,16 @@ export default {
           "0%, 100%": { transform: "translateY(0)" },
           "50%": { transform: "translateY(-5px)" },
         },
+        "key-press": {
+          "0%": { backgroundColor: "#FB923C" },  // Tailwind orange-400
+          "100%": { backgroundColor: "#FFFFFF" }, // Back to white
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "tile-bounce": "tile-bounce 0.3s ease-in-out",
+        "key-press": "key-press 0.15s ease-out",
       },
     },
   },

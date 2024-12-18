@@ -41,7 +41,7 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
     // Reset pressed key after animation duration
     setTimeout(() => {
       setPressedKey(null);
-    }, 100);
+    }, 150); // Match the animation duration
   };
 
   // Handle backspace long press
@@ -92,7 +92,7 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
   // Helper function to get dynamic button classes
   const getButtonClasses = (key: string) => {
     const baseClasses = "h-14 w-[9.5%] text-xl font-bold transition-all bg-white border border-gray-200";
-    const pressedClasses = pressedKey === key ? "bg-gray-200 transform scale-95" : "shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.2)] active:shadow-[inset_0_2px_0_0_rgba(0,0,0,0.2)] active:translate-y-[1px]";
+    const pressedClasses = pressedKey === key ? "animate-key-press transform scale-95" : "shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.2)] active:shadow-[inset_0_2px_0_0_rgba(0,0,0,0.2)] active:translate-y-[1px]";
     return `${baseClasses} ${pressedClasses}`;
   };
 
@@ -140,7 +140,7 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
           <Button
             variant="secondary"
             className={`h-14 w-[20%] text-xl font-bold transition-all bg-white border border-gray-200 ${
-              pressedKey === "Backspace" ? "bg-gray-200 transform scale-95" : "shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.2)]"
+              pressedKey === "Backspace" ? "animate-key-press transform scale-95" : "shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.2)]"
             }`}
             onMouseDown={startBackspaceTimer}
             onMouseUp={stopBackspaceTimer}
@@ -166,7 +166,7 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
           <Button
             variant="secondary"
             className={`h-14 w-[60%] text-lg font-bold transition-all bg-white border border-gray-200 ${
-              pressedKey === " " ? "bg-gray-200 transform scale-95" : "shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.2)]"
+              pressedKey === " " ? "animate-key-press transform scale-95" : "shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.2)]"
             }`}
             onClick={() => handleKeyPress(" ")}
           >
