@@ -55,7 +55,7 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
   };
 
   // Start backspace long press
-  const startBackspaceLongPress = (e: React.TouchEvent) => {
+  const startBackspaceLongPress = (e: React.TouchEvent | React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -68,11 +68,16 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
     longPressTimerRef.current = setTimeout(() => {
       isLongPressActiveRef.current = true;
       onClear(); // Clear all text when long pressed
+      try {
+        navigator.vibrate?.(100); // Longer vibration for clear
+      } catch (error) {
+        console.log("Vibration not supported");
+      }
     }, INITIAL_DELAY);
   };
 
   // Stop backspace long press
-  const stopBackspaceLongPress = (e: React.TouchEvent) => {
+  const stopBackspaceLongPress = (e: React.TouchEvent | React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     cleanupTimers();
@@ -141,7 +146,10 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
             onTouchStart={startBackspaceLongPress}
             onTouchEnd={stopBackspaceLongPress}
             onTouchCancel={stopBackspaceLongPress}
-            onClick={() => handleKeyPress("Backspace")}
+            onMouseDown={startBackspaceLongPress}
+            onMouseUp={stopBackspaceLongPress}
+            onMouseLeave={stopBackspaceLongPress}
+            onClick={(e) => e.preventDefault()}
             onContextMenu={(e) => e.preventDefault()}
           >
             <Delete className="h-6 w-6" />
