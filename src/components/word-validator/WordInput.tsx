@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Check, X } from "lucide-react";
+import CustomKeyboard from "../anagramador/CustomKeyboard";
 
 interface WordInputProps {
   word: string;
@@ -68,27 +69,21 @@ const WordInput = ({
     let value = input.value
       .split('')
       .map(char => {
-        // Convert to uppercase first
         const upperChar = char.toUpperCase();
-        
-        // If it's Ñ/ñ, keep it as Ñ without any normalization
         if (upperChar === 'Ñ' || upperChar === 'ñ') {
           return 'Ñ';
         }
-        
-        // For all other characters, remove accents
         return upperChar
           .normalize('NFD')
           .replace(/[\u0300-\u036f]/g, '')
           .normalize('NFC');
       })
       .join('')
-      .replace(/[^A-ZÑ\s]/g, '')  // Only allow uppercase letters, Ñ, and spaces
-      .replace(/[KW]/g, '');      // Remove K and W
+      .replace(/[^A-ZÑ\s]/g, '')
+      .replace(/[KW]/g, '');
     
     onWordChange(value);
     
-    // Restore cursor position after the change
     setTimeout(() => {
       input.setSelectionRange(cursorPosition, cursorPosition);
     }, 0);
@@ -100,9 +95,29 @@ const WordInput = ({
     }
   };
 
+  const handleCustomKeyPress = (key: string) => {
+    const currentValue = word;
+    const newValue = currentValue + key;
+    const validValue = newValue.replace(/[^A-ZÑ\s]/g, '').toUpperCase();
+    onWordChange(validValue);
+  };
+
+  // Prevent mobile keyboard
+  useEffect(() => {
+    const input = inputRef.current;
+    if (input) {
+      input.addEventListener('focus', (e) => {
+        if (window.innerWidth <= 768) {
+          e.preventDefault();
+          input.blur();
+        }
+      });
+    }
+  }, [inputRef]);
+
   return (
     <div className="relative">
-      <ScrollArea className={`h-32 rounded-md ${getInputBackground()}`}>
+      <ScrollArea className={`h-24 rounded-md ${getInputBackground()}`}>
         <div className={`p-3 min-h-full ${getInputBackground()}`}>
           {result.checked && !isEditing ? (
             <div 
@@ -159,6 +174,7 @@ const WordInput = ({
           )}
         </Button>
       )}
+      <CustomKeyboard onKeyPress={handleCustomKeyPress} onClear={onClear} />
     </div>
   );
 };

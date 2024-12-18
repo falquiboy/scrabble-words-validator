@@ -56,7 +56,7 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
   };
 
   return (
-    <ScrollArea className="h-[calc(100vh-20rem)] md:h-[calc(100vh-12rem)]">
+    <ScrollArea className="h-[calc(100vh-24rem)] md:h-[calc(100vh-12rem)]">
       <div className="space-y-4">
         {isLoading ? (
           <div className="flex items-center gap-2 text-gray-500">

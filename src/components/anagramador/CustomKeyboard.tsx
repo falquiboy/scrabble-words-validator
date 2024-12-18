@@ -12,7 +12,7 @@ const CustomKeyboard = ({ onKeyPress, onClear }: CustomKeyboardProps) => {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-gray-100 p-4 shadow-lg md:hidden">
-      <div className="space-y-3">
+      <div className="space-y-3 pb-safe">
         {/* First row */}
         <div className="flex justify-center gap-2">
           {row1.map((key) => (
