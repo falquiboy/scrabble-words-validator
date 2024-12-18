@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Check, X } from "lucide-react";
 import CustomKeyboard from "../anagramador/CustomKeyboard";
+import InputField from './word-input/InputField';
+import DisplayText from './word-input/DisplayText';
 
 interface WordInputProps {
   word: string;
@@ -35,7 +37,6 @@ const WordInput = ({
   const [showKeyboard, setShowKeyboard] = useState(true);
   const [cursorPosition, setCursorPosition] = useState<number | null>(null);
 
-  // Handle cursor position changes
   const handleSelectionChange = () => {
     if (inputRef.current) {
       setCursorPosition(inputRef.current.selectionStart);
@@ -75,7 +76,6 @@ const WordInput = ({
         const newValue = currentValue.slice(0, pos - 1) + currentValue.slice(pos);
         onWordChange(newValue);
         
-        // Update cursor position after backspace
         const newPos = pos - 1;
         setCursorPosition(newPos);
         
@@ -89,12 +89,10 @@ const WordInput = ({
       return;
     }
 
-    // Insert the key at cursor position
     const newValue = currentValue.slice(0, pos) + key + currentValue.slice(pos);
     const validValue = newValue.replace(/[^A-ZÑa-zñ\s]/g, '').toUpperCase();
     onWordChange(validValue);
     
-    // Update cursor position after insertion
     const newPos = pos + 1;
     setCursorPosition(newPos);
     
@@ -127,7 +125,6 @@ const WordInput = ({
     
     onWordChange(value);
     
-    // Maintain cursor position after change
     requestAnimationFrame(() => {
       input.setSelectionRange(cursorPosition, cursorPosition);
     });
@@ -147,7 +144,6 @@ const WordInput = ({
       : "bg-scrabble-invalid text-white";
   };
 
-  // Prevent mobile keyboard
   useEffect(() => {
     const input = inputRef.current;
     if (input) {
@@ -165,39 +161,14 @@ const WordInput = ({
       <ScrollArea className={`h-24 rounded-md ${getInputBackground()}`}>
         <div className={`p-3 min-h-full ${getInputBackground()}`}>
           {result.checked && !isEditing ? (
-            <div 
-              className="relative" 
-              onClick={onEditStart}
-            >
-              <div className="flex flex-wrap gap-2">
-                {word.split(" ").map((w, i) => (
-                  <span key={i} className="text-2xl font-bold">
-                    {w}
-                  </span>
-                ))}
-              </div>
-            </div>
+            <DisplayText word={word} onEditStart={onEditStart} />
           ) : (
-            <input
-              ref={inputRef}
-              type="text"
-              placeholder={!result.checked ? "Escribe una o más palabras..." : ""}
-              value={word}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              className={`w-full text-2xl font-bold bg-transparent outline-none placeholder:text-gray-400`}
-              onBlur={() => {
-                if (!word.trim()) {
-                  onEditEnd();
-                }
-              }}
-              autoFocus
-              spellCheck="false"
-              autoCorrect="off"
-              autoCapitalize="off"
-              autoComplete="off"
-              inputMode="none"
-              enterKeyHint="done"
+            <InputField
+              word={word}
+              inputRef={inputRef}
+              handleInputChange={handleInputChange}
+              handleKeyDown={handleKeyDown}
+              getInputBackground={getInputBackground}
             />
           )}
         </div>
