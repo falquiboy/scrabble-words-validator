@@ -18,6 +18,7 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
   const [pressedKey, setPressedKey] = useState<string | null>(null);
   const backspaceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const backspaceIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isBackspacePressedRef = useRef(false);
 
   // Constants for timing
   const INITIAL_DELAY = 500; // Initial delay before repeat starts
@@ -46,10 +47,11 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
 
   // Handle backspace long press
   const startBackspaceTimer = (e: React.MouseEvent | React.TouchEvent) => {
-    // Prevent default behavior to avoid text selection
-    e.preventDefault();
+    e.preventDefault(); // Prevent default behavior
+    e.stopPropagation(); // Stop event propagation
     
-    if (backspaceTimerRef.current) return;
+    if (isBackspacePressedRef.current) return;
+    isBackspacePressedRef.current = true;
 
     // Initial backspace
     handleKeyPress("Backspace");
@@ -64,9 +66,11 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
   };
 
   const stopBackspaceTimer = (e: React.MouseEvent | React.TouchEvent) => {
-    // Prevent default behavior
-    e.preventDefault();
+    e.preventDefault(); // Prevent default behavior
+    e.stopPropagation(); // Stop event propagation
     
+    isBackspacePressedRef.current = false;
+
     if (backspaceTimerRef.current) {
       clearTimeout(backspaceTimerRef.current);
       backspaceTimerRef.current = null;
