@@ -45,7 +45,10 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
   };
 
   // Handle backspace long press
-  const startBackspaceTimer = () => {
+  const startBackspaceTimer = (e: React.MouseEvent | React.TouchEvent) => {
+    // Prevent default behavior to avoid text selection
+    e.preventDefault();
+    
     if (backspaceTimerRef.current) return;
 
     // Initial backspace
@@ -60,7 +63,10 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
     }, INITIAL_DELAY);
   };
 
-  const stopBackspaceTimer = () => {
+  const stopBackspaceTimer = (e: React.MouseEvent | React.TouchEvent) => {
+    // Prevent default behavior
+    e.preventDefault();
+    
     if (backspaceTimerRef.current) {
       clearTimeout(backspaceTimerRef.current);
       backspaceTimerRef.current = null;
@@ -74,7 +80,12 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      stopBackspaceTimer();
+      if (backspaceTimerRef.current) {
+        clearTimeout(backspaceTimerRef.current);
+      }
+      if (backspaceIntervalRef.current) {
+        clearInterval(backspaceIntervalRef.current);
+      }
     };
   }, []);
 
@@ -136,6 +147,8 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
             onMouseLeave={stopBackspaceTimer}
             onTouchStart={startBackspaceTimer}
             onTouchEnd={stopBackspaceTimer}
+            onTouchCancel={stopBackspaceTimer}
+            onContextMenu={(e) => e.preventDefault()} // Prevent context menu on long press
           >
             <Delete className="h-6 w-6" />
           </Button>
@@ -143,11 +156,12 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
         {/* Bottom row with centered space bar */}
         <div className="flex justify-between items-center gap-1">
           <Button
-            onClick={onClear}
-            variant="destructive"
-            className="h-14 w-14 flex items-center justify-center shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.2)] active:shadow-[inset_0_2px_0_0_rgba(0,0,0,0.2)] active:translate-y-[1px] transition-all"
+            onClick={onToggle}
+            variant="ghost"
+            className="h-14 w-14 flex items-center justify-center md:hidden"
+            type="button"
           >
-            <Trash2 className="h-6 w-6 text-white" />
+            <Keyboard className={`h-6 w-6 transition-transform ${showKeyboard ? 'rotate-180' : ''}`} />
           </Button>
           <Button
             variant="secondary"
@@ -159,12 +173,11 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
             Espacio
           </Button>
           <Button
-            onClick={onToggle}
-            variant="ghost"
-            className="h-14 w-14 flex items-center justify-center md:hidden"
-            type="button"
+            onClick={onClear}
+            variant="destructive"
+            className="h-14 w-14 flex items-center justify-center shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.2)] active:shadow-[inset_0_2px_0_0_rgba(0,0,0,0.2)] active:translate-y-[1px] transition-all"
           >
-            <Keyboard className={`h-6 w-6 transition-transform ${showKeyboard ? 'rotate-180' : ''}`} />
+            <Trash2 className="h-6 w-6 text-white" />
           </Button>
         </div>
       </div>
