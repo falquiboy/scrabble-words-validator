@@ -16,22 +16,32 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
 
   // State for tracking pressed keys and long press
   const [pressedKey, setPressedKey] = useState<string | null>(null);
-  const backspaceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const backspaceIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const isBackspacePressedRef = useRef(false);
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const repeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isLongPressActiveRef = useRef(false);
 
   // Constants for timing
-  const INITIAL_DELAY = 500; // Initial delay before repeat starts
-  const REPEAT_DELAY = 50;   // Delay between repeats
-  const VIBRATION_DURATION = 15; // Duration of vibration in milliseconds
+  const INITIAL_DELAY = 500;  // Initial delay before repeat starts
+  const REPEAT_INTERVAL = 50; // Interval between repeats
+  const VIBRATION_DURATION = 15;
 
-  // Handle key press with vibration
+  // Cleanup function for timers
+  const cleanupTimers = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    if (repeatIntervalRef.current) {
+      clearInterval(repeatIntervalRef.current);
+      repeatIntervalRef.current = null;
+    }
+    isLongPressActiveRef.current = false;
+  };
+
+  // Handle regular key press with vibration
   const handleKeyPress = (key: string) => {
-    // Attempt to vibrate
     try {
-      if (navigator.vibrate) {
-        navigator.vibrate(VIBRATION_DURATION);
-      }
+      navigator.vibrate?.(VIBRATION_DURATION);
     } catch (error) {
       console.log("Vibration not supported");
     }
@@ -39,57 +49,42 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
     setPressedKey(key);
     onKeyPress(key);
 
-    // Reset pressed key after animation duration
     setTimeout(() => {
       setPressedKey(null);
-    }, 150); // Match the animation duration
+    }, 150);
   };
 
-  // Handle backspace long press
-  const startBackspaceTimer = (e: React.MouseEvent | React.TouchEvent) => {
-    e.preventDefault(); // Prevent default behavior
-    e.stopPropagation(); // Stop event propagation
+  // Start backspace long press
+  const startBackspaceLongPress = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (isLongPressActiveRef.current) return;
     
-    if (isBackspacePressedRef.current) return;
-    isBackspacePressedRef.current = true;
-
-    // Initial backspace
+    // Initial backspace press
     handleKeyPress("Backspace");
-
+    
     // Set up long press timer
-    backspaceTimerRef.current = setTimeout(() => {
-      // Start continuous backspace
-      backspaceIntervalRef.current = setInterval(() => {
+    longPressTimerRef.current = setTimeout(() => {
+      isLongPressActiveRef.current = true;
+      // Start repeating backspace
+      repeatIntervalRef.current = setInterval(() => {
         handleKeyPress("Backspace");
-      }, REPEAT_DELAY);
+      }, REPEAT_INTERVAL);
     }, INITIAL_DELAY);
   };
 
-  const stopBackspaceTimer = (e: React.MouseEvent | React.TouchEvent) => {
-    e.preventDefault(); // Prevent default behavior
-    e.stopPropagation(); // Stop event propagation
-    
-    isBackspacePressedRef.current = false;
-
-    if (backspaceTimerRef.current) {
-      clearTimeout(backspaceTimerRef.current);
-      backspaceTimerRef.current = null;
-    }
-    if (backspaceIntervalRef.current) {
-      clearInterval(backspaceIntervalRef.current);
-      backspaceIntervalRef.current = null;
-    }
+  // Stop backspace long press
+  const stopBackspaceLongPress = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    cleanupTimers();
   };
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (backspaceTimerRef.current) {
-        clearTimeout(backspaceTimerRef.current);
-      }
-      if (backspaceIntervalRef.current) {
-        clearInterval(backspaceIntervalRef.current);
-      }
+      cleanupTimers();
     };
   }, []);
 
@@ -146,13 +141,13 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
             className={`h-14 w-[20%] text-xl font-bold transition-all bg-white border border-gray-200 ${
               pressedKey === "Backspace" ? "animate-key-press transform scale-95" : "shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.2)]"
             }`}
-            onMouseDown={startBackspaceTimer}
-            onMouseUp={stopBackspaceTimer}
-            onMouseLeave={stopBackspaceTimer}
-            onTouchStart={startBackspaceTimer}
-            onTouchEnd={stopBackspaceTimer}
-            onTouchCancel={stopBackspaceTimer}
-            onContextMenu={(e) => e.preventDefault()} // Prevent context menu on long press
+            onMouseDown={startBackspaceLongPress}
+            onMouseUp={stopBackspaceLongPress}
+            onMouseLeave={stopBackspaceLongPress}
+            onTouchStart={startBackspaceLongPress}
+            onTouchEnd={stopBackspaceLongPress}
+            onTouchCancel={stopBackspaceLongPress}
+            onContextMenu={(e) => e.preventDefault()}
           >
             <Delete className="h-6 w-6" />
           </Button>
