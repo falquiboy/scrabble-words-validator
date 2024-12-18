@@ -11,11 +11,6 @@ const CustomKeyboard = ({ onKeyPress, onClear }: CustomKeyboardProps) => {
   const row2 = ['A', 'S', 'D', 'F', 'G', 'H', 'J', '?', 'L', 'Ñ'];
   const row3 = ['/', 'Z', 'X', 'C', 'V', 'B', 'N', 'M'];
 
-  const handleBackspace = () => {
-    // Explicitly send a backspace event
-    onKeyPress('Backspace');
-  };
-
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-gray-100 p-2 shadow-lg md:hidden">
       <div className="space-y-2 pb-safe">
@@ -60,7 +55,7 @@ const CustomKeyboard = ({ onKeyPress, onClear }: CustomKeyboardProps) => {
           <Button
             variant="secondary"
             className="h-14 w-[20%] text-xl font-bold shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.2)] active:shadow-[inset_0_2px_0_0_rgba(0,0,0,0.2)] active:translate-y-[1px] transition-all bg-white border border-gray-200"
-            onClick={handleBackspace}
+            onClick={() => onKeyPress("Backspace")}
           >
             <Delete className="h-6 w-6" />
           </Button>

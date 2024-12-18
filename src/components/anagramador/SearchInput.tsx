@@ -41,12 +41,11 @@ const SearchInput = ({
 
   const handleCustomKeyPress = (key: string) => {
     if (key === "Backspace") {
-      const currentValue = letters;
-      const newValue = currentValue.slice(0, -1);
-      onInputChange(newValue);
+      // Handle backspace by removing the last character
+      onInputChange(letters.slice(0, -1));
     } else {
-      const currentValue = letters;
-      const newValue = currentValue + key;
+      // Handle other keys
+      const newValue = letters + key;
       const validValue = newValue.replace(/[^A-ZÑa-zñ\s*?/]/g, '').toUpperCase();
       onInputChange(validValue);
     }
