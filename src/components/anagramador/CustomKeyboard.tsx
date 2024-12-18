@@ -59,8 +59,6 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
     e.preventDefault();
     e.stopPropagation();
 
-    if (isLongPressActiveRef.current) return;
-    
     // Initial backspace press
     handleKeyPress("Backspace");
     
@@ -74,6 +72,13 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
         console.log("Vibration not supported");
       }
     }, INITIAL_DELAY);
+
+    // Set up repeat interval for backspace
+    repeatIntervalRef.current = setInterval(() => {
+      if (!isLongPressActiveRef.current) {
+        handleKeyPress("Backspace");
+      }
+    }, REPEAT_INTERVAL);
   };
 
   // Stop backspace long press
