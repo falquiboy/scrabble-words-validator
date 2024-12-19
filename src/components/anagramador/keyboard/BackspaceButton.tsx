@@ -20,8 +20,8 @@ const BackspaceButton = ({
   onMouseLeave,
   isPressed
 }: BackspaceButtonProps) => {
-  const handleClick = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const handleClick = () => {
+    // No-op function to satisfy type requirements
   };
 
   return (
