@@ -46,7 +46,7 @@ const Anagramador = () => {
 
   return (
     <div className="flex flex-col h-screen">
-      <div className="flex-none px-4 pt-8 pb-4">
+      <div className="flex-none px-4 pt-4 pb-2">
         <div className="max-w-2xl mx-auto w-full">
           <SearchInput
             letters={letters}
@@ -61,7 +61,7 @@ const Anagramador = () => {
         </div>
       </div>
       <div className="flex-1 overflow-hidden bg-gray-50">
-        <div className="h-full w-full md:max-w-6xl md:mx-auto md:px-4">
+        <div className="h-full w-full md:max-w-6xl md:mx-auto">
           <ResultsList
             isLoading={isLoading}
             searchTerm={searchTerm}
