@@ -41,7 +41,7 @@ const SearchInput = ({
                 <Input
                   ref={inputRef}
                   type="text"
-                  placeholder="Patrón,fichas (ej: C?T,AEIOU)"
+                  placeholder="Patrón,fichas (ej: C?SA,AEIOU)"
                   value={letters}
                   onChange={(e) => onInputChange(e.target.value)}
                   onKeyPress={onKeyPress}
@@ -63,10 +63,18 @@ const SearchInput = ({
                 )}
               </div>
             </TooltipTrigger>
-            <TooltipContent>
-              <p>Usa ? para una letra y - para cero o más letras.</p>
-              <p>Después de la coma, ingresa tus fichas disponibles.</p>
-              <p>Ejemplo: "C?T,AEIOU" buscará palabras como CAT o COT</p>
+            <TooltipContent className="max-w-sm">
+              <p className="mb-2">Busca palabras usando patrones:</p>
+              <ul className="space-y-1 list-disc pl-4">
+                <li><strong>?</strong> - una letra cualquiera</li>
+                <li><strong>-</strong> - cero o más letras</li>
+                <li>Después de la coma, ingresa las fichas disponibles</li>
+              </ul>
+              <p className="mt-2">Ejemplos:</p>
+              <ul className="space-y-1 list-disc pl-4">
+                <li>"C?SA,AEIOU" - palabras como CASA, COSA</li>
+                <li>"C-R,AEIOU" - palabras que empiezan con C y terminan en R</li>
+              </ul>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
