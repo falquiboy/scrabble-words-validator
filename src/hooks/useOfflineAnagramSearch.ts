@@ -9,7 +9,6 @@ import {
   findAdditionalMatches,
   findShorterMatches 
 } from "./anagramSearch/utils";
-import { searchPattern } from "@/utils/trie/search";
 
 export const useOfflineAnagramSearch = (searchTerm: string, showShorter: boolean = false): SearchState => {
   const { trie, isLoading, error } = useWordTrie();
@@ -19,32 +18,7 @@ export const useOfflineAnagramSearch = (searchTerm: string, showShorter: boolean
       return { 
         exactMatches: [], 
         wildcardMatches: [], 
-        additionalWildcardMatches: [], 
-        patternMatches: [] 
-      };
-    }
-
-    // Check if this is a pattern search
-    const isPatternSearch = searchTerm.includes('/');
-    
-    if (isPatternSearch) {
-      const [pattern, rackLetters] = searchTerm.split('/').map(s => s.trim().toUpperCase());
-      
-      if (!pattern || !rackLetters) {
-        return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [], patternMatches: [] };
-      }
-
-      const processedPattern = processDigraphs(pattern);
-      const processedRack = processDigraphs(rackLetters);
-      
-      const potentialMatches = trie.getWordsOfLength(processedPattern.length);
-      const patternMatches = searchPattern(potentialMatches, processedPattern, processedRack);
-
-      return {
-        exactMatches: [],
-        wildcardMatches: [],
-        additionalWildcardMatches: [],
-        patternMatches: Array.from(new Set(patternMatches))
+        additionalWildcardMatches: []
       };
     }
 
@@ -52,7 +26,7 @@ export const useOfflineAnagramSearch = (searchTerm: string, showShorter: boolean
     const wildcardCount = (searchTerm.match(/\*/g) || []).length;
     if (wildcardCount > MAX_WILDCARDS) {
       console.warn(`More than ${MAX_WILDCARDS} wildcards detected. Only the first ${MAX_WILDCARDS} will be considered.`);
-      return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [], patternMatches: [] };
+      return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [] };
     }
 
     // First process digraphs, then handle wildcards
@@ -60,7 +34,7 @@ export const useOfflineAnagramSearch = (searchTerm: string, showShorter: boolean
     const processedInput = processedSearch.replace(/\*/g, '');
 
     if (!processedInput) {
-      return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [], patternMatches: [] };
+      return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [] };
     }
 
     const startTime = performance.now();
@@ -72,8 +46,7 @@ export const useOfflineAnagramSearch = (searchTerm: string, showShorter: boolean
       results = {
         exactMatches: [],
         wildcardMatches: [],
-        additionalWildcardMatches: shorterMatches,
-        patternMatches: []
+        additionalWildcardMatches: shorterMatches
       };
     } else if (wildcardCount === 0) {
       const exactMatches = Array.from(findExactMatches(processedInput));
@@ -81,8 +54,7 @@ export const useOfflineAnagramSearch = (searchTerm: string, showShorter: boolean
       results = {
         exactMatches,
         wildcardMatches: [],
-        additionalWildcardMatches: additionalMatches,
-        patternMatches: []
+        additionalWildcardMatches: additionalMatches
       };
     } else {
       const wildcardMatches = Array.from(findWildcardMatches(processedInput, wildcardCount));
@@ -90,8 +62,7 @@ export const useOfflineAnagramSearch = (searchTerm: string, showShorter: boolean
       results = {
         exactMatches: [],
         wildcardMatches,
-        additionalWildcardMatches: additionalMatches,
-        patternMatches: []
+        additionalWildcardMatches: additionalMatches
       };
     }
 

@@ -2,7 +2,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { ResultsHeader } from "./ResultsHeader";
-import { PatternResults } from "./PatternResults";
 import { ExactResults } from "./ExactResults";
 import { ShorterResults } from "./ShorterResults";
 
@@ -13,7 +12,6 @@ interface ResultsListProps {
     exactMatches: string[];
     wildcardMatches: string[];
     additionalWildcardMatches: string[];
-    patternMatches: string[];
   } | undefined;
   highlightWildcardLetter: (word: string, originalWord: string) => React.ReactNode;
 }
@@ -21,24 +19,19 @@ interface ResultsListProps {
 const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }: ResultsListProps) => {
   const { toast } = useToast();
   const wildcardCount = (searchTerm.match(/\*/g) || []).length;
-  const isPatternSearch = searchTerm.includes('/');
 
   const handleCopyAll = () => {
     if (!results) return;
 
     let allWords: string[] = [];
 
-    if (isPatternSearch) {
-      allWords = results.patternMatches;
+    if (wildcardCount === 0) {
+      allWords = [...results.exactMatches];
     } else {
-      if (wildcardCount === 0) {
-        allWords = [...results.exactMatches];
-      } else {
-        allWords = [...results.wildcardMatches];
-      }
-      if (results.additionalWildcardMatches.length > 0) {
-        allWords = [...allWords, ...results.additionalWildcardMatches];
-      }
+      allWords = [...results.wildcardMatches];
+    }
+    if (results.additionalWildcardMatches.length > 0) {
+      allWords = [...allWords, ...results.additionalWildcardMatches];
     }
 
     navigator.clipboard.writeText(allWords.join('\n')).then(() => {
@@ -64,31 +57,23 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
             Buscando anagramas...
           </div>
         ) : results && (
-          results.patternMatches.length > 0 || 
           results.exactMatches.length > 0 || 
           results.wildcardMatches.length > 0 || 
           results.additionalWildcardMatches.length > 0
         ) ? (
           <>
             <ResultsHeader onCopyAll={handleCopyAll} />
-
-            {isPatternSearch ? (
-              <PatternResults matches={results.patternMatches} />
-            ) : (
-              <>
-                <ExactResults
-                  matches={wildcardCount === 0 ? results.exactMatches : results.wildcardMatches}
-                  wildcardCount={wildcardCount}
-                  highlightWildcardLetter={highlightWildcardLetter}
-                  searchTerm={searchTerm}
-                />
-                <ShorterResults
-                  matches={results.additionalWildcardMatches}
-                  highlightWildcardLetter={highlightWildcardLetter}
-                  searchTerm={searchTerm}
-                />
-              </>
-            )}
+            <ExactResults
+              matches={wildcardCount === 0 ? results.exactMatches : results.wildcardMatches}
+              wildcardCount={wildcardCount}
+              highlightWildcardLetter={highlightWildcardLetter}
+              searchTerm={searchTerm}
+            />
+            <ShorterResults
+              matches={results.additionalWildcardMatches}
+              highlightWildcardLetter={highlightWildcardLetter}
+              searchTerm={searchTerm}
+            />
           </>
         ) : searchTerm ? (
           <p className="text-gray-500 text-lg">No se encontraron palabras.</p>
