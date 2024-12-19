@@ -13,7 +13,7 @@ interface SearchInputProps {
   inputRef: RefObject<HTMLInputElement>;
 }
 
-const SearchInput = ({ 
+export const SearchInput = ({ 
   letters, 
   showShorter,
   onInputChange, 
@@ -59,5 +59,3 @@ const SearchInput = ({
     </div>
   );
 };
-
-export default SearchInput;

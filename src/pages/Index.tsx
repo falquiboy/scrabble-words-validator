@@ -1,4 +1,4 @@
-import Anagramador from "@/components/Anagramador";
+import { Anagramador } from "@/components/Anagramador";
 
 export const Index = () => {
   return (

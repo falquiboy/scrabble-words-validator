@@ -6,10 +6,10 @@ import ResultsList from "./anagramador/ResultsList";
 import { useAnagramSearch } from "@/hooks/useAnagramSearch";
 import { Loader } from "lucide-react";
 
-export function Anagramador() {
+export const Anagramador = () => {
   const { isLoading: isLoadingDB, clearDatabase } = useWordDatabase();
   const { isLoading: isLoadingTrie, trie } = useWordTrie();
-  const { searchTerm, results, isSearching, highlightWildcardLetter } = useAnagramSearch(trie);
+  const { data: searchResults, isLoading: isSearching } = useAnagramSearch(trie);
 
   const isLoading = isLoadingDB || isLoadingTrie;
 
@@ -42,9 +42,9 @@ export function Anagramador() {
       <SearchInput isLoading={isSearching} />
       <ResultsList
         isLoading={isSearching}
-        searchTerm={searchTerm}
-        results={results}
-        highlightWildcardLetter={highlightWildcardLetter}
+        searchTerm={searchResults?.searchTerm || ""}
+        results={searchResults?.results}
+        highlightWildcardLetter={searchResults?.highlightWildcardLetter}
       />
       <div className="flex justify-end">
         <Button
@@ -57,4 +57,4 @@ export function Anagramador() {
       </div>
     </div>
   );
-}
+};
