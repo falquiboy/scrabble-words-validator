@@ -69,8 +69,8 @@ const SearchInput = ({
     }
   };
 
-  const handleCustomKeyPress = async (key: string) => {
-    if (isProcessing) return; // Prevent concurrent processing
+  const handleCustomKeyPress = (key: string) => {
+    if (isProcessing) return;
     setIsProcessing(true);
 
     const input = inputRef.current;
@@ -79,16 +79,15 @@ const SearchInput = ({
       return;
     }
 
-    if (key === "Enter") {
-      handleValidate();
-      setIsProcessing(false);
-      return;
-    }
-
-    const currentValue = letters;
-    const pos = cursorPosition !== null ? cursorPosition : currentValue.length;
-
     try {
+      if (key === "Enter") {
+        handleValidate();
+        return;
+      }
+
+      const currentValue = letters;
+      const pos = cursorPosition !== null ? cursorPosition : currentValue.length;
+
       if (key === "Backspace") {
         if (pos > 0) {
           const newValue = currentValue.slice(0, pos - 1) + currentValue.slice(pos);
