@@ -27,8 +27,8 @@ const Anagramador = () => {
       setTargetLength(null);
     }
 
-    // Allow ?, -, and * along with letters
-    const sanitizedValue = value.replace(/[^a-zA-ZÑñ*?-,]/g, '');
+    // Allow ?, -, and * along with letters (moved hyphen to end)
+    const sanitizedValue = value.replace(/[^a-zA-ZÑñ*?,\-]/g, '');
     setLetters(sanitizedValue.toUpperCase());
   };
 

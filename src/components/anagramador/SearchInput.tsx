@@ -44,8 +44,8 @@ const SearchInput = ({
         // Keep only the first two parts if multiple commas
         const [patternPart, rackPart] = parts;
         
-        // Handle pattern part (before comma)
-        const pattern = patternPart.replace(/[^A-ZÑ?\-,]/g, '');
+        // Handle pattern part (before comma) - moved hyphen to end
+        const pattern = patternPart.replace(/[^A-ZÑ?\,\-]/g, '');
         
         // Handle rack part (after comma)
         const rack = rackPart.replace(/[^A-ZÑ]/g, '');
@@ -53,8 +53,8 @@ const SearchInput = ({
         // Combine parts back together
         value = `${pattern},${rack}`;
       } else {
-        // If no comma, treat as pattern part
-        value = value.replace(/[^A-ZÑ?\-,]/g, '');
+        // If no comma, treat as pattern part - moved hyphen to end
+        value = value.replace(/[^A-ZÑ?\,\-]/g, '');
       }
     } else {
       // In anagram mode, allow * for wildcards and / followed by digits for length
