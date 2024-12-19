@@ -26,6 +26,9 @@ export const searchPattern = (trie: { getRoot: () => TrieNode }, pattern: string
     for (const letter of processedRack) {
       rackMap.set(letter, (rackMap.get(letter) || 0) + 1);
     }
+    console.log('Rack letters:', rackLetters);
+    console.log('Processed rack:', processedRack);
+    console.log('Rack map:', Object.fromEntries(rackMap));
   }
 
   const patternMatches = (word: string, pattern: string): boolean => {
@@ -34,24 +37,24 @@ export const searchPattern = (trie: { getRoot: () => TrieNode }, pattern: string
     
     if (processedWord.length !== processedPattern.length) return false;
     
+    // Create a copy of the rack map for this word check
+    const availableLetters = new Map(rackMap);
+    
     for (let i = 0; i < processedPattern.length; i++) {
-      if (processedPattern[i] === '?') continue;
+      if (processedPattern[i] === '?') {
+        // For wildcards, check if we have the required letter in our rack
+        if (rackLetters) {
+          const letter = processedWord[i];
+          const available = availableLetters.get(letter) || 0;
+          if (available <= 0) {
+            return false;
+          }
+          availableLetters.set(letter, available - 1);
+        }
+        continue;
+      }
       if (processedPattern[i] === '-') continue;
       if (processedPattern[i] !== processedWord[i]) return false;
-    }
-    
-    // If we have a rack, verify we can form the word with available letters
-    if (rackLetters) {
-      const usedLetters = new Map<string, number>();
-      for (let i = 0; i < processedWord.length; i++) {
-        if (processedPattern[i] === '?' || processedPattern[i] === '-') {
-          const letter = processedWord[i];
-          const used = (usedLetters.get(letter) || 0) + 1;
-          const available = rackMap.get(letter) || 0;
-          if (used > available) return false;
-          usedLetters.set(letter, used);
-        }
-      }
     }
     
     return true;
