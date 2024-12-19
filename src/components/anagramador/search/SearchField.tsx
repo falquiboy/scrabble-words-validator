@@ -43,6 +43,16 @@ const SearchField = ({
     });
   };
 
+  const handleButtonClick = () => {
+    if (letters.trim()) {
+      if (!letters.includes('/')) {
+        onValidate();
+      } else {
+        onClear();
+      }
+    }
+  };
+
   return (
     <div className="relative w-full max-w-[584px] mx-auto">
       <div className="relative flex items-center">
@@ -60,8 +70,7 @@ const SearchField = ({
         />
         {letters && (
           <Button
-            onClick={letters.trim() ? onClear : undefined}
-            onDoubleClick={letters.trim() ? onValidate : undefined}
+            onClick={handleButtonClick}
             variant="ghost"
             className={`absolute right-2 h-8 w-8 p-0 hover:bg-transparent ${
               letters.trim() 
@@ -69,7 +78,7 @@ const SearchField = ({
                 : "opacity-50 cursor-not-allowed"
             }`}
             type="button"
-            title={letters.trim() ? "Borrar (clic) o Buscar (doble clic)" : "Ingresa letras para buscar"}
+            title={letters.trim() ? "Buscar o borrar" : "Ingresa letras para buscar"}
           >
             <X className="h-4 w-4" />
           </Button>
