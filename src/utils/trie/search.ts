@@ -29,14 +29,25 @@ export const searchPattern = (words: string[], pattern: string, rackLetters: str
   
   const regex = new RegExp(`^${regexPattern}$`);
   console.log('Using regex pattern:', regex);
+  console.log('Available rack letters:', rackLetters);
   
-  return lengthFilteredWords.filter(word => {
+  const matches = lengthFilteredWords.filter(word => {
     const patternMatch = regex.test(word);
+    if (patternMatch) {
+      console.log('Pattern match found:', word);
+    }
     if (!patternMatch) return false;
     
     // Check if word can be made with rack letters
-    return canMakeWordWithRack(word, rackLetters);
+    const canMake = canMakeWordWithRack(word, rackLetters);
+    if (canMake) {
+      console.log('Word can be made with rack:', word);
+    }
+    return canMake;
   });
+
+  console.log('Final matches:', matches);
+  return matches;
 };
 
 const canMakeWordWithRack = (word: string, rackLetters: string): boolean => {
