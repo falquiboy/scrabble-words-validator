@@ -9,7 +9,7 @@ import { Loader } from "lucide-react";
 export const Anagramador = () => {
   const { isLoading: isLoadingDB, clearDatabase } = useWordDatabase();
   const { isLoading: isLoadingTrie, trie } = useWordTrie();
-  const { data: searchResults, isLoading: isSearching } = useAnagramSearch(trie);
+  const { data: searchResults, isLoading: isSearching } = useAnagramSearch("");
 
   const isLoading = isLoadingDB || isLoadingTrie;
 
@@ -42,9 +42,14 @@ export const Anagramador = () => {
       <SearchInput isLoading={isSearching} />
       <ResultsList
         isLoading={isSearching}
-        searchTerm={searchResults?.searchTerm || ""}
-        results={searchResults?.results}
-        highlightWildcardLetter={searchResults?.highlightWildcardLetter}
+        searchTerm=""
+        results={{
+          exactMatches: [],
+          wildcardMatches: [],
+          additionalWildcardMatches: [],
+          patternMatches: []
+        }}
+        highlightWildcardLetter={(word: string, originalWord: string) => word}
       />
       <div className="flex justify-end">
         <Button

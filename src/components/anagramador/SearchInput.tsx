@@ -1,4 +1,4 @@
-import { RefObject, useState } from "react";
+import { useState } from "react";
 import SearchField from "./search/SearchField";
 import ShorterWordsToggle from "./search/ShorterWordsToggle";
 
@@ -10,7 +10,7 @@ interface SearchInputProps {
   onClear: () => void;
   onKeyPress: (e: React.KeyboardEvent) => void;
   onShowShorterChange: (checked: boolean) => void;
-  inputRef: RefObject<HTMLInputElement>;
+  inputRef: React.RefObject<HTMLInputElement>;
 }
 
 export const SearchInput = ({ 

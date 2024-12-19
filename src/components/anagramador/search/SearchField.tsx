@@ -1,7 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Trash2 } from "lucide-react";
-import { RefObject } from "react";
+import { Search, Trash2, Loader } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -11,22 +10,20 @@ import {
 
 interface SearchFieldProps {
   letters: string;
-  inputRef: RefObject<HTMLInputElement>;
   onInputChange: (value: string) => void;
   onValidate: () => void;
   onClear: () => void;
   onKeyPress: (e: React.KeyboardEvent) => void;
-  setCursorPosition: (position: number | null) => void;
+  isLoading: boolean;
 }
 
 const SearchField = ({
   letters,
-  inputRef,
   onInputChange,
   onValidate,
   onClear,
   onKeyPress,
-  setCursorPosition
+  isLoading
 }: SearchFieldProps) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -41,12 +38,6 @@ const SearchField = ({
       const validPattern = value.replace(/[^A-ZÑa-zñ\s*?]/g, '');
       onInputChange(validPattern.toUpperCase());
     }
-    
-    requestAnimationFrame(() => {
-      if (inputRef.current) {
-        setCursorPosition(inputRef.current.selectionStart);
-      }
-    });
   };
 
   const handleButtonClick = () => {
@@ -63,7 +54,6 @@ const SearchField = ({
     <div className="relative w-full max-w-[584px] mx-auto">
       <div className="relative flex items-center">
         <Input
-          ref={inputRef}
           type="text"
           placeholder="Ingresa letras o patrón..."
           value={letters}
@@ -72,6 +62,7 @@ const SearchField = ({
           className="h-12 pr-10 rounded-full border-2 hover:border-gray-300 focus-visible:border-blue-500 focus-visible:ring-0 focus-visible:ring-offset-0 shadow-sm"
           autoCapitalize="off"
           inputMode="none"
+          disabled={isLoading}
         />
         {letters && (
           <TooltipProvider>
@@ -86,8 +77,11 @@ const SearchField = ({
                       : "opacity-50 cursor-not-allowed"
                   }`}
                   type="button"
+                  disabled={isLoading}
                 >
-                  {letters.includes('/') ? (
+                  {isLoading ? (
+                    <Loader className="h-4 w-4 animate-spin" />
+                  ) : letters.includes('/') ? (
                     <Trash2 className="h-4 w-4" />
                   ) : (
                     <Search className="h-4 w-4" />
