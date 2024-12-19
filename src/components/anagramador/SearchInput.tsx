@@ -42,7 +42,7 @@ const SearchInput = ({
       const [patternPart, rackPart, ...rest] = parts;
       
       // Handle pattern part (before comma)
-      const pattern = patternPart.replace(/[^A-ZÑÇ?-]/g, '');
+      const pattern = patternPart.replace(/[^A-ZÑÇ?,\-]/g, '');
       
       // Handle rack part (after comma) - allow asterisks
       const rack = rackPart.replace(/[^A-ZÑÇ*]/g, '');
@@ -51,7 +51,7 @@ const SearchInput = ({
       value = `${pattern},${rack}`;
     } else {
       // If no comma, treat as pattern part
-      value = value.replace(/[^A-ZÑÇ?-,]/g, '');
+      value = value.replace(/[^A-ZÑÇ?,\-]/g, '');
     }
     
     onInputChange(value);
