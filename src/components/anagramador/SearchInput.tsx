@@ -1,5 +1,4 @@
-import { RefObject, useEffect, useState } from "react";
-import CustomKeyboard from "./CustomKeyboard";
+import { RefObject } from "react";
 import SearchField from "./search/SearchField";
 import ShorterWordsToggle from "./search/ShorterWordsToggle";
 
@@ -24,82 +23,11 @@ const SearchInput = ({
   onShowShorterChange,
   inputRef 
 }: SearchInputProps) => {
-  const [showKeyboard, setShowKeyboard] = useState(true);
-  const [cursorPosition, setCursorPosition] = useState<number | null>(null);
-
-  // Handle cursor position changes
-  const handleSelectionChange = () => {
-    if (inputRef.current) {
-      setCursorPosition(inputRef.current.selectionStart);
-    }
-  };
-
-  // Update cursor position on input focus and click
-  useEffect(() => {
-    const input = inputRef.current;
-    if (input) {
-      const events = ['click', 'focus', 'select', 'keyup', 'touchend'];
-      events.forEach(event => {
-        input.addEventListener(event, handleSelectionChange);
-      });
-      
-      input.addEventListener('focus', () => {
-        if (window.innerWidth <= 768) {
-          setShowKeyboard(true);
-        }
-      });
-
-      return () => {
-        events.forEach(event => {
-          input.removeEventListener(event, handleSelectionChange);
-        });
-      };
-    }
-  }, [inputRef]);
-
   const handleValidate = () => {
     onSearch();
     if (inputRef.current) {
       inputRef.current.focus();
-      const length = inputRef.current.value.length;
-      inputRef.current.setSelectionRange(length, length);
-      setCursorPosition(length);
     }
-  };
-
-  const handleCustomKeyPress = (key: string) => {
-    const input = inputRef.current;
-    if (!input) return;
-
-    if (key === "Enter") {
-      handleValidate();
-      return;
-    }
-
-    const currentValue = letters;
-    const pos = cursorPosition !== null ? cursorPosition : currentValue.length;
-
-    let newValue = currentValue;
-    let newPos = pos;
-
-    if (key === "Backspace") {
-      if (pos > 0) {
-        newValue = currentValue.slice(0, pos - 1) + currentValue.slice(pos);
-        newPos = pos - 1;
-      }
-    } else {
-      newValue = currentValue.slice(0, pos) + key + currentValue.slice(pos);
-      newPos = pos + 1;
-    }
-
-    onInputChange(newValue.toUpperCase());
-    setCursorPosition(newPos);
-    
-    // Ensure cursor position is maintained
-    requestAnimationFrame(() => {
-      input.focus();
-      input.setSelectionRange(newPos, newPos);
-    });
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -120,20 +48,11 @@ const SearchInput = ({
         onValidate={handleValidate}
         onClear={onClear}
         onKeyPress={handleKeyPress}
-        setCursorPosition={setCursorPosition}
       />
       <ShorterWordsToggle
         showShorter={showShorter}
         onShowShorterChange={onShowShorterChange}
       />
-      {showKeyboard && (
-        <CustomKeyboard 
-          onKeyPress={handleCustomKeyPress} 
-          onClear={onClear}
-          onToggle={() => setShowKeyboard(!showKeyboard)}
-          showKeyboard={showKeyboard}
-        />
-      )}
     </div>
   );
 };
