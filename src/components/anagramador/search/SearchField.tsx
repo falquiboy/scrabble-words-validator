@@ -1,6 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, X, Check } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { RefObject } from "react";
 
 interface SearchFieldProps {
@@ -52,32 +52,26 @@ const SearchField = ({
         value={letters}
         onChange={handleChange}
         onKeyDown={onKeyPress}
-        className="text-xl h-12 text-left pr-24 caret-blue-500"
+        className="text-xl h-12 text-left pr-12 caret-blue-500"
         autoCapitalize="off"
         inputMode="none"
       />
-      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
-        {letters && (
-          <>
-            <Button
-              onClick={onValidate}
-              variant="ghost"
-              className="h-8 w-8 p-0 hover:text-green-600"
-              type="button"
-            >
-              <Search className="h-4 w-4" />
-            </Button>
-            <Button
-              onClick={onClear}
-              variant="ghost"
-              className="h-8 w-8 p-0 hover:text-red-600"
-              type="button"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </>
-        )}
-      </div>
+      {letters && (
+        <Button
+          onClick={letters.trim() ? onClear : undefined}
+          onDoubleClick={letters.trim() ? onValidate : undefined}
+          variant="ghost"
+          className={`absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 p-0 transition-colors ${
+            letters.trim() 
+              ? "hover:text-red-600 active:text-green-600" 
+              : "opacity-50 cursor-not-allowed"
+          }`}
+          type="button"
+          title={letters.trim() ? "Borrar (clic) o Buscar (doble clic)" : "Ingresa letras para buscar"}
+        >
+          {letters.trim() ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
+        </Button>
+      )}
     </div>
   );
 };
