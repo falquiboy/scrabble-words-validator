@@ -1,6 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, X } from "lucide-react";
+import { Search, Trash2, X } from "lucide-react";
 import { RefObject } from "react";
 
 interface SearchFieldProps {
@@ -78,9 +78,13 @@ const SearchField = ({
                 : "opacity-50 cursor-not-allowed"
             }`}
             type="button"
-            title={letters.trim() ? "Buscar o borrar" : "Ingresa letras para buscar"}
+            title={letters.trim() ? (letters.includes('/') ? "Borrar" : "Buscar") : "Ingresa letras para buscar"}
           >
-            <X className="h-4 w-4" />
+            {letters.includes('/') ? (
+              <Trash2 className="h-4 w-4" />
+            ) : (
+              <Search className="h-4 w-4" />
+            )}
           </Button>
         )}
       </div>
