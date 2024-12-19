@@ -1,5 +1,6 @@
 import { TrieNode } from './types';
 import { findNode } from './nodeOperations';
+import { processDigraphs } from '@/utils/digraphs';
 
 export const searchExact = (root: TrieNode, word: string): boolean => {
   const node = findNode(root, word);
@@ -11,30 +12,40 @@ export const searchPattern = (trie: { getRoot: () => TrieNode }, pattern: string
   const [boardPattern, rackLetters] = pattern.split(',').map(p => p?.trim().toUpperCase());
   
   if (!boardPattern) return results;
+
+  // Process the pattern to handle digraphs (LL -> K, etc)
+  const processedPattern = processDigraphs(boardPattern);
+  console.log('Original pattern:', boardPattern);
+  console.log('Processed pattern:', processedPattern);
   
   // If there's a rack, convert it to a letter frequency map
   const rackMap = new Map<string, number>();
   if (rackLetters) {
-    for (const letter of rackLetters) {
+    // Process rack letters for digraphs as well
+    const processedRack = processDigraphs(rackLetters);
+    for (const letter of processedRack) {
       rackMap.set(letter, (rackMap.get(letter) || 0) + 1);
     }
   }
 
   const patternMatches = (word: string, pattern: string): boolean => {
-    if (word.length !== pattern.length) return false;
+    // Convert the word to internal representation for comparison
+    const processedWord = processDigraphs(word);
     
-    for (let i = 0; i < pattern.length; i++) {
-      if (pattern[i] === '?') continue;
-      if (pattern[i] === '-') continue;
-      if (pattern[i] !== word[i]) return false;
+    if (processedWord.length !== processedPattern.length) return false;
+    
+    for (let i = 0; i < processedPattern.length; i++) {
+      if (processedPattern[i] === '?') continue;
+      if (processedPattern[i] === '-') continue;
+      if (processedPattern[i] !== processedWord[i]) return false;
     }
     
     // If we have a rack, verify we can form the word with available letters
     if (rackLetters) {
       const usedLetters = new Map<string, number>();
-      for (let i = 0; i < word.length; i++) {
-        if (pattern[i] === '?' || pattern[i] === '-') {
-          const letter = word[i];
+      for (let i = 0; i < processedWord.length; i++) {
+        if (processedPattern[i] === '?' || processedPattern[i] === '-') {
+          const letter = processedWord[i];
           const used = (usedLetters.get(letter) || 0) + 1;
           const available = rackMap.get(letter) || 0;
           if (used > available) return false;
@@ -77,6 +88,6 @@ export const searchPattern = (trie: { getRoot: () => TrieNode }, pattern: string
     }
   };
 
-  searchRecursive(trie.getRoot(), boardPattern, '');
+  searchRecursive(trie.getRoot(), processedPattern, '');
   return Array.from(new Set(results)); // Remove duplicates
 };
