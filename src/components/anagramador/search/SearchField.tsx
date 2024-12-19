@@ -44,34 +44,37 @@ const SearchField = ({
   };
 
   return (
-    <div className="relative w-full">
-      <Input
-        ref={inputRef}
-        type="text"
-        placeholder="Ingresa letras o patrón (usa ? para una letra, * para cero o más letras)..."
-        value={letters}
-        onChange={handleChange}
-        onKeyDown={onKeyPress}
-        className="text-xl h-12 text-left pr-12 caret-blue-500"
-        autoCapitalize="off"
-        inputMode="none"
-      />
-      {letters && (
-        <Button
-          onClick={letters.trim() ? onClear : undefined}
-          onDoubleClick={letters.trim() ? onValidate : undefined}
-          variant="ghost"
-          className={`absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 p-0 transition-colors ${
-            letters.trim() 
-              ? "hover:text-red-600 active:text-green-600" 
-              : "opacity-50 cursor-not-allowed"
-          }`}
-          type="button"
-          title={letters.trim() ? "Borrar (clic) o Buscar (doble clic)" : "Ingresa letras para buscar"}
-        >
-          {letters.trim() ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
-        </Button>
-      )}
+    <div className="relative w-full max-w-[584px] mx-auto">
+      <div className="relative flex items-center">
+        <Search className="absolute left-4 h-4 w-4 text-muted-foreground pointer-events-none" />
+        <Input
+          ref={inputRef}
+          type="text"
+          placeholder="Ingresa letras o patrón..."
+          value={letters}
+          onChange={handleChange}
+          onKeyDown={onKeyPress}
+          className="h-12 pl-10 pr-10 rounded-full border-2 hover:border-gray-300 focus-visible:border-blue-500 focus-visible:ring-0 focus-visible:ring-offset-0 shadow-sm"
+          autoCapitalize="off"
+          inputMode="none"
+        />
+        {letters && (
+          <Button
+            onClick={letters.trim() ? onClear : undefined}
+            onDoubleClick={letters.trim() ? onValidate : undefined}
+            variant="ghost"
+            className={`absolute right-2 h-8 w-8 p-0 hover:bg-transparent ${
+              letters.trim() 
+                ? "text-muted-foreground hover:text-foreground" 
+                : "opacity-50 cursor-not-allowed"
+            }`}
+            type="button"
+            title={letters.trim() ? "Borrar (clic) o Buscar (doble clic)" : "Ingresa letras para buscar"}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
     </div>
   );
 };
