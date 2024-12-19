@@ -56,7 +56,7 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
   };
 
   return (
-    <div className="md:h-[calc(100vh-12rem)] h-full overflow-auto md:overflow-hidden">
+    <div className="h-full overflow-auto md:overflow-hidden">
       <ScrollArea className="h-full md:h-[calc(100vh-12rem)] transition-all duration-300">
         <div className="space-y-4 pb-4">
           {isLoading ? (
