@@ -44,21 +44,21 @@ const SearchInput = ({
         // Keep only the first two parts if multiple commas
         const [patternPart, rackPart] = parts;
         
-        // Handle pattern part (before comma) - moved hyphen to end
+        // Handle pattern part (before comma) - allow ?, -, and letters
         const pattern = patternPart.replace(/[^A-ZÑ?\,\-]/g, '');
         
-        // Handle rack part (after comma)
+        // Handle rack part (after comma) - only letters
         const rack = rackPart.replace(/[^A-ZÑ]/g, '');
         
         // Combine parts back together
         value = `${pattern},${rack}`;
       } else {
-        // If no comma, treat as pattern part - moved hyphen to end
+        // If no comma, treat as pattern part - allow ?, -, and letters
         value = value.replace(/[^A-ZÑ?\,\-]/g, '');
       }
     } else {
-      // In anagram mode, allow * for wildcards and / followed by digits for length
-      value = value.replace(/[^A-ZÑ*/0-9]/g, '');
+      // In anagram mode, allow letters, *, /, numbers, and commas
+      value = value.replace(/[^A-ZÑ*/0-9,]/g, '');
     }
     
     onInputChange(value);
