@@ -20,67 +20,63 @@ export const searchPattern = (trie: { getRoot: () => TrieNode }, pattern: string
     }
   }
 
-  const searchRecursive = (node: TrieNode, pattern: string, currentIndex: number, usedRackLetters: Map<string, number>) => {
-    if (currentIndex === pattern.length) {
-      if (node.isEndOfWord) {
+  const patternMatches = (word: string, pattern: string): boolean => {
+    if (word.length !== pattern.length) return false;
+    
+    for (let i = 0; i < pattern.length; i++) {
+      if (pattern[i] === '?') continue;
+      if (pattern[i] === '-') continue;
+      if (pattern[i] !== word[i]) return false;
+    }
+    
+    // If we have a rack, verify we can form the word with available letters
+    if (rackLetters) {
+      const usedLetters = new Map<string, number>();
+      for (let i = 0; i < word.length; i++) {
+        if (pattern[i] === '?' || pattern[i] === '-') {
+          const letter = word[i];
+          const used = (usedLetters.get(letter) || 0) + 1;
+          const available = rackMap.get(letter) || 0;
+          if (used > available) return false;
+          usedLetters.set(letter, used);
+        }
+      }
+    }
+    
+    return true;
+  };
+
+  const searchRecursive = (node: TrieNode, currentPattern: string, currentWord: string) => {
+    if (currentPattern.length === 0) {
+      if (node.isEndOfWord && patternMatches(node.word, boardPattern)) {
         results.push(node.word);
       }
       return;
     }
 
-    const currentChar = pattern[currentIndex];
+    const currentChar = currentPattern[0];
+    const remainingPattern = currentPattern.slice(1);
 
     if (currentChar === '?') {
-      // For ? we need to try all possible letters from the rack
-      if (rackLetters) {
-        for (const [letter, count] of rackMap) {
-          if (count > (usedRackLetters.get(letter) || 0)) {
-            const nextNode = node.children.get(letter);
-            if (nextNode) {
-              const newUsedLetters = new Map(usedRackLetters);
-              newUsedLetters.set(letter, (newUsedLetters.get(letter) || 0) + 1);
-              searchRecursive(nextNode, pattern, currentIndex + 1, newUsedLetters);
-            }
-          }
-        }
-      } else {
-        // If no rack specified, try all possible letters
-        for (const [letter, childNode] of node.children) {
-          searchRecursive(childNode, pattern, currentIndex + 1, usedRackLetters);
-        }
+      // For ? we try all possible next letters
+      for (const [letter, childNode] of node.children) {
+        searchRecursive(childNode, remainingPattern, currentWord + letter);
       }
     } else if (currentChar === '-') {
-      // Match zero characters (skip the hyphen)
-      searchRecursive(node, pattern, currentIndex + 1, usedRackLetters);
-      
-      // Try matching one or more characters from the rack
-      if (rackLetters) {
-        for (const [letter, count] of rackMap) {
-          if (count > (usedRackLetters.get(letter) || 0)) {
-            const nextNode = node.children.get(letter);
-            if (nextNode) {
-              const newUsedLetters = new Map(usedRackLetters);
-              newUsedLetters.set(letter, (newUsedLetters.get(letter) || 0) + 1);
-              // Continue searching with the same pattern position to allow multiple letters
-              searchRecursive(nextNode, pattern, currentIndex, newUsedLetters);
-            }
-          }
-        }
-      } else {
-        // If no rack specified, try all possible letters
-        for (const [, childNode] of node.children) {
-          searchRecursive(childNode, pattern, currentIndex, usedRackLetters);
-        }
+      // Match zero or more characters
+      searchRecursive(node, remainingPattern, currentWord); // Zero characters
+      for (const [letter, childNode] of node.children) {
+        searchRecursive(childNode, currentPattern, currentWord + letter); // Try one more character
       }
     } else {
-      // Match exact character from the board
+      // Match exact character
       const childNode = node.children.get(currentChar);
       if (childNode) {
-        searchRecursive(childNode, pattern, currentIndex + 1, usedRackLetters);
+        searchRecursive(childNode, remainingPattern, currentWord + currentChar);
       }
     }
   };
 
-  searchRecursive(trie.getRoot(), boardPattern, 0, new Map());
+  searchRecursive(trie.getRoot(), boardPattern, '');
   return Array.from(new Set(results)); // Remove duplicates
 };
