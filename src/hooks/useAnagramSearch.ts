@@ -26,7 +26,12 @@ export const useAnagramSearch = (searchTerm: string) => {
   return useQuery({
     queryKey: ["words", searchTerm],
     queryFn: async () => {
-      if (!searchTerm) return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [] };
+      if (!searchTerm) return { 
+        exactMatches: [], 
+        wildcardMatches: [], 
+        additionalWildcardMatches: [],
+        patternMatches: []  // Added this property
+      };
       
       console.log('Search term:', searchTerm, 'Wildcard count:', wildcardCount);
 
@@ -130,7 +135,8 @@ export const useAnagramSearch = (searchTerm: string) => {
       return {
         exactMatches,
         wildcardMatches,
-        additionalWildcardMatches
+        additionalWildcardMatches,
+        patternMatches: [] // Added this property
       };
     },
     enabled: Boolean(searchTerm)
