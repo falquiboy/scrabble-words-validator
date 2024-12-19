@@ -54,7 +54,7 @@ const SearchInput = ({
         value = `${pattern},${rack}`;
       } else {
         // If no comma, treat as pattern part
-        value = value.replace(/[^A-ZÑÇ?\-,]/g, '');
+        value = value.replace(/[^A-ZÑÇ?\-]/g, '');
       }
     } else {
       // In anagram mode, allow * for wildcards
@@ -88,7 +88,7 @@ const SearchInput = ({
                   ref={inputRef}
                   type="text"
                   placeholder={isPatternMode ? 
-                    "Patrón,fichas (ej: C?SA,CASA)" : 
+                    "Patrón (ej: C?SA) o Patrón,fichas (ej: C?SA,CASA)" : 
                     "Letras (ej: CASA, CAS*)"
                   }
                   value={letters}
@@ -119,10 +119,11 @@ const SearchInput = ({
                   <ul className="space-y-1 list-disc pl-4">
                     <li><strong>?</strong> - una letra cualquiera</li>
                     <li><strong>-</strong> - cero o más letras</li>
-                    <li>Después de la coma, ingresa las fichas disponibles</li>
+                    <li>Opcionalmente, después de una coma, ingresa las fichas disponibles</li>
                   </ul>
                   <p className="mt-2">Ejemplos:</p>
                   <ul className="space-y-1 list-disc pl-4">
+                    <li>"C?SA" - palabras como CASA, COSA (usando cualquier letra)</li>
                     <li>"C?SA,CASA" - palabras como CASA, COSA usando las letras CASA</li>
                     <li>"C-R,AEIOU" - palabras que empiezan con C y terminan en R usando AEIOU</li>
                   </ul>
