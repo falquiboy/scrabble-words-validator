@@ -45,31 +45,35 @@ const Anagramador = () => {
   }, []);
 
   return (
-    <div className="w-full max-w-md flex flex-col h-screen px-4 pt-8">
-      <div className="flex-none">
-        <SearchInput
-          letters={letters}
-          showShorter={showShorter}
-          onInputChange={handleInputChange}
-          onSearch={handleSearch}
-          onClear={handleClear}
-          onKeyPress={handleKeyPress}
-          onShowShorterChange={setShowShorter}
-          inputRef={inputRef}
-        />
+    <div className="flex flex-col h-screen">
+      <div className="flex-none px-4 pt-8 pb-4">
+        <div className="max-w-2xl mx-auto w-full">
+          <SearchInput
+            letters={letters}
+            showShorter={showShorter}
+            onInputChange={handleInputChange}
+            onSearch={handleSearch}
+            onClear={handleClear}
+            onKeyPress={handleKeyPress}
+            onShowShorterChange={setShowShorter}
+            inputRef={inputRef}
+          />
+        </div>
       </div>
-      <div className="flex-1 overflow-auto mt-4">
-        <ResultsList
-          isLoading={isLoading}
-          searchTerm={searchTerm}
-          results={{
-            exactMatches: results?.exactMatches || [],
-            wildcardMatches: results?.wildcardMatches || [],
-            additionalWildcardMatches: results?.additionalWildcardMatches || [],
-            patternMatches: results?.patternMatches || []
-          }}
-          highlightWildcardLetter={renderHighlightedWord}
-        />
+      <div className="flex-1 overflow-hidden bg-gray-50">
+        <div className="h-full max-w-6xl mx-auto px-4">
+          <ResultsList
+            isLoading={isLoading}
+            searchTerm={searchTerm}
+            results={{
+              exactMatches: results?.exactMatches || [],
+              wildcardMatches: results?.wildcardMatches || [],
+              additionalWildcardMatches: results?.additionalWildcardMatches || [],
+              patternMatches: results?.patternMatches || []
+            }}
+            highlightWildcardLetter={renderHighlightedWord}
+          />
+        </div>
       </div>
     </div>
   );
