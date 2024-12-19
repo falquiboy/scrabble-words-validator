@@ -25,6 +25,10 @@ export const useWordTrie = (): WordTrieState => {
 
     const initTrie = async () => {
       try {
+        // Clear trie before rebuilding
+        wordTrie.clear();
+        console.log('Trie cleared');
+
         // Initialize database first
         await wordDB.init();
         
@@ -36,9 +40,6 @@ export const useWordTrie = (): WordTrieState => {
         if (words.length === 0) {
           throw new Error('No words found in IndexedDB');
         }
-
-        // Clear trie before rebuilding
-        wordTrie.clear();
 
         // Build trie with words
         console.log('Starting Trie build with', words.length, 'words');
