@@ -61,7 +61,7 @@ const Anagramador = () => {
         </div>
       </div>
       <div className="flex-1 overflow-hidden bg-gray-50">
-        <div className="h-full max-w-6xl mx-auto px-4">
+        <div className="h-full w-full md:max-w-6xl md:mx-auto md:px-4">
           <ResultsList
             isLoading={isLoading}
             searchTerm={searchTerm}
