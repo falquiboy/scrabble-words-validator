@@ -34,17 +34,25 @@ const SearchInput = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value;
     
-    // Allow only one comma
-    const commaCount = (value.match(/,/g) || []).length;
-    if (commaCount > 1) {
-      value = value.substring(0, value.lastIndexOf(','));
-    }
-    
-    // Convert to uppercase
+    // Convert to uppercase before any other processing
     value = value.toUpperCase();
     
-    // Allow only valid characters: letters, comma, question mark, and hyphen
-    value = value.replace(/[^A-ZÑÇ,?-]/g, '');
+    // Split into pattern and rack parts if comma exists
+    const parts = value.split(',');
+    
+    if (parts.length > 1) {
+      // Handle pattern part (before comma)
+      const pattern = parts[0].replace(/[^A-ZÑÇ?-]/g, '');
+      
+      // Handle rack part (after comma) - allow asterisks
+      const rack = parts[1].replace(/[^A-ZÑÇ*]/g, '');
+      
+      // Combine parts back together
+      value = `${pattern},${rack}`;
+    } else {
+      // If no comma, treat as pattern part
+      value = value.replace(/[^A-ZÑÇ?-]/g, '');
+    }
     
     onInputChange(value);
   };
@@ -59,7 +67,7 @@ const SearchInput = ({
                 <Input
                   ref={inputRef}
                   type="text"
-                  placeholder="Patrón,fichas (ej: C?SA,AEIOU)"
+                  placeholder="Patrón,fichas (ej: C?SA,AEIOU*)"
                   value={letters}
                   onChange={handleInputChange}
                   onKeyPress={onKeyPress}
@@ -87,10 +95,11 @@ const SearchInput = ({
                 <li><strong>?</strong> - una letra cualquiera</li>
                 <li><strong>-</strong> - cero o más letras</li>
                 <li>Después de la coma, ingresa las fichas disponibles</li>
+                <li><strong>*</strong> - comodín (en las fichas)</li>
               </ul>
               <p className="mt-2">Ejemplos:</p>
               <ul className="space-y-1 list-disc pl-4">
-                <li>"C?SA,AEIOU" - palabras como CASA, COSA</li>
+                <li>"C?SA,AEIOU*" - palabras como CASA, COSA usando un comodín</li>
                 <li>"C-R,AEIOU" - palabras que empiezan con C y terminan en R</li>
               </ul>
             </TooltipContent>
