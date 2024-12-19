@@ -31,6 +31,24 @@ const SearchInput = ({
   onShowShorterChange,
   inputRef 
 }: SearchInputProps) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value;
+    
+    // Allow only one comma
+    const commaCount = (value.match(/,/g) || []).length;
+    if (commaCount > 1) {
+      value = value.substring(0, value.lastIndexOf(','));
+    }
+    
+    // Convert to uppercase
+    value = value.toUpperCase();
+    
+    // Allow only valid characters: letters, comma, question mark, and hyphen
+    value = value.replace(/[^A-ZÑÇ,?-]/g, '');
+    
+    onInputChange(value);
+  };
+
   return (
     <div className="space-y-2">
       <div className="flex gap-2">
@@ -43,7 +61,7 @@ const SearchInput = ({
                   type="text"
                   placeholder="Patrón,fichas (ej: C?SA,AEIOU)"
                   value={letters}
-                  onChange={(e) => onInputChange(e.target.value)}
+                  onChange={handleInputChange}
                   onKeyPress={onKeyPress}
                   className="text-xl h-12 text-left pr-12"
                   autoFocus
