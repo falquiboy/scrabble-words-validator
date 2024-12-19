@@ -10,37 +10,31 @@ const Anagramador = () => {
   const [showShorter, setShowShorter] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Query for words using offline search hook
   const { data: results, isLoading } = useOfflineAnagramSearch(searchTerm, showShorter);
 
-  // Handle input changes
   const handleInputChange = (value: string) => {
     const sanitizedValue = value.replace(/[^a-zA-ZÑñ*?/.]/g, '');
     setLetters(sanitizedValue.toUpperCase());
   };
 
-  // Handle search
   const handleSearch = () => {
     if (letters.trim()) {
       setSearchTerm(letters);
     }
   };
 
-  // Handle key press
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleSearch();
     }
   };
 
-  // Handle clear
   const handleClear = () => {
     setLetters("");
     setSearchTerm("");
     inputRef.current?.focus();
   };
 
-  // Create a wrapper function to handle the HTML dangerously
   const renderHighlightedWord = (word: string, originalWord: string) => {
     const highlightedHtml = highlightWildcardLetter(word, originalWord);
     return <span dangerouslySetInnerHTML={{ __html: highlightedHtml }} />;
@@ -51,28 +45,32 @@ const Anagramador = () => {
   }, []);
 
   return (
-    <div className="w-full max-w-md space-y-4 px-4">
-      <SearchInput
-        letters={letters}
-        showShorter={showShorter}
-        onInputChange={handleInputChange}
-        onSearch={handleSearch}
-        onClear={handleClear}
-        onKeyPress={handleKeyPress}
-        onShowShorterChange={setShowShorter}
-        inputRef={inputRef}
-      />
-      <ResultsList
-        isLoading={isLoading}
-        searchTerm={searchTerm}
-        results={{
-          exactMatches: results?.exactMatches || [],
-          wildcardMatches: results?.wildcardMatches || [],
-          additionalWildcardMatches: results?.additionalWildcardMatches || [],
-          patternMatches: results?.patternMatches || []
-        }}
-        highlightWildcardLetter={renderHighlightedWord}
-      />
+    <div className="w-full max-w-md flex flex-col h-screen px-4 pt-8">
+      <div className="flex-none">
+        <SearchInput
+          letters={letters}
+          showShorter={showShorter}
+          onInputChange={handleInputChange}
+          onSearch={handleSearch}
+          onClear={handleClear}
+          onKeyPress={handleKeyPress}
+          onShowShorterChange={setShowShorter}
+          inputRef={inputRef}
+        />
+      </div>
+      <div className="flex-1 overflow-auto mt-4">
+        <ResultsList
+          isLoading={isLoading}
+          searchTerm={searchTerm}
+          results={{
+            exactMatches: results?.exactMatches || [],
+            wildcardMatches: results?.wildcardMatches || [],
+            additionalWildcardMatches: results?.additionalWildcardMatches || [],
+            patternMatches: results?.patternMatches || []
+          }}
+          highlightWildcardLetter={renderHighlightedWord}
+        />
+      </div>
     </div>
   );
 };
