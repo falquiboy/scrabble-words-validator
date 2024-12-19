@@ -1,4 +1,4 @@
-import { RefObject } from "react";
+import { RefObject, useState } from "react";
 import SearchField from "./search/SearchField";
 import ShorterWordsToggle from "./search/ShorterWordsToggle";
 
@@ -23,6 +23,8 @@ const SearchInput = ({
   onShowShorterChange,
   inputRef 
 }: SearchInputProps) => {
+  const [cursorPosition, setCursorPosition] = useState<number | null>(null);
+
   const handleValidate = () => {
     onSearch();
     if (inputRef.current) {
@@ -48,6 +50,7 @@ const SearchInput = ({
         onValidate={handleValidate}
         onClear={onClear}
         onKeyPress={handleKeyPress}
+        setCursorPosition={setCursorPosition}
       />
       <ShorterWordsToggle
         showShorter={showShorter}

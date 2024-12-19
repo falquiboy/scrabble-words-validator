@@ -2,7 +2,6 @@ import React, { useRef, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Check, X } from "lucide-react";
-import CustomKeyboard from "../anagramador/CustomKeyboard";
 import InputField from './word-input/InputField';
 import DisplayText from './word-input/DisplayText';
 import CursorManager from './word-input/CursorManager';
@@ -36,7 +35,6 @@ const WordInput = ({
   onEditEnd
 }: WordInputProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [showKeyboard, setShowKeyboard] = useState(true);
   const [cursorPosition, setCursorPosition] = useState<number | null>(null);
 
   const { handleCustomKeyPress } = KeyboardHandler({
@@ -123,12 +121,6 @@ const WordInput = ({
           )}
         </Button>
       )}
-      <CustomKeyboard 
-        onKeyPress={handleCustomKeyPress} 
-        onClear={onClear}
-        onToggle={() => setShowKeyboard(!showKeyboard)}
-        showKeyboard={showKeyboard}
-      />
     </div>
   );
 };
