@@ -1,7 +1,7 @@
-import { TrieNode, LengthIndexedTrie } from './types';
-import { createNode, findNode, collectWords } from './nodeOperations';
-import { findWordsByLength, findWordsByAlphagram } from './indexing';
-import { searchExact } from './search';
+import { TrieNode, LengthIndexedTrie } from './trie/types';
+import { createNode, findNode, collectWords } from './trie/nodeOperations';
+import { findWordsByLength, findWordsByAlphagram } from './trie/indexing';
+import { searchExact } from './trie/search';
 
 export class Trie {
   private root: TrieNode;
@@ -55,7 +55,6 @@ export class Trie {
   findAnagrams(letters: string): string[] {
     const length = letters.length;
     const alphagram = this.sortLetters(letters);
-    
     return findWordsByAlphagram(this.lengthIndex, length, alphagram);
   }
 
