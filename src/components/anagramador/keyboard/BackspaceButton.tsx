@@ -20,13 +20,17 @@ const BackspaceButton = ({
   onMouseLeave,
   isPressed
 }: BackspaceButtonProps) => {
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+  };
+
   return (
     <KeyboardButton
       className="w-[20%]"
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
       onTouchCancel={onTouchCancel}
-      onClick={(e) => e.preventDefault()}
+      onClick={handleClick}
       isPressed={isPressed}
     >
       <Delete className="h-6 w-6" />
