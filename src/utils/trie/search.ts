@@ -6,7 +6,7 @@ export const searchExact = (root: TrieNode, word: string): boolean => {
   return node !== null && node.isEndOfWord;
 };
 
-export const searchPattern = (root: TrieNode, pattern: string): string[] => {
+export const searchPattern = (trie: { root: TrieNode }, pattern: string): string[] => {
   const results: string[] = [];
   
   const searchRecursive = (node: TrieNode, pattern: string, currentIndex: number) => {
@@ -42,6 +42,6 @@ export const searchPattern = (root: TrieNode, pattern: string): string[] => {
     }
   };
 
-  searchRecursive(root, pattern, 0);
+  searchRecursive(trie.root, pattern, 0);
   return Array.from(new Set(results)); // Remove duplicates
 };

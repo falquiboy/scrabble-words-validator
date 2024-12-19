@@ -69,7 +69,8 @@ const Anagramador = () => {
         results={{
           exactMatches: results?.exactMatches || [],
           wildcardMatches: results?.wildcardMatches || [],
-          additionalWildcardMatches: results?.additionalWildcardMatches || []
+          additionalWildcardMatches: results?.additionalWildcardMatches || [],
+          patternMatches: results?.patternMatches || []
         }}
         highlightWildcardLetter={renderHighlightedWord}
       />
