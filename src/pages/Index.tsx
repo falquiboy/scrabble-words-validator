@@ -1,9 +1,19 @@
-import { Anagramador } from "@/components/Anagramador";
+import { useState } from "react";
+import WordValidator from "@/components/WordValidator";
+import Anagramador from "@/components/Anagramador";
+import ModuleSelector from "@/components/ModuleSelector";
 
-export const Index = () => {
+const Index = () => {
+  const [activeModule, setActiveModule] = useState<'judge' | 'anagram'>('judge');
+
   return (
-    <div className="h-screen overflow-hidden">
-      <Anagramador />
+    <div className={`fixed inset-0 ${activeModule === 'judge' ? 'bg-[#16417C]' : 'bg-white'} flex flex-col items-center pt-20`}>
+      <ModuleSelector activeModule={activeModule} onModuleChange={setActiveModule} />
+      <div className="mt-8">
+        {activeModule === 'judge' ? <WordValidator /> : <Anagramador />}
+      </div>
     </div>
   );
-}
+};
+
+export default Index;

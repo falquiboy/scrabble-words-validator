@@ -8,21 +8,6 @@ export const useWordDatabase = () => {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const clearDatabase = async () => {
-    try {
-      await wordDB.clear();
-      // Force page reload to trigger complete reinitialization
-      window.location.reload();
-    } catch (err) {
-      console.error('Error clearing database:', err);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "No se pudo limpiar la base de datos.",
-      });
-    }
-  };
-
   useEffect(() => {
     let mounted = true;
     let batchSize = 10000;
@@ -138,5 +123,5 @@ export const useWordDatabase = () => {
     };
   }, [toast]);
 
-  return { isLoading, error, clearDatabase };
+  return { isLoading, error };
 };
