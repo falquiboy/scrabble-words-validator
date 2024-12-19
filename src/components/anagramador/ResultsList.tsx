@@ -4,6 +4,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { ResultsHeader } from "./ResultsHeader";
 import { ExactResults } from "./ExactResults";
 import { ShorterResults } from "./ShorterResults";
+import { PatternResults } from "./PatternResults";
 
 interface ResultsListProps {
   isLoading: boolean;
@@ -12,6 +13,7 @@ interface ResultsListProps {
     exactMatches: string[];
     wildcardMatches: string[];
     additionalWildcardMatches: string[];
+    patternMatches: string[];
   } | undefined;
   highlightWildcardLetter: (word: string, originalWord: string) => React.ReactNode;
 }
@@ -19,13 +21,16 @@ interface ResultsListProps {
 const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }: ResultsListProps) => {
   const { toast } = useToast();
   const wildcardCount = (searchTerm.match(/\*/g) || []).length;
+  const isPatternSearch = searchTerm.includes('?') || searchTerm.includes('-');
 
   const handleCopyAll = () => {
     if (!results) return;
 
     let allWords: string[] = [];
 
-    if (wildcardCount === 0) {
+    if (isPatternSearch) {
+      allWords = [...results.patternMatches];
+    } else if (wildcardCount === 0) {
       allWords = [...results.exactMatches];
     } else {
       allWords = [...results.wildcardMatches];
@@ -59,21 +64,31 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
         ) : results && (
           results.exactMatches.length > 0 || 
           results.wildcardMatches.length > 0 || 
-          results.additionalWildcardMatches.length > 0
+          results.additionalWildcardMatches.length > 0 ||
+          results.patternMatches.length > 0
         ) ? (
           <>
             <ResultsHeader onCopyAll={handleCopyAll} />
-            <ExactResults
-              matches={wildcardCount === 0 ? results.exactMatches : results.wildcardMatches}
-              wildcardCount={wildcardCount}
-              highlightWildcardLetter={highlightWildcardLetter}
-              searchTerm={searchTerm}
-            />
-            <ShorterResults
-              matches={results.additionalWildcardMatches}
-              highlightWildcardLetter={highlightWildcardLetter}
-              searchTerm={searchTerm}
-            />
+            {isPatternSearch ? (
+              <PatternResults
+                matches={results.patternMatches}
+                searchTerm={searchTerm}
+              />
+            ) : (
+              <>
+                <ExactResults
+                  matches={wildcardCount === 0 ? results.exactMatches : results.wildcardMatches}
+                  wildcardCount={wildcardCount}
+                  highlightWildcardLetter={highlightWildcardLetter}
+                  searchTerm={searchTerm}
+                />
+                <ShorterResults
+                  matches={results.additionalWildcardMatches}
+                  highlightWildcardLetter={highlightWildcardLetter}
+                  searchTerm={searchTerm}
+                />
+              </>
+            )}
           </>
         ) : searchTerm ? (
           <p className="text-gray-500 text-lg">No se encontraron palabras.</p>
