@@ -1,6 +1,11 @@
 import { TrieNode } from './types';
 import { findNode } from './nodeOperations';
 
+export const searchExact = (root: TrieNode, word: string): boolean => {
+  const node = findNode(root, word);
+  return node !== null && node.isEndOfWord;
+};
+
 export const searchPattern = (trie: { getRoot: () => TrieNode }, pattern: string): string[] => {
   const results: string[] = [];
   const [boardPattern, rackLetters] = pattern.split(',').map(p => p?.trim().toUpperCase());
