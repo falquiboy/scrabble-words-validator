@@ -4,6 +4,8 @@ import { ReactNode } from "react";
 interface KeyboardButtonProps {
   onClick: () => void;
   onTouchStart?: (e: React.TouchEvent) => void;
+  onTouchEnd?: (e: React.TouchEvent) => void;
+  onTouchCancel?: (e: React.TouchEvent) => void;
   className?: string;
   children: ReactNode;
   variant?: "secondary" | "default" | "ghost";
@@ -13,6 +15,8 @@ interface KeyboardButtonProps {
 const KeyboardButton = ({ 
   onClick, 
   onTouchStart, 
+  onTouchEnd,
+  onTouchCancel,
   className = "", 
   children, 
   variant = "secondary",
@@ -28,6 +32,8 @@ const KeyboardButton = ({
       variant={variant}
       className={`${baseClasses} ${pressedClasses} ${className}`}
       onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+      onTouchCancel={onTouchCancel}
       onClick={onClick}
     >
       {children}
