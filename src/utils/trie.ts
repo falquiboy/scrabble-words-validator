@@ -1,7 +1,7 @@
-import { TrieNode, LengthIndexedTrie } from './trie/types';
-import { createNode, findNode, collectWords } from './trie/nodeOperations';
-import { createLengthIndex, findWordsByLength, findWordsByAlphagram } from './trie/indexing';
-import { searchExact } from './trie/search';
+import { TrieNode, LengthIndexedTrie } from './types';
+import { createNode, findNode, collectWords } from './nodeOperations';
+import { createLengthIndex, findWordsByLength, findWordsByAlphagram } from './indexing';
+import { searchExact } from './search';
 
 export class Trie {
   private root: TrieNode;
@@ -10,6 +10,11 @@ export class Trie {
   constructor() {
     this.root = createNode();
     this.lengthIndex = {};
+  }
+
+  // Add this new method to expose root
+  getRoot(): TrieNode {
+    return this.root;
   }
 
   clear(): void {

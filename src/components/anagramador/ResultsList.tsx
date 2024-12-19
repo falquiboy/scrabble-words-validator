@@ -29,14 +29,14 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
     let allWords: string[] = [];
 
     if (isPatternSearch) {
-      allWords = [...results.patternMatches];
+      allWords = [...(results.patternMatches || [])];
     } else if (wildcardCount === 0) {
-      allWords = [...results.exactMatches];
+      allWords = [...(results.exactMatches || [])];
     } else {
-      allWords = [...results.wildcardMatches];
+      allWords = [...(results.wildcardMatches || [])];
     }
-    if (results.additionalWildcardMatches.length > 0) {
-      allWords = [...allWords, ...results.additionalWildcardMatches];
+    if (results.additionalWildcardMatches?.length > 0) {
+      allWords = [...allWords, ...(results.additionalWildcardMatches || [])];
     }
 
     navigator.clipboard.writeText(allWords.join('\n')).then(() => {
@@ -62,28 +62,28 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
             Buscando anagramas...
           </div>
         ) : results && (
-          results.exactMatches.length > 0 || 
-          results.wildcardMatches.length > 0 || 
-          results.additionalWildcardMatches.length > 0 ||
-          results.patternMatches.length > 0
+          (results.exactMatches?.length > 0 || 
+          results.wildcardMatches?.length > 0 || 
+          results.additionalWildcardMatches?.length > 0 ||
+          results.patternMatches?.length > 0)
         ) ? (
           <>
             <ResultsHeader onCopyAll={handleCopyAll} />
             {isPatternSearch ? (
               <PatternResults
-                matches={results.patternMatches}
+                matches={results.patternMatches || []}
                 searchTerm={searchTerm}
               />
             ) : (
               <>
                 <ExactResults
-                  matches={wildcardCount === 0 ? results.exactMatches : results.wildcardMatches}
+                  matches={wildcardCount === 0 ? (results.exactMatches || []) : (results.wildcardMatches || [])}
                   wildcardCount={wildcardCount}
                   highlightWildcardLetter={highlightWildcardLetter}
                   searchTerm={searchTerm}
                 />
                 <ShorterResults
-                  matches={results.additionalWildcardMatches}
+                  matches={results.additionalWildcardMatches || []}
                   highlightWildcardLetter={highlightWildcardLetter}
                   searchTerm={searchTerm}
                 />

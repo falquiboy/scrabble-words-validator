@@ -1,12 +1,11 @@
 import { TrieNode } from './types';
-import { findNode } from './nodeOperations';
 
 export const searchExact = (root: TrieNode, word: string): boolean => {
   const node = findNode(root, word);
   return node !== null && node.isEndOfWord;
 };
 
-export const searchPattern = (trie: { root: TrieNode }, pattern: string): string[] => {
+export const searchPattern = (trie: Trie, pattern: string): string[] => {
   const results: string[] = [];
   
   const searchRecursive = (node: TrieNode, pattern: string, currentIndex: number) => {
@@ -42,6 +41,6 @@ export const searchPattern = (trie: { root: TrieNode }, pattern: string): string
     }
   };
 
-  searchRecursive(trie.root, pattern, 0);
+  searchRecursive(trie.getRoot(), pattern, 0);
   return Array.from(new Set(results)); // Remove duplicates
 };

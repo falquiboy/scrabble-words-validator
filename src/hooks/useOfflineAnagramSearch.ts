@@ -42,7 +42,12 @@ export const useOfflineAnagramSearch = (searchTerm: string, showShorter: boolean
     const wildcardCount = (searchTerm.match(/\*/g) || []).length;
     if (wildcardCount > MAX_WILDCARDS) {
       console.warn(`More than ${MAX_WILDCARDS} wildcards detected. Only the first ${MAX_WILDCARDS} will be considered.`);
-      return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [], patternMatches: [] };
+      return { 
+        exactMatches: [], 
+        wildcardMatches: [], 
+        additionalWildcardMatches: [], 
+        patternMatches: [] 
+      };
     }
 
     // First process digraphs, then handle wildcards
@@ -50,7 +55,12 @@ export const useOfflineAnagramSearch = (searchTerm: string, showShorter: boolean
     const processedInput = processedSearch.replace(/\*/g, '');
 
     if (!processedInput) {
-      return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [], patternMatches: [] };
+      return { 
+        exactMatches: [], 
+        wildcardMatches: [], 
+        additionalWildcardMatches: [], 
+        patternMatches: [] 
+      };
     }
 
     const startTime = performance.now();
