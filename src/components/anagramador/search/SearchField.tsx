@@ -1,6 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Trash2, X } from "lucide-react";
+import { Search, Trash2 } from "lucide-react";
 import { RefObject } from "react";
 
 interface SearchFieldProps {
@@ -56,7 +56,6 @@ const SearchField = ({
   return (
     <div className="relative w-full max-w-[584px] mx-auto">
       <div className="relative flex items-center">
-        <Search className="absolute left-4 h-4 w-4 text-muted-foreground pointer-events-none" />
         <Input
           ref={inputRef}
           type="text"
@@ -64,7 +63,7 @@ const SearchField = ({
           value={letters}
           onChange={handleChange}
           onKeyDown={onKeyPress}
-          className="h-12 pl-10 pr-10 rounded-full border-2 hover:border-gray-300 focus-visible:border-blue-500 focus-visible:ring-0 focus-visible:ring-offset-0 shadow-sm"
+          className="h-12 pr-10 rounded-full border-2 hover:border-gray-300 focus-visible:border-blue-500 focus-visible:ring-0 focus-visible:ring-offset-0 shadow-sm"
           autoCapitalize="off"
           inputMode="none"
         />
