@@ -37,8 +37,25 @@ const SearchInput = ({
     let value = e.target.value.toUpperCase();
     
     if (isPatternMode) {
-      // In pattern mode, allow ?, - for patterns
-      value = value.replace(/[^A-ZÑÇ?\-]/g, '');
+      // Split into pattern and rack parts if comma exists
+      const parts = value.split(',');
+      
+      if (parts.length > 1) {
+        // Keep only the first two parts if multiple commas
+        const [patternPart, rackPart] = parts;
+        
+        // Handle pattern part (before comma)
+        const pattern = patternPart.replace(/[^A-ZÑÇ?\-]/g, '');
+        
+        // Handle rack part (after comma)
+        const rack = rackPart.replace(/[^A-ZÑÇ]/g, '');
+        
+        // Combine parts back together
+        value = `${pattern},${rack}`;
+      } else {
+        // If no comma, treat as pattern part
+        value = value.replace(/[^A-ZÑÇ?\-,]/g, '');
+      }
     } else {
       // In anagram mode, allow * for wildcards
       value = value.replace(/[^A-ZÑÇ*]/g, '');
@@ -71,7 +88,7 @@ const SearchInput = ({
                   ref={inputRef}
                   type="text"
                   placeholder={isPatternMode ? 
-                    "Patrón (ej: C?SA, C-R)" : 
+                    "Patrón,fichas (ej: C?SA,CASA)" : 
                     "Letras (ej: CASA, CAS*)"
                   }
                   value={letters}
@@ -102,11 +119,12 @@ const SearchInput = ({
                   <ul className="space-y-1 list-disc pl-4">
                     <li><strong>?</strong> - una letra cualquiera</li>
                     <li><strong>-</strong> - cero o más letras</li>
+                    <li>Después de la coma, ingresa las fichas disponibles</li>
                   </ul>
                   <p className="mt-2">Ejemplos:</p>
                   <ul className="space-y-1 list-disc pl-4">
-                    <li>"C?SA" - palabras como CASA, COSA</li>
-                    <li>"C-R" - palabras que empiezan con C y terminan en R</li>
+                    <li>"C?SA,CASA" - palabras como CASA, COSA usando las letras CASA</li>
+                    <li>"C-R,AEIOU" - palabras que empiezan con C y terminan en R usando AEIOU</li>
                   </ul>
                 </>
               ) : (
