@@ -9,8 +9,8 @@ export const searchExact = (root: TrieNode, word: string): boolean => {
 export const searchPattern = (words: string[], pattern: string, rackLetters: string): string[] => {
   console.log('Searching with pattern:', pattern, 'and rack:', rackLetters);
   
-  // Calculate minimum length required by the pattern
-  const minLength = pattern.replace(/[*?]/g, '').length;
+  // Calculate minimum length required by the pattern - only remove * wildcards since ? requires a character
+  const minLength = pattern.replace(/[*]/g, '').length;
   console.log('Minimum length required:', minLength);
   
   // Filter words by minimum length first
