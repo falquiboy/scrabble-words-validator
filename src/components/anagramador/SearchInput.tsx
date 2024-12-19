@@ -26,6 +26,7 @@ const SearchInput = ({
 }: SearchInputProps) => {
   const [showKeyboard, setShowKeyboard] = useState(true);
   const [cursorPosition, setCursorPosition] = useState<number | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Handle cursor position changes
   const handleSelectionChange = () => {
@@ -59,62 +60,60 @@ const SearchInput = ({
 
   const handleValidate = () => {
     onSearch();
-    // Focus input after validation to allow continued typing
-    requestAnimationFrame(() => {
-      if (inputRef.current) {
-        inputRef.current.focus();
-        const length = inputRef.current.value.length;
-        inputRef.current.setSelectionRange(length, length);
-        setCursorPosition(length);
-      }
-    });
+    // Focus input after validation
+    if (inputRef.current) {
+      inputRef.current.focus();
+      const length = inputRef.current.value.length;
+      inputRef.current.setSelectionRange(length, length);
+      setCursorPosition(length);
+    }
   };
 
-  const handleCustomKeyPress = (key: string) => {
+  const handleCustomKeyPress = async (key: string) => {
+    if (isProcessing) return; // Prevent concurrent processing
+    setIsProcessing(true);
+
     const input = inputRef.current;
-    if (!input) return;
+    if (!input) {
+      setIsProcessing(false);
+      return;
+    }
 
     if (key === "Enter") {
       handleValidate();
+      setIsProcessing(false);
       return;
     }
 
     const currentValue = letters;
     const pos = cursorPosition !== null ? cursorPosition : currentValue.length;
 
-    if (key === "Backspace") {
-      if (pos > 0) {
-        const newValue = currentValue.slice(0, pos - 1) + currentValue.slice(pos);
-        onInputChange(newValue);
+    try {
+      if (key === "Backspace") {
+        if (pos > 0) {
+          const newValue = currentValue.slice(0, pos - 1) + currentValue.slice(pos);
+          onInputChange(newValue);
+          
+          const newPos = pos - 1;
+          setCursorPosition(newPos);
+          
+          input.focus();
+          input.setSelectionRange(newPos, newPos);
+        }
+      } else {
+        // Insert the key at cursor position
+        const newValue = currentValue.slice(0, pos) + key + currentValue.slice(pos);
+        onInputChange(newValue.toUpperCase());
         
-        // Update cursor position after backspace
-        const newPos = pos - 1;
+        const newPos = pos + 1;
         setCursorPosition(newPos);
         
-        requestAnimationFrame(() => {
-          if (input) {
-            input.focus();
-            input.setSelectionRange(newPos, newPos);
-          }
-        });
-      }
-      return;
-    }
-
-    // Insert the key at cursor position
-    const newValue = currentValue.slice(0, pos) + key + currentValue.slice(pos);
-    onInputChange(newValue.toUpperCase());
-    
-    // Update cursor position after insertion
-    const newPos = pos + 1;
-    setCursorPosition(newPos);
-    
-    requestAnimationFrame(() => {
-      if (input) {
         input.focus();
         input.setSelectionRange(newPos, newPos);
       }
-    });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
