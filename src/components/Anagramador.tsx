@@ -1,82 +1,60 @@
-import { useState, useEffect, useRef } from "react";
-import SearchInput from "./anagramador/SearchInput";
+import { useWordTrie } from "@/hooks/useWordTrie";
+import { useWordDatabase } from "@/hooks/useWordDatabase";
+import { Button } from "@/components/ui/button";
+import { SearchInput } from "./anagramador/SearchInput";
 import ResultsList from "./anagramador/ResultsList";
-import { useOfflineAnagramSearch } from "@/hooks/useOfflineAnagramSearch";
-import { highlightWildcardLetter } from "@/utils/wildcardHighlighting";
+import { useAnagramSearch } from "@/hooks/useAnagramSearch";
+import { Loader } from "lucide-react";
 
-const Anagramador = () => {
-  const [letters, setLetters] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [showShorter, setShowShorter] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+export function Anagramador() {
+  const { isLoading: isLoadingDB, clearDatabase } = useWordDatabase();
+  const { isLoading: isLoadingTrie, trie } = useWordTrie();
+  const { searchTerm, results, isSearching, highlightWildcardLetter } = useAnagramSearch(trie);
 
-  const { data: results, isLoading } = useOfflineAnagramSearch(searchTerm, showShorter);
+  const isLoading = isLoadingDB || isLoadingTrie;
 
-  const handleInputChange = (value: string) => {
-    const sanitizedValue = value.replace(/[^a-zA-ZÑñ*?/.]/g, '');
-    setLetters(sanitizedValue.toUpperCase());
-  };
-
-  const handleSearch = () => {
-    if (letters.trim()) {
-      setSearchTerm(letters);
+  const handleClearDatabase = async () => {
+    if (window.confirm('¿Estás seguro de que quieres borrar la base de datos local? La aplicación se recargará para reconstruirla.')) {
+      await clearDatabase();
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
-  };
-
-  const handleClear = () => {
-    setLetters("");
-    setSearchTerm("");
-    inputRef.current?.focus();
-  };
-
-  const renderHighlightedWord = (word: string, originalWord: string) => {
-    const highlightedHtml = highlightWildcardLetter(word, originalWord);
-    return <span dangerouslySetInnerHTML={{ __html: highlightedHtml }} />;
-  };
-
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4">
+        <div className="flex items-center gap-2">
+          <Loader className="h-4 w-4 animate-spin" />
+          <p className="text-gray-500">Cargando diccionario...</p>
+        </div>
+        <Button
+          variant="outline"
+          onClick={handleClearDatabase}
+          className="mt-4"
+        >
+          Borrar base de datos local
+        </Button>
+      </div>
+    );
+  }
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
-      <div className="flex-none px-4 pt-4 pb-2">
-        <div className="max-w-2xl mx-auto w-full">
-          <SearchInput
-            letters={letters}
-            showShorter={showShorter}
-            onInputChange={handleInputChange}
-            onSearch={handleSearch}
-            onClear={handleClear}
-            onKeyPress={handleKeyPress}
-            onShowShorterChange={setShowShorter}
-            inputRef={inputRef}
-          />
-        </div>
-      </div>
-      <div className="flex-1 bg-gray-50 overflow-hidden">
-        <div className="h-full w-full md:max-w-6xl md:mx-auto">
-          <ResultsList
-            isLoading={isLoading}
-            searchTerm={searchTerm}
-            results={{
-              exactMatches: results?.exactMatches || [],
-              wildcardMatches: results?.wildcardMatches || [],
-              additionalWildcardMatches: results?.additionalWildcardMatches || [],
-              patternMatches: results?.patternMatches || []
-            }}
-            highlightWildcardLetter={renderHighlightedWord}
-          />
-        </div>
+    <div className="flex flex-col space-y-4">
+      <SearchInput isLoading={isSearching} />
+      <ResultsList
+        isLoading={isSearching}
+        searchTerm={searchTerm}
+        results={results}
+        highlightWildcardLetter={highlightWildcardLetter}
+      />
+      <div className="flex justify-end">
+        <Button
+          variant="outline"
+          onClick={handleClearDatabase}
+          size="sm"
+        >
+          Borrar base de datos local
+        </Button>
       </div>
     </div>
   );
-};
-
-export default Anagramador;
+}
