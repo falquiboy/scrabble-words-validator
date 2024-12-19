@@ -32,26 +32,26 @@ const SearchInput = ({
   inputRef 
 }: SearchInputProps) => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value;
-    
-    // Convert to uppercase before any other processing
-    value = value.toUpperCase();
+    let value = e.target.value.toUpperCase();
     
     // Split into pattern and rack parts if comma exists
     const parts = value.split(',');
     
     if (parts.length > 1) {
+      // Keep only the first two parts if multiple commas
+      const [patternPart, rackPart, ...rest] = parts;
+      
       // Handle pattern part (before comma)
-      const pattern = parts[0].replace(/[^A-ZÑÇ?-]/g, '');
+      const pattern = patternPart.replace(/[^A-ZÑÇ?-]/g, '');
       
       // Handle rack part (after comma) - allow asterisks
-      const rack = parts[1].replace(/[^A-ZÑÇ*]/g, '');
+      const rack = rackPart.replace(/[^A-ZÑÇ*]/g, '');
       
       // Combine parts back together
       value = `${pattern},${rack}`;
     } else {
       // If no comma, treat as pattern part
-      value = value.replace(/[^A-ZÑÇ?-]/g, '');
+      value = value.replace(/[^A-ZÑÇ?-,]/g, '');
     }
     
     onInputChange(value);
