@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import SearchField from "./search/SearchField";
 import ShorterWordsToggle from "./search/ShorterWordsToggle";
 
@@ -10,7 +10,7 @@ interface SearchInputProps {
   onClear: () => void;
   onKeyPress: (e: React.KeyboardEvent) => void;
   onShowShorterChange: (checked: boolean) => void;
-  inputRef: React.RefObject<HTMLInputElement>;
+  isLoading: boolean;
 }
 
 export const SearchInput = ({ 
@@ -21,9 +21,9 @@ export const SearchInput = ({
   onClear, 
   onKeyPress, 
   onShowShorterChange,
-  inputRef 
+  isLoading
 }: SearchInputProps) => {
-  const [cursorPosition, setCursorPosition] = useState<number | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleValidate = () => {
     onSearch();
@@ -45,12 +45,11 @@ export const SearchInput = ({
     <div className="space-y-2">
       <SearchField
         letters={letters}
-        inputRef={inputRef}
         onInputChange={onInputChange}
         onValidate={handleValidate}
         onClear={onClear}
         onKeyPress={handleKeyPress}
-        setCursorPosition={setCursorPosition}
+        isLoading={isLoading}
       />
       <ShorterWordsToggle
         showShorter={showShorter}

@@ -5,11 +5,13 @@ import { SearchInput } from "./anagramador/SearchInput";
 import ResultsList from "./anagramador/ResultsList";
 import { useAnagramSearch } from "@/hooks/useAnagramSearch";
 import { Loader } from "lucide-react";
+import { useState } from "react";
 
 export const Anagramador = () => {
   const { isLoading: isLoadingDB, clearDatabase } = useWordDatabase();
-  const { isLoading: isLoadingTrie, trie } = useWordTrie();
-  const { data: searchResults, isLoading: isSearching } = useAnagramSearch("");
+  const { isLoading: isLoadingTrie } = useWordTrie();
+  const [searchTerm, setSearchTerm] = useState("");
+  const { data: searchResults, isLoading: isSearching } = useAnagramSearch(searchTerm);
 
   const isLoading = isLoadingDB || isLoadingTrie;
 
@@ -17,6 +19,14 @@ export const Anagramador = () => {
     if (window.confirm('¿Estás seguro de que quieres borrar la base de datos local? La aplicación se recargará para reconstruirla.')) {
       await clearDatabase();
     }
+  };
+
+  const handleInputChange = (value: string) => {
+    setSearchTerm(value);
+  };
+
+  const handleClear = () => {
+    setSearchTerm("");
   };
 
   if (isLoading) {
@@ -39,17 +49,26 @@ export const Anagramador = () => {
 
   return (
     <div className="flex flex-col space-y-4">
-      <SearchInput isLoading={isSearching} />
+      <SearchInput 
+        letters={searchTerm}
+        showShorter={false}
+        onInputChange={handleInputChange}
+        onSearch={() => {}}
+        onClear={handleClear}
+        onKeyPress={() => {}}
+        onShowShorterChange={() => {}}
+        isLoading={isSearching}
+      />
       <ResultsList
         isLoading={isSearching}
-        searchTerm=""
-        results={{
+        searchTerm={searchTerm}
+        results={searchResults || {
           exactMatches: [],
           wildcardMatches: [],
           additionalWildcardMatches: [],
           patternMatches: []
         }}
-        highlightWildcardLetter={(word: string, originalWord: string) => word}
+        highlightWildcardLetter={(word: string) => word}
       />
       <div className="flex justify-end">
         <Button
