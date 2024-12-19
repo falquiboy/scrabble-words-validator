@@ -2,6 +2,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Trash2 } from "lucide-react";
 import { RefObject } from "react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface SearchFieldProps {
   letters: string;
@@ -44,12 +50,12 @@ const SearchField = ({
   };
 
   const handleButtonClick = () => {
-    if (letters.trim()) {
-      if (!letters.includes('/')) {
-        onValidate();
-      } else {
-        onClear();
-      }
+    if (!letters.trim()) return;
+    
+    if (letters.includes('/')) {
+      onClear();
+    } else {
+      onValidate();
     }
   };
 
@@ -68,23 +74,31 @@ const SearchField = ({
           inputMode="none"
         />
         {letters && (
-          <Button
-            onClick={handleButtonClick}
-            variant="ghost"
-            className={`absolute right-2 h-8 w-8 p-0 hover:bg-transparent ${
-              letters.trim() 
-                ? "text-muted-foreground hover:text-foreground" 
-                : "opacity-50 cursor-not-allowed"
-            }`}
-            type="button"
-            title={letters.trim() ? (letters.includes('/') ? "Borrar" : "Buscar") : "Ingresa letras para buscar"}
-          >
-            {letters.includes('/') ? (
-              <Trash2 className="h-4 w-4" />
-            ) : (
-              <Search className="h-4 w-4" />
-            )}
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={handleButtonClick}
+                  variant="ghost"
+                  className={`absolute right-2 h-8 w-8 p-0 hover:bg-transparent ${
+                    letters.trim() 
+                      ? "text-muted-foreground hover:text-foreground" 
+                      : "opacity-50 cursor-not-allowed"
+                  }`}
+                  type="button"
+                >
+                  {letters.includes('/') ? (
+                    <Trash2 className="h-4 w-4" />
+                  ) : (
+                    <Search className="h-4 w-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {letters.includes('/') ? 'Limpiar búsqueda' : 'Buscar'}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )}
       </div>
     </div>
