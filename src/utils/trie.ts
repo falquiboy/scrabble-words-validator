@@ -1,7 +1,7 @@
 import { TrieNode, LengthIndexedTrie } from './trie/types';
 import { createNode, findNode, collectWords } from './trie/nodeOperations';
 import { createLengthIndex, findWordsByLength, findWordsByAlphagram } from './trie/indexing';
-import { searchExact, searchPattern } from './trie/search';
+import { searchExact } from './trie/search';
 
 export class Trie {
   private root: TrieNode;

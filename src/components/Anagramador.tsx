@@ -15,7 +15,8 @@ const Anagramador = () => {
 
   // Handle input changes
   const handleInputChange = (value: string) => {
-    const sanitizedValue = value.replace(/[^a-zA-ZÑñ*/.]/g, '');
+    // Allow ?, -, and * along with letters
+    const sanitizedValue = value.replace(/[^a-zA-ZÑñ*?-]/g, '');
     setLetters(sanitizedValue.toUpperCase());
   };
 
@@ -68,8 +69,7 @@ const Anagramador = () => {
         results={{
           exactMatches: results?.exactMatches || [],
           wildcardMatches: results?.wildcardMatches || [],
-          additionalWildcardMatches: results?.additionalWildcardMatches || [],
-          patternMatches: results?.patternMatches || []
+          additionalWildcardMatches: results?.additionalWildcardMatches || []
         }}
         highlightWildcardLetter={renderHighlightedWord}
       />
