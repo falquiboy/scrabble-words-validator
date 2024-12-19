@@ -14,16 +14,17 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
   const row2 = ['A', 'S', 'D', 'F', 'G', 'H', 'J', '?', 'L', 'Ñ'];
   const row3 = ['/', 'Z', 'X', 'C', 'V', 'B', 'N', 'M'];
 
-  // State for tracking pressed keys and long press
   const [pressedKey, setPressedKey] = useState<string | null>(null);
+  const [isLongPressActive, setIsLongPressActive] = useState(false);
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const repeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const isLongPressActiveRef = useRef(false);
+  const lastKeyPressTime = useRef<number>(0);
 
-  // Constants for timing
-  const INITIAL_DELAY = 500;  // Initial delay before repeat starts
-  const REPEAT_INTERVAL = 50; // Interval between repeats
-  const VIBRATION_DURATION = 15; // Standard vibration duration for all interactions
+  // Constants
+  const DEBOUNCE_TIME = 50; // Minimum time between keypresses
+  const LONG_PRESS_DELAY = 500; // Time before long press activates
+  const REPEAT_INTERVAL = 50; // Time between repeated actions
+  const VIBRATION_DURATION = 15; // Standard vibration duration
 
   const cleanupTimers = () => {
     if (longPressTimerRef.current) {
@@ -34,11 +35,16 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
       clearInterval(repeatIntervalRef.current);
       repeatIntervalRef.current = null;
     }
-    isLongPressActiveRef.current = false;
+    setIsLongPressActive(false);
   };
 
-  // Handle regular key press with vibration
   const handleKeyPress = (key: string) => {
+    const now = Date.now();
+    if (now - lastKeyPressTime.current < DEBOUNCE_TIME) {
+      return; // Debounce fast keypresses
+    }
+    lastKeyPressTime.current = now;
+
     try {
       navigator.vibrate?.(VIBRATION_DURATION);
     } catch (error) {
@@ -48,38 +54,38 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
     setPressedKey(key);
     onKeyPress(key);
 
+    // Reset pressed key state after animation
     setTimeout(() => {
       setPressedKey(null);
-    }, 150);
+    }, 100);
   };
 
   const startBackspaceLongPress = (e: React.TouchEvent | React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
-    // Initial backspace press
+    // Initial backspace
     handleKeyPress("Backspace");
     
-    // Set up long press timer for clear functionality
+    // Set up long press timer
     longPressTimerRef.current = setTimeout(() => {
-      isLongPressActiveRef.current = true;
-      onClear(); // Clear all text when long pressed
+      setIsLongPressActive(true);
+      onClear();
       try {
-        navigator.vibrate?.(VIBRATION_DURATION); // Now using standard vibration duration
+        navigator.vibrate?.(VIBRATION_DURATION * 2);
       } catch (error) {
         console.log("Vibration not supported");
       }
-    }, INITIAL_DELAY);
+    }, LONG_PRESS_DELAY);
 
-    // Set up repeat interval for backspace
+    // Set up repeat interval
     repeatIntervalRef.current = setInterval(() => {
-      if (!isLongPressActiveRef.current) {
+      if (!isLongPressActive) {
         handleKeyPress("Backspace");
       }
     }, REPEAT_INTERVAL);
   };
 
-  // Stop backspace long press
   const stopBackspaceLongPress = (e: React.TouchEvent | React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -93,10 +99,12 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
     };
   }, []);
 
-  // Helper function to get dynamic button classes
   const getButtonClasses = (key: string) => {
     const baseClasses = "h-14 w-[9.5%] text-xl font-bold transition-all bg-white border border-gray-200";
-    const pressedClasses = pressedKey === key ? "animate-key-press transform scale-95" : "shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.2)] active:shadow-[inset_0_2px_0_0_rgba(0,0,0,0.2)] active:translate-y-[1px]";
+    const isPressed = pressedKey === key;
+    const pressedClasses = isPressed 
+      ? "transform scale-95 shadow-inner bg-gray-100" 
+      : "shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.2)] active:shadow-[inset_0_2px_0_0_rgba(0,0,0,0.2)] active:translate-y-[1px]";
     return `${baseClasses} ${pressedClasses}`;
   };
 
@@ -110,12 +118,14 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
               key={key}
               variant="secondary"
               className={getButtonClasses(key)}
+              onTouchStart={() => handleKeyPress(key)}
               onClick={() => handleKeyPress(key)}
             >
               {key}
             </Button>
           ))}
         </div>
+
         {/* Second row */}
         <div className="flex justify-center gap-1">
           {row2.map((key) => (
@@ -123,19 +133,22 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
               key={key}
               variant="secondary"
               className={getButtonClasses(key)}
+              onTouchStart={() => handleKeyPress(key)}
               onClick={() => handleKeyPress(key)}
             >
               {key}
             </Button>
           ))}
         </div>
-        {/* Third row with backspace button */}
+
+        {/* Third row with backspace */}
         <div className="flex justify-center gap-1">
           {row3.map((key) => (
             <Button
               key={key}
               variant="secondary"
               className={getButtonClasses(key)}
+              onTouchStart={() => handleKeyPress(key)}
               onClick={() => handleKeyPress(key)}
             >
               {key}
@@ -144,7 +157,7 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
           <Button
             variant="secondary"
             className={`h-14 w-[20%] text-xl font-bold transition-all bg-white border border-gray-200 ${
-              pressedKey === "Backspace" ? "animate-key-press transform scale-95" : "shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.2)]"
+              pressedKey === "Backspace" ? "transform scale-95 shadow-inner bg-gray-100" : "shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.2)]"
             }`}
             onTouchStart={startBackspaceLongPress}
             onTouchEnd={stopBackspaceLongPress}
@@ -158,7 +171,8 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
             <Delete className="h-6 w-6" />
           </Button>
         </div>
-        {/* Bottom row with centered space bar */}
+
+        {/* Bottom row with space and enter */}
         <div className="flex justify-between items-center gap-1">
           <Button
             onClick={onToggle}
@@ -171,16 +185,20 @@ const CustomKeyboard = ({ onKeyPress, onClear, onToggle, showKeyboard }: CustomK
           <Button
             variant="secondary"
             className={`h-14 w-[60%] text-lg font-bold transition-all bg-white border border-gray-200 ${
-              pressedKey === " " ? "animate-key-press transform scale-95" : "shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.2)]"
+              pressedKey === " " ? "transform scale-95 shadow-inner bg-gray-100" : "shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.2)]"
             }`}
+            onTouchStart={() => handleKeyPress(" ")}
             onClick={() => handleKeyPress(" ")}
           >
             Espacio
           </Button>
           <Button
             variant="default"
-            className="h-14 w-14 flex items-center justify-center shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.2)] active:shadow-[inset_0_2px_0_0_rgba(0,0,0,0.2)] active:translate-y-[1px] transition-all"
-            onClick={() => onKeyPress("Enter")}
+            className={`h-14 w-14 flex items-center justify-center ${
+              pressedKey === "Enter" ? "transform scale-95 shadow-inner" : "shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.2)]"
+            } transition-all`}
+            onTouchStart={() => handleKeyPress("Enter")}
+            onClick={() => handleKeyPress("Enter")}
             type="button"
           >
             <CornerDownLeft className="h-6 w-6 text-white" />
