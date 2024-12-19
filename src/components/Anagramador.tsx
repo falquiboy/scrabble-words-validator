@@ -8,15 +8,27 @@ const Anagramador = () => {
   const [letters, setLetters] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [showShorter, setShowShorter] = useState(false);
+  const [targetLength, setTargetLength] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Query for words using offline search hook
-  const { data: results, isLoading } = useOfflineAnagramSearch(searchTerm, showShorter);
+  const { data: results, isLoading } = useOfflineAnagramSearch(searchTerm, showShorter, targetLength);
 
   // Handle input changes
   const handleInputChange = (value: string) => {
+    // Check for length filter
+    const lengthMatch = value.match(/\/(\d+)$/);
+    if (lengthMatch) {
+      const length = parseInt(lengthMatch[1], 10);
+      setTargetLength(length);
+      // Remove the length filter from the letters
+      value = value.replace(/\/\d+$/, '');
+    } else {
+      setTargetLength(null);
+    }
+
     // Allow ?, -, and * along with letters
-    const sanitizedValue = value.replace(/[^a-zA-ZÑñ*?-]/g, '');
+    const sanitizedValue = value.replace(/[^a-zA-ZÑñ*?-,]/g, '');
     setLetters(sanitizedValue.toUpperCase());
   };
 
@@ -38,6 +50,7 @@ const Anagramador = () => {
   const handleClear = () => {
     setLetters("");
     setSearchTerm("");
+    setTargetLength(null);
     inputRef.current?.focus();
   };
 

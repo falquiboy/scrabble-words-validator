@@ -57,8 +57,8 @@ const SearchInput = ({
         value = value.replace(/[^A-ZÑ?\-,]/g, '');
       }
     } else {
-      // In anagram mode, allow * for wildcards
-      value = value.replace(/[^A-ZÑ*]/g, '');
+      // In anagram mode, allow * for wildcards and / followed by digits for length
+      value = value.replace(/[^A-ZÑ*/0-9]/g, '');
     }
     
     onInputChange(value);
@@ -89,7 +89,7 @@ const SearchInput = ({
                   type="text"
                   placeholder={isPatternMode ? 
                     "Patrón (ej: C?SA) o Patrón,fichas (ej: C?SA,CASA)" : 
-                    "Letras (ej: CASA, CAS*)"
+                    "Letras (ej: CASA, CAS*, CASA/4)"
                   }
                   value={letters}
                   onChange={handleInputChange}
@@ -134,11 +134,13 @@ const SearchInput = ({
                   <ul className="space-y-1 list-disc pl-4">
                     <li>Ingresa las letras disponibles</li>
                     <li><strong>*</strong> - comodín (cualquier letra)</li>
+                    <li><strong>/N</strong> - palabras de N letras (ej: CASA/4)</li>
                   </ul>
                   <p className="mt-2">Ejemplos:</p>
                   <ul className="space-y-1 list-disc pl-4">
                     <li>"CASA" - anagramas usando esas letras</li>
                     <li>"CAS*" - anagramas usando un comodín</li>
+                    <li>"CASA/4" - palabras de 4 letras usando CASA</li>
                   </ul>
                 </>
               )}

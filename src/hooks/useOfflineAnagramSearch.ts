@@ -12,7 +12,11 @@ import {
 import { searchPattern } from "@/utils/trie/search";
 import { wordTrie } from "@/utils/trie";
 
-export const useOfflineAnagramSearch = (searchTerm: string, showShorter: boolean = false): SearchState => {
+export const useOfflineAnagramSearch = (
+  searchTerm: string, 
+  showShorter: boolean = false,
+  targetLength: number | null = null
+): SearchState => {
   const { trie, isLoading, error } = useWordTrie();
 
   const results = useMemo(() => {
@@ -34,7 +38,7 @@ export const useOfflineAnagramSearch = (searchTerm: string, showShorter: boolean
         exactMatches: [],
         wildcardMatches: [],
         additionalWildcardMatches: [],
-        patternMatches
+        patternMatches: targetLength ? patternMatches.filter(word => word.length === targetLength) : patternMatches
       };
     }
 
@@ -66,22 +70,26 @@ export const useOfflineAnagramSearch = (searchTerm: string, showShorter: boolean
     const startTime = performance.now();
     let results: SearchResults;
 
+    // Filter function for target length
+    const filterByLength = (words: string[]) => 
+      targetLength ? words.filter(word => word.length === targetLength) : words;
+
     // Handle shorter words mode
     if (showShorter) {
       const shorterMatches = Array.from(findShorterMatches(processedInput));
       results = {
         exactMatches: [],
         wildcardMatches: [],
-        additionalWildcardMatches: shorterMatches,
+        additionalWildcardMatches: filterByLength(shorterMatches),
         patternMatches: []
       };
     } else if (wildcardCount === 0) {
       const exactMatches = Array.from(findExactMatches(processedInput));
       const additionalMatches = Array.from(findAdditionalMatches(processedInput, 0));
       results = {
-        exactMatches,
+        exactMatches: filterByLength(exactMatches),
         wildcardMatches: [],
-        additionalWildcardMatches: additionalMatches,
+        additionalWildcardMatches: filterByLength(additionalMatches),
         patternMatches: []
       };
     } else {
@@ -89,8 +97,8 @@ export const useOfflineAnagramSearch = (searchTerm: string, showShorter: boolean
       const additionalMatches = Array.from(findAdditionalMatches(processedInput, wildcardCount));
       results = {
         exactMatches: [],
-        wildcardMatches,
-        additionalWildcardMatches: additionalMatches,
+        wildcardMatches: filterByLength(wildcardMatches),
+        additionalWildcardMatches: filterByLength(additionalMatches),
         patternMatches: []
       };
     }
@@ -101,11 +109,12 @@ export const useOfflineAnagramSearch = (searchTerm: string, showShorter: boolean
       wildcardMatches: results.wildcardMatches.length,
       additionalMatches: results.additionalWildcardMatches.length,
       patternMatches: results.patternMatches.length,
-      timeMs: (endTime - startTime).toFixed(2)
+      timeMs: (endTime - startTime).toFixed(2),
+      targetLength
     });
 
     return results;
-  }, [searchTerm, trie, isLoading, error, showShorter]);
+  }, [searchTerm, trie, isLoading, error, showShorter, targetLength]);
 
   return {
     data: results,
