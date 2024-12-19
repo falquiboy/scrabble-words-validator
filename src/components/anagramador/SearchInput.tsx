@@ -2,7 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, X } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { RefObject } from "react";
+import { RefObject, useState } from "react";
 import {
   Tooltip,
   TooltipContent,
@@ -31,27 +31,17 @@ const SearchInput = ({
   onShowShorterChange,
   inputRef 
 }: SearchInputProps) => {
+  const [isPatternMode, setIsPatternMode] = useState(false);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.toUpperCase();
     
-    // Split into pattern and rack parts if comma exists
-    const parts = value.split(',');
-    
-    if (parts.length > 1) {
-      // Keep only the first two parts if multiple commas
-      const [patternPart, rackPart, ...rest] = parts;
-      
-      // Handle pattern part (before comma)
-      const pattern = patternPart.replace(/[^A-ZÑÇ?,\-]/g, '');
-      
-      // Handle rack part (after comma) - allow asterisks
-      const rack = rackPart.replace(/[^A-ZÑÇ*]/g, '');
-      
-      // Combine parts back together
-      value = `${pattern},${rack}`;
+    if (isPatternMode) {
+      // In pattern mode, allow ?, - for patterns
+      value = value.replace(/[^A-ZÑÇ?\-]/g, '');
     } else {
-      // If no comma, treat as pattern part
-      value = value.replace(/[^A-ZÑÇ?,\-]/g, '');
+      // In anagram mode, allow * for wildcards
+      value = value.replace(/[^A-ZÑÇ*]/g, '');
     }
     
     onInputChange(value);
@@ -59,6 +49,19 @@ const SearchInput = ({
 
   return (
     <div className="space-y-2">
+      <div className="flex items-center space-x-2 mb-2">
+        <Switch
+          id="pattern-mode"
+          checked={isPatternMode}
+          onCheckedChange={setIsPatternMode}
+        />
+        <label
+          htmlFor="pattern-mode"
+          className="text-sm text-gray-600 cursor-pointer"
+        >
+          Modo patrón
+        </label>
+      </div>
       <div className="flex gap-2">
         <TooltipProvider>
           <Tooltip>
@@ -67,7 +70,10 @@ const SearchInput = ({
                 <Input
                   ref={inputRef}
                   type="text"
-                  placeholder="Patrón,fichas (ej: C?SA,AEIOU*)"
+                  placeholder={isPatternMode ? 
+                    "Patrón (ej: C?SA, C-R)" : 
+                    "Letras (ej: CASA, CAS*)"
+                  }
                   value={letters}
                   onChange={handleInputChange}
                   onKeyPress={onKeyPress}
@@ -90,18 +96,33 @@ const SearchInput = ({
               </div>
             </TooltipTrigger>
             <TooltipContent className="max-w-sm">
-              <p className="mb-2">Busca palabras usando patrones:</p>
-              <ul className="space-y-1 list-disc pl-4">
-                <li><strong>?</strong> - una letra cualquiera</li>
-                <li><strong>-</strong> - cero o más letras</li>
-                <li>Después de la coma, ingresa las fichas disponibles</li>
-                <li><strong>*</strong> - comodín (en las fichas)</li>
-              </ul>
-              <p className="mt-2">Ejemplos:</p>
-              <ul className="space-y-1 list-disc pl-4">
-                <li>"C?SA,AEIOU*" - palabras como CASA, COSA usando un comodín</li>
-                <li>"C-R,AEIOU" - palabras que empiezan con C y terminan en R</li>
-              </ul>
+              {isPatternMode ? (
+                <>
+                  <p className="mb-2">Busca palabras usando patrones:</p>
+                  <ul className="space-y-1 list-disc pl-4">
+                    <li><strong>?</strong> - una letra cualquiera</li>
+                    <li><strong>-</strong> - cero o más letras</li>
+                  </ul>
+                  <p className="mt-2">Ejemplos:</p>
+                  <ul className="space-y-1 list-disc pl-4">
+                    <li>"C?SA" - palabras como CASA, COSA</li>
+                    <li>"C-R" - palabras que empiezan con C y terminan en R</li>
+                  </ul>
+                </>
+              ) : (
+                <>
+                  <p className="mb-2">Busca anagramas:</p>
+                  <ul className="space-y-1 list-disc pl-4">
+                    <li>Ingresa las letras disponibles</li>
+                    <li><strong>*</strong> - comodín (cualquier letra)</li>
+                  </ul>
+                  <p className="mt-2">Ejemplos:</p>
+                  <ul className="space-y-1 list-disc pl-4">
+                    <li>"CASA" - anagramas usando esas letras</li>
+                    <li>"CAS*" - anagramas usando un comodín</li>
+                  </ul>
+                </>
+              )}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
