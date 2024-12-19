@@ -23,7 +23,7 @@ export const searchPattern = (words: string[], pattern: string, rackLetters: str
     .map(char => {
       if (char === '?') return '[A-ZÑ]'; // Single character wildcard
       if (char === '*') return '[A-ZÑ]*'; // Multiple character wildcard
-      return char;
+      return char === '.' ? '\\.' : char; // Escape dots, keep other characters as-is
     })
     .join('');
   
@@ -32,35 +32,47 @@ export const searchPattern = (words: string[], pattern: string, rackLetters: str
   console.log('Available rack letters:', rackLetters);
   
   const matches = lengthFilteredWords.filter(word => {
+    // First check if the word matches the pattern
     const patternMatch = regex.test(word);
     if (patternMatch) {
       console.log('Pattern match found:', word);
+      
+      // Then check if it can be made with the available rack letters
+      const canMake = canMakeWordWithRack(word, pattern, rackLetters);
+      if (canMake) {
+        console.log('Word can be made with rack:', word);
+      }
+      return canMake;
     }
-    if (!patternMatch) return false;
-    
-    // Check if word can be made with rack letters
-    const canMake = canMakeWordWithRack(word, rackLetters);
-    if (canMake) {
-      console.log('Word can be made with rack:', word);
-    }
-    return canMake;
+    return false;
   });
 
   console.log('Final matches:', matches);
   return matches;
 };
 
-const canMakeWordWithRack = (word: string, rackLetters: string): boolean => {
+const canMakeWordWithRack = (word: string, pattern: string, rackLetters: string): boolean => {
   const rackArray = rackLetters.split('');
   const wordArray = word.split('');
+  const patternArray = pattern.split('');
   
-  for (const char of wordArray) {
+  // For each character in the word
+  for (let i = 0; i < wordArray.length; i++) {
+    const char = wordArray[i];
+    const patternChar = patternArray[i];
+    
+    // If this position is fixed in the pattern, skip checking rack letters
+    if (patternChar !== '?' && patternChar !== '*') {
+      continue;
+    }
+    
+    // For wildcards, we need to use a rack letter
     const letterIndex = rackArray.indexOf(char);
     if (letterIndex === -1) {
-      // Try to use a wildcard
+      // Try to use a wildcard from rack
       const wildcardIndex = rackArray.indexOf('*');
       if (wildcardIndex === -1) {
-        return false;
+        return false; // No matching letter or wildcard found
       }
       // Use the wildcard
       rackArray.splice(wildcardIndex, 1);
@@ -89,5 +101,5 @@ export const matchesPattern = (word: string, pattern: string, rackLetters: strin
   
   if (!patternMatch) return false;
   
-  return canMakeWordWithRack(word, rackLetters);
+  return canMakeWordWithRack(word, pattern, rackLetters);
 };
