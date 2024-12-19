@@ -10,7 +10,7 @@ export const searchPattern = (words: string[], pattern: string, rackLetters: str
   console.log('Searching with pattern:', pattern, 'and rack:', rackLetters);
   
   // Calculate minimum length required by the pattern
-  const minLength = pattern.replace(/[*]/g, '').length;
+  const minLength = pattern.replace(/[*?]/g, '').length;
   console.log('Minimum length required:', minLength);
   
   // Filter words by minimum length first
@@ -21,8 +21,8 @@ export const searchPattern = (words: string[], pattern: string, rackLetters: str
   const regexPattern = pattern
     .split('')
     .map(char => {
-      if (char === '?') return '[A-ZÑ]';
-      if (char === '*') return '[A-ZÑ]*';
+      if (char === '?') return '[A-ZÑ]'; // Single character wildcard
+      if (char === '*') return '[A-ZÑ]*'; // Multiple character wildcard
       return char;
     })
     .join('');
