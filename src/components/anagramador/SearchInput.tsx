@@ -45,7 +45,7 @@ const SearchInput = ({
         const [patternPart, rackPart] = parts;
         
         // Handle pattern part (before comma)
-        const pattern = patternPart.replace(/[^A-ZÑ?\-]/g, '');
+        const pattern = patternPart.replace(/[^A-ZÑ?\-,]/g, '');
         
         // Handle rack part (after comma)
         const rack = rackPart.replace(/[^A-ZÑ]/g, '');
@@ -54,7 +54,7 @@ const SearchInput = ({
         value = `${pattern},${rack}`;
       } else {
         // If no comma, treat as pattern part
-        value = value.replace(/[^A-ZÑ?\-]/g, '');
+        value = value.replace(/[^A-ZÑ?\-,]/g, '');
       }
     } else {
       // In anagram mode, allow * for wildcards
