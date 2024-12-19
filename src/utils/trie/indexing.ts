@@ -1,26 +1,4 @@
 import { LengthIndexedTrie } from './types';
-import { generateAlphagram } from '../digraphs';
-
-export const createLengthIndex = (words: string[]): LengthIndexedTrie => {
-  const index: LengthIndexedTrie = {};
-  
-  for (const word of words) {
-    const length = word.length;
-    const alphagram = generateAlphagram(word);
-    
-    if (!index[length]) {
-      index[length] = {};
-    }
-    
-    if (!index[length][alphagram]) {
-      index[length][alphagram] = [];
-    }
-    
-    index[length][alphagram].push(word);
-  }
-  
-  return index;
-};
 
 export const findWordsByLength = (index: LengthIndexedTrie, length: number): string[] => {
   if (!index[length]) return [];

@@ -1,11 +1,12 @@
 import { TrieNode } from './types';
+import { findNode } from './nodeOperations';
 
 export const searchExact = (root: TrieNode, word: string): boolean => {
   const node = findNode(root, word);
   return node !== null && node.isEndOfWord;
 };
 
-export const searchPattern = (trie: Trie, pattern: string): string[] => {
+export const searchPattern = (trie: { getRoot: () => TrieNode }, pattern: string): string[] => {
   const results: string[] = [];
   
   const searchRecursive = (node: TrieNode, pattern: string, currentIndex: number) => {
@@ -20,7 +21,7 @@ export const searchPattern = (trie: Trie, pattern: string): string[] => {
 
     if (currentChar === '?') {
       // Match exactly one character
-      for (const [char, childNode] of node.children) {
+      for (const [, childNode] of node.children) {
         searchRecursive(childNode, pattern, currentIndex + 1);
       }
     } else if (currentChar === '-') {
@@ -29,7 +30,7 @@ export const searchPattern = (trie: Trie, pattern: string): string[] => {
       searchRecursive(node, pattern, currentIndex + 1);
       
       // Try matching one or more characters
-      for (const [char, childNode] of node.children) {
+      for (const [, childNode] of node.children) {
         searchRecursive(childNode, pattern, currentIndex);
       }
     } else {

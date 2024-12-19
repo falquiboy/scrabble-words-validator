@@ -1,6 +1,6 @@
 import { TrieNode, LengthIndexedTrie } from './types';
 import { createNode, findNode, collectWords } from './nodeOperations';
-import { createLengthIndex, findWordsByLength, findWordsByAlphagram } from './indexing';
+import { findWordsByLength, findWordsByAlphagram } from './indexing';
 import { searchExact } from './search';
 
 export class Trie {
@@ -12,7 +12,6 @@ export class Trie {
     this.lengthIndex = {};
   }
 
-  // Add this new method to expose root
   getRoot(): TrieNode {
     return this.root;
   }
