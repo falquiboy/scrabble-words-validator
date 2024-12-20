@@ -41,6 +41,13 @@ const SearchInput = ({
     onInputChange(value);
   };
 
+  const handleSearch = () => {
+    onSearch();
+    // Reset both toggles after search
+    setIsPatternMode(false);
+    onShowShorterChange(false);
+  };
+
   return (
     <div className="space-y-2">
       <div className="flex items-center space-x-2 mb-2">
@@ -68,7 +75,13 @@ const SearchInput = ({
               }
               value={letters}
               onChange={handleInputChange}
-              onKeyPress={onKeyPress}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  handleSearch();
+                } else {
+                  onKeyPress(e);
+                }
+              }}
               className="text-xl h-12 text-left pr-12"
               autoFocus
               spellCheck={false}
@@ -88,7 +101,7 @@ const SearchInput = ({
           </div>
         </SearchTooltip>
         <Button 
-          onClick={onSearch}
+          onClick={handleSearch}
           className="h-12 w-12 p-0"
           variant="default"
           disabled={!letters.trim()}
