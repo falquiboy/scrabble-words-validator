@@ -1,4 +1,5 @@
 import { processDigraphs } from "@/utils/digraphs";
+import { calculateWordScore } from "@/utils/scrabbleScore";
 
 interface ShorterResultsProps {
   matches: string[];
@@ -9,18 +10,18 @@ interface ShorterResultsProps {
 export const ShorterResults = ({ matches, highlightWildcardLetter, searchTerm }: ShorterResultsProps) => {
   if (matches.length === 0) return null;
 
-  // Group shorter words by their nominal length
+  // Group shorter words by their nominal value
   const groupedShorterWords = matches.reduce((acc, word) => {
-    const length = word.length;
-    if (!acc[length]) {
-      acc[length] = [];
+    const score = calculateWordScore(word);
+    if (!acc[score]) {
+      acc[score] = [];
     }
-    acc[length].push(word);
+    acc[score].push(word);
     return acc;
   }, {} as Record<number, string[]>);
 
-  // Sort lengths in descending order
-  const sortedLengths = Object.keys(groupedShorterWords)
+  // Sort scores in descending order
+  const sortedScores = Object.keys(groupedShorterWords)
     .map(Number)
     .sort((a, b) => b - a);
 
@@ -29,15 +30,15 @@ export const ShorterResults = ({ matches, highlightWildcardLetter, searchTerm }:
       <h3 className="font-semibold text-lg">
         {`${matches.length} ${matches.length === 1 ? "palabra encontrada" : "palabras encontradas"} usando algunas letras:`}
       </h3>
-      {sortedLengths.map(length => (
-        <div key={`length-${length}`} className="space-y-2">
+      {sortedScores.map(score => (
+        <div key={`score-${score}`} className="space-y-2">
           <h4 className="font-medium text-gray-600">
-            {`Palabras de ${length} ${length === 1 ? 'letra' : 'letras'} (${groupedShorterWords[length].length}):`}
+            {`Palabras de ${score} ${score === 1 ? 'punto' : 'puntos'} (${groupedShorterWords[score].length}):`}
           </h4>
           <div className="grid grid-cols-3 gap-2">
-            {groupedShorterWords[length].map((word, index) => (
+            {groupedShorterWords[score].map((word, index) => (
               <a
-                key={`shorter-${length}-${index}`}
+                key={`shorter-${score}-${index}`}
                 href={`https://dle.rae.es/?w=${word}`}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -45,7 +46,7 @@ export const ShorterResults = ({ matches, highlightWildcardLetter, searchTerm }:
               >
                 <span className="flex items-center gap-2">
                   {highlightWildcardLetter(word, searchTerm)}
-                  <span className="text-sm text-gray-500">({word.length})</span>
+                  <span className="text-sm text-gray-500">({score})</span>
                 </span>
               </a>
             ))}

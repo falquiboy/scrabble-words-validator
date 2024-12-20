@@ -1,4 +1,5 @@
 import { processDigraphs } from "@/utils/digraphs";
+import { calculateWordScore } from "@/utils/scrabbleScore";
 
 interface ExactResultsProps {
   matches: string[];
@@ -30,7 +31,7 @@ export const ExactResults = ({ matches, wildcardCount, highlightWildcardLetter, 
           >
             <span className="flex items-center gap-2">
               {highlightWildcardLetter(word, searchTerm)}
-              <span className="text-sm text-gray-500">({word.length})</span>
+              <span className="text-sm text-gray-500">({calculateWordScore(word)})</span>
             </span>
           </a>
         ))}

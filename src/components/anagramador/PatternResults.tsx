@@ -1,4 +1,5 @@
 import { processDigraphs } from "@/utils/digraphs";
+import { calculateWordScore } from "@/utils/scrabbleScore";
 
 interface PatternResultsProps {
   matches: string[];
@@ -8,18 +9,18 @@ interface PatternResultsProps {
 export const PatternResults = ({ matches, searchTerm }: PatternResultsProps) => {
   if (matches.length === 0) return null;
 
-  // Group words by nominal length
+  // Group words by nominal value (score)
   const groupedWords = matches.reduce((acc, word) => {
-    const length = word.length;
-    if (!acc[length]) {
-      acc[length] = [];
+    const score = calculateWordScore(word);
+    if (!acc[score]) {
+      acc[score] = [];
     }
-    acc[length].push(word);
+    acc[score].push(word);
     return acc;
   }, {} as Record<number, string[]>);
 
-  // Sort lengths in ascending order
-  const sortedLengths = Object.keys(groupedWords)
+  // Sort scores in ascending order
+  const sortedScores = Object.keys(groupedWords)
     .map(Number)
     .sort((a, b) => a - b);
 
@@ -28,15 +29,15 @@ export const PatternResults = ({ matches, searchTerm }: PatternResultsProps) => 
       <h3 className="font-semibold text-lg">
         {`${matches.length} ${matches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que coinciden con el patrón:`}
       </h3>
-      {sortedLengths.map(length => (
-        <div key={`length-${length}`} className="space-y-2">
+      {sortedScores.map(score => (
+        <div key={`score-${score}`} className="space-y-2">
           <h4 className="font-medium text-gray-600">
-            {`Palabras de ${length} ${length === 1 ? 'letra' : 'letras'} (${groupedWords[length].length}):`}
+            {`Palabras de ${score} ${score === 1 ? 'punto' : 'puntos'} (${groupedWords[score].length}):`}
           </h4>
           <div className="grid grid-cols-3 gap-2">
-            {groupedWords[length].map((word, index) => (
+            {groupedWords[score].map((word, index) => (
               <a
-                key={`pattern-${length}-${index}`}
+                key={`pattern-${score}-${index}`}
                 href={`https://dle.rae.es/?w=${word}`}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -44,7 +45,7 @@ export const PatternResults = ({ matches, searchTerm }: PatternResultsProps) => 
               >
                 <span className="flex items-center gap-2">
                   {word}
-                  <span className="text-sm text-gray-500">({word.length})</span>
+                  <span className="text-sm text-gray-500">({score})</span>
                 </span>
               </a>
             ))}
