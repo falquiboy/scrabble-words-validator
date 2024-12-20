@@ -8,9 +8,9 @@ interface PatternResultsProps {
 export const PatternResults = ({ matches, searchTerm }: PatternResultsProps) => {
   if (matches.length === 0) return null;
 
-  // Group words by digraph-aware length
+  // Group words by nominal length
   const groupedWords = matches.reduce((acc, word) => {
-    const length = processDigraphs(word).length;
+    const length = word.length;
     if (!acc[length]) {
       acc[length] = [];
     }
@@ -44,7 +44,7 @@ export const PatternResults = ({ matches, searchTerm }: PatternResultsProps) => 
               >
                 <span className="flex items-center gap-2">
                   {word}
-                  <span className="text-sm text-gray-500">({processDigraphs(word).length})</span>
+                  <span className="text-sm text-gray-500">({word.length})</span>
                 </span>
               </a>
             ))}

@@ -9,10 +9,9 @@ interface ShorterResultsProps {
 export const ShorterResults = ({ matches, highlightWildcardLetter, searchTerm }: ShorterResultsProps) => {
   if (matches.length === 0) return null;
 
-  // Group shorter words by their digraph-aware length
+  // Group shorter words by their nominal length
   const groupedShorterWords = matches.reduce((acc, word) => {
-    const processedWord = processDigraphs(word);
-    const length = processedWord.length;
+    const length = word.length;
     if (!acc[length]) {
       acc[length] = [];
     }
@@ -46,7 +45,7 @@ export const ShorterResults = ({ matches, highlightWildcardLetter, searchTerm }:
               >
                 <span className="flex items-center gap-2">
                   {highlightWildcardLetter(word, searchTerm)}
-                  <span className="text-sm text-gray-500">({processDigraphs(word).length})</span>
+                  <span className="text-sm text-gray-500">({word.length})</span>
                 </span>
               </a>
             ))}

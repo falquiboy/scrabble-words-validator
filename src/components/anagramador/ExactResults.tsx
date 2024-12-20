@@ -30,7 +30,7 @@ export const ExactResults = ({ matches, wildcardCount, highlightWildcardLetter, 
           >
             <span className="flex items-center gap-2">
               {highlightWildcardLetter(word, searchTerm)}
-              <span className="text-sm text-gray-500">({processDigraphs(word).length})</span>
+              <span className="text-sm text-gray-500">({word.length})</span>
             </span>
           </a>
         ))}
