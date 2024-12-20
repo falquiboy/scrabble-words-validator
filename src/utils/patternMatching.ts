@@ -14,6 +14,14 @@ export const convertPatternToRegex = (pattern: string): RegExp => {
     return new RegExp(`^${pattern.replace(/\?/g, '.')}$`);
   }
 
+  // Filter out empty strings from parts array
+  const nonEmptyParts = parts.filter(part => part.length > 0);
+
+  if (nonEmptyParts.length === 0) {
+    // Pattern is just hyphens, match anything
+    return /.*/;
+  }
+
   if (pattern.startsWith('-')) {
     // Pattern like "-ABC" means "ends with ABC"
     const suffix = parts[1].replace(/\?/g, '.');
@@ -24,6 +32,13 @@ export const convertPatternToRegex = (pattern: string): RegExp => {
     // Pattern like "??V-" means "starts with ??V"
     const prefix = parts[0].replace(/\?/g, '.');
     return new RegExp(`^${prefix}`);
+  }
+
+  // For patterns like "A-B" or "-N-", we need to handle middle position constraints
+  if (nonEmptyParts.length === 1 && parts.length > 2) {
+    // Pattern like "-N-" means "contains N"
+    const middle = nonEmptyParts[0].replace(/\?/g, '.');
+    return new RegExp(`.*${middle}.*`);
   }
 
   // Pattern like "A-BC" means "starts with A and ends with BC"
@@ -54,13 +69,27 @@ export const validateWordPattern = (
 
   // For each letter in the word that's not fixed in the pattern,
   // check if we have it available in our rack
+  const patternParts = pattern.split('-');
+  const fixedPositions = new Set<number>();
+
+  // Mark fixed positions from the pattern
+  patternParts.forEach((part, index) => {
+    if (part && !/[?-]/.test(part)) {
+      const offset = index === 0 ? 0 : word.indexOf(part);
+      if (offset >= 0) {
+        for (let i = 0; i < part.length; i++) {
+          fixedPositions.add(offset + i);
+        }
+      }
+    }
+  });
+
+  // Check each letter in the word
   for (let i = 0; i < word.length; i++) {
-    const patternChar = pattern[i] || '-';
-    const wordChar = word[i];
-
     // Skip if this position has a fixed letter in the pattern
-    if (patternChar !== '?' && patternChar !== '-') continue;
+    if (fixedPositions.has(i)) continue;
 
+    const wordChar = word[i];
     // Check if we have this letter available
     const count = availableLetters.get(wordChar) || 0;
     if (count === 0) return false;
