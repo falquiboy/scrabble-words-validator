@@ -30,6 +30,39 @@ export const searchPattern = (trie: { getRoot: () => TrieNode }, pattern: string
 
   const MAX_WORD_LENGTH = 10;
 
+  // Helper function to check if we have enough letters in the rack
+  const hasEnoughLetters = (word: string, pattern: string, rackLetters: Map<string, number>): boolean => {
+    if (!rackLetters.size) return true;
+
+    const remainingLetters = new Map(rackLetters);
+    const patternParts = pattern.split('-').filter(Boolean);
+    const fixedPositions = new Set<number>();
+
+    // Mark fixed positions from pattern parts
+    let currentPos = 0;
+    patternParts.forEach(part => {
+      const partIndex = word.indexOf(part, currentPos);
+      if (partIndex !== -1) {
+        for (let i = 0; i < part.length; i++) {
+          fixedPositions.add(partIndex + i);
+        }
+        currentPos = partIndex + part.length;
+      }
+    });
+
+    // Check if we have enough letters for variable positions
+    for (let i = 0; i < word.length; i++) {
+      if (fixedPositions.has(i)) continue;
+
+      const letter = word[i];
+      const available = remainingLetters.get(letter) || 0;
+      if (available <= 0) return false;
+      remainingLetters.set(letter, available - 1);
+    }
+
+    return true;
+  };
+
   const patternMatches = (word: string, pattern: string): boolean => {
     // Convert the word to internal representation for comparison
     const processedWord = processDigraphs(word);
@@ -43,17 +76,21 @@ export const searchPattern = (trie: { getRoot: () => TrieNode }, pattern: string
       
       // Handle pattern with hyphens on both ends (e.g., -COMB-)
       if (pattern.startsWith('-') && pattern.endsWith('-')) {
-        return parts.length === 1 && processedWord.includes(parts[0]);
+        return parts.length === 1 && 
+               processedWord.includes(parts[0]) && 
+               hasEnoughLetters(processedWord, pattern, rackMap);
       }
       
       // Handle pattern starting with hyphen (e.g., -EZ)
       if (pattern.startsWith('-')) {
-        return processedWord.endsWith(parts[0]);
+        return processedWord.endsWith(parts[0]) && 
+               hasEnoughLetters(processedWord, pattern, rackMap);
       }
       
       // Handle pattern ending with hyphen (e.g., EX-)
       if (pattern.endsWith('-')) {
-        return processedWord.startsWith(parts[0]);
+        return processedWord.startsWith(parts[0]) && 
+               hasEnoughLetters(processedWord, pattern, rackMap);
       }
       
       // Handle pattern with hyphen in the middle
@@ -71,7 +108,8 @@ export const searchPattern = (trie: { getRoot: () => TrieNode }, pattern: string
         
         // If it's the last part, it must match at the end
         if (parts.indexOf(part) === parts.length - 1) {
-          return processedWord.endsWith(processedPart);
+          return processedWord.endsWith(processedPart) && 
+                 hasEnoughLetters(processedWord, pattern, rackMap);
         }
         
         // For middle parts, find them in order
@@ -80,7 +118,7 @@ export const searchPattern = (trie: { getRoot: () => TrieNode }, pattern: string
         currentIndex = partIndex + processedPart.length;
       }
       
-      return true;
+      return hasEnoughLetters(processedWord, pattern, rackMap);
     }
     
     // For patterns without hyphens, do exact length matching
