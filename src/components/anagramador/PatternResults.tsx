@@ -1,3 +1,5 @@
+import { processDigraphs } from "@/utils/digraphs";
+
 interface PatternResultsProps {
   matches: string[];
   searchTerm: string;
@@ -6,9 +8,9 @@ interface PatternResultsProps {
 export const PatternResults = ({ matches, searchTerm }: PatternResultsProps) => {
   if (matches.length === 0) return null;
 
-  // Group words by length
+  // Group words by digraph-aware length
   const groupedWords = matches.reduce((acc, word) => {
-    const length = word.length;
+    const length = processDigraphs(word).length;
     if (!acc[length]) {
       acc[length] = [];
     }
@@ -22,7 +24,7 @@ export const PatternResults = ({ matches, searchTerm }: PatternResultsProps) => 
     .sort((a, b) => a - b);
 
   return (
-    <div className="space-y-4 pb-4">
+    <div className="space-y-4 pb-8">
       <h3 className="font-semibold text-lg">
         {`${matches.length} ${matches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que coinciden con el patrón:`}
       </h3>
@@ -42,7 +44,7 @@ export const PatternResults = ({ matches, searchTerm }: PatternResultsProps) => 
               >
                 <span className="flex items-center gap-2">
                   {word}
-                  <span className="text-sm text-gray-500">({word.length})</span>
+                  <span className="text-sm text-gray-500">({processDigraphs(word).length})</span>
                 </span>
               </a>
             ))}

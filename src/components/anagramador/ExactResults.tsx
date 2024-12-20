@@ -1,3 +1,5 @@
+import { processDigraphs } from "@/utils/digraphs";
+
 interface ExactResultsProps {
   matches: string[];
   wildcardCount: number;
@@ -9,7 +11,7 @@ export const ExactResults = ({ matches, wildcardCount, highlightWildcardLetter, 
   if (matches.length === 0) return null;
 
   return (
-    <div className="space-y-2 pb-4">
+    <div className="space-y-2 pb-8">
       <h3 className="font-semibold text-lg">
         {wildcardCount === 0 ? (
           `${matches.length} ${matches.length === 1 ? "palabra encontrada" : "palabras encontradas"} usando todas las letras:`
@@ -28,7 +30,7 @@ export const ExactResults = ({ matches, wildcardCount, highlightWildcardLetter, 
           >
             <span className="flex items-center gap-2">
               {highlightWildcardLetter(word, searchTerm)}
-              <span className="text-sm text-gray-500">({word.length})</span>
+              <span className="text-sm text-gray-500">({processDigraphs(word).length})</span>
             </span>
           </a>
         ))}
