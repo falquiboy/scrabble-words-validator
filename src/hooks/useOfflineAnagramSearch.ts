@@ -70,9 +70,15 @@ export const useOfflineAnagramSearch = (
     const startTime = performance.now();
     let results: SearchResults;
 
-    // Filter function for target length - now only filters the final results
-    const filterByLength = (words: string[]) => 
+    // Filter function for exact length matches
+    const filterByExactLength = (words: string[]) => 
       targetLength ? words.filter(word => word.length === targetLength) : words;
+
+    // Filter function for shorter words - only show words shorter than target length
+    const filterShorterWords = (words: string[]) => {
+      if (!targetLength) return words;
+      return words.filter(word => word.length < targetLength);
+    };
 
     // Handle shorter words mode
     if (showShorter) {
@@ -80,27 +86,27 @@ export const useOfflineAnagramSearch = (
       results = {
         exactMatches: [],
         wildcardMatches: [],
-        additionalWildcardMatches: filterByLength(shorterMatches),
+        additionalWildcardMatches: filterShorterWords(shorterMatches),
         patternMatches: []
       };
     } else if (wildcardCount === 0) {
-      // For exact matches, first find all possible matches, then filter by length
+      // For exact matches
       const exactMatches = Array.from(findExactMatches(processedInput));
       const additionalMatches = Array.from(findAdditionalMatches(processedInput, 0));
       results = {
-        exactMatches: filterByLength(exactMatches),
+        exactMatches: filterByExactLength(exactMatches),
         wildcardMatches: [],
-        additionalWildcardMatches: filterByLength(additionalMatches),
+        additionalWildcardMatches: filterByExactLength(additionalMatches),
         patternMatches: []
       };
     } else {
-      // For wildcard matches, first find all possible matches, then filter by length
+      // For wildcard matches
       const wildcardMatches = Array.from(findWildcardMatches(processedInput, wildcardCount));
       const additionalMatches = Array.from(findAdditionalMatches(processedInput, wildcardCount));
       results = {
         exactMatches: [],
-        wildcardMatches: filterByLength(wildcardMatches),
-        additionalWildcardMatches: filterByLength(additionalMatches),
+        wildcardMatches: filterByExactLength(wildcardMatches),
+        additionalWildcardMatches: filterByExactLength(additionalMatches),
         patternMatches: []
       };
     }
