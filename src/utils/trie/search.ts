@@ -17,32 +17,22 @@ const matchesPositionPattern = (word: string, pattern: string): boolean => {
   // Handle pattern starting with hyphen (-ABC)
   if (pattern.startsWith('-')) {
     const fixedPart = parts[1];
-    const expectedLength = fixedPart.length;
-    
-    // If pattern is just -V??, we need to check if V is in the correct position
-    if (fixedPart.includes('?')) {
-      const firstChar = fixedPart[0];
-      if (firstChar !== '?') {
-        // For pattern like -V??, check if V is in the correct position from the end
-        const position = wordLength - fixedPart.length;
-        return word[position] === firstChar;
-      }
-    }
-    
-    // For exact suffix match
-    return word.endsWith(fixedPart.replace(/\?/g, ''));
+    return word.endsWith(fixedPart.replace(/\?/g, '.'));
   }
 
   // Handle pattern ending with hyphen (ABC-)
   if (pattern.endsWith('-')) {
     const fixedPart = parts[0];
-    return word.startsWith(fixedPart.replace(/\?/g, ''));
+    // Convert pattern to regex format
+    const regexPattern = fixedPart.replace(/\?/g, '.');
+    const regex = new RegExp(`^${regexPattern}`);
+    return regex.test(word);
   }
 
   // Handle pattern with middle hyphen (A-BC)
   const [start, end] = parts;
-  return word.startsWith(start.replace(/\?/g, '')) && 
-         word.endsWith(end.replace(/\?/g, ''));
+  return word.startsWith(start.replace(/\?/g, '.')) && 
+         word.endsWith(end.replace(/\?/g, '.'));
 };
 
 export const searchPattern = (trie: { getRoot: () => TrieNode }, pattern: string): string[] => {
@@ -72,7 +62,16 @@ export const searchPattern = (trie: { getRoot: () => TrieNode }, pattern: string
     if (node.isEndOfWord) {
       // Check if the word matches the position pattern
       const processedWord = processDigraphs(node.word);
-      if (matchesPositionPattern(processedWord, processedPattern)) {
+      
+      // For patterns like "??V-", create a regex to match V in third position
+      if (processedPattern.endsWith('-')) {
+        const fixedPart = processedPattern.slice(0, -1);
+        const regexStr = fixedPart.replace(/\?/g, '.');
+        const regex = new RegExp(`^${regexStr}`);
+        if (regex.test(processedWord)) {
+          results.push(node.word);
+        }
+      } else if (matchesPositionPattern(processedWord, processedPattern)) {
         results.push(node.word);
       }
     }
