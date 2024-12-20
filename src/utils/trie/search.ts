@@ -40,12 +40,22 @@ export const searchPattern = (trie: { getRoot: () => TrieNode }, pattern: string
     // in the correct order
     if (pattern.includes('-')) {
       const parts = pattern.split('-').filter(Boolean);
+      
+      // Handle pattern starting with hyphen (e.g., -EZ)
+      if (pattern.startsWith('-')) {
+        return processedWord.endsWith(parts[0]);
+      }
+      
+      // Handle pattern ending with hyphen (e.g., EX-)
+      if (pattern.endsWith('-')) {
+        return processedWord.startsWith(parts[0]);
+      }
+      
+      // Handle pattern with hyphen in the middle
       let currentIndex = 0;
       
       for (const part of parts) {
-        // For each part, find it in the remaining portion of the word
         const processedPart = processDigraphs(part);
-        let partFound = false;
         
         // If it's the first part, it must match from the start
         if (parts.indexOf(part) === 0) {
