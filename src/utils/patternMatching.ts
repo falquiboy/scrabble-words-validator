@@ -63,8 +63,10 @@ export const validateWordPattern = (
   // If no rack letters provided, we're done
   if (!rackLetters) return true;
 
-  // Process digraphs in rack letters
+  // Process digraphs in rack letters and word
   const processedRack = processDigraphs(rackLetters);
+  const processedWord = processDigraphs(word);
+  
   console.log('Pattern validation:', {
     word,
     pattern,
@@ -89,18 +91,10 @@ export const validateWordPattern = (
     if (part && !/[?-]/.test(part)) {
       // For middle patterns like "-NA-", we need to find where these letters actually appear in the word
       if (index === 1 && patternParts.length === 3) {
-        const pos = word.indexOf(part);
+        const pos = processedWord.indexOf(part);
         if (pos >= 0) {
           for (let i = 0; i < part.length; i++) {
             fixedPositions.add(pos + i);
-            fixedLetters.add(part[i]);
-          }
-        }
-      } else {
-        const offset = index === 0 ? 0 : word.indexOf(part);
-        if (offset >= 0) {
-          for (let i = 0; i < part.length; i++) {
-            fixedPositions.add(offset + i);
             fixedLetters.add(part[i]);
           }
         }
@@ -108,24 +102,19 @@ export const validateWordPattern = (
     }
   });
 
-  // Process digraphs in the word
-  const processedWord = processDigraphs(word);
-
-  // Check each letter in the processed word
+  // Count letters needed from the rack (excluding fixed pattern letters)
+  const neededLetters = new Map<string, number>();
   for (let i = 0; i < processedWord.length; i++) {
-    const wordChar = processedWord[i];
-    
-    // Skip if this position has a fixed letter in the pattern
-    if (fixedPositions.has(i)) {
-      continue;
+    if (!fixedPositions.has(i)) {
+      const letter = processedWord[i];
+      neededLetters.set(letter, (neededLetters.get(letter) || 0) + 1);
     }
+  }
 
-    // Check if we have this letter available in the rack
-    const count = availableLetters.get(wordChar) || 0;
-    if (count === 0) return false;
-    
-    // Use the letter from the rack
-    availableLetters.set(wordChar, count - 1);
+  // Check if we have enough letters in the rack
+  for (const [letter, count] of neededLetters) {
+    const available = availableLetters.get(letter) || 0;
+    if (count > available) return false;
   }
 
   return true;
