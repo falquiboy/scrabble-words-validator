@@ -1,4 +1,4 @@
-import { processDigraphs } from './digraphs';
+import { processDigraphs } from '@/utils/digraphs';
 
 /**
  * Converts a pattern like "??V-" into a proper regex pattern
