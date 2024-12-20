@@ -20,22 +20,24 @@ export const validateAndCleanAnagramInput = (value: string) => {
     // Clean letters part (allow A-Z, Ñ, *, and commas)
     const cleanLetters = letters.replace(/[^A-ZÑ*,]/g, '');
     
-    // If not a length constraint, check letter limit
-    if (cleanLetters.replace(/[^A-ZÑ]/g, '').length > MAX_RACK_LETTERS) {
+    // Check letter limit only for the actual letters part
+    const actualLetters = cleanLetters.replace(/[^A-ZÑ]/g, '');
+    if (actualLetters.length > MAX_RACK_LETTERS) {
       toast({
         title: "Límite excedido",
         description: `No puedes usar más de ${MAX_RACK_LETTERS} letras en el atril.`,
         variant: "destructive",
       });
-      return cleanLetters.slice(0, MAX_RACK_LETTERS) + '/' + cleanLength;
+      return actualLetters.slice(0, MAX_RACK_LETTERS) + '/' + cleanLength;
     }
     
     return cleanLetters + '/' + cleanLength;
   }
   
-  // If no slash, just clean and limit letters
+  // If no slash, just clean and check letter limit
   const cleanLetters = value.replace(/[^A-ZÑ*,]/g, '');
-  if (cleanLetters.replace(/[^A-ZÑ]/g, '').length > MAX_RACK_LETTERS) {
+  const actualLetters = cleanLetters.replace(/[^A-ZÑ]/g, '');
+  if (actualLetters.length > MAX_RACK_LETTERS) {
     toast({
       title: "Límite excedido",
       description: `No puedes usar más de ${MAX_RACK_LETTERS} letras en el atril.`,
