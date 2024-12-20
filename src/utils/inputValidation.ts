@@ -41,23 +41,6 @@ export const validateAndCleanPatternInput = (value: string) => {
     // Handle pattern part - allow ?, -, and letters
     patternPart = patternPart.replace(/[^A-ZÑ?\-,]/g, '');
     
-    // Process digraphs in the pattern part (only for actual letters, not ? or -)
-    const processedPattern = patternPart.split('').map(char => {
-      if (char === '?' || char === '-') return char;
-      return processDigraphs(char);
-    }).join('');
-    
-    // Limit pattern length after digraph processing
-    if (processedPattern.length > MAX_PATTERN_LENGTH) {
-      toast({
-        title: "Límite excedido",
-        description: `El patrón no puede tener más de ${MAX_PATTERN_LENGTH} posiciones después de procesar dígrafos.`,
-        variant: "destructive",
-      });
-      // We need to truncate the original pattern to maintain valid digraphs
-      patternPart = patternPart.slice(0, MAX_PATTERN_LENGTH);
-    }
-    
     // Handle rack part - only letters
     rackPart = rackPart.replace(/[^A-ZÑ]/g, '');
     
@@ -65,23 +48,5 @@ export const validateAndCleanPatternInput = (value: string) => {
   }
   
   // If no comma, treat as pattern part
-  let patternPart = value.replace(/[^A-ZÑ?\-,]/g, '');
-  
-  // Process digraphs in the pattern (only for actual letters, not ? or -)
-  const processedPattern = patternPart.split('').map(char => {
-    if (char === '?' || char === '-') return char;
-    return processDigraphs(char);
-  }).join('');
-  
-  // Limit pattern length after digraph processing
-  if (processedPattern.length > MAX_PATTERN_LENGTH) {
-    toast({
-      title: "Límite excedido",
-      description: `El patrón no puede tener más de ${MAX_PATTERN_LENGTH} posiciones después de procesar dígrafos.`,
-      variant: "destructive",
-    });
-    patternPart = patternPart.slice(0, MAX_PATTERN_LENGTH);
-  }
-  
-  return patternPart;
+  return value.replace(/[^A-ZÑ?\-,]/g, '');
 };
