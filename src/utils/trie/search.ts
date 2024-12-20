@@ -26,20 +26,25 @@ export const searchPattern = (trie: { getRoot: () => TrieNode }, pattern: string
     for (const letter of processedRack) {
       rackMap.set(letter, (rackMap.get(letter) || 0) + 1);
     }
-    console.log('Rack letters:', rackLetters);
-    console.log('Processed rack:', processedRack);
-    console.log('Rack map:', Object.fromEntries(rackMap));
   }
+
+  const MAX_WORD_LENGTH = 10;
 
   const patternMatches = (word: string, pattern: string): boolean => {
     // Convert the word to internal representation for comparison
     const processedWord = processDigraphs(word);
     
+    // Skip words longer than MAX_WORD_LENGTH
+    if (processedWord.length > MAX_WORD_LENGTH) return false;
+
     // For patterns with hyphens, we need to check if the word matches the pattern
-    // by splitting the pattern into parts and checking if the word contains those parts
-    // in the correct order
     if (pattern.includes('-')) {
       const parts = pattern.split('-').filter(Boolean);
+      
+      // Handle pattern with hyphens on both ends (e.g., -COMB-)
+      if (pattern.startsWith('-') && pattern.endsWith('-')) {
+        return parts.length === 1 && processedWord.includes(parts[0]);
+      }
       
       // Handle pattern starting with hyphen (e.g., -EZ)
       if (pattern.startsWith('-')) {
