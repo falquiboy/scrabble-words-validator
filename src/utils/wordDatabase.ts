@@ -1,8 +1,9 @@
 import { processDigraphs, toDisplayFormat } from '@/utils/digraphs';
 
 const DB_NAME = 'scrabbleDB';
-const DB_VERSION = 2; // Updated from 1 to 2 to match existing DB version
+const DB_VERSION = 3; // Increment this when we need to rebuild the database
 const STORE_NAME = 'words';
+const META_STORE = 'metadata';
 
 export class WordDatabase {
   private db: IDBDatabase | null = null;
@@ -28,14 +29,55 @@ export class WordDatabase {
 
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
-        if (!db.objectStoreNames.contains(STORE_NAME)) {
-          const store = db.createObjectStore(STORE_NAME, { keyPath: 'word' });
-          store.createIndex('processedWord', 'processedWord', { unique: true });
+        
+        // If old stores exist, delete them to force a rebuild
+        if (db.objectStoreNames.contains(STORE_NAME)) {
+          db.deleteObjectStore(STORE_NAME);
         }
+        if (db.objectStoreNames.contains(META_STORE)) {
+          db.deleteObjectStore(META_STORE);
+        }
+
+        // Create stores
+        const store = db.createObjectStore(STORE_NAME, { keyPath: 'word' });
+        store.createIndex('processedWord', 'processedWord', { unique: true });
+        
+        // Create metadata store
+        const metaStore = db.createObjectStore(META_STORE, { keyPath: 'key' });
+        metaStore.put({ key: 'version', value: DB_VERSION });
+        metaStore.put({ key: 'lastUpdate', value: new Date().toISOString() });
       };
     });
 
     return this.initPromise;
+  }
+
+  async getVersion(): Promise<number> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(META_STORE, 'readonly');
+      const store = transaction.objectStore(META_STORE);
+      const request = store.get('version');
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result?.value || 0);
+    });
+  }
+
+  async updateMetadata(): Promise<void> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(META_STORE, 'readwrite');
+      const store = transaction.objectStore(META_STORE);
+      
+      store.put({ key: 'version', value: DB_VERSION });
+      store.put({ key: 'lastUpdate', value: new Date().toISOString() });
+
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
   }
 
   async addWords(words: string[]): Promise<void> {
