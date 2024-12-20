@@ -94,9 +94,9 @@ export const useOfflineAnagramSearch = (
       const exactMatches = Array.from(findExactMatches(processedInput));
       const additionalMatches = Array.from(findAdditionalMatches(processedInput, 0));
       results = {
-        exactMatches: filterByExactLength(exactMatches),
+        exactMatches: targetLength ? filterByExactLength(exactMatches) : exactMatches,
         wildcardMatches: [],
-        additionalWildcardMatches: targetLength ? [] : additionalMatches, // Only show additional matches if no target length
+        additionalWildcardMatches: targetLength ? [] : additionalMatches,
         patternMatches: []
       };
     } else {
@@ -105,8 +105,8 @@ export const useOfflineAnagramSearch = (
       const additionalMatches = Array.from(findAdditionalMatches(processedInput, wildcardCount));
       results = {
         exactMatches: [],
-        wildcardMatches: filterByExactLength(wildcardMatches),
-        additionalWildcardMatches: targetLength ? [] : additionalMatches, // Only show additional matches if no target length
+        wildcardMatches: targetLength ? filterByExactLength(wildcardMatches) : wildcardMatches,
+        additionalWildcardMatches: targetLength ? [] : additionalMatches,
         patternMatches: []
       };
     }
