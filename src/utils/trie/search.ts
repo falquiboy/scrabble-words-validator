@@ -35,6 +35,40 @@ export const searchPattern = (trie: { getRoot: () => TrieNode }, pattern: string
     // Convert the word to internal representation for comparison
     const processedWord = processDigraphs(word);
     
+    // For patterns with hyphens, we need to check if the word matches the pattern
+    // by splitting the pattern into parts and checking if the word contains those parts
+    // in the correct order
+    if (pattern.includes('-')) {
+      const parts = pattern.split('-').filter(Boolean);
+      let currentIndex = 0;
+      
+      for (const part of parts) {
+        // For each part, find it in the remaining portion of the word
+        const processedPart = processDigraphs(part);
+        let partFound = false;
+        
+        // If it's the first part, it must match from the start
+        if (parts.indexOf(part) === 0) {
+          if (!processedWord.startsWith(processedPart)) return false;
+          currentIndex = processedPart.length;
+          continue;
+        }
+        
+        // If it's the last part, it must match at the end
+        if (parts.indexOf(part) === parts.length - 1) {
+          return processedWord.endsWith(processedPart);
+        }
+        
+        // For middle parts, find them in order
+        const partIndex = processedWord.indexOf(processedPart, currentIndex);
+        if (partIndex === -1) return false;
+        currentIndex = partIndex + processedPart.length;
+      }
+      
+      return true;
+    }
+    
+    // For patterns without hyphens, do exact length matching
     if (processedWord.length !== processedPattern.length) return false;
     
     // Create a copy of the rack map for this word check
@@ -53,7 +87,6 @@ export const searchPattern = (trie: { getRoot: () => TrieNode }, pattern: string
         }
         continue;
       }
-      if (processedPattern[i] === '-') continue;
       if (processedPattern[i] !== processedWord[i]) return false;
     }
     
@@ -78,9 +111,12 @@ export const searchPattern = (trie: { getRoot: () => TrieNode }, pattern: string
       }
     } else if (currentChar === '-') {
       // Match zero or more characters
-      searchRecursive(node, remainingPattern, currentWord); // Zero characters
+      // Try zero characters
+      searchRecursive(node, remainingPattern, currentWord);
+      
+      // Try one or more characters
       for (const [letter, childNode] of node.children) {
-        searchRecursive(childNode, currentPattern, currentWord + letter); // Try one more character
+        searchRecursive(childNode, currentPattern, currentWord + letter);
       }
     } else {
       // Match exact character
