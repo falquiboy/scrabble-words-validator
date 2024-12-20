@@ -61,9 +61,18 @@ export const validateWordPattern = (
   // If no rack letters provided, we're done
   if (!rackLetters) return true;
 
+  // Process digraphs in rack letters
+  const processedRack = processDigraphs(rackLetters);
+  console.log('Pattern validation:', {
+    word,
+    pattern,
+    originalRack: rackLetters,
+    processedRack
+  });
+
   // Create frequency maps for both the word and available letters
   const availableLetters = new Map<string, number>();
-  for (const letter of rackLetters) {
+  for (const letter of processedRack) {
     availableLetters.set(letter, (availableLetters.get(letter) || 0) + 1);
   }
 
@@ -97,13 +106,15 @@ export const validateWordPattern = (
     }
   });
 
-  // Check each letter in the word
-  for (let i = 0; i < word.length; i++) {
-    const wordChar = word[i];
+  // Process digraphs in the word
+  const processedWord = processDigraphs(word);
+
+  // Check each letter in the processed word
+  for (let i = 0; i < processedWord.length; i++) {
+    const wordChar = processedWord[i];
     
     // Skip if this position has a fixed letter in the pattern
     if (fixedPositions.has(i)) {
-      // For fixed positions, we don't need to check rack letters
       continue;
     }
 
