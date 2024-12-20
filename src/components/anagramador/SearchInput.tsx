@@ -58,7 +58,7 @@ const SearchInput = ({
       }
     } else {
       // In anagram mode, allow letters, *, /, numbers, and commas
-      value = value.replace(/[^A-ZÑ*/0-9,]/g, '');
+      value = value.replace(/[^A-ZÑ*/0-9,/]/g, '');
     }
     
     onInputChange(value);
