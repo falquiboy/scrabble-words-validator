@@ -24,12 +24,13 @@ export const convertPatternToRegex = (pattern: string): RegExp => {
     return /.*/;
   }
 
-  // For patterns with hyphens, we just need to ensure the fixed letters appear in order
+  // For patterns with hyphens, we need to ensure the fixed letters appear in order
+  // with any number of characters in between
   const fixedLettersPattern = nonEmptyParts.map(part => 
     part.replace(/\?/g, '.')
   ).join('.*');
 
-  return new RegExp(fixedLettersPattern);
+  return new RegExp(`^${fixedLettersPattern}$`);
 };
 
 /**
@@ -44,7 +45,7 @@ export const validateWordPattern = (
   const regex = convertPatternToRegex(pattern);
   if (!regex.test(word)) return false;
 
-  // If no rack letters provided, we're done
+  // If no rack letters provided, we're done - the regex match is sufficient
   if (!rackLetters) return true;
 
   // Process digraphs in rack letters and word
@@ -58,11 +59,12 @@ export const validateWordPattern = (
     processedRack
   });
 
-  // Extract fixed letters from pattern
+  // Extract fixed letters from pattern (excluding ? and -)
   const fixedLetters = pattern
     .split('-')
-    .filter(part => part && !/[?-]/.test(part))
-    .join('');
+    .join('')
+    .replace(/\?/g, '')
+    .toUpperCase();
   const processedFixedLetters = processDigraphs(fixedLetters);
 
   // Create frequency maps for rack letters
