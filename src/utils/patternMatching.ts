@@ -24,13 +24,25 @@ export const convertPatternToRegex = (pattern: string): RegExp => {
     return /.*/;
   }
 
-  // For patterns with hyphens, we need to ensure the fixed letters appear in order
-  // with any number of characters in between
-  const fixedLettersPattern = nonEmptyParts.map(part => 
+  // For patterns with hyphens, we need to handle start/end patterns differently
+  let regexPattern = '';
+  
+  // If pattern starts with hyphen, allow any characters at start
+  if (pattern.startsWith('-')) {
+    regexPattern += '.*';
+  }
+
+  // Add the fixed parts with proper wildcards
+  regexPattern += nonEmptyParts.map(part => 
     part.replace(/\?/g, '.')
   ).join('.*');
 
-  return new RegExp(`^${fixedLettersPattern}$`);
+  // If pattern ends with hyphen, allow any characters at end
+  if (pattern.endsWith('-')) {
+    regexPattern += '.*';
+  }
+
+  return new RegExp(`^${regexPattern}$`);
 };
 
 /**
