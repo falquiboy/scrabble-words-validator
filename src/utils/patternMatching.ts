@@ -1,3 +1,5 @@
+import { processDigraphs } from './digraphs';
+
 /**
  * Converts a pattern like "??V-" into a proper regex pattern
  * that enforces position constraints
