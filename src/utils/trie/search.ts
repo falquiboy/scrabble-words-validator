@@ -28,8 +28,8 @@ export const searchPattern = (trie: { getRoot: () => TrieNode }, pattern: string
     }
   }
 
-  const MAX_WORD_LENGTH = 10;
-  const MAX_RECURSION_DEPTH = 5;
+  const MAX_WORD_LENGTH = 15; // Increased to handle longer words
+  const MAX_SEQUENCE_LENGTH = 5; // Maximum length to try for each hyphen expansion
 
   // Helper function to check if we have enough letters in the rack
   const hasEnoughLetters = (word: string, pattern: string, rackLetters: Map<string, number>): boolean => {
@@ -147,50 +147,25 @@ export const searchPattern = (trie: { getRoot: () => TrieNode }, pattern: string
     return true;
   };
 
-  const searchRecursive = (
-    node: TrieNode, 
-    currentPattern: string, 
-    currentWord: string,
-    depth: number = 0
-  ) => {
-    // Base cases
-    if (depth > MAX_RECURSION_DEPTH) return;
-    if (currentWord.length > MAX_WORD_LENGTH) return;
-    
-    if (currentPattern.length === 0) {
-      if (node.isEndOfWord && patternMatches(node.word, boardPattern)) {
-        results.push(node.word);
-      }
-      return;
+  // New implementation using iterative approach for hyphen expansion
+  const searchWords = (node: TrieNode, currentWord: string = '') => {
+    // Check if current word is valid
+    if (node.isEndOfWord && patternMatches(node.word, boardPattern)) {
+      results.push(node.word);
     }
 
-    const currentChar = currentPattern[0];
-    const remainingPattern = currentPattern.slice(1);
+    // Stop if word is too long
+    if (currentWord.length >= MAX_WORD_LENGTH) return;
 
-    if (currentChar === '?') {
-      // For ? we try all possible next letters
-      for (const [letter, childNode] of node.children) {
-        searchRecursive(childNode, remainingPattern, currentWord + letter, depth);
-      }
-    } else if (currentChar === '-') {
-      // Match zero or more characters
-      // Try zero characters (skip the hyphen)
-      searchRecursive(node, remainingPattern, currentWord, depth);
-      
-      // Try one character and continue with the same pattern (including the hyphen)
-      // but increment depth to prevent infinite recursion
-      for (const [letter, childNode] of node.children) {
-        searchRecursive(childNode, currentPattern, currentWord + letter, depth + 1);
-      }
-    } else {
-      // Match exact character
-      const childNode = node.children.get(currentChar);
-      if (childNode) {
-        searchRecursive(childNode, remainingPattern, currentWord + currentChar, depth);
-      }
+    // Try all possible next letters
+    for (const [letter, childNode] of node.children) {
+      searchWords(childNode, currentWord + letter);
     }
   };
 
-  searchRecursive(trie.getRoot(), processedPattern, '');
+  // Start the search from root
+  searchWords(trie.getRoot());
+  
+  console.log(`Found ${results.length} matches for pattern "${boardPattern}" with rack "${rackLetters}"`);
   return Array.from(new Set(results)); // Remove duplicates
 };
