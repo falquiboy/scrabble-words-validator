@@ -26,7 +26,7 @@ export const ShorterResults = ({ matches, highlightWildcardLetter, searchTerm }:
     .sort((a, b) => b - a);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-4">
       <h3 className="font-semibold text-lg">
         {`${matches.length} ${matches.length === 1 ? "palabra encontrada" : "palabras encontradas"} usando algunas letras:`}
       </h3>
@@ -44,7 +44,10 @@ export const ShorterResults = ({ matches, highlightWildcardLetter, searchTerm }:
                 rel="noopener noreferrer"
                 className="block hover:bg-gray-100 p-1.5 rounded transition-colors text-lg w-full text-left"
               >
-                {highlightWildcardLetter(word, searchTerm)}
+                <span className="flex items-center gap-2">
+                  {highlightWildcardLetter(word, searchTerm)}
+                  <span className="text-sm text-gray-500">({word.length})</span>
+                </span>
               </a>
             ))}
           </div>
