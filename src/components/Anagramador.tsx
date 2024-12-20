@@ -11,11 +11,11 @@ const Anagramador = () => {
   const [targetLength, setTargetLength] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Query for words using offline search hook
-  const { data: results, isLoading } = useOfflineAnagramSearch(searchTerm, showShorter, targetLength);
-
   // Handle input changes
   const handleInputChange = (value: string) => {
+    // Allow all characters initially, validation will happen in inputValidation.ts
+    setLetters(value);
+
     // Check for length filter
     const lengthMatch = value.match(/\/(\d+)$/);
     if (lengthMatch) {
@@ -26,10 +26,6 @@ const Anagramador = () => {
     } else {
       setTargetLength(null);
     }
-
-    // Allow ?, -, and * along with letters (moved hyphen to end)
-    const sanitizedValue = value.replace(/[^a-zA-ZÑñ*?,\-]/g, '');
-    setLetters(sanitizedValue.toUpperCase());
   };
 
   // Handle search
