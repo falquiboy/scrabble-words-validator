@@ -1,7 +1,8 @@
 import { toast } from "@/components/ui/use-toast";
 import { processDigraphs } from "./digraphs";
 
-export const MAX_RACK_LETTERS = 7;
+// Removing the 7-letter constraint
+export const MAX_RACK_LETTERS = 15; // Increased to a more reasonable limit
 export const MAX_PATTERN_LENGTH = 10;
 
 export const validateAndCleanAnagramInput = (value: string) => {
@@ -21,41 +22,12 @@ export const validateAndCleanAnagramInput = (value: string) => {
     // Clean letters part (allow A-Z, Ñ, *, and commas)
     const cleanLetters = letters.replace(/[^A-ZÑ*,]/g, '');
     
-    // Process digraphs and check letter limit only for the actual letters part
-    const actualLetters = cleanLetters.replace(/[^A-ZÑ]/g, '');
-    const processedLetters = processDigraphs(actualLetters);
-    
-    if (processedLetters.length > MAX_RACK_LETTERS) {
-      toast({
-        title: "Límite excedido",
-        description: `No puedes usar más de ${MAX_RACK_LETTERS} letras en el atril después de procesar dígrafos.`,
-        variant: "destructive",
-      });
-      // Return the input truncated to maintain valid length after digraph processing
-      const truncatedLetters = actualLetters.slice(0, MAX_RACK_LETTERS);
-      return truncatedLetters + '/' + cleanLength;
-    }
-    
     return cleanLetters + '/' + cleanLength;
   }
   
-  // If no slash, just clean and check letter limit
+  // If no slash, just clean input
   // Allow slash in the input by not removing it in the regex
-  const cleanLetters = value.replace(/[^A-ZÑ*,/0-9]/g, '');
-  const actualLetters = cleanLetters.replace(/[^A-ZÑ]/g, '');
-  const processedLetters = processDigraphs(actualLetters);
-  
-  if (processedLetters.length > MAX_RACK_LETTERS) {
-    toast({
-      title: "Límite excedido",
-      description: `No puedes usar más de ${MAX_RACK_LETTERS} letras en el atril después de procesar dígrafos.`,
-      variant: "destructive",
-    });
-    // Return the input truncated to maintain valid length after digraph processing
-    return actualLetters.slice(0, MAX_RACK_LETTERS);
-  }
-  
-  return cleanLetters;
+  return value.replace(/[^A-ZÑ*,/0-9]/g, '');
 };
 
 export const validateAndCleanPatternInput = (value: string) => {
@@ -86,19 +58,8 @@ export const validateAndCleanPatternInput = (value: string) => {
       patternPart = patternPart.slice(0, MAX_PATTERN_LENGTH);
     }
     
-    // Handle rack part - only letters, and check length after digraph processing
+    // Handle rack part - only letters
     rackPart = rackPart.replace(/[^A-ZÑ]/g, '');
-    const processedRack = processDigraphs(rackPart);
-    
-    // Limit rack letters
-    if (processedRack.length > MAX_RACK_LETTERS) {
-      toast({
-        title: "Límite excedido",
-        description: `No puedes usar más de ${MAX_RACK_LETTERS} letras en el atril después de procesar dígrafos.`,
-        variant: "destructive",
-      });
-      rackPart = rackPart.slice(0, MAX_RACK_LETTERS);
-    }
     
     return `${patternPart},${rackPart}`;
   }
