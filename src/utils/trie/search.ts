@@ -9,37 +9,40 @@ export const searchExact = (root: TrieNode, word: string): boolean => {
 
 // Helper function to check if a word matches a position pattern
 const matchesPositionPattern = (word: string, pattern: string): boolean => {
-  // If no pattern specified, accept all words
   if (!pattern.includes('-')) return true;
 
+  const parts = pattern.split('-');
   const wordLength = word.length;
-  const parts = pattern.split('-').filter(Boolean);
-  
-  // Handle different pattern cases
-  if (pattern.startsWith('-') && pattern.endsWith('-')) {
-    // -ABC- : ABC must be somewhere in the word
-    return parts.every(part => word.includes(part));
-  }
-  
+
+  // Handle pattern starting with hyphen (-ABC)
   if (pattern.startsWith('-')) {
-    // -ABC : ABC must be at the end
-    const endPart = parts[0];
-    return word.endsWith(endPart);
+    const fixedPart = parts[1];
+    const expectedLength = fixedPart.length;
+    
+    // If pattern is just -V??, we need to check if V is in the correct position
+    if (fixedPart.includes('?')) {
+      const firstChar = fixedPart[0];
+      if (firstChar !== '?') {
+        // For pattern like -V??, check if V is in the correct position from the end
+        const position = wordLength - fixedPart.length;
+        return word[position] === firstChar;
+      }
+    }
+    
+    // For exact suffix match
+    return word.endsWith(fixedPart.replace(/\?/g, ''));
   }
-  
+
+  // Handle pattern ending with hyphen (ABC-)
   if (pattern.endsWith('-')) {
-    // ABC- : ABC must be at the start
-    const startPart = parts[0];
-    return word.startsWith(startPart);
+    const fixedPart = parts[0];
+    return word.startsWith(fixedPart.replace(/\?/g, ''));
   }
-  
-  // ABC-DEF : ABC must be at start, DEF at end
-  if (parts.length === 2) {
-    const [start, end] = parts;
-    return word.startsWith(start) && word.endsWith(end);
-  }
-  
-  return false;
+
+  // Handle pattern with middle hyphen (A-BC)
+  const [start, end] = parts;
+  return word.startsWith(start.replace(/\?/g, '')) && 
+         word.endsWith(end.replace(/\?/g, ''));
 };
 
 export const searchPattern = (trie: { getRoot: () => TrieNode }, pattern: string): string[] => {
@@ -50,8 +53,11 @@ export const searchPattern = (trie: { getRoot: () => TrieNode }, pattern: string
 
   // Process the pattern to handle digraphs
   const processedPattern = processDigraphs(boardPattern);
-  console.log('Original pattern:', boardPattern);
-  console.log('Processed pattern:', processedPattern);
+  console.log('Pattern search:', {
+    originalPattern: boardPattern,
+    processedPattern,
+    rackLetters
+  });
   
   // Extract fixed letters from pattern (non-? characters)
   const fixedLetters = processedPattern.replace(/[-?]/g, '');
@@ -65,7 +71,8 @@ export const searchPattern = (trie: { getRoot: () => TrieNode }, pattern: string
   const findValidWords = (node: TrieNode, currentWord: string = '', remainingLetters: string) => {
     if (node.isEndOfWord) {
       // Check if the word matches the position pattern
-      if (matchesPositionPattern(processDigraphs(node.word), processedPattern)) {
+      const processedWord = processDigraphs(node.word);
+      if (matchesPositionPattern(processedWord, processedPattern)) {
         results.push(node.word);
       }
     }
@@ -95,6 +102,12 @@ export const searchPattern = (trie: { getRoot: () => TrieNode }, pattern: string
   // Start the search from root with all available letters
   findValidWords(trie.getRoot(), '', availableLetters);
   
-  console.log(`Found ${results.length} matches for pattern "${boardPattern}" with rack "${rackLetters}"`);
+  console.log('Pattern search results:', {
+    pattern: boardPattern,
+    rackLetters,
+    matches: results.length,
+    words: results
+  });
+
   return Array.from(new Set(results)); // Remove duplicates
 };
