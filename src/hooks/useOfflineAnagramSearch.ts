@@ -86,7 +86,7 @@ export const useOfflineAnagramSearch = (
       results = {
         exactMatches: [],
         wildcardMatches: [],
-        additionalWildcardMatches: filterShorterWords(shorterMatches),
+        additionalWildcardMatches: targetLength ? filterShorterWords(shorterMatches) : shorterMatches,
         patternMatches: []
       };
     } else if (wildcardCount === 0) {
