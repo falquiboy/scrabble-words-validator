@@ -96,7 +96,7 @@ export const useOfflineAnagramSearch = (
       results = {
         exactMatches: filterByExactLength(exactMatches),
         wildcardMatches: [],
-        additionalWildcardMatches: filterByExactLength(additionalMatches),
+        additionalWildcardMatches: targetLength ? [] : additionalMatches, // Only show additional matches if no target length
         patternMatches: []
       };
     } else {
@@ -106,7 +106,7 @@ export const useOfflineAnagramSearch = (
       results = {
         exactMatches: [],
         wildcardMatches: filterByExactLength(wildcardMatches),
-        additionalWildcardMatches: filterByExactLength(additionalMatches),
+        additionalWildcardMatches: targetLength ? [] : additionalMatches, // Only show additional matches if no target length
         patternMatches: []
       };
     }
