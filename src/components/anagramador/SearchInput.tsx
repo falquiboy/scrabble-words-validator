@@ -41,13 +41,6 @@ const SearchInput = ({
     onInputChange(value);
   };
 
-  const handleSearch = () => {
-    onSearch();
-    // Reset both toggles after search
-    setIsPatternMode(false);
-    onShowShorterChange(false);
-  };
-
   return (
     <div className="space-y-2">
       <div className="flex items-center space-x-2 mb-2">
@@ -77,7 +70,7 @@ const SearchInput = ({
               onChange={handleInputChange}
               onKeyPress={(e) => {
                 if (e.key === 'Enter') {
-                  handleSearch();
+                  onSearch();
                 } else {
                   onKeyPress(e);
                 }
@@ -101,7 +94,7 @@ const SearchInput = ({
           </div>
         </SearchTooltip>
         <Button 
-          onClick={handleSearch}
+          onClick={onSearch}
           className="h-12 w-12 p-0"
           variant="default"
           disabled={!letters.trim()}
