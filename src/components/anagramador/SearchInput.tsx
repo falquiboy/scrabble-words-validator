@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Search, X } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { RefObject, useState } from "react";
+import { useToast } from "@/components/ui/use-toast";
 import {
   Tooltip,
   TooltipContent,
@@ -21,6 +22,9 @@ interface SearchInputProps {
   inputRef: RefObject<HTMLInputElement>;
 }
 
+const MAX_RACK_LETTERS = 7;
+const MAX_PATTERN_LENGTH = 10;
+
 const SearchInput = ({ 
   letters, 
   showShorter,
@@ -32,6 +36,7 @@ const SearchInput = ({
   inputRef 
 }: SearchInputProps) => {
   const [isPatternMode, setIsPatternMode] = useState(false);
+  const { toast } = useToast();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.toUpperCase();
@@ -42,23 +47,65 @@ const SearchInput = ({
       
       if (parts.length > 1) {
         // Keep only the first two parts if multiple commas
-        const [patternPart, rackPart] = parts;
+        let [patternPart, rackPart] = parts;
         
         // Handle pattern part (before comma) - allow ?, -, and letters
-        const pattern = patternPart.replace(/[^A-ZÑ?\-,]/g, '');
+        patternPart = patternPart.replace(/[^A-ZÑ?\-,]/g, '');
+        
+        // Limit pattern length
+        if (patternPart.length > MAX_PATTERN_LENGTH) {
+          toast({
+            title: "Límite excedido",
+            description: `El patrón no puede tener más de ${MAX_PATTERN_LENGTH} posiciones.`,
+            variant: "destructive",
+          });
+          patternPart = patternPart.slice(0, MAX_PATTERN_LENGTH);
+        }
         
         // Handle rack part (after comma) - only letters
-        const rack = rackPart.replace(/[^A-ZÑ]/g, '');
+        rackPart = rackPart.replace(/[^A-ZÑ]/g, '');
+        
+        // Limit rack letters
+        if (rackPart.length > MAX_RACK_LETTERS) {
+          toast({
+            title: "Límite excedido",
+            description: `No puedes usar más de ${MAX_RACK_LETTERS} letras en el atril.`,
+            variant: "destructive",
+          });
+          rackPart = rackPart.slice(0, MAX_RACK_LETTERS);
+        }
         
         // Combine parts back together
-        value = `${pattern},${rack}`;
+        value = `${patternPart},${rackPart}`;
       } else {
         // If no comma, treat as pattern part - allow ?, -, and letters
         value = value.replace(/[^A-ZÑ?\-,]/g, '');
+        
+        // Limit pattern length
+        if (value.length > MAX_PATTERN_LENGTH) {
+          toast({
+            title: "Límite excedido",
+            description: `El patrón no puede tener más de ${MAX_PATTERN_LENGTH} posiciones.`,
+            variant: "destructive",
+          });
+          value = value.slice(0, MAX_PATTERN_LENGTH);
+        }
       }
     } else {
       // In anagram mode, allow letters, *, /, numbers, and commas
       value = value.replace(/[^A-ZÑ*/0-9,/]/g, '');
+      
+      // If not a length constraint (no /), limit to MAX_RACK_LETTERS
+      if (!value.includes('/') && value.replace(/[^A-ZÑ]/g, '').length > MAX_RACK_LETTERS) {
+        toast({
+          title: "Límite excedido",
+          description: `No puedes usar más de ${MAX_RACK_LETTERS} letras en el atril.`,
+          variant: "destructive",
+        });
+        // Keep only the first MAX_RACK_LETTERS letters
+        const letters = value.replace(/[^A-ZÑ]/g, '');
+        value = letters.slice(0, MAX_RACK_LETTERS);
+      }
     }
     
     onInputChange(value);
@@ -119,7 +166,7 @@ const SearchInput = ({
                   <ul className="space-y-1 list-disc pl-4">
                     <li><strong>?</strong> - una letra cualquiera</li>
                     <li><strong>-</strong> - cero o más letras</li>
-                    <li>Opcionalmente, después de una coma, ingresa las fichas disponibles</li>
+                    <li>Opcionalmente, después de una coma, ingresa las fichas disponibles (máx. {MAX_RACK_LETTERS})</li>
                   </ul>
                   <p className="mt-2">Ejemplos:</p>
                   <ul className="space-y-1 list-disc pl-4">
@@ -132,7 +179,7 @@ const SearchInput = ({
                 <>
                   <p className="mb-2">Busca anagramas:</p>
                   <ul className="space-y-1 list-disc pl-4">
-                    <li>Ingresa las letras disponibles</li>
+                    <li>Ingresa las letras disponibles (máx. {MAX_RACK_LETTERS})</li>
                     <li><strong>*</strong> - comodín (cualquier letra)</li>
                     <li><strong>/N</strong> - palabras de N letras (ej: CASA/4)</li>
                   </ul>
