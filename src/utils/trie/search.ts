@@ -1,38 +1,11 @@
 import { TrieNode } from './types';
 import { findNode } from './nodeOperations';
 import { processDigraphs } from '@/utils/digraphs';
+import { convertPatternToRegex, validateWordPattern } from '@/utils/patternMatching';
 
 export const searchExact = (root: TrieNode, word: string): boolean => {
   const node = findNode(root, word);
   return node !== null && node.isEndOfWord;
-};
-
-// Helper function to check if a word matches a position pattern
-const matchesPositionPattern = (word: string, pattern: string): boolean => {
-  if (!pattern.includes('-')) return true;
-
-  const parts = pattern.split('-');
-  const wordLength = word.length;
-
-  // Handle pattern starting with hyphen (-ABC)
-  if (pattern.startsWith('-')) {
-    const fixedPart = parts[1];
-    return word.endsWith(fixedPart.replace(/\?/g, '.'));
-  }
-
-  // Handle pattern ending with hyphen (ABC-)
-  if (pattern.endsWith('-')) {
-    const fixedPart = parts[0];
-    // Convert pattern to regex format
-    const regexPattern = fixedPart.replace(/\?/g, '.');
-    const regex = new RegExp(`^${regexPattern}`);
-    return regex.test(word);
-  }
-
-  // Handle pattern with middle hyphen (A-BC)
-  const [start, end] = parts;
-  return word.startsWith(start.replace(/\?/g, '.')) && 
-         word.endsWith(end.replace(/\?/g, '.'));
 };
 
 export const searchPattern = (trie: { getRoot: () => TrieNode }, pattern: string): string[] => {
@@ -48,58 +21,28 @@ export const searchPattern = (trie: { getRoot: () => TrieNode }, pattern: string
     processedPattern,
     rackLetters
   });
-  
-  // Extract fixed letters from pattern (non-? characters)
-  const fixedLetters = processedPattern.replace(/[-?]/g, '');
-  console.log('Fixed letters:', fixedLetters);
-  
-  // Create rack with fixed letters + available rack letters
-  const availableLetters = (fixedLetters + (rackLetters || '')).toUpperCase();
-  console.log('Available letters:', availableLetters);
 
-  // First find all valid words that can be formed with the available letters
-  const findValidWords = (node: TrieNode, currentWord: string = '', remainingLetters: string) => {
+  // Create regex for the pattern
+  const regex = convertPatternToRegex(processedPattern);
+  console.log('Generated regex:', regex);
+
+  // Function to collect all valid words
+  const collectWords = (node: TrieNode, currentWord: string = '') => {
     if (node.isEndOfWord) {
-      // Check if the word matches the position pattern
       const processedWord = processDigraphs(node.word);
-      
-      // For patterns like "??V-", create a regex to match V in third position
-      if (processedPattern.endsWith('-')) {
-        const fixedPart = processedPattern.slice(0, -1);
-        const regexStr = fixedPart.replace(/\?/g, '.');
-        const regex = new RegExp(`^${regexStr}`);
-        if (regex.test(processedWord)) {
-          results.push(node.word);
-        }
-      } else if (matchesPositionPattern(processedWord, processedPattern)) {
+      if (validateWordPattern(processedWord, processedPattern, rackLetters)) {
         results.push(node.word);
       }
     }
 
-    // Create a frequency map of remaining letters
-    const letterFreq = new Map<string, number>();
-    for (const letter of remainingLetters) {
-      letterFreq.set(letter, (letterFreq.get(letter) || 0) + 1);
-    }
-
-    // Try each possible next letter
+    // Continue searching
     for (const [letter, childNode] of node.children) {
-      const available = letterFreq.get(letter) || 0;
-      if (available > 0) {
-        // Use the letter and update remaining letters
-        letterFreq.set(letter, available - 1);
-        const newRemaining = Array.from(letterFreq.entries())
-          .flatMap(([char, count]) => Array(count).fill(char))
-          .join('');
-        findValidWords(childNode, currentWord + letter, newRemaining);
-        // Restore the letter for backtracking
-        letterFreq.set(letter, available);
-      }
+      collectWords(childNode, currentWord + letter);
     }
   };
 
-  // Start the search from root with all available letters
-  findValidWords(trie.getRoot(), '', availableLetters);
+  // Start collection from root
+  collectWords(trie.getRoot());
   
   console.log('Pattern search results:', {
     pattern: boardPattern,
