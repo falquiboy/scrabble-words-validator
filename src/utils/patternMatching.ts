@@ -71,14 +71,27 @@ export const validateWordPattern = (
   // check if we have it available in our rack
   const patternParts = pattern.split('-');
   const fixedPositions = new Set<number>();
+  const fixedLetters = new Set<string>();
 
-  // Mark fixed positions from the pattern
+  // Mark fixed positions and letters from the pattern
   patternParts.forEach((part, index) => {
     if (part && !/[?-]/.test(part)) {
-      const offset = index === 0 ? 0 : word.indexOf(part);
-      if (offset >= 0) {
-        for (let i = 0; i < part.length; i++) {
-          fixedPositions.add(offset + i);
+      // For middle patterns like "-NA-", we need to find where these letters actually appear in the word
+      if (index === 1 && patternParts.length === 3) {
+        const pos = word.indexOf(part);
+        if (pos >= 0) {
+          for (let i = 0; i < part.length; i++) {
+            fixedPositions.add(pos + i);
+            fixedLetters.add(part[i]);
+          }
+        }
+      } else {
+        const offset = index === 0 ? 0 : word.indexOf(part);
+        if (offset >= 0) {
+          for (let i = 0; i < part.length; i++) {
+            fixedPositions.add(offset + i);
+            fixedLetters.add(part[i]);
+          }
         }
       }
     }
@@ -86,15 +99,19 @@ export const validateWordPattern = (
 
   // Check each letter in the word
   for (let i = 0; i < word.length; i++) {
-    // Skip if this position has a fixed letter in the pattern
-    if (fixedPositions.has(i)) continue;
-
     const wordChar = word[i];
-    // Check if we have this letter available
+    
+    // Skip if this position has a fixed letter in the pattern
+    if (fixedPositions.has(i)) {
+      // For fixed positions, we don't need to check rack letters
+      continue;
+    }
+
+    // Check if we have this letter available in the rack
     const count = availableLetters.get(wordChar) || 0;
     if (count === 0) return false;
     
-    // Use the letter
+    // Use the letter from the rack
     availableLetters.set(wordChar, count - 1);
   }
 
