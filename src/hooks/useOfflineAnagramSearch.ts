@@ -70,7 +70,7 @@ export const useOfflineAnagramSearch = (
     const startTime = performance.now();
     let results: SearchResults;
 
-    // Filter function for target length
+    // Filter function for target length - now only filters the final results
     const filterByLength = (words: string[]) => 
       targetLength ? words.filter(word => word.length === targetLength) : words;
 
@@ -84,6 +84,7 @@ export const useOfflineAnagramSearch = (
         patternMatches: []
       };
     } else if (wildcardCount === 0) {
+      // For exact matches, first find all possible matches, then filter by length
       const exactMatches = Array.from(findExactMatches(processedInput));
       const additionalMatches = Array.from(findAdditionalMatches(processedInput, 0));
       results = {
@@ -93,6 +94,7 @@ export const useOfflineAnagramSearch = (
         patternMatches: []
       };
     } else {
+      // For wildcard matches, first find all possible matches, then filter by length
       const wildcardMatches = Array.from(findWildcardMatches(processedInput, wildcardCount));
       const additionalMatches = Array.from(findAdditionalMatches(processedInput, wildcardCount));
       results = {
@@ -105,12 +107,14 @@ export const useOfflineAnagramSearch = (
 
     const endTime = performance.now();
     console.log('Search performance:', {
+      input: processedInput,
       exactMatches: results.exactMatches.length,
       wildcardMatches: results.wildcardMatches.length,
       additionalMatches: results.additionalWildcardMatches.length,
       patternMatches: results.patternMatches.length,
       timeMs: (endTime - startTime).toFixed(2),
-      targetLength
+      targetLength,
+      showShorter
     });
 
     return results;
