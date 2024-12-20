@@ -11,6 +11,9 @@ const Anagramador = () => {
   const [targetLength, setTargetLength] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Query for words using offline search hook
+  const { data: results, isLoading } = useOfflineAnagramSearch(searchTerm, showShorter, targetLength);
+
   // Handle input changes
   const handleInputChange = (value: string) => {
     // Allow all characters initially, validation will happen in inputValidation.ts
