@@ -1,4 +1,5 @@
 import { toast } from "@/components/ui/use-toast";
+import { processDigraphs } from "./digraphs";
 
 export const MAX_RACK_LETTERS = 7;
 export const MAX_PATTERN_LENGTH = 10;
@@ -20,15 +21,19 @@ export const validateAndCleanAnagramInput = (value: string) => {
     // Clean letters part (allow A-Z, Ñ, *, and commas)
     const cleanLetters = letters.replace(/[^A-ZÑ*,]/g, '');
     
-    // Check letter limit only for the actual letters part
+    // Process digraphs and check letter limit only for the actual letters part
     const actualLetters = cleanLetters.replace(/[^A-ZÑ]/g, '');
-    if (actualLetters.length > MAX_RACK_LETTERS) {
+    const processedLetters = processDigraphs(actualLetters);
+    
+    if (processedLetters.length > MAX_RACK_LETTERS) {
       toast({
         title: "Límite excedido",
-        description: `No puedes usar más de ${MAX_RACK_LETTERS} letras en el atril.`,
+        description: `No puedes usar más de ${MAX_RACK_LETTERS} letras en el atril después de procesar dígrafos.`,
         variant: "destructive",
       });
-      return actualLetters.slice(0, MAX_RACK_LETTERS) + '/' + cleanLength;
+      // Return the input truncated to maintain valid length after digraph processing
+      const truncatedLetters = actualLetters.slice(0, MAX_RACK_LETTERS);
+      return truncatedLetters + '/' + cleanLength;
     }
     
     return cleanLetters + '/' + cleanLength;
@@ -38,13 +43,16 @@ export const validateAndCleanAnagramInput = (value: string) => {
   // Allow slash in the input by not removing it in the regex
   const cleanLetters = value.replace(/[^A-ZÑ*,/0-9]/g, '');
   const actualLetters = cleanLetters.replace(/[^A-ZÑ]/g, '');
-  if (actualLetters.length > MAX_RACK_LETTERS) {
+  const processedLetters = processDigraphs(actualLetters);
+  
+  if (processedLetters.length > MAX_RACK_LETTERS) {
     toast({
       title: "Límite excedido",
-      description: `No puedes usar más de ${MAX_RACK_LETTERS} letras en el atril.`,
+      description: `No puedes usar más de ${MAX_RACK_LETTERS} letras en el atril después de procesar dígrafos.`,
       variant: "destructive",
     });
-    return cleanLetters.slice(0, MAX_RACK_LETTERS);
+    // Return the input truncated to maintain valid length after digraph processing
+    return actualLetters.slice(0, MAX_RACK_LETTERS);
   }
   
   return cleanLetters;
@@ -71,14 +79,15 @@ export const validateAndCleanPatternInput = (value: string) => {
       patternPart = patternPart.slice(0, MAX_PATTERN_LENGTH);
     }
     
-    // Handle rack part - only letters
+    // Handle rack part - only letters, and check length after digraph processing
     rackPart = rackPart.replace(/[^A-ZÑ]/g, '');
+    const processedRack = processDigraphs(rackPart);
     
     // Limit rack letters
-    if (rackPart.length > MAX_RACK_LETTERS) {
+    if (processedRack.length > MAX_RACK_LETTERS) {
       toast({
         title: "Límite excedido",
-        description: `No puedes usar más de ${MAX_RACK_LETTERS} letras en el atril.`,
+        description: `No puedes usar más de ${MAX_RACK_LETTERS} letras en el atril después de procesar dígrafos.`,
         variant: "destructive",
       });
       rackPart = rackPart.slice(0, MAX_RACK_LETTERS);
