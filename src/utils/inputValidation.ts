@@ -35,7 +35,8 @@ export const validateAndCleanAnagramInput = (value: string) => {
   }
   
   // If no slash, just clean and check letter limit
-  const cleanLetters = value.replace(/[^A-ZÑ*,]/g, '');
+  // Allow slash in the input by not removing it in the regex
+  const cleanLetters = value.replace(/[^A-ZÑ*,/0-9]/g, '');
   const actualLetters = cleanLetters.replace(/[^A-ZÑ]/g, '');
   if (actualLetters.length > MAX_RACK_LETTERS) {
     toast({
