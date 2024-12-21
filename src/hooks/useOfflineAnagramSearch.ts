@@ -1,6 +1,6 @@
 import { useWordTrie } from "./useWordTrie";
 import { useMemo } from "react";
-import { processDigraphs } from "@/utils/digraphs";
+import { processDigraphs, getInternalLength } from "@/utils/digraphs";
 import { MAX_WILDCARDS } from "./anagramSearch/constants";
 import { SearchResults, SearchState } from "./anagramSearch/types";
 import { 
@@ -38,7 +38,7 @@ export const useOfflineAnagramSearch = (
         exactMatches: [],
         wildcardMatches: [],
         additionalWildcardMatches: [],
-        patternMatches: targetLength ? patternMatches.filter(word => word.length === targetLength) : patternMatches
+        patternMatches: targetLength ? patternMatches.filter(word => getInternalLength(word) === targetLength) : patternMatches
       };
     }
 
@@ -70,17 +70,17 @@ export const useOfflineAnagramSearch = (
     const startTime = performance.now();
     let results: SearchResults;
 
-    // Filter function for exact length matches
+    // Filter function for exact length matches using internal length
     const filterByLength = (words: string[]) => {
       if (!targetLength) return words;
-      return words.filter(word => word.length === targetLength);
+      return words.filter(word => getInternalLength(word) === targetLength);
     };
 
     // Handle shorter words mode
     if (showShorter) {
       const shorterMatches = Array.from(findShorterMatches(processedInput));
       const filteredMatches = targetLength 
-        ? shorterMatches.filter(word => word.length < targetLength)
+        ? shorterMatches.filter(word => getInternalLength(word) === targetLength)
         : shorterMatches;
       
       results = {
@@ -93,7 +93,9 @@ export const useOfflineAnagramSearch = (
       // For exact matches
       const exactMatches = Array.from(findExactMatches(processedInput));
       const filteredExactMatches = filterByLength(exactMatches);
-      const additionalMatches = targetLength ? [] : Array.from(findAdditionalMatches(processedInput, 0));
+      const additionalMatches = targetLength 
+        ? Array.from(findAdditionalMatches(processedInput, 0)).filter(word => getInternalLength(word) === targetLength)
+        : Array.from(findAdditionalMatches(processedInput, 0));
       
       results = {
         exactMatches: filteredExactMatches,
@@ -105,7 +107,9 @@ export const useOfflineAnagramSearch = (
       // For wildcard matches
       const wildcardMatches = Array.from(findWildcardMatches(processedInput, wildcardCount));
       const filteredWildcardMatches = filterByLength(wildcardMatches);
-      const additionalMatches = targetLength ? [] : Array.from(findAdditionalMatches(processedInput, wildcardCount));
+      const additionalMatches = targetLength 
+        ? Array.from(findAdditionalMatches(processedInput, wildcardCount)).filter(word => getInternalLength(word) === targetLength)
+        : Array.from(findAdditionalMatches(processedInput, wildcardCount));
       
       results = {
         exactMatches: [],
