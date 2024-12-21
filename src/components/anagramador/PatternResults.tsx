@@ -34,7 +34,7 @@ export const PatternResults = ({ matches, searchTerm }: PatternResultsProps) => 
           <h4 className="font-medium text-gray-600">
             {`Palabras de ${length} ${length === 1 ? 'letra' : 'letras'} (${groupedByLength[length].length}):`}
           </h4>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="flex flex-wrap gap-2">
             {groupedByLength[length].map((word, index) => {
               const score = calculateWordScore(word);
               return (
@@ -43,7 +43,7 @@ export const PatternResults = ({ matches, searchTerm }: PatternResultsProps) => 
                   href={`https://dle.rae.es/?w=${word}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block hover:bg-gray-100 p-1.5 rounded transition-colors text-lg w-full text-left"
+                  className="hover:bg-gray-100 p-1.5 rounded transition-colors text-lg"
                 >
                   <span className="flex items-center gap-2">
                     {word}
