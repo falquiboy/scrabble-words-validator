@@ -1,4 +1,4 @@
-import { processDigraphs } from "@/utils/digraphs";
+import { processDigraphs, getInternalLength } from "@/utils/digraphs";
 import { calculateWordScore } from "@/utils/scrabbleScore";
 
 interface ShorterResultsProps {
@@ -10,9 +10,9 @@ interface ShorterResultsProps {
 export const ShorterResults = ({ matches, highlightWildcardLetter, searchTerm }: ShorterResultsProps) => {
   if (matches.length === 0) return null;
 
-  // Group words by length
+  // Group words by internal length
   const groupedByLength = matches.reduce((acc, word) => {
-    const length = word.length;
+    const length = getInternalLength(word);
     if (!acc[length]) {
       acc[length] = [];
     }
