@@ -1,9 +1,6 @@
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+import { Help } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { MAX_RACK_LETTERS, MAX_PATTERN_LENGTH } from "@/utils/inputValidation";
 
 interface SearchTooltipProps {
@@ -12,16 +9,16 @@ interface SearchTooltipProps {
 }
 
 export const SearchTooltip = ({ isPatternMode, children }: SearchTooltipProps) => {
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          {children}
-        </TooltipTrigger>
-        <TooltipContent className="max-w-sm">
+  const { toast } = useToast();
+
+  const showHelp = () => {
+    toast({
+      title: isPatternMode ? "Modo patrón" : "Modo anagrama",
+      description: (
+        <div className="mt-2 space-y-2">
           {isPatternMode ? (
             <>
-              <p className="mb-2">Busca palabras usando patrones:</p>
+              <p>Busca palabras usando patrones:</p>
               <ul className="space-y-1 list-disc pl-4">
                 <li><strong>?</strong> - una letra cualquiera</li>
                 <li><strong>-</strong> - cero o más letras</li>
@@ -36,7 +33,7 @@ export const SearchTooltip = ({ isPatternMode, children }: SearchTooltipProps) =
             </>
           ) : (
             <>
-              <p className="mb-2">Busca anagramas:</p>
+              <p>Busca anagramas:</p>
               <ul className="space-y-1 list-disc pl-4">
                 <li>Ingresa las letras disponibles (máx. {MAX_RACK_LETTERS})</li>
                 <li><strong>*</strong> - comodín (cualquier letra)</li>
@@ -50,8 +47,24 @@ export const SearchTooltip = ({ isPatternMode, children }: SearchTooltipProps) =
               </ul>
             </>
           )}
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+        </div>
+      ),
+      duration: 10000,
+    });
+  };
+
+  return (
+    <div className="relative flex-1">
+      {children}
+      <Button
+        onClick={showHelp}
+        variant="ghost"
+        size="icon"
+        className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
+        type="button"
+      >
+        <Help className="h-4 w-4" />
+      </Button>
+    </div>
   );
 };
