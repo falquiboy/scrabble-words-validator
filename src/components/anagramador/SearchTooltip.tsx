@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { HelpCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { MAX_RACK_LETTERS, MAX_PATTERN_LENGTH } from "@/utils/inputValidation";
 
@@ -56,15 +55,6 @@ export const SearchTooltip = ({ isPatternMode, children }: SearchTooltipProps) =
   return (
     <div className="relative flex-1">
       {children}
-      <Button
-        onClick={showHelp}
-        variant="ghost"
-        size="icon"
-        className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
-        type="button"
-      >
-        <HelpCircle className="h-4 w-4" />
-      </Button>
     </div>
   );
 };

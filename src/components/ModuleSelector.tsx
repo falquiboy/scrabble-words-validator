@@ -1,5 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { Gavel, Shuffle } from "lucide-react";
+import { Gavel, Shuffle, HelpCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { MAX_RACK_LETTERS } from "@/utils/inputValidation";
 
 interface ModuleSelectorProps {
   activeModule: 'judge' | 'anagram';
@@ -7,6 +9,33 @@ interface ModuleSelectorProps {
 }
 
 const ModuleSelector = ({ activeModule, onModuleChange }: ModuleSelectorProps) => {
+  const { toast } = useToast();
+
+  const showHelp = () => {
+    if (activeModule === 'anagram') {
+      toast({
+        title: "Modo anagrama",
+        description: (
+          <div className="mt-2 space-y-2">
+            <p>Busca anagramas:</p>
+            <ul className="space-y-1 list-disc pl-4">
+              <li>Ingresa las letras disponibles (máx. {MAX_RACK_LETTERS})</li>
+              <li><strong>*</strong> - comodín (cualquier letra)</li>
+              <li><strong>/N</strong> - palabras de N letras (ej: CASA/4)</li>
+            </ul>
+            <p className="mt-2">Ejemplos:</p>
+            <ul className="space-y-1 list-disc pl-4">
+              <li>"CASA" - anagramas usando esas letras</li>
+              <li>"CAS*" - anagramas usando un comodín</li>
+              <li>"CASA/4" - palabras de 4 letras usando CASA</li>
+            </ul>
+          </div>
+        ),
+        duration: 10000,
+      });
+    }
+  };
+
   return (
     <div className="fixed top-4 left-1/2 -translate-x-1/2 flex gap-2 justify-center mb-4 bg-white/80 backdrop-blur-sm p-2 rounded-lg shadow-sm">
       <Button
@@ -25,6 +54,15 @@ const ModuleSelector = ({ activeModule, onModuleChange }: ModuleSelectorProps) =
         <Shuffle className="h-4 w-4" />
         Anagramador
       </Button>
+      {activeModule === 'anagram' && (
+        <Button
+          variant="ghost"
+          onClick={showHelp}
+          className="w-8 h-8 p-0"
+        >
+          <HelpCircle className="h-4 w-4" />
+        </Button>
+      )}
     </div>
   );
 };
