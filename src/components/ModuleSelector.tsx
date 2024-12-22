@@ -1,13 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { Gavel, Shuffle, Menu } from "lucide-react";
+import { Gavel, Shuffle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useState } from "react";
 
 interface ModuleSelectorProps {
   activeModule: 'judge' | 'anagram';
@@ -17,25 +10,31 @@ interface ModuleSelectorProps {
 const ModuleSelector = ({ activeModule, onModuleChange }: ModuleSelectorProps) => {
   const { toast } = useToast();
 
+  const handleModuleChange = () => {
+    const newModule = activeModule === 'judge' ? 'anagram' : 'judge';
+    onModuleChange(newModule);
+  };
+
   return (
     <div className="fixed top-4 right-4 flex gap-2 items-center bg-white/80 backdrop-blur-sm p-2 rounded-lg">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="icon">
-            <Menu className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          <DropdownMenuItem onClick={() => onModuleChange('judge')} className="flex items-center gap-2">
-            <Gavel className="h-4 w-4" />
-            <span>Juez</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onModuleChange('anagram')} className="flex items-center gap-2">
+      <Button 
+        variant="outline" 
+        size="default"
+        onClick={handleModuleChange}
+        className="flex items-center gap-2"
+      >
+        {activeModule === 'judge' ? (
+          <>
             <Shuffle className="h-4 w-4" />
             <span>Anagramador</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+          </>
+        ) : (
+          <>
+            <Gavel className="h-4 w-4" />
+            <span>Juez</span>
+          </>
+        )}
+      </Button>
     </div>
   );
 };
