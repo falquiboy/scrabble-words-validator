@@ -87,7 +87,7 @@ const SearchInput = ({
                 onKeyPress(e);
               }
             }}
-            className="text-xl h-12 text-left pr-12"
+            className="text-xl h-12 text-left pr-12 border border-gray-200 rounded-md"
             autoFocus
             spellCheck={false}
             autoCorrect="off"
