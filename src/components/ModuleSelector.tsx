@@ -65,7 +65,7 @@ const ModuleSelector = ({ activeModule, onModuleChange }: ModuleSelectorProps) =
         <Button
           variant="ghost"
           onClick={showHelp}
-          className="w-8 h-8 p-0"
+          className="fixed top-4 right-4 w-8 h-8 p-0"
         >
           <HelpCircle className="h-4 w-4" />
         </Button>
