@@ -102,7 +102,7 @@ const WordInput = ({
 
   return (
     <div className="relative">
-      <ScrollArea className={`h-32 rounded-md border border-gray-200 ${getInputBackground()}`}>
+      <ScrollArea className={`h-40 rounded-md border border-gray-200 ${getInputBackground()}`}>
         <div className={`p-3 min-h-full ${getInputBackground()}`}>
           {result.checked && !isEditing ? (
             <div 
