@@ -1,33 +1,41 @@
-import React, { Dispatch, SetStateAction } from 'react';
+import { Button } from "@/components/ui/button";
+import { Gavel, Shuffle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Dispatch, SetStateAction } from "react";
 
 interface ModuleSelectorProps {
   activeModule: 'judge' | 'anagram';
-  setActiveModule: Dispatch<SetStateAction<'judge' | 'anagram'>>;
+  onModuleChange: (module: 'judge' | 'anagram') => void;
 }
 
-const ModuleSelector = ({ activeModule, setActiveModule }: ModuleSelectorProps) => {
+const ModuleSelector = ({ activeModule, onModuleChange }: ModuleSelectorProps) => {
   const { toast } = useToast();
 
   const handleModuleChange = () => {
     const newModule = activeModule === 'judge' ? 'anagram' : 'judge';
-    setActiveModule(newModule);
+    onModuleChange(newModule);
   };
 
   return (
-    <div className="flex justify-between p-4">
-      <button
+    <div className="fixed top-4 right-4 flex gap-2 items-center bg-white/80 backdrop-blur-sm p-2 rounded-lg">
+      <Button 
+        variant="outline" 
+        size="default"
         onClick={handleModuleChange}
-        className={`p-2 ${activeModule === 'judge' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+        className="flex items-center gap-2"
       >
-        Judge
-      </button>
-      <button
-        onClick={handleModuleChange}
-        className={`p-2 ${activeModule === 'anagram' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-      >
-        Anagram
-      </button>
+        {activeModule === 'judge' ? (
+          <>
+            <Shuffle className="h-4 w-4" />
+            <span>Anagramador</span>
+          </>
+        ) : (
+          <>
+            <Gavel className="h-4 w-4" />
+            <span>Juez</span>
+          </>
+        )}
+      </Button>
     </div>
   );
 };
