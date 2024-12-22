@@ -3,7 +3,6 @@ import { processDigraphs, toDisplayFormat } from "@/utils/digraphs";
 import { useWordDatabase } from "@/hooks/useWordDatabase";
 import { useWordTrie } from "@/hooks/useWordTrie";
 import { wordTrie } from "@/utils/trie";
-import LoadingState from "./word-validator/LoadingState";
 import Header from "./word-validator/Header";
 import WordInput from "./word-validator/WordInput";
 
@@ -22,7 +21,7 @@ const WordValidator = () => {
   const { isLoading: isTrieLoading } = useWordTrie();
 
   const handleValidate = async () => {
-    if (!word.trim()) return;
+    if (!word.trim() || isDBLoading || isTrieLoading) return;
 
     setIsLoading(true);
     try {
@@ -102,11 +101,6 @@ const WordValidator = () => {
     }
   };
 
-  // Show loading state while initializing
-  if (isDBLoading || isTrieLoading) {
-    return <LoadingState />;
-  }
-
   return (
     <div className="w-full max-w-md space-y-4 px-4">
       <Header />
@@ -122,6 +116,11 @@ const WordValidator = () => {
           onEditStart={() => setIsEditing(true)}
           onEditEnd={() => setIsEditing(false)}
         />
+        {(isDBLoading || isTrieLoading) && (
+          <div className="text-center">
+            <p className="text-sm text-gray-500">Cargando diccionario...</p>
+          </div>
+        )}
       </div>
     </div>
   );
