@@ -1,18 +1,19 @@
 import { Button } from "@/components/ui/button";
 import { Gavel, Shuffle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Dispatch, SetStateAction } from "react";
 
 interface ModuleSelectorProps {
   activeModule: 'judge' | 'anagram';
-  onModuleChange: (module: 'judge' | 'anagram') => void;
+  setActiveModule: Dispatch<SetStateAction<'judge' | 'anagram'>>;
 }
 
-const ModuleSelector = ({ activeModule, onModuleChange }: ModuleSelectorProps) => {
+const ModuleSelector = ({ activeModule, setActiveModule }: ModuleSelectorProps) => {
   const { toast } = useToast();
 
   const handleModuleChange = () => {
     const newModule = activeModule === 'judge' ? 'anagram' : 'judge';
-    onModuleChange(newModule);
+    setActiveModule(newModule);
   };
 
   return (
