@@ -64,7 +64,7 @@ const SearchInput = ({
               type="text"
               placeholder={isPatternMode ? 
                 "Patrón (ej: C?SA) o Patrón,fichas (ej: C?SA,CASA)" : 
-                "Letras (ej: CASA, CAS*, CASA/4)"
+                "Ingresa letras (ej: CASA, CAS*, CASA/4)"
               }
               value={letters}
               onChange={handleInputChange}
