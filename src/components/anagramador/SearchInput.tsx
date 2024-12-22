@@ -1,6 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, X } from "lucide-react";
+import { Search, Trash2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { RefObject, useState } from "react";
 import { SearchTooltip } from "./SearchTooltip";
@@ -28,6 +28,7 @@ const SearchInput = ({
   inputRef 
 }: SearchInputProps) => {
   const [isPatternMode, setIsPatternMode] = useState(false);
+  const [isSearchMode, setIsSearchMode] = useState(true);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.toUpperCase();
@@ -39,6 +40,17 @@ const SearchInput = ({
     }
     
     onInputChange(value);
+    setIsSearchMode(true);
+  };
+
+  const handleSearchClick = () => {
+    if (isSearchMode) {
+      onSearch();
+      setIsSearchMode(false);
+    } else {
+      onClear();
+      setIsSearchMode(true);
+    }
   };
 
   return (
@@ -70,6 +82,7 @@ const SearchInput = ({
             onKeyPress={(e) => {
               if (e.key === 'Enter') {
                 onSearch();
+                setIsSearchMode(false);
               } else {
                 onKeyPress(e);
               }
@@ -88,16 +101,20 @@ const SearchInput = ({
                 className="h-8 w-8 p-0"
                 type="button"
               >
-                <X className="h-4 w-4" />
+                <Trash2 className="h-4 w-4" />
               </Button>
             )}
             <Button 
-              onClick={onSearch}
+              onClick={handleSearchClick}
               className="h-8 w-8 p-0"
               variant="ghost"
               disabled={!letters.trim()}
             >
-              <Search className="h-4 w-4" />
+              {isSearchMode ? (
+                <Search className="h-4 w-4" />
+              ) : (
+                <Trash2 className="h-4 w-4" />
+              )}
             </Button>
           </div>
         </div>
