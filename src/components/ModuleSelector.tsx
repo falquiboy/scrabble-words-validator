@@ -1,7 +1,13 @@
 import { Button } from "@/components/ui/button";
-import { Gavel, Shuffle, HelpCircle } from "lucide-react";
+import { Gavel, Shuffle, HelpCircle, Menu } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { MAX_RACK_LETTERS } from "@/utils/inputValidation";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface ModuleSelectorProps {
   activeModule: 'judge' | 'anagram';
@@ -20,7 +26,7 @@ const ModuleSelector = ({ activeModule, onModuleChange }: ModuleSelectorProps) =
             <p>Busca anagramas:</p>
             <ul className="space-y-1 list-disc pl-4">
               <li>Ingresa las letras disponibles (máx. {MAX_RACK_LETTERS})</li>
-              <li><strong>*</strong> - comodín (cualquier letra)</li>
+              <li><strong>asterisco</strong> - comodín (cualquier letra)</li>
               <li><strong>/N</strong> - palabras de N letras (ej: CASA/4)</li>
             </ul>
             <p className="mt-2">Ejemplos:</p>
@@ -38,22 +44,23 @@ const ModuleSelector = ({ activeModule, onModuleChange }: ModuleSelectorProps) =
 
   return (
     <div className="fixed top-4 left-1/2 -translate-x-1/2 flex gap-2 justify-center mb-4 bg-white/80 backdrop-blur-sm p-2 rounded-lg shadow-sm">
-      <Button
-        variant={activeModule === 'judge' ? 'default' : 'outline'}
-        onClick={() => onModuleChange('judge')}
-        className="flex items-center gap-2"
-      >
-        <Gavel className="h-4 w-4" />
-        Juez
-      </Button>
-      <Button
-        variant={activeModule === 'anagram' ? 'default' : 'outline'}
-        onClick={() => onModuleChange('anagram')}
-        className="flex items-center gap-2"
-      >
-        <Shuffle className="h-4 w-4" />
-        Anagramador
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="icon">
+            <Menu className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem onClick={() => onModuleChange('judge')} className="flex items-center gap-2">
+            <Gavel className="h-4 w-4" />
+            <span>Juez</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onModuleChange('anagram')} className="flex items-center gap-2">
+            <Shuffle className="h-4 w-4" />
+            <span>Anagramador</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
       {activeModule === 'anagram' && (
         <Button
           variant="ghost"
