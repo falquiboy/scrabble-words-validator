@@ -59,7 +59,7 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
         {isLoading ? (
           <div className="flex items-center gap-2 text-gray-500">
             <Loader className="h-4 w-4 animate-spin" />
-            Buscando anagramas...
+            Preparando búsqueda...
           </div>
         ) : results && (
           (results.exactMatches?.length > 0 || 
