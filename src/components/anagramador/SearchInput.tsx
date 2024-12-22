@@ -56,52 +56,52 @@ const SearchInput = ({
           Modo patrón
         </label>
       </div>
-      <div className="flex gap-2">
-        <SearchTooltip isPatternMode={isPatternMode}>
-          <div className="relative flex-1">
-            <Input
-              ref={inputRef}
-              type="text"
-              placeholder={isPatternMode ? 
-                "Ingresa un patrón" : 
-                "Ingresa letras"
+      <SearchTooltip isPatternMode={isPatternMode}>
+        <div className="relative flex-1">
+          <Input
+            ref={inputRef}
+            type="text"
+            placeholder={isPatternMode ? 
+              "Ingresa un patrón" : 
+              "Ingresa letras"
+            }
+            value={letters}
+            onChange={handleInputChange}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                onSearch();
+              } else {
+                onKeyPress(e);
               }
-              value={letters}
-              onChange={handleInputChange}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                  onSearch();
-                } else {
-                  onKeyPress(e);
-                }
-              }}
-              className="text-xl h-12 text-left pr-12"
-              autoFocus
-              spellCheck={false}
-              autoCorrect="off"
-              autoCapitalize="off"
-            />
+            }}
+            className="text-xl h-12 text-left pr-24"
+            autoFocus
+            spellCheck={false}
+            autoCorrect="off"
+            autoCapitalize="off"
+          />
+          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
             {letters && (
               <Button
                 onClick={onClear}
                 variant="ghost"
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 p-0"
+                className="h-8 w-8 p-0"
                 type="button"
               >
                 <X className="h-4 w-4" />
               </Button>
             )}
+            <Button 
+              onClick={onSearch}
+              className="h-8 w-8 p-0"
+              variant="ghost"
+              disabled={!letters.trim()}
+            >
+              <Search className="h-4 w-4" />
+            </Button>
           </div>
-        </SearchTooltip>
-        <Button 
-          onClick={onSearch}
-          className="h-12 w-12 p-0"
-          variant="default"
-          disabled={!letters.trim()}
-        >
-          <Search className="h-5 w-5" />
-        </Button>
-      </div>
+        </div>
+      </SearchTooltip>
       <div className="flex items-center space-x-2">
         <Switch
           id="show-shorter"
