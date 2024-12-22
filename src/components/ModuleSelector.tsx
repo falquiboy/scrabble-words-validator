@@ -5,15 +5,15 @@ import { Dispatch, SetStateAction } from "react";
 
 interface ModuleSelectorProps {
   activeModule: 'judge' | 'anagram';
-  setActiveModule: Dispatch<SetStateAction<'judge' | 'anagram'>>;
+  onModuleChange: (module: 'judge' | 'anagram') => void;
 }
 
-const ModuleSelector = ({ activeModule, setActiveModule }: ModuleSelectorProps) => {
+const ModuleSelector = ({ activeModule, onModuleChange }: ModuleSelectorProps) => {
   const { toast } = useToast();
 
   const handleModuleChange = () => {
     const newModule = activeModule === 'judge' ? 'anagram' : 'judge';
-    setActiveModule(newModule);
+    onModuleChange(newModule);
   };
 
   return (
