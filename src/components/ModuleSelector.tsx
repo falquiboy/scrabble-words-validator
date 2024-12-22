@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Gavel, Shuffle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Dispatch, SetStateAction } from "react";
 
 interface ModuleSelectorProps {
   activeModule: 'judge' | 'anagram';
