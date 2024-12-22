@@ -111,7 +111,7 @@ const WordInput = ({
             >
               <div className="flex flex-wrap gap-2">
                 {word.split(" ").map((w, i) => (
-                  <span key={i} className="text-2xl font-bold">
+                  <span key={i} className="text-4xl font-bold">
                     {w}
                   </span>
                 ))}
