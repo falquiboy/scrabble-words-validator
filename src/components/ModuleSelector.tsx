@@ -43,7 +43,7 @@ const ModuleSelector = ({ activeModule, onModuleChange }: ModuleSelectorProps) =
   };
 
   return (
-    <div className="fixed top-4 left-1/2 -translate-x-1/2 flex gap-2 justify-center mb-4 bg-white/80 backdrop-blur-sm p-2 rounded-lg shadow-sm">
+    <div className="fixed top-4 left-4 flex gap-2 items-center bg-white/80 backdrop-blur-sm p-2 rounded-lg shadow-sm">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="icon">
