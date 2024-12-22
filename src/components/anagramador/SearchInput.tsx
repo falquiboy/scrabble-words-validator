@@ -87,23 +87,13 @@ const SearchInput = ({
                 onKeyPress(e);
               }
             }}
-            className="text-xl h-12 text-left pr-24"
+            className="text-xl h-12 text-left pr-12"
             autoFocus
             spellCheck={false}
             autoCorrect="off"
             autoCapitalize="off"
           />
-          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
-            {letters && (
-              <Button
-                onClick={onClear}
-                variant="ghost"
-                className="h-8 w-8 p-0"
-                type="button"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            )}
+          <div className="absolute right-2 top-1/2 -translate-y-1/2">
             <Button 
               onClick={handleSearchClick}
               className="h-8 w-8 p-0"
