@@ -18,7 +18,7 @@ const ModuleSelector = ({ activeModule, onModuleChange }: ModuleSelectorProps) =
   const { toast } = useToast();
 
   return (
-    <div className="fixed top-4 right-4 flex gap-2 items-center bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm p-2 rounded-lg shadow-sm">
+    <div className="fixed top-4 right-4 flex gap-2 items-center bg-white/80 backdrop-blur-sm p-2 rounded-lg">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="icon">
