@@ -75,7 +75,7 @@ const SearchInput = ({
             type="text"
             placeholder={isPatternMode ? 
               "Ingresa un patrón" : 
-              "* es comodín"
+              "asterisco es comodín"
             }
             value={letters}
             onChange={handleInputChange}
