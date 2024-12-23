@@ -1,4 +1,7 @@
-import { processDigraphs } from "@/utils/digraphs";
+import { TrieNode } from './types';
+import { findNode } from './nodeOperations';
+import { processDigraphs } from '@/utils/digraphs';
+import { SPANISH_LETTERS } from '@/hooks/anagramSearch/constants';
 
 /**
  * Converts a pattern like "??V-" into a proper regex pattern
@@ -79,10 +82,16 @@ export const validateWordPattern = (
     .toUpperCase();
   const processedFixedLetters = processDigraphs(fixedLetters);
 
-  // Create frequency maps for rack letters
+  // Create frequency maps for rack letters and handle wildcards
   const availableLetters = new Map<string, number>();
+  let wildcardCount = 0;
+
   for (const letter of processedRack) {
-    availableLetters.set(letter, (availableLetters.get(letter) || 0) + 1);
+    if (letter === '*') {
+      wildcardCount++;
+    } else {
+      availableLetters.set(letter, (availableLetters.get(letter) || 0) + 1);
+    }
   }
 
   // Add fixed letters to available letters
@@ -96,10 +105,16 @@ export const validateWordPattern = (
     neededLetters.set(letter, (neededLetters.get(letter) || 0) + 1);
   }
 
-  // Check if we have enough letters
+  // Check if we have enough letters, considering wildcards
+  let remainingWildcards = wildcardCount;
   for (const [letter, count] of neededLetters) {
     const available = availableLetters.get(letter) || 0;
-    if (count > available) return false;
+    if (count > available) {
+      // If we don't have enough of this letter, try to use wildcards
+      const needed = count - available;
+      if (needed > remainingWildcards) return false;
+      remainingWildcards -= needed;
+    }
   }
 
   return true;

@@ -22,12 +22,14 @@ export const SearchTooltip = ({ isPatternMode, children }: SearchTooltipProps) =
                 <li><strong>?</strong> - una letra cualquiera</li>
                 <li><strong>-</strong> - cero o más letras</li>
                 <li>Opcionalmente, después de una coma, ingresa las fichas disponibles (máx. {MAX_RACK_LETTERS})</li>
+                <li><strong>*</strong> - en las fichas, representa cualquier letra</li>
               </ul>
               <p className="mt-2">Ejemplos:</p>
               <ul className="space-y-1 list-disc pl-4">
                 <li>"C?SA" - palabras como CASA, COSA (usando cualquier letra)</li>
                 <li>"C?SA,CASA" - palabras como CASA, COSA usando las letras CASA</li>
                 <li>"C-R,AEIOU" - palabras que empiezan con C y terminan en R usando AEIOU</li>
+                <li>"C?SA,CA*A" - palabras como CASA, COSA usando CA*A (donde * es cualquier letra)</li>
               </ul>
             </>
           ) : (
