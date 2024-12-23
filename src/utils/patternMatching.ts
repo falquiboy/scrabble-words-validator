@@ -1,5 +1,3 @@
-import { TrieNode } from './types';
-import { findNode } from './nodeOperations';
 import { processDigraphs } from '@/utils/digraphs';
 import { SPANISH_LETTERS } from '@/hooks/anagramSearch/constants';
 
