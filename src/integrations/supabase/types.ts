@@ -129,6 +129,8 @@ export type Database = {
         Row: {
           id: string
           last_group: number
+          last_practice_group: number | null
+          last_practice_index: number | null
           last_word_index: number
           solved_words: string[] | null
           updated_at: string | null
@@ -137,6 +139,8 @@ export type Database = {
         Insert: {
           id?: string
           last_group?: number
+          last_practice_group?: number | null
+          last_practice_index?: number | null
           last_word_index?: number
           solved_words?: string[] | null
           updated_at?: string | null
@@ -145,6 +149,8 @@ export type Database = {
         Update: {
           id?: string
           last_group?: number
+          last_practice_group?: number | null
+          last_practice_index?: number | null
           last_word_index?: number
           solved_words?: string[] | null
           updated_at?: string | null
@@ -235,6 +241,14 @@ export type Database = {
           "": string
         }
         Returns: string[]
+      }
+      update_practice_progress: {
+        Args: {
+          p_user_id: string
+          p_last_practice_group: number
+          p_last_practice_index: number
+        }
+        Returns: undefined
       }
     }
     Enums: {
