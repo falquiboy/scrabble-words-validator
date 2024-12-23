@@ -41,8 +41,8 @@ export const validateAndCleanPatternInput = (value: string) => {
     // Handle pattern part - allow ?, -, and letters
     patternPart = patternPart.replace(/[^A-ZÑ?\-,]/g, '');
     
-    // Handle rack part - only letters
-    rackPart = rackPart.replace(/[^A-ZÑ]/g, '');
+    // Handle rack part - allow letters and asterisk (*)
+    rackPart = rackPart.replace(/[^A-ZÑ*]/g, '');
     
     return `${patternPart},${rackPart}`;
   }
