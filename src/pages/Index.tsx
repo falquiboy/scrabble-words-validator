@@ -10,7 +10,7 @@ const Index = () => {
   
   // Initialize dictionary at the top level so it's shared between modules
   const { isLoading: isDBLoading } = useWordDatabase();
-  const { isLoading: isTrieLoading } = useWordTrie();
+  const { isLoading: isTrieLoading, trie } = useWordTrie();
   const isDictionaryLoading = isDBLoading || isTrieLoading;
 
   return (
@@ -20,7 +20,7 @@ const Index = () => {
         {activeModule === 'judge' ? (
           <WordValidator isDictionaryLoading={isDictionaryLoading} />
         ) : (
-          <Anagramador />
+          <Anagramador trie={trie} />
         )}
       </div>
     </div>
