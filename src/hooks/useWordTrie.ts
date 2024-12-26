@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { wordDB } from '@/utils/wordDatabase';
 import { wordTrie } from '@/utils/trie';
 import { toast } from 'sonner';
@@ -11,13 +11,13 @@ interface WordTrieState {
   wordCount: number;
 }
 
+// Global flag to track initialization
+let isInitialized = false;
+let initializationPromise: Promise<void> | null = null;
+
 export const useWordTrie = (): WordTrieState => {
-  // Move initialization flag to useRef
-  const isInitializedRef = useRef(false);
-  const initializationPromiseRef = useRef<Promise<void> | null>(null);
-  
   const [state, setState] = useState<WordTrieState>({
-    isLoading: !isInitializedRef.current,
+    isLoading: !isInitialized,
     error: null,
     trie: wordTrie,
     wordCount: 0
@@ -28,7 +28,7 @@ export const useWordTrie = (): WordTrieState => {
 
     const initTrie = async () => {
       // If already initialized, return immediately
-      if (isInitializedRef.current) {
+      if (isInitialized) {
         if (mounted) {
           setState(prev => ({
             ...prev,
@@ -39,8 +39,8 @@ export const useWordTrie = (): WordTrieState => {
       }
 
       // If initialization is in progress, wait for it
-      if (initializationPromiseRef.current) {
-        await initializationPromiseRef.current;
+      if (initializationPromise) {
+        await initializationPromise;
         if (mounted) {
           setState(prev => ({
             ...prev,
@@ -51,7 +51,7 @@ export const useWordTrie = (): WordTrieState => {
       }
 
       // Start new initialization
-      initializationPromiseRef.current = (async () => {
+      initializationPromise = (async () => {
         try {
           // Initialize database first
           await wordDB.init();
@@ -112,7 +112,7 @@ export const useWordTrie = (): WordTrieState => {
           }
 
           // Mark as initialized only after successful completion
-          isInitializedRef.current = true;
+          isInitialized = true;
         } catch (err) {
           console.error('Error initializing trie:', err);
           if (!mounted) return;
@@ -128,11 +128,11 @@ export const useWordTrie = (): WordTrieState => {
             position: 'top-right',
           });
         } finally {
-          initializationPromiseRef.current = null;
+          initializationPromise = null;
         }
       })();
 
-      await initializationPromiseRef.current;
+      await initializationPromise;
     };
 
     initTrie();
