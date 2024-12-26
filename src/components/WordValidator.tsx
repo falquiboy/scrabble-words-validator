@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { processDigraphs } from "@/utils/digraphs";
 import { wordTrie } from "@/utils/trie";
 import Header from "./word-validator/Header";
 import WordInput from "./word-validator/WordInput";
+import { useDebouncedCallback } from "use-debounce";
 
 interface WordValidatorProps {
   isDictionaryLoading: boolean;
@@ -18,7 +19,7 @@ const WordValidator = ({ isDictionaryLoading }: WordValidatorProps) => {
   }>({ isValid: false, checked: false, words: [] });
   const [isEditing, setIsEditing] = useState(false);
 
-  const handleValidate = async () => {
+  const handleValidate = useDebouncedCallback(async () => {
     if (!word.trim() || isDictionaryLoading) return;
 
     setIsLoading(true);
@@ -35,24 +36,18 @@ const WordValidator = ({ isDictionaryLoading }: WordValidatorProps) => {
             .normalize('NFC');
         }).join('');
         
-        const processed = processDigraphs(upperWord);
-        
-        console.log('Original word:', upperWord);
-        console.log('Processed word:', processed, 'length:', processed.length);
-        
-        console.log('Words in Trie containing this word:', 
-          Array.from(wordTrie.getWordsStartingWith(processed))
-        );
-        
-        return processed;
+        return processDigraphs(upperWord);
       });
       
-      const isValid = processedWords.every(w => {
-        if (!w) return false;
-        console.log('Processing word for validation:', w);
-        const result = wordTrie.search(w);
-        console.log('Validation result for', w, ':', result);
-        return result;
+      // Process validation in batches to avoid blocking the main thread
+      const isValid = await new Promise<boolean>(resolve => {
+        setTimeout(() => {
+          const result = processedWords.every(w => {
+            if (!w) return false;
+            return wordTrie.search(w);
+          });
+          resolve(result);
+        }, 0);
       });
       
       setResult({ 
@@ -71,7 +66,7 @@ const WordValidator = ({ isDictionaryLoading }: WordValidatorProps) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, 300);
 
   const handleClear = () => {
     if (isLoading) return;
@@ -85,12 +80,12 @@ const WordValidator = ({ isDictionaryLoading }: WordValidatorProps) => {
     }
   };
 
-  const handleWordChange = (newWord: string) => {
+  const handleWordChange = useCallback((newWord: string) => {
     setWord(newWord);
     if (result.checked) {
-      setResult({ ...result, checked: false });
+      setResult(prev => ({ ...prev, checked: false }));
     }
-  };
+  }, [result.checked]);
 
   return (
     <div className="w-full max-w-md space-y-4 px-4">
