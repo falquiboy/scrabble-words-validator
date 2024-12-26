@@ -2,13 +2,29 @@ import { SPANISH_LETTERS } from './constants';
 import { processDigraphs, generateAlphagram } from '@/utils/digraphs';
 import { Trie } from '@/utils/trie/types';
 
+// Helper function to check if a letter combination would form a digraph
+const wouldFormDigraph = (base: string, newLetter: string): boolean => {
+  const combinations = {
+    'C': ['H'],
+    'L': ['L'],
+    'R': ['R']
+  };
+  
+  const lastChar = base.charAt(base.length - 1);
+  return combinations[lastChar]?.includes(newLetter) || false;
+};
+
 export const generateWildcardCombinations = (base: string, remainingWildcards: number): string[] => {
   if (remainingWildcards === 0) return [base];
   
   const combinations: string[] = [];
   for (const letter of SPANISH_LETTERS) {
-    // Only process digraphs in the final combination
-    combinations.push(...generateWildcardCombinations(base + letter, remainingWildcards - 1));
+    // Skip if this would form an invalid digraph
+    if (wouldFormDigraph(base, letter)) continue;
+    
+    // Process the combination immediately to handle digraphs properly
+    const newCombo = base + letter;
+    combinations.push(...generateWildcardCombinations(newCombo, remainingWildcards - 1));
   }
   return combinations;
 };
@@ -45,6 +61,16 @@ const findShorterMatches = (letters: string, trie: Trie): Set<string> => {
     const combinations = generateCombinations(letterArray, len);
     
     for (const combo of combinations) {
+      // Skip combinations that would form invalid digraphs
+      let isValidCombo = true;
+      for (let i = 0; i < combo.length - 1; i++) {
+        if (wouldFormDigraph(combo[i], combo[i + 1])) {
+          isValidCombo = false;
+          break;
+        }
+      }
+      if (!isValidCombo) continue;
+
       // Process digraphs after combining letters
       const processedCombo = processDigraphs(combo.join(''));
       const alphagram = generateAlphagram(processedCombo);
@@ -67,6 +93,10 @@ const generateCombinations = (arr: string[], len: number): string[][] => {
     }
     
     for (let i = start; i < arr.length; i++) {
+      // Skip if this would form an invalid digraph with the last letter
+      if (current.length > 0 && wouldFormDigraph(current[current.length - 1], arr[i])) {
+        continue;
+      }
       current.push(arr[i]);
       backtrack(i + 1, current);
       current.pop();
@@ -85,6 +115,9 @@ const findAdditionalMatches = (baseLetters: string, wildcardCount: number, trie:
   
   // For each additional letter, we'll process the combination
   for (const letter of SPANISH_LETTERS) {
+    // Skip if this would form an invalid digraph with the last letter of the base
+    if (wouldFormDigraph(baseLetters, letter)) continue;
+
     // Process the entire combination to handle digraphs properly
     const newCombo = processDigraphs(processedBase + letter);
     // Skip if the processed combination is the same length as the base
@@ -101,6 +134,9 @@ const findAdditionalMatches = (baseLetters: string, wildcardCount: number, trie:
     const wildcardCombos = generateWildcardCombinations(processedBase, wildcardCount);
     for (const combo of wildcardCombos) {
       for (const letter of SPANISH_LETTERS) {
+        // Skip if this would form an invalid digraph
+        if (wouldFormDigraph(combo, letter)) continue;
+
         // Process the entire combination to handle digraphs properly
         const newCombo = processDigraphs(combo + letter);
         // Skip if the processed combination indicates a digraph was formed
