@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { wordDB } from '@/utils/wordDatabase';
 import { wordTrie } from '@/utils/trie';
 import { toast } from 'sonner';
-import { processDigraphs } from '@/utils/digraphs';
+import { processDigraphs, toDisplayFormat } from '@/utils/digraphs';
 
 interface WordTrieState {
   isLoading: boolean;
@@ -12,7 +12,6 @@ interface WordTrieState {
 }
 
 export const useWordTrie = (): WordTrieState => {
-  // Move initialization flag to useRef
   const isInitializedRef = useRef(false);
   const initializationPromiseRef = useRef<Promise<void> | null>(null);
   
@@ -27,26 +26,34 @@ export const useWordTrie = (): WordTrieState => {
     let mounted = true;
 
     const initTrie = async () => {
-      // If already initialized, return immediately
+      // If already initialized and has words, return immediately
       if (isInitializedRef.current) {
         const currentWords = wordTrie.getAllWords();
-        console.log('Trie already initialized, current word count:', currentWords.length);
+        console.log('Checking Trie state:', {
+          isInitialized: isInitializedRef.current,
+          wordCount: currentWords.length
+        });
+        
         if (currentWords.length === 0) {
-          // If Trie is empty but marked as initialized, reset the flag
+          console.log('Trie is empty but marked as initialized, resetting...');
           isInitializedRef.current = false;
-        } else if (mounted) {
-          setState(prev => ({
-            ...prev,
-            isLoading: false,
-            wordCount: currentWords.length
-          }));
+          wordTrie.clear();
+        } else {
+          console.log('Trie is properly initialized with words:', currentWords.length);
+          if (mounted) {
+            setState(prev => ({
+              ...prev,
+              isLoading: false,
+              wordCount: currentWords.length
+            }));
+          }
           return;
         }
       }
 
       // If initialization is in progress, wait for it
       if (initializationPromiseRef.current) {
-        console.log('Trie initialization in progress, waiting...');
+        console.log('Waiting for existing initialization to complete...');
         await initializationPromiseRef.current;
         if (mounted) {
           setState(prev => ({
@@ -60,13 +67,10 @@ export const useWordTrie = (): WordTrieState => {
       // Start new initialization
       initializationPromiseRef.current = (async () => {
         try {
-          console.log('Starting Trie initialization...');
-          // Initialize database first
+          console.log('Starting fresh Trie initialization...');
           await wordDB.init();
           
-          // Get all words from IndexedDB
           const words = await wordDB.getAllWords();
-          
           if (!mounted) return;
 
           if (words.length === 0) {
@@ -75,21 +79,18 @@ export const useWordTrie = (): WordTrieState => {
 
           // Clear trie before rebuilding
           wordTrie.clear();
-          console.log('Trie cleared, starting build with', words.length, 'words');
+          console.log('Building Trie with', words.length, 'words');
 
-          // Build trie with words
           const startTime = performance.now();
-          
-          // Build in batches to avoid blocking the main thread
           const batchSize = 10000;
           let processedCount = 0;
 
           for (let i = 0; i < words.length; i += batchSize) {
             const batch = words.slice(i, i + batchSize);
             batch.forEach(word => {
-              // Process the word for proper digraph handling
+              // Store both processed and original forms
               const processedWord = processDigraphs(word.toUpperCase());
-              wordTrie.insert(processedWord, word);
+              wordTrie.insert(processedWord, word.toUpperCase());
               processedCount++;
             });
 
@@ -106,8 +107,10 @@ export const useWordTrie = (): WordTrieState => {
           
           // Verify Trie contents
           const trieWords = wordTrie.getAllWords();
-          console.log('Total words in Trie:', trieWords.length);
-          console.log('Sample words from Trie:', trieWords.slice(0, 5));
+          console.log('Final Trie state:', {
+            totalWords: trieWords.length,
+            sampleWords: trieWords.slice(0, 5)
+          });
 
           if (mounted) {
             setState({
@@ -117,14 +120,12 @@ export const useWordTrie = (): WordTrieState => {
               wordCount: processedCount
             });
 
-            // Show the session notification using Sonner
             toast.success(`Diccionario listo: ${processedCount.toLocaleString()} palabras`, {
               duration: 3000,
               position: 'top-right',
             });
           }
 
-          // Mark as initialized only after successful completion
           isInitializedRef.current = true;
         } catch (err) {
           console.error('Error initializing trie:', err);
