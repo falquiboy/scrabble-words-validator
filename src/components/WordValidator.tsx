@@ -109,7 +109,7 @@ const WordValidator = ({ isDictionaryLoading }: WordValidatorProps) => {
         />
         {isDictionaryLoading && (
           <div className="text-center">
-            <p className="text-sm text-gray-500">Cargando diccionario...</p>
+            <p className="text-sm text-gray-500">Cargando lexicón...</p>
           </div>
         )}
       </div>
