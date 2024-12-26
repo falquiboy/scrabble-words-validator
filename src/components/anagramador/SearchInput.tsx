@@ -5,8 +5,8 @@ import { Switch } from "@/components/ui/switch";
 import { RefObject, useState } from "react";
 import { SearchTooltip } from "./SearchTooltip";
 import { validateAndCleanAnagramInput, validateAndCleanPatternInput } from "@/utils/inputValidation";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { NaturalSearchHandler } from "./search/NaturalSearchHandler";
+import { SearchModes } from "./search/SearchModes";
 
 interface SearchInputProps {
   letters: string;
@@ -33,43 +33,8 @@ const SearchInput = ({
   const [isNaturalMode, setIsNaturalMode] = useState(false);
   const [isSearchMode, setIsSearchMode] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
-  const { toast } = useToast();
 
-  const processNaturalLanguage = async (query: string) => {
-    setIsProcessing(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('process-natural-query', {
-        body: { query },
-      });
-
-      if (error) throw error;
-      
-      if (data.pattern) {
-        onInputChange(data.pattern);
-        toast({
-          title: "Consulta procesada",
-          description: `Se encontraron ${data.results?.length || 0} palabras`,
-        });
-      } else if (data.error) {
-        toast({
-          title: "Error",
-          description: data.error,
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('Error processing natural language:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo procesar la consulta en lenguaje natural",
-        variant: "destructive",
-      });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value;
     
     if (isNaturalMode) {
@@ -92,11 +57,23 @@ const SearchInput = ({
 
   const handleSearchClick = async () => {
     if (isSearchMode) {
-      if (isNaturalMode && letters.trim()) {
-        await processNaturalLanguage(letters);
+      setIsProcessing(true);
+      try {
+        if (isNaturalMode && letters.trim()) {
+          await NaturalSearchHandler({ 
+            query: letters,
+            onResults: (results) => {
+              // We don't use the Trie in natural mode, results come directly from DB
+              console.log('Natural language results:', results);
+            }
+          });
+        } else {
+          onSearch();
+        }
+        setIsSearchMode(false);
+      } finally {
+        setIsProcessing(false);
       }
-      onSearch();
-      setIsSearchMode(false);
     } else {
       onClear();
       setIsSearchMode(true);
@@ -105,40 +82,12 @@ const SearchInput = ({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center space-x-4 mb-2">
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="pattern-mode"
-            checked={isPatternMode}
-            onCheckedChange={(checked) => {
-              setIsPatternMode(checked);
-              setIsNaturalMode(false);
-            }}
-          />
-          <label
-            htmlFor="pattern-mode"
-            className="text-sm text-gray-600 cursor-pointer"
-          >
-            Modo patrón
-          </label>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="natural-mode"
-            checked={isNaturalMode}
-            onCheckedChange={(checked) => {
-              setIsNaturalMode(checked);
-              setIsPatternMode(false);
-            }}
-          />
-          <label
-            htmlFor="natural-mode"
-            className="text-sm text-gray-600 cursor-pointer"
-          >
-            Modo natural
-          </label>
-        </div>
-      </div>
+      <SearchModes
+        isPatternMode={isPatternMode}
+        isNaturalMode={isNaturalMode}
+        onPatternModeChange={setIsPatternMode}
+        onNaturalModeChange={setIsNaturalMode}
+      />
       <SearchTooltip isPatternMode={isPatternMode}>
         <div className="relative flex-1">
           <Input
