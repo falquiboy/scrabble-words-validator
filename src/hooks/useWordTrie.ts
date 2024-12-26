@@ -31,7 +31,8 @@ export const useWordTrie = (): WordTrieState => {
         const currentWords = wordTrie.getAllWords();
         console.log('Checking Trie state:', {
           isInitialized: isInitializedRef.current,
-          wordCount: currentWords.length
+          wordCount: currentWords.length,
+          sampleWords: currentWords.slice(0, 5)
         });
         
         if (currentWords.length === 0) {
@@ -109,7 +110,9 @@ export const useWordTrie = (): WordTrieState => {
           const trieWords = wordTrie.getAllWords();
           console.log('Final Trie state:', {
             totalWords: trieWords.length,
-            sampleWords: trieWords.slice(0, 5)
+            sampleWords: trieWords.slice(0, 5),
+            containsJUEZ: trieWords.includes('JUEZ'),
+            containsCASERON: trieWords.includes('CASERON')
           });
 
           if (mounted) {
@@ -120,7 +123,7 @@ export const useWordTrie = (): WordTrieState => {
               wordCount: processedCount
             });
 
-            toast.success(`Diccionario listo: ${processedCount.toLocaleString()} palabras`, {
+            toast.success(`Lexicón listo: ${processedCount.toLocaleString()} palabras`, {
               duration: 3000,
               position: 'top-right',
             });
@@ -137,7 +140,7 @@ export const useWordTrie = (): WordTrieState => {
             isLoading: false
           }));
 
-          toast.error("No se pudo inicializar el diccionario", {
+          toast.error("No se pudo inicializar el lexicón", {
             duration: 4000,
             position: 'top-right',
           });
