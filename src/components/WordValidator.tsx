@@ -1,14 +1,12 @@
 import { useState } from "react";
-import { processDigraphs } from "@/utils/digraphs";
+import { processDigraphs, toDisplayFormat } from "@/utils/digraphs";
+import { useWordDatabase } from "@/hooks/useWordDatabase";
+import { useWordTrie } from "@/hooks/useWordTrie";
 import { wordTrie } from "@/utils/trie";
 import Header from "./word-validator/Header";
 import WordInput from "./word-validator/WordInput";
 
-interface WordValidatorProps {
-  isDictionaryLoading: boolean;
-}
-
-const WordValidator = ({ isDictionaryLoading }: WordValidatorProps) => {
+const WordValidator = () => {
   const [word, setWord] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<{
@@ -18,28 +16,38 @@ const WordValidator = ({ isDictionaryLoading }: WordValidatorProps) => {
   }>({ isValid: false, checked: false, words: [] });
   const [isEditing, setIsEditing] = useState(false);
 
+  // Initialize both IndexedDB and Trie
+  const { isLoading: isDBLoading } = useWordDatabase();
+  const { isLoading: isTrieLoading } = useWordTrie();
+
   const handleValidate = async () => {
-    if (!word.trim() || isDictionaryLoading) return;
+    if (!word.trim() || isDBLoading || isTrieLoading) return;
 
     setIsLoading(true);
     try {
       const words = word.trim().split(" ");
       const processedWords = words.map(w => {
+        // First convert to uppercase and preserve Ñ
         let upperWord = w.toUpperCase();
         
+        // Special handling for Ñ - preserve it exactly as is
         upperWord = upperWord.split('').map(char => {
           if (char === 'Ñ' || char === 'ñ') return 'Ñ';
+          // For non-Ñ characters, remove accents
           return char
             .normalize('NFD')
             .replace(/[\u0300-\u036f]/g, '')
             .normalize('NFC');
         }).join('');
         
+        // Process digraphs (CH -> Ç, LL -> K, RR -> W)
         const processed = processDigraphs(upperWord);
         
+        // Log lengths - after processing digraphs since we want to count them as single letters
         console.log('Original word:', upperWord);
         console.log('Processed word:', processed, 'length:', processed.length);
         
+        // Log the actual Trie content for debugging
         console.log('Words in Trie containing this word:', 
           Array.from(wordTrie.getWordsStartingWith(processed))
         );
@@ -47,8 +55,9 @@ const WordValidator = ({ isDictionaryLoading }: WordValidatorProps) => {
         return processed;
       });
       
+      // Use Trie for fast validation
       const isValid = processedWords.every(w => {
-        if (!w) return false;
+        if (!w) return false; // Skip empty strings
         console.log('Processing word for validation:', w);
         const result = wordTrie.search(w);
         console.log('Validation result for', w, ':', result);
@@ -107,7 +116,7 @@ const WordValidator = ({ isDictionaryLoading }: WordValidatorProps) => {
           onEditStart={() => setIsEditing(true)}
           onEditEnd={() => setIsEditing(false)}
         />
-        {isDictionaryLoading && (
+        {(isDBLoading || isTrieLoading) && (
           <div className="text-center">
             <p className="text-sm text-gray-500">Cargando diccionario...</p>
           </div>
