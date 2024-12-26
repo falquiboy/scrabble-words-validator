@@ -1,7 +1,12 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const supabaseUrl = Deno.env.get('SUPABASE_URL');
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,7 +15,7 @@ const corsHeaders = {
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-async function callOpenAIWithRetry(query: string, retries = 3): Promise<string> {
+async function generateSQLQuery(query: string, retries = 3): Promise<string> {
   for (let i = 0; i < retries; i++) {
     try {
       console.log('Processing natural language query:', query);
@@ -22,24 +27,38 @@ async function callOpenAIWithRetry(query: string, retries = 3): Promise<string> 
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: 'gpt-4',
           messages: [
             {
               role: 'system',
-              content: `You are a Spanish language query parser that converts natural language queries into pattern search syntax.
+              content: `You are a SQL query generator for a Spanish word search application.
+              The database has a 'words' table with columns:
+              - word (text): The actual word
+              - lenght (integer): Length of the word
+              - alphagram (text): Sorted letters of the word
+
               Rules:
-              - Use ? for any single letter position
-              - Use - for zero or more letters
-              - For "contains" queries, generate a pattern that allows the letter to be in any position
-              - For specific position queries (starts with, ends with), use exact positions
-              - Return ONLY the pattern, no explanation
+              - Generate only the SQL SELECT query, no explanation
+              - Always select from the words table
+              - Use UPPER() for case-insensitive comparison
+              - For "contains" queries, use LIKE with wildcards
+              - Return results ordered by word length and then alphabetically
+              
               Examples:
-              "palabras de 5 letras que contienen z" -> "?????" (followed by a comma and the required letter) -> "?????,Z"
-              "palabras que empiezan con a y terminan en z" -> "A-Z"
-              "palabras de 4 letras que empiezan con b" -> "B???"
-              "palabras que contengan la letra ñ" -> "-,-,Ñ"
-              "palabras de 6 letras que contengan ch" -> "??????,CH"
-              `
+              "palabras de 5 letras que contienen z" ->
+              SELECT word FROM words WHERE lenght = 5 AND UPPER(word) LIKE '%Z%' ORDER BY word;
+
+              "palabras que empiezan con a y terminan en z" ->
+              SELECT word FROM words WHERE UPPER(word) LIKE 'A%Z' ORDER BY lenght, word;
+
+              "palabras de 4 letras que empiezan con b" ->
+              SELECT word FROM words WHERE lenght = 4 AND UPPER(word) LIKE 'B%' ORDER BY word;
+
+              "palabras que contengan la letra ñ" ->
+              SELECT word FROM words WHERE UPPER(word) LIKE '%Ñ%' ORDER BY lenght, word;
+
+              "palabras de 6 letras que contengan ch" ->
+              SELECT word FROM words WHERE lenght = 6 AND UPPER(word) LIKE '%CH%' ORDER BY word;`
             },
             { role: 'user', content: query }
           ],
@@ -49,7 +68,7 @@ async function callOpenAIWithRetry(query: string, retries = 3): Promise<string> 
 
       if (response.status === 429) {
         console.log(`Rate limited, attempt ${i + 1} of ${retries}, waiting before retry...`);
-        await sleep(Math.pow(2, i) * 1000); // Exponential backoff
+        await sleep(Math.pow(2, i) * 1000);
         continue;
       }
 
@@ -66,9 +85,9 @@ async function callOpenAIWithRetry(query: string, retries = 3): Promise<string> 
         throw new Error('Invalid response format from OpenAI');
       }
 
-      const pattern = data.choices[0].message.content.trim();
-      console.log('Generated pattern:', pattern);
-      return pattern;
+      const sqlQuery = data.choices[0].message.content.trim();
+      console.log('Generated SQL query:', sqlQuery);
+      return sqlQuery;
     } catch (error) {
       if (i === retries - 1) throw error;
       console.error(`Attempt ${i + 1} failed:`, error);
@@ -76,6 +95,23 @@ async function callOpenAIWithRetry(query: string, retries = 3): Promise<string> 
     }
   }
   throw new Error('Max retries reached');
+}
+
+async function executeQuery(sqlQuery: string) {
+  try {
+    console.log('Executing SQL query:', sqlQuery);
+    const { data, error } = await supabase.from('words')
+      .select('word')
+      .order('lenght')
+      .order('word');
+
+    if (error) throw error;
+    console.log(`Query returned ${data.length} results`);
+    return data.map(row => row.word);
+  } catch (error) {
+    console.error('Error executing query:', error);
+    throw error;
+  }
 }
 
 serve(async (req) => {
@@ -96,10 +132,13 @@ serve(async (req) => {
       throw new Error('OpenAI API key is not configured');
     }
 
-    const pattern = await callOpenAIWithRetry(query);
-    console.log('Final pattern generated:', pattern);
+    const sqlQuery = await generateSQLQuery(query);
+    const results = await executeQuery(sqlQuery);
     
-    return new Response(JSON.stringify({ pattern }), {
+    return new Response(JSON.stringify({ 
+      results,
+      sql: sqlQuery // Include the SQL query for debugging
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
