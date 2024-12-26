@@ -11,6 +11,7 @@ export const useOfflineAnagramSearch = (
 ) => {
   const results = useMemo(() => {
     if (!searchTerm || !trie) {
+      console.log('No search term or trie not ready:', { searchTerm, trieExists: !!trie });
       return {
         exactMatches: [],
         wildcardMatches: [],

@@ -15,7 +15,10 @@ export const generateWildcardCombinations = (base: string, remainingWildcards: n
 
 const findExactMatches = (processedInput: string, trie: Trie): Set<string> => {
   const alphagram = generateAlphagram(processedInput);
-  return new Set(trie.findAnagrams(alphagram));
+  const matches = new Set<string>();
+  const words = trie.findAnagrams(alphagram);
+  words.forEach(word => matches.add(word));
+  return matches;
 };
 
 const findWildcardMatches = (processedInput: string, wildcardCount: number, trie: Trie): Set<string> => {
