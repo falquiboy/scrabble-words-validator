@@ -5,9 +5,7 @@ import { Switch } from "@/components/ui/switch";
 import { RefObject, useState } from "react";
 import { SearchTooltip } from "./SearchTooltip";
 import { validateAndCleanAnagramInput, validateAndCleanPatternInput } from "@/utils/inputValidation";
-import { useNaturalSearch } from "./search/NaturalSearchHandler";
 import { SearchModes } from "./search/SearchModes";
-import { useToast } from "@/hooks/use-toast";
 
 interface SearchInputProps {
   letters: string;
@@ -31,29 +29,11 @@ const SearchInput = ({
   inputRef 
 }: SearchInputProps) => {
   const [isPatternMode, setIsPatternMode] = useState(false);
-  const [isNaturalMode, setIsNaturalMode] = useState(false);
   const [isSearchMode, setIsSearchMode] = useState(true);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const { toast } = useToast();
   
-  const { processQuery } = useNaturalSearch({
-    onResults: (results) => {
-      if (results && results.length > 0) {
-        onInputChange(results.join('\n'));
-        onSearch();
-      }
-    }
-  });
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value;
+    let value = e.target.value.toUpperCase();
     
-    if (isNaturalMode) {
-      onInputChange(value);
-      return;
-    }
-    
-    value = value.toUpperCase();
     if (isPatternMode) {
       value = validateAndCleanPatternInput(value);
     } else {
@@ -64,33 +44,10 @@ const SearchInput = ({
     setIsSearchMode(true);
   };
 
-  const handleSearchClick = async () => {
+  const handleSearchClick = () => {
     if (isSearchMode) {
-      setIsProcessing(true);
-      try {
-        if (isNaturalMode && letters.trim()) {
-          const result = await processQuery(letters);
-          if (result.success) {
-            toast({
-              title: "Consulta procesada",
-              description: result.count > 0 
-                ? `Se encontraron ${result.count} palabras` 
-                : "No se encontraron palabras para esta consulta",
-            });
-          }
-        } else {
-          onSearch();
-        }
-        setIsSearchMode(false);
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: error.message || "No se pudo procesar la consulta",
-          variant: "destructive",
-        });
-      } finally {
-        setIsProcessing(false);
-      }
+      onSearch();
+      setIsSearchMode(false);
     } else {
       onClear();
       setIsSearchMode(true);
@@ -101,9 +58,7 @@ const SearchInput = ({
     <div className="space-y-2">
       <SearchModes
         isPatternMode={isPatternMode}
-        isNaturalMode={isNaturalMode}
         onPatternModeChange={setIsPatternMode}
-        onNaturalModeChange={setIsNaturalMode}
       />
       <SearchTooltip isPatternMode={isPatternMode}>
         <div className="relative flex-1">
@@ -111,11 +66,9 @@ const SearchInput = ({
             ref={inputRef}
             type="text"
             placeholder={
-              isNaturalMode 
-                ? "Escribe tu consulta en lenguaje natural..." 
-                : isPatternMode 
-                  ? "Ingresa un patrón" 
-                  : "asterisco es comodín"
+              isPatternMode 
+                ? "Ingresa un patrón" 
+                : "asterisco es comodín"
             }
             value={letters}
             onChange={handleInputChange}
@@ -131,17 +84,16 @@ const SearchInput = ({
             spellCheck={false}
             autoCorrect="off"
             autoCapitalize="off"
-            disabled={isProcessing}
           />
           <div className="absolute right-2 top-1/2 -translate-y-1/2">
             <Button 
               onClick={handleSearchClick}
               className="h-8 w-8 p-0"
               variant="ghost"
-              disabled={!letters.trim() || isProcessing}
+              disabled={!letters.trim()}
             >
               {isSearchMode ? (
-                <Search className={`h-4 w-4 ${isProcessing ? 'animate-spin' : ''}`} />
+                <Search className="h-4 w-4" />
               ) : (
                 <Trash2 className="h-4 w-4" />
               )}
