@@ -84,7 +84,8 @@ const findAdditionalMatches = (baseLetters: string, wildcardCount: number, trie:
   
   // For each additional letter, we'll process the combination
   for (const letter of SPANISH_LETTERS) {
-    // Add the letter directly to the processed base
+    // Important: We add the letter directly without any further digraph processing
+    // since processedBase is already in internal format and letter is a single character
     const newCombo = processedBase + letter;
     const alphagram = generateAlphagram(newCombo);
     const baseMatches = trie.findAnagrams(alphagram);
@@ -96,6 +97,7 @@ const findAdditionalMatches = (baseLetters: string, wildcardCount: number, trie:
     const wildcardCombos = generateWildcardCombinations(processedBase, wildcardCount);
     for (const combo of wildcardCombos) {
       for (const letter of SPANISH_LETTERS) {
+        // Same here: direct concatenation without additional processing
         const newCombo = combo + letter;
         const alphagram = generateAlphagram(newCombo);
         const comboMatches = trie.findAnagrams(alphagram);
@@ -111,6 +113,8 @@ export const findAnagrams = (searchTerm: string, trie: Trie, showShorter: boolea
   // Count wildcards and process input
   const wildcardCount = (searchTerm.match(/\*/g) || []).length;
   const lettersOnly = searchTerm.replace(/\*/g, '');
+  
+  // Process digraphs ONCE at the beginning
   const processedInput = processDigraphs(lettersOnly);
 
   console.log('Processing search:', {
