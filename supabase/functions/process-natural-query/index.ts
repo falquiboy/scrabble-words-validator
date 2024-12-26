@@ -28,14 +28,17 @@ async function callOpenAIWithRetry(query: string, retries = 3): Promise<string> 
               role: 'system',
               content: `You are a Spanish language query parser that converts natural language queries into pattern search syntax.
               Rules:
-              - Use ? for single letters
+              - Use ? for any single letter position
               - Use - for zero or more letters
-              - If a specific letter is mentioned, include it in the pattern
+              - For "contains" queries, generate a pattern that allows the letter to be in any position
+              - For specific position queries (starts with, ends with), use exact positions
               - Return ONLY the pattern, no explanation
               Examples:
-              "palabras de 5 letras que contienen z" -> "????Z"
+              "palabras de 5 letras que contienen z" -> "?????" (followed by a comma and the required letter) -> "?????,Z"
               "palabras que empiezan con a y terminan en z" -> "A-Z"
               "palabras de 4 letras que empiezan con b" -> "B???"
+              "palabras que contengan la letra ñ" -> "-,-,Ñ"
+              "palabras de 6 letras que contengan ch" -> "??????,CH"
               `
             },
             { role: 'user', content: query }
