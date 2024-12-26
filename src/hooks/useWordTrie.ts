@@ -47,6 +47,11 @@ export const useWordTrie = (): WordTrieState => {
               isLoading: false,
               wordCount: currentWords.length
             }));
+            // Show toast when words are already loaded
+            toast.success(`Lexicón listo: ${currentWords.length.toLocaleString()} palabras`, {
+              duration: 3000,
+              position: 'top-right',
+            });
           }
           return;
         }
@@ -123,6 +128,7 @@ export const useWordTrie = (): WordTrieState => {
               wordCount: processedCount
             });
 
+            // Show toast immediately after Trie is populated
             toast.success(`Lexicón listo: ${processedCount.toLocaleString()} palabras`, {
               duration: 3000,
               position: 'top-right',
