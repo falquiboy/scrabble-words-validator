@@ -9,7 +9,7 @@ export class Trie implements TrieInterface {
     this.root = createNode();
   }
 
-  insert(word: string) {
+  insert(word: string, value: string = word) {
     let current = this.root;
     
     for (const char of word) {
@@ -20,7 +20,7 @@ export class Trie implements TrieInterface {
     }
     
     current.isEndOfWord = true;
-    current.word = word;
+    current.word = value;
   }
 
   search(word: string): boolean {
