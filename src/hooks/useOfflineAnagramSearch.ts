@@ -38,7 +38,8 @@ export const useOfflineAnagramSearch = (
     }
 
     // Regular anagram search
-    const { exactMatches, wildcardMatches, additionalWildcardMatches, shorterMatches } = findAnagrams(searchTerm, trie, showShorter);
+    const { exactMatches, wildcardMatches, additionalWildcardMatches, shorterMatches } = findAnagrams(searchTerm, trie, true);
+
     console.log('Anagram search results:', { 
       exactMatches, 
       wildcardMatches, 
@@ -59,14 +60,26 @@ export const useOfflineAnagramSearch = (
       } as SearchResults;
     }
 
-    // Return all results, including shorter matches if showShorter is true
-    return {
-      exactMatches,
-      wildcardMatches,
-      additionalWildcardMatches,
-      shorterMatches,
-      patternMatches: []
-    } as SearchResults;
+    // Return results based on showShorter toggle
+    if (showShorter) {
+      // When toggle is ON, show only shorter matches
+      return {
+        exactMatches: [],
+        wildcardMatches: [],
+        additionalWildcardMatches: [],
+        shorterMatches,
+        patternMatches: []
+      } as SearchResults;
+    } else {
+      // When toggle is OFF, show only full-length and additional letter matches
+      return {
+        exactMatches,
+        wildcardMatches,
+        additionalWildcardMatches,
+        shorterMatches: [],
+        patternMatches: []
+      } as SearchResults;
+    }
   }, [searchTerm, showShorter, targetLength, trie]);
 
   return {

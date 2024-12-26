@@ -119,7 +119,7 @@ const SearchInput = ({
           htmlFor="show-shorter"
           className="text-sm text-gray-600 cursor-pointer"
         >
-          Mostrar palabras más cortas
+          Mostrar solo palabras más cortas
         </label>
       </div>
     </div>
