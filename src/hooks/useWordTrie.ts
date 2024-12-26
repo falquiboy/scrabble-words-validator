@@ -29,14 +29,19 @@ export const useWordTrie = (): WordTrieState => {
     const initTrie = async () => {
       // If already initialized, return immediately
       if (isInitializedRef.current) {
-        console.log('Trie already initialized, current word count:', wordTrie.getAllWords().length);
-        if (mounted) {
+        const currentWords = wordTrie.getAllWords();
+        console.log('Trie already initialized, current word count:', currentWords.length);
+        if (currentWords.length === 0) {
+          // If Trie is empty but marked as initialized, reset the flag
+          isInitializedRef.current = false;
+        } else if (mounted) {
           setState(prev => ({
             ...prev,
-            isLoading: false
+            isLoading: false,
+            wordCount: currentWords.length
           }));
+          return;
         }
-        return;
       }
 
       // If initialization is in progress, wait for it
