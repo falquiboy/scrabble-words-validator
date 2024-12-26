@@ -7,6 +7,7 @@ export const generateWildcardCombinations = (base: string, remainingWildcards: n
   
   const combinations: string[] = [];
   for (const letter of SPANISH_LETTERS) {
+    // When adding K or W, use them directly as they are already in internal representation
     const newBase = base + letter;
     combinations.push(...generateWildcardCombinations(newBase, remainingWildcards - 1));
   }
@@ -23,6 +24,7 @@ const findExactMatches = (processedInput: string, trie: Trie): Set<string> => {
 
 const findWildcardMatches = (processedInput: string, wildcardCount: number, trie: Trie): Set<string> => {
   const matches = new Set<string>();
+  // Generate combinations with already processed input
   const combinations = generateWildcardCombinations(processedInput, wildcardCount);
   
   for (const combo of combinations) {
@@ -78,6 +80,7 @@ const findAdditionalMatches = (baseLetters: string, wildcardCount: number, trie:
   
   // For the base letters (without wildcards)
   for (const letter of SPANISH_LETTERS) {
+    // When adding K or W, use them directly as they are already in internal representation
     const newBase = baseLetters + letter;
     const alphagram = generateAlphagram(newBase);
     const baseMatches = trie.findAnagrams(alphagram);
@@ -89,6 +92,7 @@ const findAdditionalMatches = (baseLetters: string, wildcardCount: number, trie:
     const wildcardCombos = generateWildcardCombinations(baseLetters, wildcardCount);
     for (const combo of wildcardCombos) {
       for (const letter of SPANISH_LETTERS) {
+        // When adding K or W, use them directly as they are already in internal representation
         const newCombo = combo + letter;
         const alphagram = generateAlphagram(newCombo);
         const comboMatches = trie.findAnagrams(alphagram);
@@ -104,6 +108,7 @@ export const findAnagrams = (searchTerm: string, trie: Trie, showShorter: boolea
   // Count wildcards and process input
   const wildcardCount = (searchTerm.match(/\*/g) || []).length;
   const lettersOnly = searchTerm.replace(/\*/g, '');
+  // Process digraphs first, before any additional letter handling
   const processedInput = processDigraphs(lettersOnly);
 
   console.log('Processing search:', {
