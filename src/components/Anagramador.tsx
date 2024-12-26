@@ -1,91 +1,46 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useCallback } from "react";
+import { useToast } from "@/hooks/use-toast";
 import SearchInput from "./anagramador/SearchInput";
+import ResultsHeader from "./anagramador/ResultsHeader";
 import ResultsList from "./anagramador/ResultsList";
-import { useOfflineAnagramSearch } from "@/hooks/useOfflineAnagramSearch";
-import { highlightWildcardLetter } from "@/utils/wildcardHighlighting";
+import { Trie } from "@/utils/trie";
+import { validateAndCleanPatternInput } from "@/utils/inputValidation";
+import { searchPattern } from "@/utils/trie/search";
 
-const Anagramador = () => {
-  const [letters, setLetters] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [showShorter, setShowShorter] = useState(false);
-  const [targetLength, setTargetLength] = useState<number | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+interface AnagramadorProps {
+  trie: Trie;
+  isLoading: boolean;
+  error: string | null;
+}
 
-  // Query for words using offline search hook
-  const { data: results, isLoading } = useOfflineAnagramSearch(searchTerm, showShorter, targetLength);
+const Anagramador = ({ trie, isLoading, error }: AnagramadorProps) => {
+  const { toast } = useToast();
+  const [pattern, setPattern] = useState("");
+  const [results, setResults] = useState<string[]>([]);
 
-  // Handle input changes
-  const handleInputChange = (value: string) => {
-    // Allow all characters initially, validation will happen in inputValidation.ts
-    setLetters(value);
-
-    // Check for length filter
-    const lengthMatch = value.match(/\/(\d+)$/);
-    if (lengthMatch) {
-      const length = parseInt(lengthMatch[1], 10);
-      setTargetLength(length);
-      // Remove the length filter from the letters
-      value = value.replace(/\/\d+$/, '');
+  const handleSearch = useCallback((pattern: string) => {
+    const cleanedPattern = validateAndCleanPatternInput(pattern);
+    if (cleanedPattern) {
+      const searchResults = searchPattern(trie, cleanedPattern);
+      setResults(searchResults);
     } else {
-      setTargetLength(null);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Patrón de búsqueda no válido.",
+      });
     }
-  };
-
-  // Handle search
-  const handleSearch = () => {
-    if (letters.trim()) {
-      setSearchTerm(letters);
-    }
-  };
-
-  // Handle key press
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
-  };
-
-  // Handle clear
-  const handleClear = () => {
-    setLetters("");
-    setSearchTerm("");
-    setTargetLength(null);
-    inputRef.current?.focus();
-  };
-
-  // Create a wrapper function to handle the HTML dangerously
-  const renderHighlightedWord = (word: string, originalWord: string) => {
-    const highlightedHtml = highlightWildcardLetter(word, originalWord);
-    return <span dangerouslySetInnerHTML={{ __html: highlightedHtml }} />;
-  };
-
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+  }, [trie, toast]);
 
   return (
-    <div className="w-full max-w-md space-y-4 px-4">
-      <SearchInput
-        letters={letters}
-        showShorter={showShorter}
-        onInputChange={handleInputChange}
+    <div className="w-full max-w-2xl mx-auto px-4">
+      <SearchInput 
         onSearch={handleSearch}
-        onClear={handleClear}
-        onKeyPress={handleKeyPress}
-        onShowShorterChange={setShowShorter}
-        inputRef={inputRef}
-      />
-      <ResultsList
         isLoading={isLoading}
-        searchTerm={searchTerm}
-        results={{
-          exactMatches: results?.exactMatches || [],
-          wildcardMatches: results?.wildcardMatches || [],
-          additionalWildcardMatches: results?.additionalWildcardMatches || [],
-          patternMatches: results?.patternMatches || []
-        }}
-        highlightWildcardLetter={renderHighlightedWord}
+        error={error}
       />
+      <ResultsHeader results={results} />
+      <ResultsList results={results} />
     </div>
   );
 };
