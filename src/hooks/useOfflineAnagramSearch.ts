@@ -48,10 +48,13 @@ export const useOfflineAnagramSearch = (
       };
     }
 
+    // If showShorter is false, filter out shorter words from additionalWildcardMatches
+    const filteredAdditionalMatches = showShorter ? additionalWildcardMatches : [];
+
     return {
       exactMatches,
       wildcardMatches,
-      additionalWildcardMatches,
+      additionalWildcardMatches: filteredAdditionalMatches,
       patternMatches: []
     };
   }, [searchTerm, showShorter, targetLength, trie]);
