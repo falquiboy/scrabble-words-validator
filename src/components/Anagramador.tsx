@@ -17,7 +17,7 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Query for words using offline search hook
-  const { data: results, isLoading } = useOfflineAnagramSearch(searchTerm, showShorter, targetLength, trie);
+  const { data: results } = useOfflineAnagramSearch(searchTerm, showShorter, targetLength, trie);
 
   // Handle input changes
   const handleInputChange = (value: string) => {
@@ -79,20 +79,20 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
         onKeyPress={handleKeyPress}
         onShowShorterChange={(checked) => {
           setShowShorter(checked);
+          // Trigger a new search immediately when toggling showShorter
           if (searchTerm) {
-            // Trigger a new search when toggling showShorter
             setSearchTerm(searchTerm);
           }
         }}
         inputRef={inputRef}
       />
       <ResultsList
-        isLoading={isLoading}
+        isLoading={false}
         searchTerm={searchTerm}
         results={{
           exactMatches: results?.exactMatches || [],
           wildcardMatches: results?.wildcardMatches || [],
-          additionalWildcardMatches: results?.additionalWildcardMatches || [],
+          additionalWildcardMatches: showShorter ? (results?.additionalWildcardMatches || []) : [],
           patternMatches: results?.patternMatches || []
         }}
         highlightWildcardLetter={renderHighlightedWord}

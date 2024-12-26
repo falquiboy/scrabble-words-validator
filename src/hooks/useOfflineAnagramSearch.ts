@@ -49,7 +49,7 @@ export const useOfflineAnagramSearch = (
       return {
         exactMatches: exactMatches.filter(word => word.length === targetLength),
         wildcardMatches: wildcardMatches.filter(word => word.length === targetLength),
-        additionalWildcardMatches: additionalWildcardMatches.filter(word => word.length === targetLength),
+        additionalWildcardMatches: showShorter ? additionalWildcardMatches.filter(word => word.length === targetLength) : [],
         patternMatches: []
       };
     }
