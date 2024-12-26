@@ -133,7 +133,7 @@ export const useOfflineAnagramSearch = (
     });
 
     return results;
-  }, [searchTerm, trie, isLoading, error, showShorter, targetLength]);
+  }, [searchTerm, isLoading, error, showShorter, targetLength]);
 
   return {
     data: results,
