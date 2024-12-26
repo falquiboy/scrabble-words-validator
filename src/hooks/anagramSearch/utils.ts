@@ -7,7 +7,6 @@ export const generateWildcardCombinations = (base: string, remainingWildcards: n
   
   const combinations: string[] = [];
   for (const letter of SPANISH_LETTERS) {
-    // When adding K or W, use them directly as they are already in internal representation
     const newBase = base + letter;
     combinations.push(...generateWildcardCombinations(newBase, remainingWildcards - 1));
   }
@@ -17,25 +16,18 @@ export const generateWildcardCombinations = (base: string, remainingWildcards: n
 const findExactMatches = (processedInput: string, trie: Trie): Set<string> => {
   const alphagram = generateAlphagram(processedInput);
   const matches = new Set<string>();
-  const words = trie.getAllWords().filter(word => {
-    const wordAlphagram = generateAlphagram(processDigraphs(word));
-    return wordAlphagram === alphagram;
-  });
+  const words = trie.findAnagrams(alphagram);
   words.forEach(word => matches.add(word));
   return matches;
 };
 
 const findWildcardMatches = (processedInput: string, wildcardCount: number, trie: Trie): Set<string> => {
   const matches = new Set<string>();
-  // Generate combinations with already processed input
   const combinations = generateWildcardCombinations(processedInput, wildcardCount);
   
   for (const combo of combinations) {
     const alphagram = generateAlphagram(combo);
-    const comboMatches = trie.getAllWords().filter(word => {
-      const wordAlphagram = generateAlphagram(processDigraphs(word));
-      return wordAlphagram === alphagram;
-    });
+    const comboMatches = trie.findAnagrams(alphagram);
     comboMatches.forEach(match => matches.add(match));
   }
   
@@ -46,16 +38,12 @@ const findShorterMatches = (letters: string, trie: Trie): Set<string> => {
   const matches = new Set<string>();
   const letterArray = letters.split('');
   
-  // Generate all possible combinations of letters
   for (let len = 1; len < letters.length; len++) {
     const combinations = generateCombinations(letterArray, len);
     
     for (const combo of combinations) {
       const alphagram = generateAlphagram(combo.join(''));
-      const comboMatches = trie.getAllWords().filter(word => {
-        const wordAlphagram = generateAlphagram(processDigraphs(word));
-        return wordAlphagram === alphagram;
-      });
+      const comboMatches = trie.findAnagrams(alphagram);
       comboMatches.forEach(match => matches.add(match));
     }
   }
@@ -63,7 +51,6 @@ const findShorterMatches = (letters: string, trie: Trie): Set<string> => {
   return matches;
 };
 
-// Helper function to generate all possible combinations of letters
 const generateCombinations = (arr: string[], len: number): string[][] => {
   const result: string[][] = [];
   
@@ -89,14 +76,10 @@ const findAdditionalMatches = (baseLetters: string, wildcardCount: number, trie:
   
   // For the base letters (without wildcards)
   for (const letter of SPANISH_LETTERS) {
-    // Process the new letter first to handle any potential digraphs
     const processedLetter = processDigraphs(letter);
     const newBase = baseLetters + processedLetter;
     const alphagram = generateAlphagram(newBase);
-    const baseMatches = trie.getAllWords().filter(word => {
-      const wordAlphagram = generateAlphagram(processDigraphs(word));
-      return wordAlphagram === alphagram;
-    });
+    const baseMatches = trie.findAnagrams(alphagram);
     baseMatches.forEach(match => matches.add(match));
   }
   
@@ -105,14 +88,10 @@ const findAdditionalMatches = (baseLetters: string, wildcardCount: number, trie:
     const wildcardCombos = generateWildcardCombinations(baseLetters, wildcardCount);
     for (const combo of wildcardCombos) {
       for (const letter of SPANISH_LETTERS) {
-        // Process the new letter first to handle any potential digraphs
         const processedLetter = processDigraphs(letter);
         const newCombo = combo + processedLetter;
         const alphagram = generateAlphagram(newCombo);
-        const comboMatches = trie.getAllWords().filter(word => {
-          const wordAlphagram = generateAlphagram(processDigraphs(word));
-          return wordAlphagram === alphagram;
-        });
+        const comboMatches = trie.findAnagrams(alphagram);
         comboMatches.forEach(match => matches.add(match));
       }
     }

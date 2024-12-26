@@ -1,27 +1,15 @@
-import { TrieNode, LengthIndexedTrie } from './trie/types';
+import { TrieNode, Trie as TrieInterface } from './trie/types';
 import { createNode, findNode, collectWords } from './trie/nodeOperations';
-import { findWordsByLength, findWordsByAlphagram } from './trie/indexing';
-import { searchExact } from './trie/search';
+import { generateAlphagram, processDigraphs } from './digraphs';
 
-export class Trie {
-  private root: TrieNode;
-  private lengthIndex: LengthIndexedTrie;
+export class Trie implements TrieInterface {
+  root: TrieNode;
 
   constructor() {
     this.root = createNode();
-    this.lengthIndex = {};
   }
 
-  getRoot(): TrieNode {
-    return this.root;
-  }
-
-  clear(): void {
-    this.root = createNode();
-    this.lengthIndex = {};
-  }
-
-  insert(word: string, originalWord: string): void {
+  insert(word: string) {
     let current = this.root;
     
     for (const char of word) {
@@ -32,63 +20,33 @@ export class Trie {
     }
     
     current.isEndOfWord = true;
-    current.word = originalWord;
-
-    // Update length index
-    const length = word.length;
-    if (!this.lengthIndex[length]) {
-      this.lengthIndex[length] = {};
-    }
-    
-    const alphagram = this.sortLetters(word);
-    if (!this.lengthIndex[length][alphagram]) {
-      this.lengthIndex[length][alphagram] = [];
-    }
-    
-    this.lengthIndex[length][alphagram].push(originalWord);
+    current.word = word;
   }
 
   search(word: string): boolean {
-    return searchExact(this.root, word);
-  }
-
-  findAnagrams(letters: string): string[] {
-    const length = letters.length;
-    const alphagram = this.sortLetters(letters);
-    return findWordsByAlphagram(this.lengthIndex, length, alphagram);
-  }
-
-  getWordsOfLength(length: number): string[] {
-    return findWordsByLength(this.lengthIndex, length);
+    const node = findNode(this.root, word);
+    return node?.isEndOfWord || false;
   }
 
   getAllWords(): string[] {
     const words: string[] = [];
-    this.dfs(this.root, words);
+    collectWords(this.root, words);
     return words;
   }
 
-  getWordsStartingWith(prefix: string): string[] {
+  getWordsStartingWith(prefix: string): Set<string> {
     const node = findNode(this.root, prefix);
-    if (!node) return [];
+    if (!node) return new Set();
     
     const words: string[] = [];
-    if (node.isEndOfWord) {
-      words.push(node.word);
-    }
-    
     collectWords(node, words);
-    return words;
+    return new Set(words);
   }
 
-  private dfs(node: TrieNode, words: string[]): void {
-    collectWords(node, words);
-  }
-
-  private sortLetters(letters: string): string {
-    return letters.split('').sort().join('');
+  findAnagrams(alphagram: string): string[] {
+    return this.getAllWords().filter(word => {
+      const wordAlphagram = generateAlphagram(processDigraphs(word));
+      return wordAlphagram === alphagram;
+    });
   }
 }
-
-// Create a singleton instance
-export const wordTrie = new Trie();
