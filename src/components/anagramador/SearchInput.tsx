@@ -2,31 +2,18 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Trash2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { RefObject, useState } from "react";
+import { useState } from "react";
 import { SearchTooltip } from "./SearchTooltip";
 import { validateAndCleanAnagramInput, validateAndCleanPatternInput } from "@/utils/inputValidation";
 
 interface SearchInputProps {
-  letters: string;
-  showShorter: boolean;
-  onInputChange: (value: string) => void;
-  onSearch: () => void;
-  onClear: () => void;
-  onKeyPress: (e: React.KeyboardEvent) => void;
-  onShowShorterChange: (checked: boolean) => void;
-  inputRef: RefObject<HTMLInputElement>;
+  onSearch: (value: string) => void;
+  isLoading: boolean;
+  error: string | null;
 }
 
-const SearchInput = ({ 
-  letters, 
-  showShorter,
-  onInputChange, 
-  onSearch, 
-  onClear, 
-  onKeyPress, 
-  onShowShorterChange,
-  inputRef 
-}: SearchInputProps) => {
+const SearchInput = ({ onSearch, isLoading, error }: SearchInputProps) => {
+  const [letters, setLetters] = useState("");
   const [isPatternMode, setIsPatternMode] = useState(false);
   const [isSearchMode, setIsSearchMode] = useState(true);
 
@@ -34,21 +21,21 @@ const SearchInput = ({
     let value = e.target.value.toUpperCase();
     
     if (isPatternMode) {
-      value = validateAndCleanPatternInput(value);
+      value = validateAndCleanPatternInput(value) || "";
     } else {
-      value = validateAndCleanAnagramInput(value);
+      value = validateAndCleanAnagramInput(value) || "";
     }
     
-    onInputChange(value);
+    setLetters(value);
     setIsSearchMode(true);
   };
 
   const handleSearchClick = () => {
     if (isSearchMode) {
-      onSearch();
+      onSearch(letters);
       setIsSearchMode(false);
     } else {
-      onClear();
+      setLetters("");
       setIsSearchMode(true);
     }
   };
@@ -71,7 +58,6 @@ const SearchInput = ({
       <SearchTooltip isPatternMode={isPatternMode}>
         <div className="relative flex-1">
           <Input
-            ref={inputRef}
             type="text"
             placeholder={isPatternMode ? 
               "Ingresa un patrón" : 
@@ -81,10 +67,8 @@ const SearchInput = ({
             onChange={handleInputChange}
             onKeyPress={(e) => {
               if (e.key === 'Enter') {
-                onSearch();
+                onSearch(letters);
                 setIsSearchMode(false);
-              } else {
-                onKeyPress(e);
               }
             }}
             className="text-xl h-12 text-left pr-12 border border-gray-200 rounded-md"
@@ -109,19 +93,6 @@ const SearchInput = ({
           </div>
         </div>
       </SearchTooltip>
-      <div className="flex items-center space-x-2">
-        <Switch
-          id="show-shorter"
-          checked={showShorter}
-          onCheckedChange={onShowShorterChange}
-        />
-        <label
-          htmlFor="show-shorter"
-          className="text-sm text-gray-600 cursor-pointer"
-        >
-          Mostrar palabras más cortas
-        </label>
-      </div>
     </div>
   );
 };
