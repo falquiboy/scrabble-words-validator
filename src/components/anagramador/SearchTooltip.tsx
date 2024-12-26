@@ -12,7 +12,7 @@ export const SearchTooltip = ({ isPatternMode, children }: SearchTooltipProps) =
 
   const showHelp = () => {
     toast({
-      title: isPatternMode ? "Modo patrón" : "Modo anagrama",
+      title: isPatternMode ? "Modo patrón" : "Búsqueda",
       description: (
         <div className="mt-2 space-y-2">
           {isPatternMode ? (
@@ -34,17 +34,17 @@ export const SearchTooltip = ({ isPatternMode, children }: SearchTooltipProps) =
             </>
           ) : (
             <>
-              <p>Busca anagramas:</p>
+              <p>Puedes buscar de tres formas:</p>
               <ul className="space-y-1 list-disc pl-4">
-                <li>Ingresa las letras disponibles (máx. {MAX_RACK_LETTERS})</li>
-                <li><strong>*</strong> - comodín (cualquier letra)</li>
-                <li><strong>/N</strong> - palabras de N letras (ej: CASA/4)</li>
+                <li><strong>Modo normal:</strong> Ingresa letras (máx. {MAX_RACK_LETTERS})</li>
+                <li><strong>Modo patrón:</strong> Usa ? y - para buscar patrones específicos</li>
+                <li><strong>Modo natural:</strong> Escribe tu consulta en español</li>
               </ul>
-              <p className="mt-2">Ejemplos:</p>
+              <p className="mt-2">Ejemplos en lenguaje natural:</p>
               <ul className="space-y-1 list-disc pl-4">
-                <li>"CASA" - anagramas usando esas letras</li>
-                <li>"CAS*" - anagramas usando un comodín</li>
-                <li>"CASA/4" - palabras de 4 letras usando CASA</li>
+                <li>"palabras de 5 letras que contienen z"</li>
+                <li>"palabras que empiezan con a y terminan en z"</li>
+                <li>"palabras de 4 letras que empiezan con b"</li>
               </ul>
             </>
           )}
