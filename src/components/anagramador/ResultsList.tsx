@@ -1,21 +1,57 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 import { ResultsHeader } from "./ResultsHeader";
 import { ExactResults } from "./ExactResults";
 import { ShorterResults } from "./ShorterResults";
 import { PatternResults } from "./PatternResults";
-import { SearchResults } from "@/hooks/anagramSearch/types";
 
 interface ResultsListProps {
   isLoading: boolean;
   searchTerm: string;
-  results: SearchResults;
+  results: {
+    exactMatches: string[];
+    wildcardMatches: string[];
+    additionalWildcardMatches: string[];
+    patternMatches: string[];
+  } | undefined;
   highlightWildcardLetter: (word: string, originalWord: string) => React.ReactNode;
 }
 
 const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }: ResultsListProps) => {
+  const { toast } = useToast();
   const wildcardCount = (searchTerm.match(/\*/g) || []).length;
   const isPatternSearch = searchTerm.includes('?') || searchTerm.includes('-');
+
+  const handleCopyAll = () => {
+    if (!results) return;
+
+    let allWords: string[] = [];
+
+    if (isPatternSearch) {
+      allWords = [...(results.patternMatches || [])];
+    } else if (wildcardCount === 0) {
+      allWords = [...(results.exactMatches || [])];
+    } else {
+      allWords = [...(results.wildcardMatches || [])];
+    }
+    if (results.additionalWildcardMatches?.length > 0) {
+      allWords = [...allWords, ...(results.additionalWildcardMatches || [])];
+    }
+
+    navigator.clipboard.writeText(allWords.join('\n')).then(() => {
+      toast({
+        title: "¡Copiado!",
+        description: `${allWords.length} palabras copiadas al portapapeles`,
+      });
+    }).catch(() => {
+      toast({
+        title: "Error",
+        description: "No se pudieron copiar las palabras",
+        variant: "destructive",
+      });
+    });
+  };
 
   return (
     <ScrollArea className="h-[calc(100vh-12rem)] px-1">
@@ -32,7 +68,7 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
           results.patternMatches?.length > 0)
         ) ? (
           <>
-            <ResultsHeader results={results} />
+            <ResultsHeader onCopyAll={handleCopyAll} />
             {isPatternSearch ? (
               <PatternResults
                 matches={results.patternMatches || []}

@@ -1,28 +1,62 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Check, X } from "lucide-react";
 
 interface WordInputProps {
-  onValidate: (word: string) => void;
+  word: string;
   isLoading: boolean;
-  error: string | null;
+  result: {
+    isValid: boolean;
+    checked: boolean;
+    words: string[];
+  };
+  isEditing: boolean;
+  onWordChange: (value: string) => void;
+  onValidate: () => void;
+  onClear: () => void;
+  onEditStart: () => void;
+  onEditEnd: () => void;
 }
 
-const WordInput = ({ onValidate, isLoading, error }: WordInputProps) => {
-  const [word, setWord] = useState("");
-  const [isValid, setIsValid] = useState<boolean | null>(null);
-  const [isEditing, setIsEditing] = useState(true);
-  const [isChecked, setIsChecked] = useState(false);
+const WordInput = ({
+  word,
+  isLoading,
+  result,
+  isEditing,
+  onWordChange,
+  onValidate,
+  onClear,
+  onEditStart,
+  onEditEnd
+}: WordInputProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
+  useEffect(() => {
+    const handleGlobalEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        if (word) {
+          onWordChange("");
+        }
+        onEditStart();
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 0);
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalEsc);
+    return () => window.removeEventListener('keydown', handleGlobalEsc);
+  }, [word, onWordChange, onEditStart]);
+
   const getInputBackground = () => {
-    if (!isChecked) return "bg-white text-black";
-    return isValid 
+    if (!result.checked) return "bg-white text-black";
+    return result.isValid 
       ? "bg-scrabble-valid text-white" 
       : "bg-scrabble-invalid text-white";
   };
@@ -34,49 +68,46 @@ const WordInput = ({ onValidate, isLoading, error }: WordInputProps) => {
     let value = input.value
       .split('')
       .map(char => {
+        // Convert to uppercase first
         const upperChar = char.toUpperCase();
+        
+        // If it's Ñ/ñ, keep it as Ñ without any normalization
         if (upperChar === 'Ñ' || upperChar === 'ñ') {
           return 'Ñ';
         }
+        
+        // For all other characters, remove accents
         return upperChar
           .normalize('NFD')
           .replace(/[\u0300-\u036f]/g, '')
           .normalize('NFC');
       })
       .join('')
-      .replace(/[^A-ZÑ\s]/g, '')
-      .replace(/[KW]/g, '');
+      .replace(/[^A-ZÑ\s]/g, '')  // Only allow uppercase letters, Ñ, and spaces
+      .replace(/[KW]/g, '');      // Remove K and W
     
-    setWord(value);
+    onWordChange(value);
+    
+    // Restore cursor position after the change
     setTimeout(() => {
       input.setSelectionRange(cursorPosition, cursorPosition);
     }, 0);
   };
 
-  const handleValidate = () => {
-    if (word.trim()) {
-      onValidate(word);
-      setIsEditing(false);
-      setIsChecked(true);
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      onValidate();
     }
-  };
-
-  const handleClear = () => {
-    setWord("");
-    setIsValid(null);
-    setIsEditing(true);
-    setIsChecked(false);
-    inputRef.current?.focus();
   };
 
   return (
     <div className="relative">
       <ScrollArea className={`h-40 rounded-md border border-gray-200 ${getInputBackground()}`}>
         <div className={`p-3 min-h-full ${getInputBackground()}`}>
-          {!isEditing ? (
+          {result.checked && !isEditing ? (
             <div 
               className="relative" 
-              onClick={() => setIsEditing(true)}
+              onClick={onEditStart}
             >
               <div className="flex flex-wrap gap-2">
                 {word.split(" ").map((w, i) => (
@@ -90,18 +121,14 @@ const WordInput = ({ onValidate, isLoading, error }: WordInputProps) => {
             <input
               ref={inputRef}
               type="text"
-              placeholder="Escribe una o más palabras..."
+              placeholder={!result.checked ? "Escribe una o más palabras..." : ""}
               value={word}
               onChange={handleInputChange}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  handleValidate();
-                }
-              }}
+              onKeyDown={handleKeyDown}
               className={`w-full text-2xl font-bold bg-transparent outline-none placeholder:text-gray-400`}
               onBlur={() => {
                 if (!word.trim()) {
-                  setIsEditing(false);
+                  onEditEnd();
                 }
               }}
               autoFocus
@@ -117,7 +144,7 @@ const WordInput = ({ onValidate, isLoading, error }: WordInputProps) => {
       </ScrollArea>
       {word && (
         <Button
-          onClick={handleClear}
+          onClick={onClear}
           variant="ghost"
           className="absolute right-2 top-1/2 -translate-y-1/2 h-12 w-12 p-0 hover:bg-transparent"
           type="button"
@@ -125,7 +152,7 @@ const WordInput = ({ onValidate, isLoading, error }: WordInputProps) => {
         >
           {isLoading ? (
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-600" />
-          ) : isChecked ? (
+          ) : result.checked ? (
             <X className="h-6 w-6 text-white hover:text-gray-200" />
           ) : (
             <Check className="h-6 w-6 text-scrabble-valid hover:text-scrabble-valid/80" />

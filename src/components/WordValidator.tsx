@@ -1,136 +1,129 @@
-import React, { useRef, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Check, X } from "lucide-react";
+import { useState } from "react";
+import { processDigraphs, toDisplayFormat } from "@/utils/digraphs";
+import { useWordDatabase } from "@/hooks/useWordDatabase";
+import { useWordTrie } from "@/hooks/useWordTrie";
+import { wordTrie } from "@/utils/trie";
+import Header from "./word-validator/Header";
+import WordInput from "./word-validator/WordInput";
 
-interface WordInputProps {
-  onValidate: (word: string) => void;
-  isLoading: boolean;
-  error: string | null;
-}
+const WordValidator = () => {
+  const [word, setWord] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [result, setResult] = useState<{
+    isValid: boolean;
+    checked: boolean;
+    words: string[];
+  }>({ isValid: false, checked: false, words: [] });
+  const [isEditing, setIsEditing] = useState(false);
 
-const WordInput = ({ onValidate, isLoading, error }: WordInputProps) => {
-  const [word, setWord] = React.useState("");
-  const [isValid, setIsValid] = React.useState<boolean | null>(null);
-  const [isEditing, setIsEditing] = React.useState(true);
-  const inputRef = useRef<HTMLInputElement>(null);
+  // Initialize both IndexedDB and Trie
+  const { isLoading: isDBLoading } = useWordDatabase();
+  const { isLoading: isTrieLoading } = useWordTrie();
 
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+  const handleValidate = async () => {
+    if (!word.trim() || isDBLoading || isTrieLoading) return;
 
-  const getInputBackground = () => {
-    if (isValid === null) return "bg-white text-black";
-    return isValid 
-      ? "bg-scrabble-valid text-white" 
-      : "bg-scrabble-invalid text-white";
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.target;
-    const cursorPosition = input.selectionStart || 0;
-    
-    let value = input.value
-      .split('')
-      .map(char => {
-        const upperChar = char.toUpperCase();
-        if (upperChar === 'Ñ' || upperChar === 'ñ') {
-          return 'Ñ';
-        }
-        return upperChar
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-          .normalize('NFC');
-      })
-      .join('')
-      .replace(/[^A-ZÑ\s]/g, '')
-      .replace(/[KW]/g, '');
-    
-    setWord(value);
-    setTimeout(() => {
-      input.setSelectionRange(cursorPosition, cursorPosition);
-    }, 0);
-  };
-
-  const handleValidate = () => {
-    if (word.trim()) {
-      onValidate(word);
+    setIsLoading(true);
+    try {
+      const words = word.trim().split(" ");
+      const processedWords = words.map(w => {
+        // First convert to uppercase and preserve Ñ
+        let upperWord = w.toUpperCase();
+        
+        // Special handling for Ñ - preserve it exactly as is
+        upperWord = upperWord.split('').map(char => {
+          if (char === 'Ñ' || char === 'ñ') return 'Ñ';
+          // For non-Ñ characters, remove accents
+          return char
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .normalize('NFC');
+        }).join('');
+        
+        // Process digraphs (CH -> Ç, LL -> K, RR -> W)
+        const processed = processDigraphs(upperWord);
+        
+        // Log lengths - after processing digraphs since we want to count them as single letters
+        console.log('Original word:', upperWord);
+        console.log('Processed word:', processed, 'length:', processed.length);
+        
+        // Log the actual Trie content for debugging
+        console.log('Words in Trie containing this word:', 
+          Array.from(wordTrie.getWordsStartingWith(processed))
+        );
+        
+        return processed;
+      });
+      
+      // Use Trie for fast validation
+      const isValid = processedWords.every(w => {
+        if (!w) return false; // Skip empty strings
+        console.log('Processing word for validation:', w);
+        const result = wordTrie.search(w);
+        console.log('Validation result for', w, ':', result);
+        return result;
+      });
+      
+      setResult({ 
+        isValid, 
+        checked: true, 
+        words: words.map(w => w.toUpperCase()) 
+      });
       setIsEditing(false);
+    } catch (error) {
+      console.error('Validation error:', error);
+      setResult({
+        isValid: false,
+        checked: true,
+        words: []
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleClear = () => {
-    setWord("");
-    setIsValid(null);
-    setIsEditing(true);
-    inputRef.current?.focus();
+    if (isLoading) return;
+    
+    if (word && !result.checked) {
+      handleValidate();
+    } else {
+      setWord("");
+      setResult({ isValid: false, checked: false, words: [] });
+      setIsEditing(false);
+    }
+  };
+
+  const handleWordChange = (newWord: string) => {
+    setWord(newWord);
+    if (result.checked) {
+      setResult({ ...result, checked: false });
+    }
   };
 
   return (
-    <div className="relative">
-      <ScrollArea className={`h-40 rounded-md border border-gray-200 ${getInputBackground()}`}>
-        <div className={`p-3 min-h-full ${getInputBackground()}`}>
-          {!isEditing ? (
-            <div 
-              className="relative" 
-              onClick={() => setIsEditing(true)}
-            >
-              <div className="flex flex-wrap gap-2">
-                {word.split(" ").map((w, i) => (
-                  <span key={i} className="text-4xl font-bold">
-                    {w}
-                  </span>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <input
-              ref={inputRef}
-              type="text"
-              placeholder="Escribe una o más palabras..."
-              value={word}
-              onChange={handleInputChange}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  handleValidate();
-                }
-              }}
-              className={`w-full text-2xl font-bold bg-transparent outline-none placeholder:text-gray-400`}
-              onBlur={() => {
-                if (!word.trim()) {
-                  setIsEditing(false);
-                }
-              }}
-              autoFocus
-              spellCheck="false"
-              autoCorrect="off"
-              autoCapitalize="off"
-              autoComplete="off"
-              inputMode="text"
-              enterKeyHint="done"
-            />
-          )}
-        </div>
-      </ScrollArea>
-      {word && (
-        <Button
-          onClick={handleClear}
-          variant="ghost"
-          className="absolute right-2 top-1/2 -translate-y-1/2 h-12 w-12 p-0 hover:bg-transparent"
-          type="button"
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-600" />
-          ) : isValid !== null ? (
-            <X className="h-6 w-6 text-white hover:text-gray-200" />
-          ) : (
-            <Check className="h-6 w-6 text-scrabble-valid hover:text-scrabble-valid/80" />
-          )}
-        </Button>
-      )}
+    <div className="w-full max-w-md space-y-4 px-4">
+      <Header />
+      <div className="space-y-4">
+        <WordInput
+          word={word}
+          isLoading={isLoading}
+          result={result}
+          isEditing={isEditing}
+          onWordChange={handleWordChange}
+          onValidate={handleValidate}
+          onClear={handleClear}
+          onEditStart={() => setIsEditing(true)}
+          onEditEnd={() => setIsEditing(false)}
+        />
+        {(isDBLoading || isTrieLoading) && (
+          <div className="text-center">
+            <p className="text-sm text-gray-500">Cargando diccionario...</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
 
-export default WordInput;
+export default WordValidator;
