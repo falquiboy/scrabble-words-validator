@@ -38,8 +38,11 @@ const SearchInput = ({
   
   const { processQuery } = useNaturalSearch({
     onResults: (results) => {
-      // We don't use the Trie in natural mode, results come directly from DB
-      console.log('Natural language results:', results);
+      // Update the search term to trigger the results display
+      if (results && results.length > 0) {
+        onInputChange(results.join('\n'));
+        onSearch();
+      }
     }
   });
 
