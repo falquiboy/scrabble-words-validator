@@ -77,7 +77,13 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
         onSearch={handleSearch}
         onClear={handleClear}
         onKeyPress={handleKeyPress}
-        onShowShorterChange={setShowShorter}
+        onShowShorterChange={(checked) => {
+          setShowShorter(checked);
+          if (searchTerm) {
+            // Trigger a new search when toggling showShorter
+            setSearchTerm(searchTerm);
+          }
+        }}
         inputRef={inputRef}
       />
       <ResultsList
