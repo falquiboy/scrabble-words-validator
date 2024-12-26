@@ -19,20 +19,39 @@ export const useOfflineAnagramSearch = (
       };
     }
 
-    const { exactMatches, wildcardMatches, additionalWildcardMatches } = findAnagrams(
-      searchTerm,
-      showShorter,
-      targetLength,
-      trie
-    );
+    // Check if it's a pattern search
+    const isPatternSearch = searchTerm.includes('?') || searchTerm.includes('-');
+    
+    if (isPatternSearch) {
+      const matches = findPatternMatches(searchTerm, trie);
+      console.log('Pattern search results:', matches);
+      return {
+        exactMatches: [],
+        wildcardMatches: [],
+        additionalWildcardMatches: [],
+        patternMatches: matches
+      };
+    }
 
-    const patternMatches = findPatternMatches(searchTerm, trie);
+    // Regular anagram search
+    const { exactMatches, wildcardMatches, additionalWildcardMatches } = findAnagrams(searchTerm, trie);
+    console.log('Anagram search results:', { exactMatches, wildcardMatches, additionalWildcardMatches });
+
+    // Filter by target length if specified
+    if (targetLength !== null) {
+      return {
+        exactMatches: exactMatches.filter(word => word.length === targetLength),
+        wildcardMatches: wildcardMatches.filter(word => word.length === targetLength),
+        additionalWildcardMatches: additionalWildcardMatches.filter(word => word.length === targetLength),
+        patternMatches: []
+      };
+    }
 
     return {
       exactMatches,
       wildcardMatches,
       additionalWildcardMatches,
-      patternMatches
+      patternMatches: []
     };
   }, [searchTerm, showShorter, targetLength, trie]);
 

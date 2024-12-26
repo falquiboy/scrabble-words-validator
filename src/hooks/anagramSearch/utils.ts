@@ -1,6 +1,5 @@
 import { SPANISH_LETTERS } from './constants';
 import { processDigraphs, generateAlphagram } from '@/utils/digraphs';
-import { wordTrie } from '@/utils/trie';
 import { Trie } from '@/utils/trie/types';
 
 export const generateWildcardCombinations = (base: string, remainingWildcards: number): string[] => {
@@ -14,25 +13,25 @@ export const generateWildcardCombinations = (base: string, remainingWildcards: n
   return combinations;
 };
 
-export const findExactMatches = (processedInput: string): Set<string> => {
+const findExactMatches = (processedInput: string, trie: Trie): Set<string> => {
   const alphagram = generateAlphagram(processedInput);
-  return new Set(wordTrie.findAnagrams(alphagram));
+  return new Set(trie.findAnagrams(alphagram));
 };
 
-export const findWildcardMatches = (processedInput: string, wildcardCount: number): Set<string> => {
+const findWildcardMatches = (processedInput: string, wildcardCount: number, trie: Trie): Set<string> => {
   const matches = new Set<string>();
   const combinations = generateWildcardCombinations(processedInput, wildcardCount);
   
   for (const combo of combinations) {
     const alphagram = generateAlphagram(combo);
-    const comboMatches = wordTrie.findAnagrams(alphagram);
+    const comboMatches = trie.findAnagrams(alphagram);
     comboMatches.forEach(match => matches.add(match));
   }
   
   return matches;
 };
 
-export const findShorterMatches = (letters: string): Set<string> => {
+const findShorterMatches = (letters: string, trie: Trie): Set<string> => {
   const matches = new Set<string>();
   const letterArray = letters.split('');
   
@@ -42,7 +41,7 @@ export const findShorterMatches = (letters: string): Set<string> => {
     
     for (const combo of combinations) {
       const alphagram = generateAlphagram(combo.join(''));
-      const comboMatches = wordTrie.findAnagrams(alphagram);
+      const comboMatches = trie.findAnagrams(alphagram);
       comboMatches.forEach(match => matches.add(match));
     }
   }
@@ -71,14 +70,14 @@ const generateCombinations = (arr: string[], len: number): string[][] => {
   return result;
 };
 
-export const findAdditionalMatches = (baseLetters: string, wildcardCount: number): Set<string> => {
+const findAdditionalMatches = (baseLetters: string, wildcardCount: number, trie: Trie): Set<string> => {
   const matches = new Set<string>();
   
   // For the base letters (without wildcards)
   for (const letter of SPANISH_LETTERS) {
     const newBase = baseLetters + letter;
     const alphagram = generateAlphagram(newBase);
-    const baseMatches = wordTrie.findAnagrams(alphagram);
+    const baseMatches = trie.findAnagrams(alphagram);
     baseMatches.forEach(match => matches.add(match));
   }
   
@@ -89,7 +88,7 @@ export const findAdditionalMatches = (baseLetters: string, wildcardCount: number
       for (const letter of SPANISH_LETTERS) {
         const newCombo = combo + letter;
         const alphagram = generateAlphagram(newCombo);
-        const comboMatches = wordTrie.findAnagrams(alphagram);
+        const comboMatches = trie.findAnagrams(alphagram);
         comboMatches.forEach(match => matches.add(match));
       }
     }
@@ -98,19 +97,30 @@ export const findAdditionalMatches = (baseLetters: string, wildcardCount: number
   return matches;
 };
 
-export const findAnagrams = (
-  searchTerm: string,
-  showShorter: boolean,
-  targetLength: number | null,
-  trie: Trie
-) => {
-  const exactMatches = Array.from(findExactMatches(searchTerm));
-  const wildcardMatches = Array.from(findWildcardMatches(searchTerm, 1));
-  const additionalWildcardMatches = Array.from(findAdditionalMatches(searchTerm, 1));
+export const findAnagrams = (searchTerm: string, trie: Trie) => {
+  // Count wildcards and process input
+  const wildcardCount = (searchTerm.match(/\*/g) || []).length;
+  const lettersOnly = searchTerm.replace(/\*/g, '');
+  const processedInput = processDigraphs(lettersOnly);
+
+  console.log('Processing search:', {
+    searchTerm,
+    wildcardCount,
+    processedInput
+  });
+
+  // Find matches based on wildcards
+  const exactMatches = Array.from(wildcardCount === 0 ? 
+    findExactMatches(processedInput, trie) : 
+    findWildcardMatches(processedInput, wildcardCount, trie)
+  );
+
+  // Find additional matches with one more letter
+  const additionalWildcardMatches = Array.from(findAdditionalMatches(processedInput, wildcardCount, trie));
 
   return {
     exactMatches,
-    wildcardMatches,
+    wildcardMatches: wildcardCount > 0 ? exactMatches : [],
     additionalWildcardMatches
   };
 };
