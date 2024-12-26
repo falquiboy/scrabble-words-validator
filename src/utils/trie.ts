@@ -49,4 +49,11 @@ export class Trie implements TrieInterface {
       return wordAlphagram === alphagram;
     });
   }
+
+  clear() {
+    this.root = createNode();
+  }
 }
+
+// Create and export a singleton instance
+export const wordTrie = new Trie();
