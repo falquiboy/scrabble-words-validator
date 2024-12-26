@@ -1,5 +1,4 @@
 import { SPANISH_LETTERS } from './constants';
-import { findAnagrams } from '@/utils/trie/types';
 import { processDigraphs, generateAlphagram } from '@/utils/digraphs';
 import { Trie } from '@/utils/trie/types';
 
