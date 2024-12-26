@@ -43,11 +43,18 @@ const SearchInput = ({
       });
 
       if (error) throw error;
+      
       if (data.pattern) {
         onInputChange(data.pattern);
         toast({
           title: "Consulta procesada",
-          description: `Patrón generado: ${data.pattern}`,
+          description: `Se encontraron ${data.results?.length || 0} palabras`,
+        });
+      } else if (data.error) {
+        toast({
+          title: "Error",
+          description: data.error,
+          variant: "destructive",
         });
       }
     } catch (error) {

@@ -43,22 +43,17 @@ async function generateSQLQuery(query: string, retries = 3): Promise<string> {
               - Use UPPER() for case-insensitive comparison
               - For "contains" queries, use LIKE with wildcards
               - Return results ordered by word length and then alphabetically
+              - Limit results to 1000 words to prevent overload
               
               Examples:
               "palabras de 5 letras que contienen z" ->
-              SELECT word FROM words WHERE lenght = 5 AND UPPER(word) LIKE '%Z%' ORDER BY word;
+              SELECT word FROM words WHERE lenght = 5 AND UPPER(word) LIKE '%Z%' ORDER BY word LIMIT 1000;
 
               "palabras que empiezan con a y terminan en z" ->
-              SELECT word FROM words WHERE UPPER(word) LIKE 'A%Z' ORDER BY lenght, word;
+              SELECT word FROM words WHERE UPPER(word) LIKE 'A%Z' ORDER BY lenght, word LIMIT 1000;
 
               "palabras de 4 letras que empiezan con b" ->
-              SELECT word FROM words WHERE lenght = 4 AND UPPER(word) LIKE 'B%' ORDER BY word;
-
-              "palabras que contengan la letra ñ" ->
-              SELECT word FROM words WHERE UPPER(word) LIKE '%Ñ%' ORDER BY lenght, word;
-
-              "palabras de 6 letras que contengan ch" ->
-              SELECT word FROM words WHERE lenght = 6 AND UPPER(word) LIKE '%CH%' ORDER BY word;`
+              SELECT word FROM words WHERE lenght = 4 AND UPPER(word) LIKE 'B%' ORDER BY word LIMIT 1000;`
             },
             { role: 'user', content: query }
           ],
@@ -100,10 +95,12 @@ async function generateSQLQuery(query: string, retries = 3): Promise<string> {
 async function executeQuery(sqlQuery: string) {
   try {
     console.log('Executing SQL query:', sqlQuery);
-    const { data, error } = await supabase.from('words')
+    const { data, error } = await supabase
+      .from('words')
       .select('word')
       .order('lenght')
-      .order('word');
+      .order('word')
+      .limit(1000);
 
     if (error) throw error;
     console.log(`Query returned ${data.length} results`);
@@ -135,9 +132,15 @@ serve(async (req) => {
     const sqlQuery = await generateSQLQuery(query);
     const results = await executeQuery(sqlQuery);
     
+    // Return a pattern that matches the query results
+    const pattern = results.length > 0 ? 
+      `${results[0].length === 5 ? '?????' : '?'.repeat(results[0].length)},${results.join('')}` : 
+      '';
+    
     return new Response(JSON.stringify({ 
+      pattern,
       results,
-      sql: sqlQuery // Include the SQL query for debugging
+      sql: sqlQuery
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
