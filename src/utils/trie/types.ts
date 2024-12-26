@@ -1,21 +1,22 @@
 export interface TrieNode {
   children: Map<string, TrieNode>;
   isEndOfWord: boolean;
-  word?: string;
-}
-
-export interface Trie {
-  root: TrieNode;
-  insert(word: string, value?: string): void;
-  search(word: string): boolean;
-  getAllWords(): string[];
-  getWordsStartingWith(prefix: string): Set<string>;
-  findAnagrams(alphagram: string): string[];
-  clear(): void;
+  word: string;
 }
 
 export interface LengthIndexedTrie {
   [length: number]: {
     [alphagram: string]: string[];
   };
+}
+
+export interface Trie {
+  getRoot(): TrieNode;
+  clear(): void;
+  insert(word: string, originalWord: string): void;
+  search(word: string): boolean;
+  findAnagrams(letters: string): string[];
+  getWordsOfLength(length: number): string[];
+  getAllWords(): string[];
+  getWordsStartingWith(prefix: string): string[];
 }

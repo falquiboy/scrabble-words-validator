@@ -38,6 +38,7 @@ const findShorterMatches = (letters: string, trie: Trie): Set<string> => {
   const matches = new Set<string>();
   const letterArray = letters.split('');
   
+  // Generate all possible combinations of letters
   for (let len = 1; len < letters.length; len++) {
     const combinations = generateCombinations(letterArray, len);
     
@@ -51,6 +52,7 @@ const findShorterMatches = (letters: string, trie: Trie): Set<string> => {
   return matches;
 };
 
+// Helper function to generate all possible combinations of letters
 const generateCombinations = (arr: string[], len: number): string[][] => {
   const result: string[][] = [];
   
@@ -76,8 +78,7 @@ const findAdditionalMatches = (baseLetters: string, wildcardCount: number, trie:
   
   // For the base letters (without wildcards)
   for (const letter of SPANISH_LETTERS) {
-    const processedLetter = processDigraphs(letter);
-    const newBase = baseLetters + processedLetter;
+    const newBase = baseLetters + letter;
     const alphagram = generateAlphagram(newBase);
     const baseMatches = trie.findAnagrams(alphagram);
     baseMatches.forEach(match => matches.add(match));
@@ -88,8 +89,7 @@ const findAdditionalMatches = (baseLetters: string, wildcardCount: number, trie:
     const wildcardCombos = generateWildcardCombinations(baseLetters, wildcardCount);
     for (const combo of wildcardCombos) {
       for (const letter of SPANISH_LETTERS) {
-        const processedLetter = processDigraphs(letter);
-        const newCombo = combo + processedLetter;
+        const newCombo = combo + letter;
         const alphagram = generateAlphagram(newCombo);
         const comboMatches = trie.findAnagrams(alphagram);
         comboMatches.forEach(match => matches.add(match));
@@ -100,11 +100,10 @@ const findAdditionalMatches = (baseLetters: string, wildcardCount: number, trie:
   return matches;
 };
 
-export const findAnagramsUtil = (searchTerm: string, trie: Trie, showShorter: boolean = false) => {
+export const findAnagrams = (searchTerm: string, trie: Trie, showShorter: boolean = false) => {
   // Count wildcards and process input
   const wildcardCount = (searchTerm.match(/\*/g) || []).length;
   const lettersOnly = searchTerm.replace(/\*/g, '');
-  // Process digraphs first, before any additional letter handling
   const processedInput = processDigraphs(lettersOnly);
 
   console.log('Processing search:', {
