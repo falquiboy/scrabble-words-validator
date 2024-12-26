@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react';
 import { wordDB } from '@/utils/wordDatabase';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
 export const useWordDatabase = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
 
   useEffect(() => {
     let mounted = true;
@@ -70,12 +68,6 @@ export const useWordDatabase = () => {
 
                 if (totalWords % 50000 === 0) {
                   console.log('Words loaded:', totalWords);
-                  if (totalWords % 100000 === 0) {
-                    toast({
-                      title: "Cargando diccionario...",
-                      description: `${totalWords.toLocaleString()} palabras cargadas.`,
-                    });
-                  }
                 }
               }
             } catch (err) {
@@ -91,28 +83,14 @@ export const useWordDatabase = () => {
           if (mounted) {
             await wordDB.updateMetadata();
             console.log('Total words loaded:', totalWords);
-            toast({
-              title: "Diccionario actualizado",
-              description: `${totalWords.toLocaleString()} palabras disponibles offline.`,
-            });
           }
         } else {
           console.log('Database is up to date');
-          toast({
-            title: "Diccionario cargado",
-            description: `${existingWords.length.toLocaleString()} palabras disponibles offline.`,
-          });
         }
       } catch (err) {
         console.error('Error initializing word database:', err);
         if (!mounted) return;
-        
         setError(err instanceof Error ? err.message : 'Unknown error');
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "No se pudo cargar el diccionario.",
-        });
       } finally {
         if (mounted) {
           setIsLoading(false);
@@ -125,7 +103,7 @@ export const useWordDatabase = () => {
     return () => {
       mounted = false;
     };
-  }, [toast]);
+  }, []);
 
   return { isLoading, error };
 };

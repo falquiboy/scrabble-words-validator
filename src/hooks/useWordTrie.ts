@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { wordDB } from '@/utils/wordDatabase';
 import { wordTrie } from '@/utils/trie';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { processDigraphs } from '@/utils/digraphs';
 
 interface WordTrieState {
@@ -22,7 +22,6 @@ export const useWordTrie = (): WordTrieState => {
     trie: wordTrie,
     wordCount: 0
   });
-  const { toast } = useToast();
 
   useEffect(() => {
     let mounted = true;
@@ -85,17 +84,6 @@ export const useWordTrie = (): WordTrieState => {
               wordTrie.insert(processedWord, word);
               processedCount++;
             });
-            
-            // Update state every 50k words to show progress
-            if ((i + batchSize) % 50000 === 0) {
-              console.log(`Built Trie with ${i + batchSize} words...`);
-              if (mounted) {
-                setState(prev => ({
-                  ...prev,
-                  wordCount: processedCount
-                }));
-              }
-            }
 
             // Allow other tasks to run
             await new Promise(resolve => setTimeout(resolve, 0));
@@ -116,9 +104,10 @@ export const useWordTrie = (): WordTrieState => {
               wordCount: processedCount
             });
 
-            toast({
-              title: "Diccionario cargado",
-              description: `${processedCount.toLocaleString()} palabras disponibles para búsqueda.`,
+            // Show the session notification using Sonner
+            toast.success(`Diccionario listo: ${processedCount.toLocaleString()} palabras`, {
+              duration: 3000,
+              position: 'top-right',
             });
           }
 
@@ -134,10 +123,9 @@ export const useWordTrie = (): WordTrieState => {
             isLoading: false
           }));
 
-          toast({
-            variant: "destructive",
-            title: "Error",
-            description: "No se pudo inicializar el validador.",
+          toast.error("No se pudo inicializar el diccionario", {
+            duration: 4000,
+            position: 'top-right',
           });
         } finally {
           initializationPromise = null;
@@ -152,7 +140,7 @@ export const useWordTrie = (): WordTrieState => {
     return () => {
       mounted = false;
     };
-  }, [toast]);
+  }, []);
 
   return state;
 };
