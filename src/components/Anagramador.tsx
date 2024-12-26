@@ -1,11 +1,12 @@
 import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import SearchInput from "./anagramador/SearchInput";
-import ResultsHeader from "./anagramador/ResultsHeader";
+import { ResultsHeader } from "./anagramador/ResultsHeader";
 import ResultsList from "./anagramador/ResultsList";
 import { Trie } from "@/utils/trie";
 import { validateAndCleanPatternInput } from "@/utils/inputValidation";
 import { searchPattern } from "@/utils/trie/search";
+import { SearchResults } from "@/hooks/anagramSearch/types";
 
 interface AnagramadorProps {
   trie: Trie;
@@ -16,13 +17,23 @@ interface AnagramadorProps {
 const Anagramador = ({ trie, isLoading, error }: AnagramadorProps) => {
   const { toast } = useToast();
   const [pattern, setPattern] = useState("");
-  const [results, setResults] = useState<string[]>([]);
+  const [results, setResults] = useState<SearchResults>({
+    exactMatches: [],
+    wildcardMatches: [],
+    additionalWildcardMatches: [],
+    patternMatches: []
+  });
 
-  const handleSearch = useCallback((pattern: string) => {
-    const cleanedPattern = validateAndCleanPatternInput(pattern);
+  const handleSearch = useCallback((searchPattern: string) => {
+    const cleanedPattern = validateAndCleanPatternInput(searchPattern);
     if (cleanedPattern) {
       const searchResults = searchPattern(trie, cleanedPattern);
-      setResults(searchResults);
+      setResults({
+        exactMatches: searchResults,
+        wildcardMatches: [],
+        additionalWildcardMatches: [],
+        patternMatches: []
+      });
     } else {
       toast({
         variant: "destructive",
