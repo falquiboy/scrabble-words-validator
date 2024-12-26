@@ -8,8 +8,70 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function callOpenAIWithRetry(query: string, retries = 3): Promise<string> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: `You are a Spanish language query parser that converts natural language queries into pattern search syntax.
+              Rules:
+              - Use ? for single letters
+              - Use - for zero or more letters
+              - If a specific letter is mentioned, include it in the pattern
+              - Return ONLY the pattern, no explanation
+              Examples:
+              "palabras de 5 letras que contienen z" -> "????Z"
+              "palabras que empiezan con a y terminan en z" -> "A-Z"
+              "palabras de 4 letras que empiezan con b" -> "B???"
+              `
+            },
+            { role: 'user', content: query }
+          ],
+          temperature: 0.1,
+        }),
+      });
+
+      if (response.status === 429) {
+        console.log(`Rate limited, attempt ${i + 1} of ${retries}, waiting before retry...`);
+        await sleep(Math.pow(2, i) * 1000); // Exponential backoff
+        continue;
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('OpenAI API error:', errorData);
+        throw new Error(`OpenAI API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('OpenAI response:', data);
+
+      if (!data.choices?.[0]?.message?.content) {
+        throw new Error('Invalid response format from OpenAI');
+      }
+
+      return data.choices[0].message.content.trim();
+    } catch (error) {
+      if (i === retries - 1) throw error;
+      console.error(`Attempt ${i + 1} failed:`, error);
+      await sleep(Math.pow(2, i) * 1000);
+    }
+  }
+  throw new Error('Max retries reached');
+}
+
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -27,58 +89,20 @@ serve(async (req) => {
       throw new Error('OpenAI API key is not configured');
     }
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a Spanish language query parser that converts natural language queries into pattern search syntax.
-            Rules:
-            - Use ? for single letters
-            - Use - for zero or more letters
-            - If a specific letter is mentioned, include it in the pattern
-            - Return ONLY the pattern, no explanation
-            Examples:
-            "palabras de 5 letras que contienen z" -> "????Z"
-            "palabras que empiezan con a y terminan en z" -> "A-Z"
-            "palabras de 4 letras que empiezan con b" -> "B???"
-            `
-          },
-          { role: 'user', content: query }
-        ],
-        temperature: 0.1,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error('OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log('OpenAI response:', data);
-
-    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-      throw new Error('Invalid response format from OpenAI');
-    }
-
-    const pattern = data.choices[0].message.content.trim();
+    const pattern = await callOpenAIWithRetry(query);
     
     return new Response(JSON.stringify({ pattern }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
     console.error('Error processing natural language query:', error);
+    const errorMessage = error.message === 'Max retries reached' 
+      ? 'El servicio está temporalmente sobrecargado. Por favor, inténtalo de nuevo en unos momentos.'
+      : error.message || 'An error occurred while processing the query';
+    
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'An error occurred while processing the query',
+        error: errorMessage,
         details: error.toString()
       }), {
       status: 500,
