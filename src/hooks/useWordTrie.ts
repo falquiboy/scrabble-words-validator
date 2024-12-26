@@ -14,6 +14,7 @@ interface WordTrieState {
 export const useWordTrie = (): WordTrieState => {
   const isInitializedRef = useRef(false);
   const initializationPromiseRef = useRef<Promise<void> | null>(null);
+  const toastShownRef = useRef(false);
   
   const [state, setState] = useState<WordTrieState>({
     isLoading: !isInitializedRef.current,
@@ -24,6 +25,16 @@ export const useWordTrie = (): WordTrieState => {
 
   useEffect(() => {
     let mounted = true;
+
+    const showReadyToast = (wordCount: number) => {
+      if (!toastShownRef.current) {
+        toast.success(`Lexicón listo: ${wordCount.toLocaleString()} palabras`, {
+          duration: 3000,
+          position: 'top-right',
+        });
+        toastShownRef.current = true;
+      }
+    };
 
     const initTrie = async () => {
       // If already initialized and has words, return immediately
@@ -38,6 +49,7 @@ export const useWordTrie = (): WordTrieState => {
         if (currentWords.length === 0) {
           console.log('Trie is empty but marked as initialized, resetting...');
           isInitializedRef.current = false;
+          toastShownRef.current = false;
           wordTrie.clear();
         } else {
           console.log('Trie is properly initialized with words:', currentWords.length);
@@ -47,11 +59,7 @@ export const useWordTrie = (): WordTrieState => {
               isLoading: false,
               wordCount: currentWords.length
             }));
-            // Show toast when words are already loaded
-            toast.success(`Lexicón listo: ${currentWords.length.toLocaleString()} palabras`, {
-              duration: 3000,
-              position: 'top-right',
-            });
+            showReadyToast(currentWords.length);
           }
           return;
         }
@@ -127,15 +135,10 @@ export const useWordTrie = (): WordTrieState => {
               trie: wordTrie,
               wordCount: processedCount
             });
-
-            // Show toast immediately after Trie is populated
-            toast.success(`Lexicón listo: ${processedCount.toLocaleString()} palabras`, {
-              duration: 3000,
-              position: 'top-right',
-            });
+            
+            isInitializedRef.current = true;
+            showReadyToast(processedCount);
           }
-
-          isInitializedRef.current = true;
         } catch (err) {
           console.error('Error initializing trie:', err);
           if (!mounted) return;
