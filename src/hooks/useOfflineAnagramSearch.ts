@@ -51,6 +51,9 @@ export const useOfflineAnagramSearch = (
 
     // Filter by target length if specified
     if (targetLength !== null) {
+      // Remove the length filter from the search term for comparison
+      const lettersOnly = searchTerm.replace(/\/\d+$/, '');
+      
       return {
         exactMatches: exactMatches.filter(word => word.length === targetLength),
         wildcardMatches: wildcardMatches.filter(word => word.length === targetLength),
