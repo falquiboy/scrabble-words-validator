@@ -1,4 +1,5 @@
 import { SPANISH_LETTERS } from './constants';
+import { findAnagrams } from '@/utils/trie/types';
 import { processDigraphs, generateAlphagram } from '@/utils/digraphs';
 import { Trie } from '@/utils/trie/types';
 
@@ -80,8 +81,9 @@ const findAdditionalMatches = (baseLetters: string, wildcardCount: number, trie:
   
   // For the base letters (without wildcards)
   for (const letter of SPANISH_LETTERS) {
-    // When adding K or W, use them directly as they are already in internal representation
-    const newBase = baseLetters + letter;
+    // Process the new letter first to handle any potential digraphs
+    const processedLetter = processDigraphs(letter);
+    const newBase = baseLetters + processedLetter;
     const alphagram = generateAlphagram(newBase);
     const baseMatches = trie.findAnagrams(alphagram);
     baseMatches.forEach(match => matches.add(match));
@@ -92,8 +94,9 @@ const findAdditionalMatches = (baseLetters: string, wildcardCount: number, trie:
     const wildcardCombos = generateWildcardCombinations(baseLetters, wildcardCount);
     for (const combo of wildcardCombos) {
       for (const letter of SPANISH_LETTERS) {
-        // When adding K or W, use them directly as they are already in internal representation
-        const newCombo = combo + letter;
+        // Process the new letter first to handle any potential digraphs
+        const processedLetter = processDigraphs(letter);
+        const newCombo = combo + processedLetter;
         const alphagram = generateAlphagram(newCombo);
         const comboMatches = trie.findAnagrams(alphagram);
         comboMatches.forEach(match => matches.add(match));
