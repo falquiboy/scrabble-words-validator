@@ -11,9 +11,13 @@ interface WordTrieState {
   wordCount: number;
 }
 
+// Global flag to track initialization
+let isInitialized = false;
+let initializationPromise: Promise<void> | null = null;
+
 export const useWordTrie = (): WordTrieState => {
   const [state, setState] = useState<WordTrieState>({
-    isLoading: true,
+    isLoading: !isInitialized,
     error: null,
     trie: wordTrie,
     wordCount: 0
@@ -24,98 +28,123 @@ export const useWordTrie = (): WordTrieState => {
     let mounted = true;
 
     const initTrie = async () => {
-      try {
-        // Initialize database first
-        await wordDB.init();
-        
-        // Get all words from IndexedDB
-        const words = await wordDB.getAllWords();
-        
-        if (!mounted) return;
-
-        if (words.length === 0) {
-          throw new Error('No words found in IndexedDB');
+      // If already initialized, return immediately
+      if (isInitialized) {
+        if (mounted) {
+          setState(prev => ({
+            ...prev,
+            isLoading: false
+          }));
         }
+        return;
+      }
 
-        // Clear trie before rebuilding
-        wordTrie.clear();
+      // If initialization is in progress, wait for it
+      if (initializationPromise) {
+        await initializationPromise;
+        if (mounted) {
+          setState(prev => ({
+            ...prev,
+            isLoading: false
+          }));
+        }
+        return;
+      }
 
-        // Build trie with words
-        console.log('Starting Trie build with', words.length, 'words');
-        const startTime = performance.now();
-        
-        // Build in batches to avoid blocking the main thread
-        const batchSize = 10000;
-        let processedCount = 0;
-
-        for (let i = 0; i < words.length; i += batchSize) {
-          const batch = words.slice(i, i + batchSize);
-          batch.forEach(word => {
-            // Process the word for proper digraph handling
-            const processedWord = processDigraphs(word.toUpperCase());
-            wordTrie.insert(processedWord, word);
-            processedCount++;
-          });
+      // Start new initialization
+      initializationPromise = (async () => {
+        try {
+          // Initialize database first
+          await wordDB.init();
           
-          // Update state every 50k words to show progress
-          if ((i + batchSize) % 50000 === 0) {
-            console.log(`Built Trie with ${i + batchSize} words...`);
-            if (mounted) {
-              setState(prev => ({
-                ...prev,
-                wordCount: processedCount
-              }));
-            }
+          // Get all words from IndexedDB
+          const words = await wordDB.getAllWords();
+          
+          if (!mounted) return;
+
+          if (words.length === 0) {
+            throw new Error('No words found in IndexedDB');
           }
 
-          // Allow other tasks to run
-          await new Promise(resolve => setTimeout(resolve, 0));
-        }
+          // Clear trie before rebuilding
+          wordTrie.clear();
 
-        const endTime = performance.now();
-        console.log(`Trie build completed in ${((endTime - startTime) / 1000).toFixed(2)} seconds`);
-        
-        // Verify Trie contents
-        const trieWords = wordTrie.getAllWords();
-        console.log('Total words in Trie:', trieWords.length);
-        
-        // Test some common words to verify proper insertion
-        const testWords = ['CONTRATO', 'CASA', 'PERRO', 'AMOR', 'VIDA'];
-        testWords.forEach(word => {
-          const processedWord = processDigraphs(word);
-          const exists = wordTrie.search(processedWord);
-          console.log(`Is "${word}" in Trie?`, exists);
-        });
+          // Build trie with words
+          console.log('Starting Trie build with', words.length, 'words');
+          const startTime = performance.now();
+          
+          // Build in batches to avoid blocking the main thread
+          const batchSize = 10000;
+          let processedCount = 0;
 
-        if (mounted) {
-          setState({
-            isLoading: false,
-            error: null,
-            trie: wordTrie,
-            wordCount: processedCount
-          });
+          for (let i = 0; i < words.length; i += batchSize) {
+            const batch = words.slice(i, i + batchSize);
+            batch.forEach(word => {
+              // Process the word for proper digraph handling
+              const processedWord = processDigraphs(word.toUpperCase());
+              wordTrie.insert(processedWord, word);
+              processedCount++;
+            });
+            
+            // Update state every 50k words to show progress
+            if ((i + batchSize) % 50000 === 0) {
+              console.log(`Built Trie with ${i + batchSize} words...`);
+              if (mounted) {
+                setState(prev => ({
+                  ...prev,
+                  wordCount: processedCount
+                }));
+              }
+            }
+
+            // Allow other tasks to run
+            await new Promise(resolve => setTimeout(resolve, 0));
+          }
+
+          const endTime = performance.now();
+          console.log(`Trie build completed in ${((endTime - startTime) / 1000).toFixed(2)} seconds`);
+          
+          // Verify Trie contents
+          const trieWords = wordTrie.getAllWords();
+          console.log('Total words in Trie:', trieWords.length);
+
+          if (mounted) {
+            setState({
+              isLoading: false,
+              error: null,
+              trie: wordTrie,
+              wordCount: processedCount
+            });
+
+            toast({
+              title: "Diccionario cargado",
+              description: `${processedCount.toLocaleString()} palabras disponibles para búsqueda.`,
+            });
+          }
+
+          // Mark as initialized only after successful completion
+          isInitialized = true;
+        } catch (err) {
+          console.error('Error initializing trie:', err);
+          if (!mounted) return;
+          
+          setState(prev => ({
+            ...prev,
+            error: err instanceof Error ? err.message : 'Unknown error',
+            isLoading: false
+          }));
 
           toast({
-            title: "Diccionario cargado",
-            description: `${processedCount.toLocaleString()} palabras disponibles para búsqueda.`,
+            variant: "destructive",
+            title: "Error",
+            description: "No se pudo inicializar el validador.",
           });
+        } finally {
+          initializationPromise = null;
         }
-      } catch (err) {
-        console.error('Error initializing trie:', err);
-        if (!mounted) return;
-        
-        setState(prev => ({
-          ...prev,
-          error: err instanceof Error ? err.message : 'Unknown error',
-          isLoading: false
-        }));
+      })();
 
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "No se pudo inicializar el validador.",
-        });
-      }
+      await initializationPromise;
     };
 
     initTrie();
