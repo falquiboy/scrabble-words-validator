@@ -43,7 +43,6 @@ async function generateSQLQuery(query: string, retries = 3): Promise<string> {
               - Use UPPER() for case-insensitive comparison
               - For "contains" queries, use LIKE with wildcards
               - Return results ordered by word length and then alphabetically
-              - Do NOT use LIMIT unless specifically requested
               - For exact length queries, use lenght = X
               
               Examples:
@@ -96,13 +95,13 @@ async function generateSQLQuery(query: string, retries = 3): Promise<string> {
 async function executeQuery(sqlQuery: string) {
   try {
     console.log('Executing SQL query:', sqlQuery);
-    const { data, error } = await supabase
-      .from('words')
-      .select('word');
+    const { data, error } = await supabase.rpc('execute_natural_query', {
+      query_text: sqlQuery
+    });
 
     if (error) throw error;
     console.log(`Query returned ${data.length} results`);
-    return data.map(row => row.word);
+    return data.map((row: any) => row.word);
   } catch (error) {
     console.error('Error executing query:', error);
     throw error;
