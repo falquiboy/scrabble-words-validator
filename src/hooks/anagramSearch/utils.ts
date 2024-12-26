@@ -73,20 +73,26 @@ const generateCombinations = (arr: string[], len: number): string[][] => {
   return result;
 };
 
+// Process digraphs before finding additional matches to prevent invalid combinations
 const findAdditionalMatches = (baseLetters: string, wildcardCount: number, trie: Trie): Set<string> => {
   const matches = new Set<string>();
   
-  // For the base letters (without wildcards)
+  // First process the base letters to handle digraphs
+  const processedBase = processDigraphs(baseLetters);
+  
+  // For each additional letter, we'll add it to the processed base
+  // This ensures digraphs are already handled and won't combine with new letters
   for (const letter of SPANISH_LETTERS) {
-    const newBase = baseLetters + letter;
-    const alphagram = generateAlphagram(newBase);
+    // Add the new letter to the already processed base
+    const newCombo = processedBase + letter;
+    const alphagram = generateAlphagram(newCombo);
     const baseMatches = trie.findAnagrams(alphagram);
     baseMatches.forEach(match => matches.add(match));
   }
   
-  // If we have wildcards, also search additional combinations
+  // If we have wildcards, handle them similarly
   if (wildcardCount > 0) {
-    const wildcardCombos = generateWildcardCombinations(baseLetters, wildcardCount);
+    const wildcardCombos = generateWildcardCombinations(processedBase, wildcardCount);
     for (const combo of wildcardCombos) {
       for (const letter of SPANISH_LETTERS) {
         const newCombo = combo + letter;
