@@ -8,7 +8,7 @@ import { useWordTrie } from "@/hooks/useWordTrie";
 const Index = () => {
   const [activeModule, setActiveModule] = useState<'judge' | 'anagram'>('judge');
   
-  // Initialize dictionary at the top level
+  // Initialize dictionary at the top level so it's shared between modules
   const { isLoading: isDBLoading } = useWordDatabase();
   const { isLoading: isTrieLoading } = useWordTrie();
   const isDictionaryLoading = isDBLoading || isTrieLoading;

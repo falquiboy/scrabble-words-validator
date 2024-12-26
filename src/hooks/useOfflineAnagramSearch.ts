@@ -17,7 +17,8 @@ export const useOfflineAnagramSearch = (
   showShorter: boolean = false,
   targetLength: number | null = null
 ): SearchState => {
-  const { trie, isLoading, error } = useWordTrie();
+  // Only use the loading state from the shared Trie
+  const { isLoading, error } = useWordTrie();
 
   const results = useMemo(() => {
     if (!searchTerm || isLoading || error) {
