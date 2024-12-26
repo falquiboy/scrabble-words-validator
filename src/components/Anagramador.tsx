@@ -5,11 +5,14 @@ import { useOfflineAnagramSearch } from "@/hooks/useOfflineAnagramSearch";
 import { highlightWildcardLetter } from "@/utils/wildcardHighlighting";
 
 const Anagramador = () => {
+  // First all useRef hooks
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Then all useState hooks in consistent order
   const [letters, setLetters] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [showShorter, setShowShorter] = useState(false);
   const [targetLength, setTargetLength] = useState<number | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   // Query for words using offline search hook
   const { data: results, isLoading } = useOfflineAnagramSearch(searchTerm, showShorter, targetLength);
