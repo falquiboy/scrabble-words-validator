@@ -32,11 +32,14 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
       allWords = [...(results.patternMatches || [])];
     } else if (wildcardCount === 0) {
       allWords = [...(results.exactMatches || [])];
+      if (results.additionalWildcardMatches?.length > 0) {
+        allWords = [...allWords, ...(results.additionalWildcardMatches || [])];
+      }
     } else {
       allWords = [...(results.wildcardMatches || [])];
-    }
-    if (results.additionalWildcardMatches?.length > 0) {
-      allWords = [...allWords, ...(results.additionalWildcardMatches || [])];
+      if (results.additionalWildcardMatches?.length > 0) {
+        allWords = [...allWords, ...(results.additionalWildcardMatches || [])];
+      }
     }
 
     navigator.clipboard.writeText(allWords.join('\n')).then(() => {
@@ -82,11 +85,13 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
                   highlightWildcardLetter={highlightWildcardLetter}
                   searchTerm={searchTerm}
                 />
-                <ShorterResults
-                  matches={results.additionalWildcardMatches || []}
-                  highlightWildcardLetter={highlightWildcardLetter}
-                  searchTerm={searchTerm}
-                />
+                {results.additionalWildcardMatches?.length > 0 && (
+                  <ShorterResults
+                    matches={results.additionalWildcardMatches}
+                    highlightWildcardLetter={highlightWildcardLetter}
+                    searchTerm={searchTerm}
+                  />
+                )}
               </>
             )}
           </>

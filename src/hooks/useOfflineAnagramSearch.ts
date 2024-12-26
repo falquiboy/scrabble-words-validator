@@ -36,7 +36,13 @@ export const useOfflineAnagramSearch = (
 
     // Regular anagram search
     const { exactMatches, wildcardMatches, additionalWildcardMatches } = findAnagrams(searchTerm, trie);
-    console.log('Anagram search results:', { exactMatches, wildcardMatches, additionalWildcardMatches, showShorter });
+    console.log('Anagram search results:', { 
+      exactMatches, 
+      wildcardMatches, 
+      additionalWildcardMatches, 
+      showShorter,
+      targetLength 
+    });
 
     // Filter by target length if specified
     if (targetLength !== null) {
