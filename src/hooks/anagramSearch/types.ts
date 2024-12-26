@@ -2,6 +2,7 @@ export interface SearchResults {
   exactMatches: string[];
   wildcardMatches: string[];
   additionalWildcardMatches: string[];
+  shorterMatches: string[];
   patternMatches: string[];
 }
 

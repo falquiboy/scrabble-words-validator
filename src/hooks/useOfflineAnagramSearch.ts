@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { findAnagrams } from "@/hooks/anagramSearch/utils";
 import { findPatternMatches } from "@/utils/patternMatching";
 import { Trie } from "@/utils/trie/types";
+import { SearchResults } from "./anagramSearch/types";
 
 export const useOfflineAnagramSearch = (
   searchTerm: string,
@@ -16,8 +17,9 @@ export const useOfflineAnagramSearch = (
         exactMatches: [],
         wildcardMatches: [],
         additionalWildcardMatches: [],
+        shorterMatches: [],
         patternMatches: []
-      };
+      } as SearchResults;
     }
 
     // Check if it's a pattern search
@@ -30,8 +32,9 @@ export const useOfflineAnagramSearch = (
         exactMatches: [],
         wildcardMatches: [],
         additionalWildcardMatches: [],
+        shorterMatches: [],
         patternMatches: matches
-      };
+      } as SearchResults;
     }
 
     // Regular anagram search
@@ -51,8 +54,9 @@ export const useOfflineAnagramSearch = (
         exactMatches: exactMatches.filter(word => word.length === targetLength),
         wildcardMatches: wildcardMatches.filter(word => word.length === targetLength),
         additionalWildcardMatches: additionalWildcardMatches.filter(word => word.length === targetLength),
+        shorterMatches: [],
         patternMatches: []
-      };
+      } as SearchResults;
     }
 
     // Return all results, including shorter matches if showShorter is true
@@ -60,9 +64,9 @@ export const useOfflineAnagramSearch = (
       exactMatches,
       wildcardMatches,
       additionalWildcardMatches,
-      shorterMatches: showShorter ? shorterMatches : [],
+      shorterMatches,
       patternMatches: []
-    };
+    } as SearchResults;
   }, [searchTerm, showShorter, targetLength, trie]);
 
   return {

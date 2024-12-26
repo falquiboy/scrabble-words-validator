@@ -100,7 +100,7 @@ const findAdditionalMatches = (baseLetters: string, wildcardCount: number, trie:
   return matches;
 };
 
-export const findAnagrams = (searchTerm: string, trie: Trie) => {
+export const findAnagrams = (searchTerm: string, trie: Trie, showShorter: boolean = false) => {
   // Count wildcards and process input
   const wildcardCount = (searchTerm.match(/\*/g) || []).length;
   const lettersOnly = searchTerm.replace(/\*/g, '');
@@ -109,7 +109,8 @@ export const findAnagrams = (searchTerm: string, trie: Trie) => {
   console.log('Processing search:', {
     searchTerm,
     wildcardCount,
-    processedInput
+    processedInput,
+    showShorter
   });
 
   // Find matches based on wildcards
@@ -121,9 +122,13 @@ export const findAnagrams = (searchTerm: string, trie: Trie) => {
   // Find additional matches with one more letter
   const additionalWildcardMatches = Array.from(findAdditionalMatches(processedInput, wildcardCount, trie));
 
+  // Find shorter matches if requested
+  const shorterMatches = showShorter ? Array.from(findShorterMatches(processedInput, trie)) : [];
+
   return {
     exactMatches,
     wildcardMatches: wildcardCount > 0 ? exactMatches : [],
-    additionalWildcardMatches
+    additionalWildcardMatches,
+    shorterMatches
   };
 };
