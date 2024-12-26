@@ -1,12 +1,14 @@
 import { useState } from "react";
-import { processDigraphs, toDisplayFormat } from "@/utils/digraphs";
-import { useWordDatabase } from "@/hooks/useWordDatabase";
-import { useWordTrie } from "@/hooks/useWordTrie";
+import { processDigraphs } from "@/utils/digraphs";
 import { wordTrie } from "@/utils/trie";
 import Header from "./word-validator/Header";
 import WordInput from "./word-validator/WordInput";
 
-const WordValidator = () => {
+interface WordValidatorProps {
+  isDictionaryLoading: boolean;
+}
+
+const WordValidator = ({ isDictionaryLoading }: WordValidatorProps) => {
   const [word, setWord] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<{
@@ -16,38 +18,28 @@ const WordValidator = () => {
   }>({ isValid: false, checked: false, words: [] });
   const [isEditing, setIsEditing] = useState(false);
 
-  // Initialize both IndexedDB and Trie
-  const { isLoading: isDBLoading } = useWordDatabase();
-  const { isLoading: isTrieLoading } = useWordTrie();
-
   const handleValidate = async () => {
-    if (!word.trim() || isDBLoading || isTrieLoading) return;
+    if (!word.trim() || isDictionaryLoading) return;
 
     setIsLoading(true);
     try {
       const words = word.trim().split(" ");
       const processedWords = words.map(w => {
-        // First convert to uppercase and preserve Ñ
         let upperWord = w.toUpperCase();
         
-        // Special handling for Ñ - preserve it exactly as is
         upperWord = upperWord.split('').map(char => {
           if (char === 'Ñ' || char === 'ñ') return 'Ñ';
-          // For non-Ñ characters, remove accents
           return char
             .normalize('NFD')
             .replace(/[\u0300-\u036f]/g, '')
             .normalize('NFC');
         }).join('');
         
-        // Process digraphs (CH -> Ç, LL -> K, RR -> W)
         const processed = processDigraphs(upperWord);
         
-        // Log lengths - after processing digraphs since we want to count them as single letters
         console.log('Original word:', upperWord);
         console.log('Processed word:', processed, 'length:', processed.length);
         
-        // Log the actual Trie content for debugging
         console.log('Words in Trie containing this word:', 
           Array.from(wordTrie.getWordsStartingWith(processed))
         );
@@ -55,9 +47,8 @@ const WordValidator = () => {
         return processed;
       });
       
-      // Use Trie for fast validation
       const isValid = processedWords.every(w => {
-        if (!w) return false; // Skip empty strings
+        if (!w) return false;
         console.log('Processing word for validation:', w);
         const result = wordTrie.search(w);
         console.log('Validation result for', w, ':', result);
@@ -116,7 +107,7 @@ const WordValidator = () => {
           onEditStart={() => setIsEditing(true)}
           onEditEnd={() => setIsEditing(false)}
         />
-        {(isDBLoading || isTrieLoading) && (
+        {isDictionaryLoading && (
           <div className="text-center">
             <p className="text-sm text-gray-500">Cargando diccionario...</p>
           </div>
