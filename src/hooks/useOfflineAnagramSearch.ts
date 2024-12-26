@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { findAnagrams } from "@/hooks/anagramSearch/utils";
+import { findAnagramsUtil } from "@/hooks/anagramSearch/utils";
 import { findPatternMatches } from "@/utils/patternMatching";
 import { Trie } from "@/utils/trie/types";
 import { SearchResults } from "./anagramSearch/types";
@@ -38,7 +38,7 @@ export const useOfflineAnagramSearch = (
     }
 
     // Regular anagram search
-    const { exactMatches, wildcardMatches, additionalWildcardMatches, shorterMatches } = findAnagrams(searchTerm, trie, true);
+    const { exactMatches, wildcardMatches, additionalWildcardMatches, shorterMatches } = findAnagramsUtil(searchTerm, trie, true);
 
     console.log('Anagram search results:', { 
       exactMatches, 

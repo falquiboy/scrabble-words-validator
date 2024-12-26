@@ -17,7 +17,10 @@ export const generateWildcardCombinations = (base: string, remainingWildcards: n
 const findExactMatches = (processedInput: string, trie: Trie): Set<string> => {
   const alphagram = generateAlphagram(processedInput);
   const matches = new Set<string>();
-  const words = trie.findAnagrams(alphagram);
+  const words = trie.getAllWords().filter(word => {
+    const wordAlphagram = generateAlphagram(processDigraphs(word));
+    return wordAlphagram === alphagram;
+  });
   words.forEach(word => matches.add(word));
   return matches;
 };
@@ -29,7 +32,10 @@ const findWildcardMatches = (processedInput: string, wildcardCount: number, trie
   
   for (const combo of combinations) {
     const alphagram = generateAlphagram(combo);
-    const comboMatches = trie.findAnagrams(alphagram);
+    const comboMatches = trie.getAllWords().filter(word => {
+      const wordAlphagram = generateAlphagram(processDigraphs(word));
+      return wordAlphagram === alphagram;
+    });
     comboMatches.forEach(match => matches.add(match));
   }
   
@@ -46,7 +52,10 @@ const findShorterMatches = (letters: string, trie: Trie): Set<string> => {
     
     for (const combo of combinations) {
       const alphagram = generateAlphagram(combo.join(''));
-      const comboMatches = trie.findAnagrams(alphagram);
+      const comboMatches = trie.getAllWords().filter(word => {
+        const wordAlphagram = generateAlphagram(processDigraphs(word));
+        return wordAlphagram === alphagram;
+      });
       comboMatches.forEach(match => matches.add(match));
     }
   }
@@ -84,7 +93,10 @@ const findAdditionalMatches = (baseLetters: string, wildcardCount: number, trie:
     const processedLetter = processDigraphs(letter);
     const newBase = baseLetters + processedLetter;
     const alphagram = generateAlphagram(newBase);
-    const baseMatches = trie.findAnagrams(alphagram);
+    const baseMatches = trie.getAllWords().filter(word => {
+      const wordAlphagram = generateAlphagram(processDigraphs(word));
+      return wordAlphagram === alphagram;
+    });
     baseMatches.forEach(match => matches.add(match));
   }
   
@@ -97,7 +109,10 @@ const findAdditionalMatches = (baseLetters: string, wildcardCount: number, trie:
         const processedLetter = processDigraphs(letter);
         const newCombo = combo + processedLetter;
         const alphagram = generateAlphagram(newCombo);
-        const comboMatches = trie.findAnagrams(alphagram);
+        const comboMatches = trie.getAllWords().filter(word => {
+          const wordAlphagram = generateAlphagram(processDigraphs(word));
+          return wordAlphagram === alphagram;
+        });
         comboMatches.forEach(match => matches.add(match));
       }
     }
@@ -106,7 +121,7 @@ const findAdditionalMatches = (baseLetters: string, wildcardCount: number, trie:
   return matches;
 };
 
-export const findAnagrams = (searchTerm: string, trie: Trie, showShorter: boolean = false) => {
+export const findAnagramsUtil = (searchTerm: string, trie: Trie, showShorter: boolean = false) => {
   // Count wildcards and process input
   const wildcardCount = (searchTerm.match(/\*/g) || []).length;
   const lettersOnly = searchTerm.replace(/\*/g, '');
