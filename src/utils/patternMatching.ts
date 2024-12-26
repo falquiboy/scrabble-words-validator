@@ -1,5 +1,6 @@
 import { processDigraphs } from '@/utils/digraphs';
 import { SPANISH_LETTERS } from '@/hooks/anagramSearch/constants';
+import { Trie } from '@/utils/trie/types';
 
 /**
  * Converts a pattern like "??V-" into a proper regex pattern

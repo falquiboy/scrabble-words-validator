@@ -1,6 +1,7 @@
 import { SPANISH_LETTERS } from './constants';
 import { processDigraphs, generateAlphagram } from '@/utils/digraphs';
 import { wordTrie } from '@/utils/trie';
+import { Trie } from '@/utils/trie/types';
 
 export const generateWildcardCombinations = (base: string, remainingWildcards: number): string[] => {
   if (remainingWildcards === 0) return [base];
