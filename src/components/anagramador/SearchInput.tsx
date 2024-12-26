@@ -5,8 +5,9 @@ import { Switch } from "@/components/ui/switch";
 import { RefObject, useState } from "react";
 import { SearchTooltip } from "./SearchTooltip";
 import { validateAndCleanAnagramInput, validateAndCleanPatternInput } from "@/utils/inputValidation";
-import { NaturalSearchHandler } from "./search/NaturalSearchHandler";
+import { useNaturalSearch } from "./search/NaturalSearchHandler";
 import { SearchModes } from "./search/SearchModes";
+import { useToast } from "@/hooks/use-toast";
 
 interface SearchInputProps {
   letters: string;
@@ -33,6 +34,14 @@ const SearchInput = ({
   const [isNaturalMode, setIsNaturalMode] = useState(false);
   const [isSearchMode, setIsSearchMode] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+  const { toast } = useToast();
+  
+  const { processQuery } = useNaturalSearch({
+    onResults: (results) => {
+      // We don't use the Trie in natural mode, results come directly from DB
+      console.log('Natural language results:', results);
+    }
+  });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value;
@@ -60,17 +69,25 @@ const SearchInput = ({
       setIsProcessing(true);
       try {
         if (isNaturalMode && letters.trim()) {
-          await NaturalSearchHandler({ 
-            query: letters,
-            onResults: (results) => {
-              // We don't use the Trie in natural mode, results come directly from DB
-              console.log('Natural language results:', results);
-            }
-          });
+          const result = await processQuery(letters);
+          if (result.success) {
+            toast({
+              title: "Consulta procesada",
+              description: result.count > 0 
+                ? `Se encontraron ${result.count} palabras` 
+                : "No se encontraron palabras para esta consulta",
+            });
+          }
         } else {
           onSearch();
         }
         setIsSearchMode(false);
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: error.message || "No se pudo procesar la consulta",
+          variant: "destructive",
+        });
       } finally {
         setIsProcessing(false);
       }

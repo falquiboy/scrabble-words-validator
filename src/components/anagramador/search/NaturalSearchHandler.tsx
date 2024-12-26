@@ -1,48 +1,37 @@
-import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-interface NaturalSearchHandlerProps {
-  query: string;
+interface UseNaturalSearchProps {
   onResults: (results: string[]) => void;
 }
 
-export const NaturalSearchHandler = async ({ 
-  query,
-  onResults
-}: NaturalSearchHandlerProps) => {
-  const { toast } = useToast();
+export const useNaturalSearch = ({ onResults }: UseNaturalSearchProps) => {
+  const processQuery = async (query: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('process-natural-query', {
+        body: { query },
+      });
 
-  try {
-    const { data, error } = await supabase.functions.invoke('process-natural-query', {
-      body: { query },
-    });
-
-    if (error) throw error;
-    
-    if (data.results?.length > 0) {
-      onResults(data.results);
-      toast({
-        title: "Consulta procesada",
-        description: `Se encontraron ${data.results.length} palabras`,
-      });
-    } else if (data.error) {
-      toast({
-        title: "Error",
-        description: data.error,
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Sin resultados",
-        description: "No se encontraron palabras para esta consulta",
-      });
+      if (error) throw error;
+      
+      if (data.results?.length > 0) {
+        onResults(data.results);
+        return {
+          success: true,
+          count: data.results.length,
+        };
+      } else if (data.error) {
+        throw new Error(data.error);
+      } else {
+        return {
+          success: true,
+          count: 0,
+        };
+      }
+    } catch (error) {
+      console.error('Error processing natural language:', error);
+      throw error;
     }
-  } catch (error) {
-    console.error('Error processing natural language:', error);
-    toast({
-      title: "Error",
-      description: "No se pudo procesar la consulta en lenguaje natural",
-      variant: "destructive",
-    });
-  }
+  };
+
+  return { processQuery };
 };
