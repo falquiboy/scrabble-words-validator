@@ -5,7 +5,7 @@ import { ResultsHeader } from "./anagramador/ResultsHeader";
 import ResultsList from "./anagramador/ResultsList";
 import { Trie } from "@/utils/trie";
 import { validateAndCleanPatternInput } from "@/utils/inputValidation";
-import { searchPattern } from "@/utils/trie/search";
+import { searchPattern as searchPatternFn } from "@/utils/trie/search";
 import { SearchResults } from "@/hooks/anagramSearch/types";
 
 interface AnagramadorProps {
@@ -27,7 +27,7 @@ const Anagramador = ({ trie, isLoading, error }: AnagramadorProps) => {
   const handleSearch = useCallback((searchPattern: string) => {
     const cleanedPattern = validateAndCleanPatternInput(searchPattern);
     if (cleanedPattern) {
-      const searchResults = searchPattern(trie, cleanedPattern);
+      const searchResults = searchPatternFn(trie, cleanedPattern);
       setResults({
         exactMatches: searchResults,
         wildcardMatches: [],
@@ -51,7 +51,12 @@ const Anagramador = ({ trie, isLoading, error }: AnagramadorProps) => {
         error={error}
       />
       <ResultsHeader results={results} />
-      <ResultsList results={results} />
+      <ResultsList 
+        isLoading={isLoading}
+        searchTerm={pattern}
+        results={results}
+        highlightWildcardLetter={(word, originalWord) => word}
+      />
     </div>
   );
 };

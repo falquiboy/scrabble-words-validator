@@ -1,5 +1,6 @@
 import { Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import { SearchResults } from "@/hooks/anagramSearch/types";
 
 interface ResultsHeaderProps {
@@ -7,6 +8,8 @@ interface ResultsHeaderProps {
 }
 
 export const ResultsHeader = ({ results }: ResultsHeaderProps) => {
+  const { toast } = useToast();
+  
   const handleCopyAll = () => {
     const allWords = [
       ...results.exactMatches,
