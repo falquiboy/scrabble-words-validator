@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { wordDB } from '@/utils/wordDatabase';
 import { wordTrie } from '@/utils/trie';
 import { toast } from 'sonner';
-import { processDigraphs, toDisplayFormat } from '@/utils/digraphs';
 
 interface WordTrieState {
   isLoading: boolean;
@@ -15,19 +14,20 @@ export const useWordTrie = (): WordTrieState => {
   const isInitializedRef = useRef(false);
   const initializationPromiseRef = useRef<Promise<void> | null>(null);
   const toastShownRef = useRef(false);
+  const mountedRef = useRef(true);
   
   const [state, setState] = useState<WordTrieState>({
-    isLoading: !isInitializedRef.current,
+    isLoading: true,
     error: null,
     trie: wordTrie,
     wordCount: 0
   });
 
   useEffect(() => {
-    let mounted = true;
+    mountedRef.current = true;
 
     const showReadyToast = (wordCount: number) => {
-      if (!toastShownRef.current) {
+      if (!toastShownRef.current && mountedRef.current) {
         toast.success(`Lexicón listo: ${wordCount.toLocaleString()} palabras`, {
           duration: 3000,
           position: 'top-right',
@@ -37,7 +37,6 @@ export const useWordTrie = (): WordTrieState => {
     };
 
     const initTrie = async () => {
-      // If already initialized and has words, return immediately
       if (isInitializedRef.current) {
         const currentWords = wordTrie.getAllWords();
         console.log('Checking Trie state:', {
@@ -53,7 +52,7 @@ export const useWordTrie = (): WordTrieState => {
           wordTrie.clear();
         } else {
           console.log('Trie is properly initialized with words:', currentWords.length);
-          if (mounted) {
+          if (mountedRef.current) {
             setState(prev => ({
               ...prev,
               isLoading: false,
@@ -65,11 +64,10 @@ export const useWordTrie = (): WordTrieState => {
         }
       }
 
-      // If initialization is in progress, wait for it
       if (initializationPromiseRef.current) {
         console.log('Waiting for existing initialization to complete...');
         await initializationPromiseRef.current;
-        if (mounted) {
+        if (mountedRef.current) {
           setState(prev => ({
             ...prev,
             isLoading: false
@@ -78,20 +76,20 @@ export const useWordTrie = (): WordTrieState => {
         return;
       }
 
-      // Start new initialization
       initializationPromiseRef.current = (async () => {
         try {
           console.log('Starting fresh Trie initialization...');
           await wordDB.init();
           
+          if (!mountedRef.current) return;
+          
           const words = await wordDB.getAllWords();
-          if (!mounted) return;
+          if (!mountedRef.current) return;
 
           if (words.length === 0) {
             throw new Error('No words found in IndexedDB');
           }
 
-          // Clear trie before rebuilding
           wordTrie.clear();
           console.log('Building Trie with', words.length, 'words');
 
@@ -100,11 +98,11 @@ export const useWordTrie = (): WordTrieState => {
           let processedCount = 0;
 
           for (let i = 0; i < words.length; i += batchSize) {
+            if (!mountedRef.current) return;
+            
             const batch = words.slice(i, i + batchSize);
             batch.forEach(word => {
-              // Store both processed and original forms
-              const processedWord = processDigraphs(word.toUpperCase());
-              wordTrie.insert(processedWord, word.toUpperCase());
+              wordTrie.insert(word.toUpperCase(), word.toUpperCase());
               processedCount++;
             });
 
@@ -112,14 +110,12 @@ export const useWordTrie = (): WordTrieState => {
               console.log('Words processed:', processedCount);
             }
 
-            // Allow other tasks to run
             await new Promise(resolve => setTimeout(resolve, 0));
           }
 
           const endTime = performance.now();
           console.log(`Trie build completed in ${((endTime - startTime) / 1000).toFixed(2)} seconds`);
           
-          // Verify Trie contents
           const trieWords = wordTrie.getAllWords();
           console.log('Final Trie state:', {
             totalWords: trieWords.length,
@@ -128,7 +124,7 @@ export const useWordTrie = (): WordTrieState => {
             containsCASERON: trieWords.includes('CASERON')
           });
 
-          if (mounted) {
+          if (mountedRef.current) {
             setState({
               isLoading: false,
               error: null,
@@ -141,18 +137,18 @@ export const useWordTrie = (): WordTrieState => {
           }
         } catch (err) {
           console.error('Error initializing trie:', err);
-          if (!mounted) return;
-          
-          setState(prev => ({
-            ...prev,
-            error: err instanceof Error ? err.message : 'Unknown error',
-            isLoading: false
-          }));
+          if (mountedRef.current) {
+            setState(prev => ({
+              ...prev,
+              error: err instanceof Error ? err.message : 'Unknown error',
+              isLoading: false
+            }));
 
-          toast.error("No se pudo inicializar el lexicón", {
-            duration: 4000,
-            position: 'top-right',
-          });
+            toast.error("No se pudo inicializar el lexicón", {
+              duration: 4000,
+              position: 'top-right',
+            });
+          }
         } finally {
           initializationPromiseRef.current = null;
         }
@@ -164,7 +160,7 @@ export const useWordTrie = (): WordTrieState => {
     initTrie();
 
     return () => {
-      mounted = false;
+      mountedRef.current = false;
     };
   }, []);
 
