@@ -13,6 +13,8 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 async function callOpenAIWithRetry(query: string, retries = 3): Promise<string> {
   for (let i = 0; i < retries; i++) {
     try {
+      console.log('Processing natural language query:', query);
+      
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -55,13 +57,15 @@ async function callOpenAIWithRetry(query: string, retries = 3): Promise<string> 
       }
 
       const data = await response.json();
-      console.log('OpenAI response:', data);
+      console.log('OpenAI response:', JSON.stringify(data, null, 2));
 
       if (!data.choices?.[0]?.message?.content) {
         throw new Error('Invalid response format from OpenAI');
       }
 
-      return data.choices[0].message.content.trim();
+      const pattern = data.choices[0].message.content.trim();
+      console.log('Generated pattern:', pattern);
+      return pattern;
     } catch (error) {
       if (i === retries - 1) throw error;
       console.error(`Attempt ${i + 1} failed:`, error);
@@ -90,6 +94,7 @@ serve(async (req) => {
     }
 
     const pattern = await callOpenAIWithRetry(query);
+    console.log('Final pattern generated:', pattern);
     
     return new Response(JSON.stringify({ pattern }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
