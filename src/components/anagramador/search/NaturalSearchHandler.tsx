@@ -7,11 +7,14 @@ interface UseNaturalSearchProps {
 export const useNaturalSearch = ({ onResults }: UseNaturalSearchProps) => {
   const processQuery = async (query: string) => {
     try {
+      console.log('Processing natural language query:', query);
+      
       const { data, error } = await supabase.functions.invoke('process-natural-query', {
         body: { query },
       });
 
       if (error) throw error;
+      console.log('Natural language query response:', data);
       
       if (data.results?.length > 0) {
         onResults(data.results);

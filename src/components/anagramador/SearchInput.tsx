@@ -38,7 +38,6 @@ const SearchInput = ({
   
   const { processQuery } = useNaturalSearch({
     onResults: (results) => {
-      // Update the search term to trigger the results display
       if (results && results.length > 0) {
         onInputChange(results.join('\n'));
         onSearch();
@@ -50,12 +49,10 @@ const SearchInput = ({
     let value = e.target.value;
     
     if (isNaturalMode) {
-      // In natural mode, we don't clean the input
       onInputChange(value);
       return;
     }
     
-    // For pattern and anagram modes, clean the input
     value = value.toUpperCase();
     if (isPatternMode) {
       value = validateAndCleanPatternInput(value);

@@ -187,6 +187,14 @@ export type Database = {
         }
         Returns: string
       }
+      execute_natural_query: {
+        Args: {
+          query_text: string
+        }
+        Returns: {
+          word: string
+        }[]
+      }
       get_words_batch: {
         Args: {
           batch_size: number
