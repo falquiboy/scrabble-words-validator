@@ -13,3 +13,9 @@ export interface Trie {
   findAnagrams(alphagram: string): string[];
   clear(): void;
 }
+
+export interface LengthIndexedTrie {
+  [length: number]: {
+    [alphagram: string]: string[];
+  };
+}
