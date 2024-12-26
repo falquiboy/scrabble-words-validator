@@ -34,6 +34,7 @@ const Anagramador = ({ trie, isLoading, error }: AnagramadorProps) => {
         additionalWildcardMatches: [],
         patternMatches: []
       });
+      setPattern(cleanedPattern);
     } else {
       toast({
         variant: "destructive",
@@ -42,6 +43,10 @@ const Anagramador = ({ trie, isLoading, error }: AnagramadorProps) => {
       });
     }
   }, [trie, toast]);
+
+  const highlightWildcardLetter = useCallback((word: string, originalWord: string) => {
+    return word;
+  }, []);
 
   return (
     <div className="w-full max-w-2xl mx-auto px-4">
@@ -55,7 +60,7 @@ const Anagramador = ({ trie, isLoading, error }: AnagramadorProps) => {
         isLoading={isLoading}
         searchTerm={pattern}
         results={results}
-        highlightWildcardLetter={(word, originalWord) => word}
+        highlightWildcardLetter={highlightWildcardLetter}
       />
     </div>
   );
