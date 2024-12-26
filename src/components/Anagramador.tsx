@@ -92,7 +92,8 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
         results={{
           exactMatches: results?.exactMatches || [],
           wildcardMatches: results?.wildcardMatches || [],
-          additionalWildcardMatches: showShorter ? (results?.additionalWildcardMatches || []) : [],
+          additionalWildcardMatches: results?.additionalWildcardMatches || [],
+          shorterMatches: results?.shorterMatches || [],
           patternMatches: results?.patternMatches || []
         }}
         highlightWildcardLetter={renderHighlightedWord}

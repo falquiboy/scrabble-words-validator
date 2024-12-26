@@ -35,11 +35,12 @@ export const useOfflineAnagramSearch = (
     }
 
     // Regular anagram search
-    const { exactMatches, wildcardMatches, additionalWildcardMatches } = findAnagrams(searchTerm, trie);
+    const { exactMatches, wildcardMatches, additionalWildcardMatches, shorterMatches } = findAnagrams(searchTerm, trie, showShorter);
     console.log('Anagram search results:', { 
       exactMatches, 
       wildcardMatches, 
-      additionalWildcardMatches, 
+      additionalWildcardMatches,
+      shorterMatches,
       showShorter,
       targetLength 
     });
@@ -49,16 +50,17 @@ export const useOfflineAnagramSearch = (
       return {
         exactMatches: exactMatches.filter(word => word.length === targetLength),
         wildcardMatches: wildcardMatches.filter(word => word.length === targetLength),
-        additionalWildcardMatches: showShorter ? additionalWildcardMatches.filter(word => word.length === targetLength) : [],
+        additionalWildcardMatches: additionalWildcardMatches.filter(word => word.length === targetLength),
         patternMatches: []
       };
     }
 
-    // Return all results if showShorter is true, otherwise exclude additionalWildcardMatches
+    // Return all results, including shorter matches if showShorter is true
     return {
       exactMatches,
       wildcardMatches,
-      additionalWildcardMatches: showShorter ? additionalWildcardMatches : [],
+      additionalWildcardMatches,
+      shorterMatches: showShorter ? shorterMatches : [],
       patternMatches: []
     };
   }, [searchTerm, showShorter, targetLength, trie]);

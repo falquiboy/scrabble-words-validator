@@ -13,8 +13,9 @@ interface ResultsListProps {
     exactMatches: string[];
     wildcardMatches: string[];
     additionalWildcardMatches: string[];
+    shorterMatches: string[];
     patternMatches: string[];
-  } | undefined;
+  };
   highlightWildcardLetter: (word: string, originalWord: string) => React.ReactNode;
 }
 
@@ -30,15 +31,22 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
 
     if (isPatternSearch) {
       allWords = [...(results.patternMatches || [])];
-    } else if (wildcardCount === 0) {
-      allWords = [...(results.exactMatches || [])];
+    } else {
+      // Include exact/wildcard matches
+      if (wildcardCount === 0) {
+        allWords = [...(results.exactMatches || [])];
+      } else {
+        allWords = [...(results.wildcardMatches || [])];
+      }
+      
+      // Include additional letter matches
       if (results.additionalWildcardMatches?.length > 0) {
         allWords = [...allWords, ...(results.additionalWildcardMatches || [])];
       }
-    } else {
-      allWords = [...(results.wildcardMatches || [])];
-      if (results.additionalWildcardMatches?.length > 0) {
-        allWords = [...allWords, ...(results.additionalWildcardMatches || [])];
+      
+      // Include shorter matches if any
+      if (results.shorterMatches?.length > 0) {
+        allWords = [...allWords, ...(results.shorterMatches || [])];
       }
     }
 
@@ -68,6 +76,7 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
           (results.exactMatches?.length > 0 || 
           results.wildcardMatches?.length > 0 || 
           results.additionalWildcardMatches?.length > 0 ||
+          results.shorterMatches?.length > 0 ||
           results.patternMatches?.length > 0)
         ) ? (
           <>
@@ -90,6 +99,15 @@ const ResultsList = ({ isLoading, searchTerm, results, highlightWildcardLetter }
                     matches={results.additionalWildcardMatches}
                     highlightWildcardLetter={highlightWildcardLetter}
                     searchTerm={searchTerm}
+                    title="palabras encontradas usando una letra adicional"
+                  />
+                )}
+                {results.shorterMatches?.length > 0 && (
+                  <ShorterResults
+                    matches={results.shorterMatches}
+                    highlightWildcardLetter={highlightWildcardLetter}
+                    searchTerm={searchTerm}
+                    title="palabras más cortas encontradas"
                   />
                 )}
               </>

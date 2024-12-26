@@ -5,9 +5,10 @@ interface ShorterResultsProps {
   matches: string[];
   highlightWildcardLetter: (word: string, originalWord: string) => React.ReactNode;
   searchTerm: string;
+  title: string;
 }
 
-export const ShorterResults = ({ matches, highlightWildcardLetter, searchTerm }: ShorterResultsProps) => {
+export const ShorterResults = ({ matches, highlightWildcardLetter, searchTerm, title }: ShorterResultsProps) => {
   if (matches.length === 0) return null;
 
   // Group words by internal length
@@ -28,7 +29,7 @@ export const ShorterResults = ({ matches, highlightWildcardLetter, searchTerm }:
   return (
     <div className="space-y-4 pb-8">
       <h3 className="font-semibold text-lg">
-        {`${matches.length} ${matches.length === 1 ? "palabra encontrada" : "palabras encontradas"} usando una letra adicional:`}
+        {`${matches.length} ${title}:`}
       </h3>
       {sortedLengths.map(length => (
         <div key={`length-${length}`} className="space-y-2">
