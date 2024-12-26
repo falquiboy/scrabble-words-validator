@@ -96,3 +96,20 @@ export const findAdditionalMatches = (baseLetters: string, wildcardCount: number
   
   return matches;
 };
+
+export const findAnagrams = (
+  searchTerm: string,
+  showShorter: boolean,
+  targetLength: number | null,
+  trie: Trie
+) => {
+  const exactMatches = Array.from(findExactMatches(searchTerm));
+  const wildcardMatches = Array.from(findWildcardMatches(searchTerm, 1));
+  const additionalWildcardMatches = Array.from(findAdditionalMatches(searchTerm, 1));
+
+  return {
+    exactMatches,
+    wildcardMatches,
+    additionalWildcardMatches
+  };
+};

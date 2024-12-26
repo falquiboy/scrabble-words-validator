@@ -9,3 +9,14 @@ export interface LengthIndexedTrie {
     [alphagram: string]: string[];
   };
 }
+
+export interface Trie {
+  getRoot(): TrieNode;
+  clear(): void;
+  insert(word: string, originalWord: string): void;
+  search(word: string): boolean;
+  findAnagrams(letters: string): string[];
+  getWordsOfLength(length: number): string[];
+  getAllWords(): string[];
+  getWordsStartingWith(prefix: string): string[];
+}
