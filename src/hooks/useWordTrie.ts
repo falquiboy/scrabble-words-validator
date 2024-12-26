@@ -29,6 +29,7 @@ export const useWordTrie = (): WordTrieState => {
     const initTrie = async () => {
       // If already initialized, return immediately
       if (isInitializedRef.current) {
+        console.log('Trie already initialized, current word count:', wordTrie.getAllWords().length);
         if (mounted) {
           setState(prev => ({
             ...prev,
@@ -40,6 +41,7 @@ export const useWordTrie = (): WordTrieState => {
 
       // If initialization is in progress, wait for it
       if (initializationPromiseRef.current) {
+        console.log('Trie initialization in progress, waiting...');
         await initializationPromiseRef.current;
         if (mounted) {
           setState(prev => ({
@@ -53,6 +55,7 @@ export const useWordTrie = (): WordTrieState => {
       // Start new initialization
       initializationPromiseRef.current = (async () => {
         try {
+          console.log('Starting Trie initialization...');
           // Initialize database first
           await wordDB.init();
           
@@ -67,9 +70,9 @@ export const useWordTrie = (): WordTrieState => {
 
           // Clear trie before rebuilding
           wordTrie.clear();
+          console.log('Trie cleared, starting build with', words.length, 'words');
 
           // Build trie with words
-          console.log('Starting Trie build with', words.length, 'words');
           const startTime = performance.now();
           
           // Build in batches to avoid blocking the main thread
@@ -85,6 +88,10 @@ export const useWordTrie = (): WordTrieState => {
               processedCount++;
             });
 
+            if (processedCount % 50000 === 0) {
+              console.log('Words processed:', processedCount);
+            }
+
             // Allow other tasks to run
             await new Promise(resolve => setTimeout(resolve, 0));
           }
@@ -95,6 +102,7 @@ export const useWordTrie = (): WordTrieState => {
           // Verify Trie contents
           const trieWords = wordTrie.getAllWords();
           console.log('Total words in Trie:', trieWords.length);
+          console.log('Sample words from Trie:', trieWords.slice(0, 5));
 
           if (mounted) {
             setState({
