@@ -17,7 +17,15 @@ serve(async (req) => {
   try {
     const { query } = await req.json();
 
+    if (!query) {
+      throw new Error('Query is required');
+    }
+
     console.log('Processing natural language query:', query);
+
+    if (!openAIApiKey) {
+      throw new Error('OpenAI API key is not configured');
+    }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -48,8 +56,18 @@ serve(async (req) => {
       }),
     });
 
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('OpenAI API error:', errorData);
+      throw new Error(`OpenAI API error: ${response.status}`);
+    }
+
     const data = await response.json();
     console.log('OpenAI response:', data);
+
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      throw new Error('Invalid response format from OpenAI');
+    }
 
     const pattern = data.choices[0].message.content.trim();
     
@@ -58,7 +76,11 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error('Error processing natural language query:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(
+      JSON.stringify({ 
+        error: error.message || 'An error occurred while processing the query',
+        details: error.toString()
+      }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
