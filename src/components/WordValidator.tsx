@@ -28,6 +28,8 @@ const WordValidator = ({ isDictionaryLoading }: WordValidatorProps) => {
         // First convert to uppercase and handle special characters
         let upperWord = w.toUpperCase();
         upperWord = upperWord.split('').map(char => {
+          // Allow direct digraph input (Ç, K, W) to pass through
+          if (['Ç', 'K', 'W'].includes(char)) return char;
           if (char === 'Ñ' || char === 'ñ') return 'Ñ';
           return char
             .normalize('NFD')
