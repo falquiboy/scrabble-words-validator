@@ -37,7 +37,7 @@ const WordInput = ({
   }, []);
 
   useEffect(() => {
-    const handleGlobalEsc = (e: KeyboardEvent) => {
+    const handleGlobalKeys = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
         if (word) {
@@ -47,11 +47,17 @@ const WordInput = ({
         setTimeout(() => {
           inputRef.current?.focus();
         }, 0);
+      } else if (e.key === "F2") {
+        e.preventDefault();
+        onEditStart();
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 0);
       }
     };
 
-    window.addEventListener('keydown', handleGlobalEsc);
-    return () => window.removeEventListener('keydown', handleGlobalEsc);
+    window.addEventListener('keydown', handleGlobalKeys);
+    return () => window.removeEventListener('keydown', handleGlobalKeys);
   }, [word, onWordChange, onEditStart]);
 
   const getInputBackground = () => {

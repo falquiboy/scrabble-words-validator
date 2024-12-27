@@ -2,7 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Trash2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { RefObject, useState } from "react";
+import { RefObject, useState, useEffect } from "react";
 import { SearchTooltip } from "./SearchTooltip";
 import { validateAndCleanAnagramInput, validateAndCleanPatternInput } from "@/utils/inputValidation";
 import { SearchModes } from "./search/SearchModes";
@@ -31,6 +31,18 @@ const SearchInput = ({
   const [isPatternMode, setIsPatternMode] = useState(false);
   const [isSearchMode, setIsSearchMode] = useState(true);
   
+  useEffect(() => {
+    const handleGlobalF2 = (e: KeyboardEvent) => {
+      if (e.key === "F2") {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalF2);
+    return () => window.removeEventListener('keydown', handleGlobalF2);
+  }, [inputRef]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.toUpperCase();
     
