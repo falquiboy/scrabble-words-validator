@@ -134,7 +134,7 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
           shorterMatches: results?.shorterMatches || [],
           patternMatches: results?.patternMatches || []
         }}
-        highlightWildcardLetter={renderHighlightedWord}
+        highlightWildcardLetter={highlightWildcardLetter}
         isSearchAborted={isSearchAborted}
       />
     </div>

@@ -1,7 +1,7 @@
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { RefObject, useState, useEffect } from "react";
+import { RefObject, useState, useEffect, useRef } from "react";
 import { SearchTooltip } from "./SearchTooltip";
 import { validateAndCleanAnagramInput, validateAndCleanPatternInput } from "@/utils/inputValidation";
 import { SearchModes } from "./search/SearchModes";
