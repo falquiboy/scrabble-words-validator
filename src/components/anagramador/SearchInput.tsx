@@ -2,7 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Trash2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { RefObject, useState, useEffect } from "react";
+import { RefObject, useState, useEffect, useRef } from "react";
 import { SearchTooltip } from "./SearchTooltip";
 import { validateAndCleanAnagramInput, validateAndCleanPatternInput } from "@/utils/inputValidation";
 import { SearchModes } from "./search/SearchModes";
@@ -30,6 +30,7 @@ const SearchInput = ({
 }: SearchInputProps) => {
   const [isPatternMode, setIsPatternMode] = useState(false);
   const [isSearchMode, setIsSearchMode] = useState(true);
+  const cursorPositionRef = useRef<number | null>(null);
   
   useEffect(() => {
     const handleGlobalF2 = (e: KeyboardEvent) => {
@@ -43,7 +44,21 @@ const SearchInput = ({
     return () => window.removeEventListener('keydown', handleGlobalF2);
   }, [inputRef]);
 
+  useEffect(() => {
+    // Restore cursor position after state update
+    if (cursorPositionRef.current !== null && inputRef.current) {
+      inputRef.current.setSelectionRange(
+        cursorPositionRef.current,
+        cursorPositionRef.current
+      );
+      cursorPositionRef.current = null;
+    }
+  }, [letters]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Store cursor position before state update
+    cursorPositionRef.current = e.target.selectionStart;
+    
     let value = e.target.value.toUpperCase();
     
     if (isPatternMode) {
