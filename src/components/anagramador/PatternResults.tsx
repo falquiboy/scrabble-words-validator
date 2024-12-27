@@ -19,10 +19,10 @@ export const PatternResults = ({ matches, searchTerm }: PatternResultsProps) => 
     return acc;
   }, {} as Record<number, string[]>);
 
-  // Sort lengths in ascending order
+  // Sort lengths in descending order
   const sortedLengths = Object.keys(groupedByLength)
     .map(Number)
-    .sort((a, b) => a - b);
+    .sort((a, b) => b - a);
 
   return (
     <div className="space-y-4 pb-8">
