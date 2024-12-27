@@ -20,7 +20,7 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
   const { toast } = useToast();
 
   // Query for words using offline search hook
-  const { data: results, refetch } = useOfflineAnagramSearch(searchTerm, showShorter, targetLength, trie);
+  const { data: results } = useOfflineAnagramSearch(searchTerm, showShorter, targetLength, trie);
 
   // Handle input changes
   const handleInputChange = (value: string) => {
