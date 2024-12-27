@@ -1,8 +1,7 @@
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Search, Trash2 } from "lucide-react";
+import { Search } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { RefObject, useState, useEffect, useRef } from "react";
+import { RefObject, useState, useEffect } from "react";
 import { SearchTooltip } from "./SearchTooltip";
 import { validateAndCleanAnagramInput, validateAndCleanPatternInput } from "@/utils/inputValidation";
 import { SearchModes } from "./search/SearchModes";
@@ -12,7 +11,6 @@ interface SearchInputProps {
   showShorter: boolean;
   onInputChange: (value: string) => void;
   onSearch: () => void;
-  onClear: () => void;
   onKeyPress: (e: React.KeyboardEvent) => void;
   onShowShorterChange: (checked: boolean) => void;
   inputRef: RefObject<HTMLInputElement>;
@@ -22,14 +20,12 @@ const SearchInput = ({
   letters, 
   showShorter,
   onInputChange, 
-  onSearch, 
-  onClear, 
+  onSearch,
   onKeyPress, 
   onShowShorterChange,
   inputRef 
 }: SearchInputProps) => {
   const [isPatternMode, setIsPatternMode] = useState(false);
-  const [isSearchMode, setIsSearchMode] = useState(true);
   const cursorPositionRef = useRef<number | null>(null);
   
   useEffect(() => {
@@ -68,17 +64,6 @@ const SearchInput = ({
     }
     
     onInputChange(value);
-    setIsSearchMode(true);
-  };
-
-  const handleSearchClick = () => {
-    if (isSearchMode) {
-      onSearch();
-      setIsSearchMode(false);
-    } else {
-      onClear();
-      setIsSearchMode(true);
-    }
   };
 
   return (
@@ -99,13 +84,7 @@ const SearchInput = ({
             }
             value={letters}
             onChange={handleInputChange}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                handleSearchClick();
-              } else {
-                onKeyPress(e);
-              }
-            }}
+            onKeyDown={onKeyPress}
             className="text-xl h-12 text-left pr-12 border border-gray-200 rounded-md"
             autoFocus
             spellCheck={false}
@@ -113,18 +92,13 @@ const SearchInput = ({
             autoCapitalize="off"
           />
           <div className="absolute right-2 top-1/2 -translate-y-1/2">
-            <Button 
-              onClick={handleSearchClick}
-              className="h-8 w-8 p-0"
-              variant="ghost"
+            <button 
+              onClick={onSearch}
+              className="h-8 w-8 p-0 hover:text-gray-600"
               disabled={!letters.trim()}
             >
-              {isSearchMode ? (
-                <Search className="h-4 w-4" />
-              ) : (
-                <Trash2 className="h-4 w-4" />
-              )}
-            </Button>
+              <Search className="h-4 w-4" />
+            </button>
           </div>
         </div>
       </SearchTooltip>

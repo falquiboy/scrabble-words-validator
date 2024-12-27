@@ -75,38 +75,33 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
     }
   };
 
-  // Handle clear
-  const handleClear = () => {
-    setLetters("");
-    setSearchTerm("");
-    setTargetLength(null);
-    setIsSearchAborted(false);
-    setHistoryIndex(-1);
-    inputRef.current?.focus();
-  };
-
-  // Create a wrapper function to handle the HTML dangerously
-  const renderHighlightedWord = (word: string, originalWord: string) => {
-    const highlightedHtml = highlightWildcardLetter(word, originalWord);
-    return <span dangerouslySetInnerHTML={{ __html: highlightedHtml }} />;
-  };
-
   // Add ESC key listener
   useEffect(() => {
     const handleEscKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && searchTerm) {
-        setIsSearchAborted(true);
-        setSearchTerm("");
-        toast({
-          title: "Búsqueda interrumpida",
-          description: "La búsqueda ha sido cancelada.",
-        });
+      if (e.key === "Escape") {
+        if (searchTerm && !results) {
+          // If there's a search in progress (searchTerm exists but no results yet)
+          setIsSearchAborted(true);
+          setSearchTerm("");
+          toast({
+            title: "Búsqueda interrumpida",
+            description: "La búsqueda ha sido cancelada.",
+          });
+        } else if (searchTerm && results) {
+          // If results are already displayed
+          setLetters("");
+          setSearchTerm("");
+          setTargetLength(null);
+          setIsSearchAborted(false);
+          setHistoryIndex(-1);
+          inputRef.current?.focus();
+        }
       }
     };
 
     window.addEventListener("keydown", handleEscKey);
     return () => window.removeEventListener("keydown", handleEscKey);
-  }, [searchTerm, toast]);
+  }, [searchTerm, results, toast]);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -119,7 +114,6 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
         showShorter={showShorter}
         onInputChange={handleInputChange}
         onSearch={handleSearch}
-        onClear={handleClear}
         onKeyPress={handleKeyPress}
         onShowShorterChange={(checked) => {
           setShowShorter(checked);
