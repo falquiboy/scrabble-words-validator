@@ -7,27 +7,31 @@ const DIGRAPHS = {
 
 /**
  * Processes digraphs in a word, converting them to internal representation
- * This should be called AFTER converting to uppercase and removing accents
+ * This handles the complete normalization process including case conversion and accents
  */
 export const processDigraphs = (input: string): string => {
-  // First ensure we're working with uppercase and no accents
-  let result = input
-    .toUpperCase()
+  if (!input) return '';
+  
+  // First convert to uppercase
+  let result = input.toUpperCase();
+  
+  // Special handling for Ñ to preserve it through normalization
+  result = result.replace(/Ñ/g, '#');
+  
+  // Remove accents
+  result = result
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .normalize('NFC');
   
-  // Special handling for Ñ to preserve it
-  result = result.replace(/Ñ/g, '#'); // Temporary replacement
+  // Restore Ñ
+  result = result.replace(/#/g, 'Ñ');
   
-  // Process digraphs in a specific order to avoid conflicts
+  // Process digraphs in a specific order
   Object.entries(DIGRAPHS).forEach(([digraph, replacement]) => {
     result = result.replace(new RegExp(digraph, 'g'), replacement);
   });
   
-  // Restore Ñ
-  result = result.replace(/#/g, 'Ñ');
-    
   return result;
 };
 
@@ -35,6 +39,8 @@ export const processDigraphs = (input: string): string => {
  * Converts internal representation back to display format
  */
 export const toDisplayFormat = (word: string): string => {
+  if (!word) return '';
+  
   let result = word;
   
   // Convert back in reverse order to avoid conflicts
@@ -61,7 +67,7 @@ export const generateAlphagram = (input: string): string => {
  * Each digraph (CH, LL, RR) counts as one letter
  */
 export const getInternalLength = (word: string): number => {
-  // First convert digraphs to their internal representation
+  // Use processDigraphs to ensure consistent handling
   const processed = processDigraphs(word);
   
   // Now the length will be correct as each digraph is represented by one character
