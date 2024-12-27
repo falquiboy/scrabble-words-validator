@@ -118,10 +118,10 @@ export const highlightWildcardLetter = (word: string, searchTerm: string) => {
         pos += (letter === 'Ç' || letter === 'K' || letter === 'W') ? 2 : 1;
       }
       
-      // Wrap the letter/digraph in red (additional letter)
-      return word.slice(0, pos) + 
+      // Return the word with the additional letter highlighted in red
+      return `<span class="text-gray-900">${word.slice(0, pos)}</span>` + 
              `<span class="text-red-500 font-bold">${originalLetter}</span>` + 
-             word.slice(pos + originalLetter.length);
+             `<span class="text-gray-900">${word.slice(pos + originalLetter.length)}</span>`;
     }
   }
 
