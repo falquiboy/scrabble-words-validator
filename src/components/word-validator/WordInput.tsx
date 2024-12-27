@@ -71,6 +71,9 @@ const WordInput = ({
         // Convert to uppercase first
         const upperChar = char.toUpperCase();
         
+        // Allow direct digraph input (Ç, K, W) to pass through
+        if (['Ç', 'K', 'W'].includes(upperChar)) return upperChar;
+        
         // If it's Ñ/ñ, keep it as Ñ without any normalization
         if (upperChar === 'Ñ' || upperChar === 'ñ') {
           return 'Ñ';
@@ -83,8 +86,7 @@ const WordInput = ({
           .normalize('NFC');
       })
       .join('')
-      .replace(/[^A-ZÑ\s]/g, '')  // Only allow uppercase letters, Ñ, and spaces
-      .replace(/[KW]/g, '');      // Remove K and W
+      .replace(/[^A-ZÑÇKWs]/g, '');  // Only allow uppercase letters, Ñ, Ç, K, W, and spaces
     
     onWordChange(value);
     
