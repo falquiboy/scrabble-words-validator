@@ -1,11 +1,13 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Trash2 } from "lucide-react";
+import { Search, Trash2, History } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { RefObject, useState, useEffect, useRef } from "react";
 import { SearchTooltip } from "./SearchTooltip";
 import { validateAndCleanAnagramInput, validateAndCleanPatternInput } from "@/utils/inputValidation";
 import { SearchModes } from "./search/SearchModes";
+import { useSearchHistory } from "@/hooks/useSearchHistory";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 interface SearchInputProps {
   letters: string;
@@ -31,6 +33,7 @@ const SearchInput = ({
   const [isPatternMode, setIsPatternMode] = useState(false);
   const [isSearchMode, setIsSearchMode] = useState(true);
   const cursorPositionRef = useRef<number | null>(null);
+  const { history, addToHistory, clearHistory, navigateHistory } = useSearchHistory('anagram');
   
   useEffect(() => {
     const handleGlobalF2 = (e: KeyboardEvent) => {
@@ -74,10 +77,23 @@ const SearchInput = ({
   const handleSearchClick = () => {
     if (isSearchMode) {
       onSearch();
+      addToHistory(letters);
       setIsSearchMode(false);
     } else {
       onClear();
       setIsSearchMode(true);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      const newValue = navigateHistory(e.key === 'ArrowUp' ? 'up' : 'down', letters);
+      onInputChange(newValue);
+    } else if (e.key === 'Enter') {
+      handleSearchClick();
+    } else {
+      onKeyPress(e);
     }
   };
 
@@ -99,20 +115,57 @@ const SearchInput = ({
             }
             value={letters}
             onChange={handleInputChange}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                handleSearchClick();
-              } else {
-                onKeyPress(e);
-              }
-            }}
-            className="text-xl h-12 text-left pr-12 border border-gray-200 rounded-md"
+            onKeyDown={handleKeyDown}
+            className="text-xl h-12 text-left pr-24 border border-gray-200 rounded-md"
             autoFocus
             spellCheck={false}
             autoCorrect="off"
             autoCapitalize="off"
           />
-          <div className="absolute right-2 top-1/2 -translate-y-1/2">
+          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8"
+                >
+                  <History className="h-4 w-4" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="h-[40vh]">
+                <SheetHeader>
+                  <SheetTitle>Historial de búsquedas</SheetTitle>
+                </SheetHeader>
+                <div className="mt-4">
+                  {history.length > 0 ? (
+                    <div className="space-y-2">
+                      {history.map((item, index) => (
+                        <button
+                          key={index}
+                          className="w-full text-left p-2 hover:bg-gray-100 rounded-md transition-colors"
+                          onClick={() => {
+                            onInputChange(item);
+                            document.querySelector('[data-radix-collection-item]')?.click();
+                          }}
+                        >
+                          {item}
+                        </button>
+                      ))}
+                      <Button
+                        variant="ghost"
+                        className="w-full mt-4"
+                        onClick={clearHistory}
+                      >
+                        Limpiar historial
+                      </Button>
+                    </div>
+                  ) : (
+                    <p className="text-center text-gray-500">No hay búsquedas recientes</p>
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
             <Button 
               onClick={handleSearchClick}
               className="h-8 w-8 p-0"
