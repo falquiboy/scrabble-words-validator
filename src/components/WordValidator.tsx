@@ -25,8 +25,8 @@ const WordValidator = ({ isDictionaryLoading }: WordValidatorProps) => {
     try {
       const words = word.trim().split(" ");
       const processedWords = words.map(w => {
+        // First normalize the word to uppercase and handle special characters
         let upperWord = w.toUpperCase();
-        
         upperWord = upperWord.split('').map(char => {
           if (char === 'Ñ' || char === 'ñ') return 'Ñ';
           return char
@@ -35,14 +35,15 @@ const WordValidator = ({ isDictionaryLoading }: WordValidatorProps) => {
             .normalize('NFC');
         }).join('');
         
+        // Then process digraphs
         const processed = processDigraphs(upperWord);
         
         console.log('Original word:', upperWord);
         console.log('Processed word:', processed, 'length:', processed.length);
         
-        console.log('Words in Trie containing this word:', 
-          Array.from(wordTrie.getWordsStartingWith(processed))
-        );
+        // Log words in trie for debugging
+        const wordsInTrie = Array.from(wordTrie.getWordsStartingWith(processed));
+        console.log('Words in Trie containing this word:', wordsInTrie);
         
         return processed;
       });
