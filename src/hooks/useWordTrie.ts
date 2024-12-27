@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { wordDB } from '@/utils/wordDatabase';
 import { wordTrie } from '@/utils/trie';
 import { toast } from 'sonner';
-import { processDigraphs } from '@/utils/digraphs';
+import { processDigraphs, generateAlphagram } from '@/utils/digraphs';
 
 interface WordTrieState {
   isLoading: boolean;
@@ -40,13 +40,23 @@ export const useWordTrie = (): WordTrieState => {
     const initTrie = async () => {
       if (isInitializedRef.current) {
         const currentWords = Array.from(wordTrie.getAllWords());
+        const testWord = 'FOWEAR';
+        const processedTestWord = processDigraphs(testWord);
+        const testAlphagram = generateAlphagram(processedTestWord);
+        
         console.log('Checking Trie state:', {
           isInitialized: isInitializedRef.current,
           wordCount: currentWords.length,
           sampleWords: currentWords.slice(0, 5),
-          hasFOWEAR: currentWords.includes('FOWEAR'),
-          containsFOWEAR: wordTrie.search('FOWEAR'),
-          containsProcessedFOWEAR: wordTrie.search(processDigraphs('FOWEAR'))
+          hasFOWEAR: currentWords.includes(testWord),
+          containsFOWEAR: wordTrie.search(testWord),
+          containsProcessedFOWEAR: wordTrie.search(processedTestWord),
+          testWordDetails: {
+            original: testWord,
+            processed: processedTestWord,
+            alphagram: testAlphagram,
+            length: processedTestWord.length
+          }
         });
         
         if (currentWords.length === 0) {
@@ -107,16 +117,24 @@ export const useWordTrie = (): WordTrieState => {
             
             const batch = words.slice(i, i + batchSize);
             batch.forEach(word => {
-              const processedWord = processDigraphs(word.toUpperCase());
-              wordTrie.insert(processedWord, word.toUpperCase());
+              const upperWord = word.toUpperCase();
+              const processedWord = processDigraphs(upperWord);
+              const alphagram = generateAlphagram(processedWord);
+              
+              // Insert both the processed word and its alphagram
+              wordTrie.insert(processedWord, upperWord);
+              wordTrie.insert(alphagram, upperWord);
               processedCount++;
               
               // Debug specific words
-              if (word.toUpperCase() === 'FOWEAR') {
+              if (upperWord === 'FOWEAR') {
                 console.log('Found FOWEAR during insertion:', {
                   original: word,
                   processed: processedWord,
-                  isInTrie: wordTrie.search(processedWord)
+                  alphagram,
+                  length: processedWord.length,
+                  isInTrie: wordTrie.search(processedWord),
+                  alphagramInTrie: wordTrie.search(alphagram)
                 });
               }
             });
@@ -133,12 +151,21 @@ export const useWordTrie = (): WordTrieState => {
           console.log(`Trie build completed in ${((endTime - startTime) / 1000).toFixed(2)} seconds`);
           
           const trieWords = Array.from(wordTrie.getAllWords());
+          const testWord = 'FOWEAR';
+          const processedTestWord = processDigraphs(testWord);
+          const testAlphagram = generateAlphagram(processedTestWord);
+          
           console.log('Final Trie state:', {
             totalWords: trieWords.length,
             sampleWords: trieWords.slice(0, 5),
-            hasFOWEAR: trieWords.includes('FOWEAR'),
-            containsFOWEAR: wordTrie.search('FOWEAR'),
-            containsProcessedFOWEAR: wordTrie.search(processDigraphs('FOWEAR'))
+            testWordDetails: {
+              original: testWord,
+              processed: processedTestWord,
+              alphagram: testAlphagram,
+              length: processedTestWord.length,
+              isInTrie: wordTrie.search(processedTestWord),
+              alphagramInTrie: wordTrie.search(testAlphagram)
+            }
           });
 
           if (mountedRef.current) {
