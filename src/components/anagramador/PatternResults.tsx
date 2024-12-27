@@ -9,7 +9,7 @@ interface PatternResultsProps {
 export const PatternResults = ({ matches, searchTerm }: PatternResultsProps) => {
   if (matches.length === 0) return null;
 
-  // Group words by internal length
+  // Group words by internal length and sort words in descending order within each group
   const groupedByLength = matches.reduce((acc, word) => {
     const length = getInternalLength(word);
     if (!acc[length]) {
@@ -18,6 +18,11 @@ export const PatternResults = ({ matches, searchTerm }: PatternResultsProps) => 
     acc[length].push(word);
     return acc;
   }, {} as Record<number, string[]>);
+
+  // Sort words in descending order within each length group
+  Object.keys(groupedByLength).forEach(length => {
+    groupedByLength[Number(length)].sort((a, b) => b.localeCompare(a));
+  });
 
   // Sort lengths in ascending order
   const sortedLengths = Object.keys(groupedByLength)
