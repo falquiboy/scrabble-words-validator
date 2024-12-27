@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { wordDB } from '@/utils/wordDatabase';
 import { wordTrie } from '@/utils/trie';
 import { toast } from 'sonner';
+import { processDigraphs } from '@/utils/digraphs';
 
 interface WordTrieState {
   isLoading: boolean;
@@ -38,11 +39,14 @@ export const useWordTrie = (): WordTrieState => {
 
     const initTrie = async () => {
       if (isInitializedRef.current) {
-        const currentWords = wordTrie.getAllWords();
+        const currentWords = Array.from(wordTrie.getAllWords());
         console.log('Checking Trie state:', {
           isInitialized: isInitializedRef.current,
           wordCount: currentWords.length,
-          sampleWords: currentWords.slice(0, 5)
+          sampleWords: currentWords.slice(0, 5),
+          hasFOWEAR: currentWords.includes('FOWEAR'),
+          containsFOWEAR: wordTrie.search('FOWEAR'),
+          containsProcessedFOWEAR: wordTrie.search(processDigraphs('FOWEAR'))
         });
         
         if (currentWords.length === 0) {
@@ -92,6 +96,7 @@ export const useWordTrie = (): WordTrieState => {
 
           wordTrie.clear();
           console.log('Building Trie with', words.length, 'words');
+          console.log('Sample of first 10 words:', words.slice(0, 10));
 
           const startTime = performance.now();
           const batchSize = 10000;
@@ -102,26 +107,38 @@ export const useWordTrie = (): WordTrieState => {
             
             const batch = words.slice(i, i + batchSize);
             batch.forEach(word => {
-              wordTrie.insert(word.toUpperCase(), word.toUpperCase());
+              const processedWord = processDigraphs(word.toUpperCase());
+              wordTrie.insert(processedWord, word.toUpperCase());
               processedCount++;
+              
+              // Debug specific words
+              if (word.toUpperCase() === 'FOWEAR') {
+                console.log('Found FOWEAR during insertion:', {
+                  original: word,
+                  processed: processedWord,
+                  isInTrie: wordTrie.search(processedWord)
+                });
+              }
             });
 
             if (processedCount % 50000 === 0) {
               console.log('Words processed:', processedCount);
             }
 
+            // Add small delay to prevent UI blocking
             await new Promise(resolve => setTimeout(resolve, 0));
           }
 
           const endTime = performance.now();
           console.log(`Trie build completed in ${((endTime - startTime) / 1000).toFixed(2)} seconds`);
           
-          const trieWords = wordTrie.getAllWords();
+          const trieWords = Array.from(wordTrie.getAllWords());
           console.log('Final Trie state:', {
             totalWords: trieWords.length,
             sampleWords: trieWords.slice(0, 5),
-            containsJUEZ: trieWords.includes('JUEZ'),
-            containsCASERON: trieWords.includes('CASERON')
+            hasFOWEAR: trieWords.includes('FOWEAR'),
+            containsFOWEAR: wordTrie.search('FOWEAR'),
+            containsProcessedFOWEAR: wordTrie.search(processDigraphs('FOWEAR'))
           });
 
           if (mountedRef.current) {
