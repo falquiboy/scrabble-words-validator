@@ -4,6 +4,7 @@ import ResultsList from "./anagramador/ResultsList";
 import { useOfflineAnagramSearch } from "@/hooks/useOfflineAnagramSearch";
 import { highlightWildcardLetter } from "@/utils/wildcardHighlighting";
 import { Trie } from "@/utils/trie/types";
+import { useToast } from "@/hooks/use-toast";
 
 interface AnagramadorProps {
   trie: Trie;
@@ -14,10 +15,12 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showShorter, setShowShorter] = useState(false);
   const [targetLength, setTargetLength] = useState<number | null>(null);
+  const [isSearchAborted, setIsSearchAborted] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   // Query for words using offline search hook
-  const { data: results } = useOfflineAnagramSearch(searchTerm, showShorter, targetLength, trie);
+  const { data: results, refetch } = useOfflineAnagramSearch(searchTerm, showShorter, targetLength, trie);
 
   // Handle input changes
   const handleInputChange = (value: string) => {
@@ -39,6 +42,7 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
   // Handle search
   const handleSearch = () => {
     if (letters.trim()) {
+      setIsSearchAborted(false);
       setSearchTerm(letters);
     }
   };
@@ -55,6 +59,7 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
     setLetters("");
     setSearchTerm("");
     setTargetLength(null);
+    setIsSearchAborted(false);
     inputRef.current?.focus();
   };
 
@@ -63,6 +68,23 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
     const highlightedHtml = highlightWildcardLetter(word, originalWord);
     return <span dangerouslySetInnerHTML={{ __html: highlightedHtml }} />;
   };
+
+  // Add ESC key listener
+  useEffect(() => {
+    const handleEscKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && searchTerm) {
+        setIsSearchAborted(true);
+        setSearchTerm("");
+        toast({
+          title: "Búsqueda interrumpida",
+          description: "Los resultados pueden estar incompletos.",
+        });
+      }
+    };
+
+    window.addEventListener("keydown", handleEscKey);
+    return () => window.removeEventListener("keydown", handleEscKey);
+  }, [searchTerm, toast]);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -97,6 +119,7 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
           patternMatches: results?.patternMatches || []
         }}
         highlightWildcardLetter={renderHighlightedWord}
+        isSearchAborted={isSearchAborted}
       />
     </div>
   );
