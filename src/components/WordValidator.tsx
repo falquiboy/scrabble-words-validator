@@ -25,18 +25,20 @@ const WordValidator = ({ isDictionaryLoading }: WordValidatorProps) => {
     try {
       const words = word.trim().split(" ");
       const processedWords = words.map(w => {
-        // First normalize the word to uppercase and handle special characters
+        // First convert to uppercase
         let upperWord = w.toUpperCase();
-        upperWord = upperWord.split('').map(char => {
+        
+        // Process digraphs BEFORE normalizing special characters
+        let processed = processDigraphs(upperWord);
+        
+        // Then handle special characters
+        processed = processed.split('').map(char => {
           if (char === 'Ñ' || char === 'ñ') return 'Ñ';
           return char
             .normalize('NFD')
             .replace(/[\u0300-\u036f]/g, '')
             .normalize('NFC');
         }).join('');
-        
-        // Then process digraphs
-        const processed = processDigraphs(upperWord);
         
         console.log('Original word:', upperWord);
         console.log('Processed word:', processed, 'length:', processed.length);
