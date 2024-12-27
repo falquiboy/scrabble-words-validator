@@ -146,7 +146,10 @@ const SearchInput = ({
                           className="w-full text-left p-2 hover:bg-gray-100 rounded-md transition-colors"
                           onClick={() => {
                             onInputChange(item);
-                            document.querySelector('[data-radix-collection-item]')?.click();
+                            const trigger = document.querySelector('[data-radix-collection-item]');
+                            if (trigger) {
+                              (trigger as HTMLElement).click();
+                            }
                           }}
                         >
                           {item}
