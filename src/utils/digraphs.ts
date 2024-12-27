@@ -10,12 +10,23 @@ const DIGRAPHS = {
  * This should be called AFTER converting to uppercase and removing accents
  */
 export const processDigraphs = (input: string): string => {
-  let result = input;
+  // First ensure we're working with uppercase and no accents
+  let result = input
+    .toUpperCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .normalize('NFC');
+  
+  // Special handling for Ñ to preserve it
+  result = result.replace(/Ñ/g, '#'); // Temporary replacement
   
   // Process digraphs in a specific order to avoid conflicts
   Object.entries(DIGRAPHS).forEach(([digraph, replacement]) => {
     result = result.replace(new RegExp(digraph, 'g'), replacement);
   });
+  
+  // Restore Ñ
+  result = result.replace(/#/g, 'Ñ');
     
   return result;
 };
@@ -51,9 +62,7 @@ export const generateAlphagram = (input: string): string => {
  */
 export const getInternalLength = (word: string): number => {
   // First convert digraphs to their internal representation
-  const processed = Object.entries(DIGRAPHS).reduce((acc, [digraph, replacement]) => {
-    return acc.replace(new RegExp(digraph, 'g'), replacement);
-  }, word.toUpperCase());
+  const processed = processDigraphs(word);
   
   // Now the length will be correct as each digraph is represented by one character
   return processed.length;
