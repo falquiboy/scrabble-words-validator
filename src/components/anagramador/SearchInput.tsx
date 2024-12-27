@@ -1,9 +1,11 @@
-import { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, X } from "lucide-react";
+import { Search, Trash2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import { RefObject, useState, useEffect, useRef } from "react";
+import { SearchTooltip } from "./SearchTooltip";
+import { validateAndCleanAnagramInput, validateAndCleanPatternInput } from "@/utils/inputValidation";
+import { SearchModes } from "./search/SearchModes";
 
 interface SearchInputProps {
   letters: string;
@@ -13,59 +15,131 @@ interface SearchInputProps {
   onClear: () => void;
   onKeyPress: (e: React.KeyboardEvent) => void;
   onShowShorterChange: (checked: boolean) => void;
-  inputRef: React.RefObject<HTMLInputElement>;
+  inputRef: RefObject<HTMLInputElement>;
 }
 
-const SearchInput = ({
-  letters,
+const SearchInput = ({ 
+  letters, 
   showShorter,
-  onInputChange,
-  onSearch,
-  onClear,
-  onKeyPress,
+  onInputChange, 
+  onSearch, 
+  onClear, 
+  onKeyPress, 
   onShowShorterChange,
-  inputRef
+  inputRef 
 }: SearchInputProps) => {
+  const [isPatternMode, setIsPatternMode] = useState(false);
+  const [isSearchMode, setIsSearchMode] = useState(true);
+  const cursorPositionRef = useRef<number | null>(null);
+  
+  useEffect(() => {
+    const handleGlobalF2 = (e: KeyboardEvent) => {
+      if (e.key === "F2") {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalF2);
+    return () => window.removeEventListener('keydown', handleGlobalF2);
+  }, [inputRef]);
+
+  useEffect(() => {
+    // Restore cursor position after state update
+    if (cursorPositionRef.current !== null && inputRef.current) {
+      inputRef.current.setSelectionRange(
+        cursorPositionRef.current,
+        cursorPositionRef.current
+      );
+      cursorPositionRef.current = null;
+    }
+  }, [letters]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Store cursor position before state update
+    cursorPositionRef.current = e.target.selectionStart;
+    
+    let value = e.target.value.toUpperCase();
+    
+    if (isPatternMode) {
+      value = validateAndCleanPatternInput(value);
+    } else {
+      value = validateAndCleanAnagramInput(value);
+    }
+    
+    onInputChange(value);
+    setIsSearchMode(true);
+  };
+
+  const handleSearchClick = () => {
+    if (isSearchMode) {
+      onSearch();
+      setIsSearchMode(false);
+    } else {
+      onClear();
+      setIsSearchMode(true);
+    }
+  };
+
   return (
-    <div className="space-y-4">
-      <div className="relative">
-        <Input
-          type="text"
-          value={letters}
-          onChange={(e) => onInputChange(e.target.value)}
-          onKeyDown={onKeyPress}
-          placeholder="Ingresa letras..."
-          className="pr-24"
-          ref={inputRef}
-        />
-        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-          {letters && (
-            <Button
+    <div className="space-y-2">
+      <SearchModes
+        isPatternMode={isPatternMode}
+        onPatternModeChange={setIsPatternMode}
+      />
+      <SearchTooltip isPatternMode={isPatternMode}>
+        <div className="relative flex-1">
+          <Input
+            ref={inputRef}
+            type="text"
+            placeholder={
+              isPatternMode 
+                ? "Ingresa un patrón" 
+                : "asterisco es comodín"
+            }
+            value={letters}
+            onChange={handleInputChange}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                handleSearchClick();
+              } else {
+                onKeyPress(e);
+              }
+            }}
+            className="text-xl h-12 text-left pr-12 border border-gray-200 rounded-md"
+            autoFocus
+            spellCheck={false}
+            autoCorrect="off"
+            autoCapitalize="off"
+          />
+          <div className="absolute right-2 top-1/2 -translate-y-1/2">
+            <Button 
+              onClick={handleSearchClick}
+              className="h-8 w-8 p-0"
               variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={onClear}
+              disabled={!letters.trim()}
             >
-              <X className="h-4 w-4" />
+              {isSearchMode ? (
+                <Search className="h-4 w-4" />
+              ) : (
+                <Trash2 className="h-4 w-4" />
+              )}
             </Button>
-          )}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={onSearch}
-          >
-            <Search className="h-4 w-4" />
-          </Button>
+          </div>
         </div>
-      </div>
+      </SearchTooltip>
       <div className="flex items-center space-x-2">
         <Switch
-          id="shorter-words"
+          id="show-shorter"
           checked={showShorter}
           onCheckedChange={onShowShorterChange}
         />
-        <Label htmlFor="shorter-words">Incluir palabras más cortas</Label>
+        <label
+          htmlFor="show-shorter"
+          className="text-sm text-gray-600 cursor-pointer"
+        >
+          Mostrar solo palabras más cortas
+        </label>
       </div>
     </div>
   );
