@@ -26,5 +26,13 @@ export const toDisplayFormat = (word: string): string => {
     .replace(/W/g, 'RR');
 };
 
+// Calculate digraph-sensitive length
+export const getInternalLength = (word: string): number => {
+  // Count digraphs as single letters
+  const digraphCount = (word.match(/CH|LL|RR/g) || []).length;
+  // Subtract from total length because each digraph counts as one letter instead of two
+  return word.length - digraphCount;
+};
+
 // Custom alphabet order for sorting
 const CUSTOM_ALPHABET = "AEIOUBCÇDFGHJLKMNÑPQRWSTVXYZ";
