@@ -5,8 +5,6 @@ import { ResultsHeader } from "./ResultsHeader";
 import { ExactResults } from "./ExactResults";
 import { ShorterResults } from "./ShorterResults";
 import { PatternResults } from "./PatternResults";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle } from "lucide-react";
 
 interface ResultsListProps {
   isLoading: boolean;
@@ -76,14 +74,6 @@ const ResultsList = ({
   return (
     <ScrollArea className="h-[calc(100vh-12rem)] px-1">
       <div className="space-y-4 pb-4">
-        {isSearchAborted && (
-          <Alert variant="warning" className="mb-4">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              La búsqueda fue interrumpida. Los resultados mostrados pueden estar incompletos.
-            </AlertDescription>
-          </Alert>
-        )}
         {isLoading ? (
           <div className="flex items-center gap-2 text-gray-500">
             <Loader className="h-4 w-4 animate-spin" />

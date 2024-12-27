@@ -77,7 +77,7 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
         setSearchTerm("");
         toast({
           title: "Búsqueda interrumpida",
-          description: "Los resultados pueden estar incompletos.",
+          description: "La búsqueda ha sido cancelada.",
         });
       }
     };
