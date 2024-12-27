@@ -40,22 +40,22 @@ const WordValidator = ({ isDictionaryLoading }: WordValidatorProps) => {
         // Then process digraphs
         const processed = processDigraphs(upperWord);
         
-        console.log('Original word:', w);
-        console.log('Uppercase word:', upperWord);
-        console.log('Processed word:', processed, 'length:', processed.length);
-        
-        // Log words in trie for debugging
-        const wordsInTrie = Array.from(wordTrie.getWordsStartingWith(processed));
-        console.log('Words in Trie containing this word:', wordsInTrie);
+        console.log('Word validation debug:', {
+          originalWord: w,
+          upperWord,
+          processedWord: processed,
+          length: processed.length,
+          trieContains: wordTrie.search(processed),
+          wordsInTrie: Array.from(wordTrie.getWordsStartingWith(processed)),
+          allWords: Array.from(wordTrie.getAllWords()).slice(0, 10) // Show first 10 words for debugging
+        });
         
         return processed;
       });
       
       const isValid = processedWords.every(w => {
         if (!w) return false;
-        console.log('Processing word for validation:', w);
         const result = wordTrie.search(w);
-        console.log('Validation result for', w, ':', result);
         return result;
       });
       
