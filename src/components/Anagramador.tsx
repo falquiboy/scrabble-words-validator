@@ -16,6 +16,8 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
   const [showShorter, setShowShorter] = useState(false);
   const [targetLength, setTargetLength] = useState<number | null>(null);
   const [isSearchAborted, setIsSearchAborted] = useState(false);
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -24,9 +26,8 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
 
   // Handle input changes
   const handleInputChange = (value: string) => {
-    // Allow all characters initially, validation will happen in inputValidation.ts
     setLetters(value);
-
+    
     // Check for length filter
     const lengthMatch = value.match(/\/(\d+)$/);
     if (lengthMatch) {
@@ -44,13 +45,33 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
     if (letters.trim()) {
       setIsSearchAborted(false);
       setSearchTerm(letters);
+      // Add to history only if it's a new search
+      if (!searchHistory.includes(letters)) {
+        const newHistory = [letters, ...searchHistory.slice(0, 9)];
+        setSearchHistory(newHistory);
+      }
+      setHistoryIndex(-1);
     }
   };
 
-  // Handle key press
+  // Handle key press for search and history navigation
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleSearch();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (historyIndex < searchHistory.length - 1) {
+        const newIndex = historyIndex + 1;
+        setHistoryIndex(newIndex);
+        setLetters(searchHistory[newIndex]);
+      }
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (historyIndex > -1) {
+        const newIndex = historyIndex - 1;
+        setHistoryIndex(newIndex);
+        setLetters(newIndex === -1 ? '' : searchHistory[newIndex]);
+      }
     }
   };
 
@@ -60,6 +81,7 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
     setSearchTerm("");
     setTargetLength(null);
     setIsSearchAborted(false);
+    setHistoryIndex(-1);
     inputRef.current?.focus();
   };
 
