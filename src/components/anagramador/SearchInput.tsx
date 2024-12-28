@@ -97,7 +97,8 @@ const SearchInput = ({
             value={letters}
             onChange={handleInputChange}
             onKeyDown={onKeyPress}
-            className="text-xl h-12 text-left pr-12 border border-gray-200 rounded-md"
+            className="text-xl h-12 text-left pr-12 border border-gray-200 rounded-md w-full"
+            style={{ paddingRight: '3rem' }}
             autoFocus
             spellCheck={false}
             autoCorrect="off"
