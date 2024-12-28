@@ -1,5 +1,5 @@
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { RefObject, useState, useEffect, useRef } from "react";
 import { SearchTooltip } from "./SearchTooltip";
@@ -14,6 +14,8 @@ interface SearchInputProps {
   onKeyPress: (e: React.KeyboardEvent) => void;
   onShowShorterChange: (checked: boolean) => void;
   inputRef: RefObject<HTMLInputElement>;
+  hasActiveSearch?: boolean;
+  onClear?: () => void;
 }
 
 const SearchInput = ({ 
@@ -23,7 +25,9 @@ const SearchInput = ({
   onSearch,
   onKeyPress, 
   onShowShorterChange,
-  inputRef 
+  inputRef,
+  hasActiveSearch = false,
+  onClear
 }: SearchInputProps) => {
   const [isPatternMode, setIsPatternMode] = useState(false);
   const cursorPositionRef = useRef<number | null>(null);
@@ -66,6 +70,14 @@ const SearchInput = ({
     onInputChange(value);
   };
 
+  const handleButtonClick = () => {
+    if (hasActiveSearch && onClear) {
+      onClear();
+    } else {
+      onSearch();
+    }
+  };
+
   return (
     <div className="space-y-2">
       <SearchModes
@@ -93,11 +105,15 @@ const SearchInput = ({
           />
           <div className="absolute right-2 top-1/2 -translate-y-1/2">
             <button 
-              onClick={onSearch}
+              onClick={handleButtonClick}
               className="h-8 w-8 p-0 hover:text-gray-600"
               disabled={!letters.trim()}
             >
-              <Search className="h-4 w-4" />
+              {hasActiveSearch ? (
+                <X className="h-4 w-4" />
+              ) : (
+                <Search className="h-4 w-4" />
+              )}
             </button>
           </div>
         </div>

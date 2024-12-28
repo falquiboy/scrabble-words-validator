@@ -54,6 +54,16 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
     }
   };
 
+  // Handle clear
+  const handleClear = () => {
+    setLetters("");
+    setSearchTerm("");
+    setTargetLength(null);
+    setIsSearchAborted(false);
+    setHistoryIndex(-1);
+    inputRef.current?.focus();
+  };
+
   // Handle key press for search and history navigation
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -89,12 +99,7 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
           });
         } else if (searchTerm && results) {
           // If results are already displayed
-          setLetters("");
-          setSearchTerm("");
-          setTargetLength(null);
-          setIsSearchAborted(false);
-          setHistoryIndex(-1);
-          inputRef.current?.focus();
+          handleClear();
         }
       }
     };
@@ -114,6 +119,7 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
         showShorter={showShorter}
         onInputChange={handleInputChange}
         onSearch={handleSearch}
+        onClear={handleClear}
         onKeyPress={handleKeyPress}
         onShowShorterChange={(checked) => {
           setShowShorter(checked);
@@ -123,6 +129,7 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
           }
         }}
         inputRef={inputRef}
+        hasActiveSearch={!!searchTerm}
       />
       <ResultsList
         isLoading={false}
