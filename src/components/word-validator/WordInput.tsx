@@ -111,13 +111,13 @@ const WordInput = ({
   return (
     <div className="relative">
       <ScrollArea className={`h-40 rounded-md border border-gray-200 ${getInputBackground()}`}>
-        <div className={`p-3 min-h-full ${getInputBackground()}`}>
+        <div className={`p-4 min-h-full flex items-center ${getInputBackground()}`}>
           {result.checked && !isEditing ? (
             <div 
-              className="relative" 
+              className="relative w-full" 
               onClick={onEditStart}
             >
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-3">
                 {word.split(" ").map((w, i) => (
                   <span key={i} className="text-4xl font-bold">
                     {w}
@@ -154,7 +154,7 @@ const WordInput = ({
         <Button
           onClick={onClear}
           variant="ghost"
-          className="absolute right-2 top-1/2 -translate-y-1/2 h-12 w-12 p-0 hover:bg-transparent"
+          className="absolute right-3 top-1/2 -translate-y-1/2 h-12 w-12 p-0 hover:bg-transparent"
           type="button"
           disabled={isLoading}
         >
