@@ -92,7 +92,7 @@ const WordInput = ({
           .normalize('NFC');
       })
       .join('')
-      .replace(/[^A-ZÑÇKWs]/g, '');  // Only allow uppercase letters, Ñ, Ç, K, W, and spaces
+      .replace(/[^A-ZÑÇKWs\s]/g, '');  // Allow spaces by adding \s to the regex
     
     onWordChange(value);
     
