@@ -78,16 +78,18 @@ export const highlightWildcardLetter = (word: string, searchTerm: string): React
         // Check if this position is part of a digraph
         const digraph = digraphPositions.find(pos => pos.start === index || pos.end === index);
         
+        // Only highlight if this is a wildcard match or an additional letter
         const isWildcardMatch = cleanSearchTerm.includes('*');
         const isUnmatched = !matchedIndices.has(index);
         
         // Determine if this character should be highlighted
-        const shouldHighlight = (isWildcardMatch || isUnmatched) && 
+        const shouldHighlight = isUnmatched && 
+          (isWildcardMatch || !searchTerm.includes(char)) &&
           // For digraphs, highlight only if both characters are unmatched
-          (!digraph || (isUnmatched && !matchedIndices.has(digraph.start) && !matchedIndices.has(digraph.end)));
+          (!digraph || (!matchedIndices.has(digraph.start) && !matchedIndices.has(digraph.end)));
         
         if (shouldHighlight) {
-          // If it's part of a digraph and one character needs highlighting, highlight both
+          // If it's part of a digraph and needs highlighting, highlight both characters
           if (digraph && (index === digraph.start)) {
             return (
               <span key={index} className="text-red-600 font-semibold">
