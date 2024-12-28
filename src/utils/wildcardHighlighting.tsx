@@ -1,7 +1,7 @@
 import React from 'react';
 
 /**
- * Highlights wildcard letters in red
+ * Highlights wildcard letters and additional letters in red
  */
 export const highlightWildcardLetter = (word: string, searchTerm: string): React.ReactNode => {
   // Remove length filter if present
@@ -32,8 +32,8 @@ export const highlightWildcardLetter = (word: string, searchTerm: string): React
   return (
     <span className="inline-flex">
       {wordChars.map((char, index) => {
-        if (!matchedIndices.has(index) && cleanSearchTerm.includes('*')) {
-          // Only highlight wildcard matches in red
+        if (!matchedIndices.has(index) && (cleanSearchTerm.includes('*') || !searchChars.includes(char))) {
+          // Highlight both wildcard matches and additional letters in red
           return <span key={index} className="text-red-600 font-semibold">{char}</span>;
         } else {
           // Keep other letters in default color
