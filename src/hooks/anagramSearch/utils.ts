@@ -23,48 +23,7 @@ const findExactMatches = (processedInput: string, trie: Trie): Set<string> => {
   return matches;
 };
 
-// New optimized function for multiple wildcards
-const findMultipleWildcardMatches = (letters: string, wildcardCount: number, trie: Trie): Set<string> => {
-  const matches = new Set<string>();
-  const targetLength = letters.length + wildcardCount;
-  
-  // Get all words of the target length
-  const wordsOfLength = trie.getWordsOfLength(targetLength);
-  
-  // Create array of fixed positions and their letters
-  const fixedPositions: { pos: number; letter: string }[] = [];
-  let currentPos = 0;
-  for (const letter of letters) {
-    fixedPositions.push({ pos: currentPos, letter });
-    currentPos++;
-  }
-  
-  // Filter words that match our fixed positions
-  for (const word of wordsOfLength) {
-    let isMatch = true;
-    for (const { pos, letter } of fixedPositions) {
-      if (word[pos]?.toUpperCase() !== letter.toUpperCase()) {
-        isMatch = false;
-        break;
-      }
-    }
-    if (isMatch) {
-      matches.add(word);
-    }
-  }
-  
-  return matches;
-};
-
 const findWildcardMatches = (processedInput: string, wildcardCount: number, trie: Trie): Set<string> => {
-  // Use optimized approach for multiple wildcards
-  if (wildcardCount > 1) {
-    console.log('Using optimized multiple wildcards search');
-    return findMultipleWildcardMatches(processedInput, wildcardCount, trie);
-  }
-  
-  // Use existing approach for single wildcard
-  console.log('Using standard wildcard search');
   const matches = new Set<string>();
   const combinations = generateWildcardCombinations(processedInput, wildcardCount);
   
