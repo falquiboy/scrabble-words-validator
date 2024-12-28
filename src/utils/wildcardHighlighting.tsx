@@ -37,13 +37,15 @@ export const highlightWildcardLetter = (word: string, searchTerm: string): React
   const displayWord = toDisplayFormat(word);
   const displayChars = displayWord.split('');
   
-  // Track digraph positions
+  // Track digraph positions and process them
   const digraphPositions = new Set<number>();
   let i = 0;
   while (i < displayChars.length - 1) {
     const pair = displayChars[i] + displayChars[i + 1];
     if (['CH', 'LL', 'RR'].includes(pair)) {
-      if (!matchedIndices.has(Math.floor(i / 2))) {
+      const processedIndex = Math.floor(i / 2);
+      // If this digraph position is not matched in the processed word
+      if (!matchedIndices.has(processedIndex)) {
         digraphPositions.add(i);
         digraphPositions.add(i + 1);
       }
