@@ -20,7 +20,7 @@ export const highlightWildcardLetter = (word: string, searchTerm: string): React
   // Track which characters have been matched
   const matchedIndices = new Set<number>();
   
-  // First pass: mark exact matches
+  // First pass: mark exact matches from left to right
   wordChars.forEach((char, index) => {
     if (searchCharCounts.has(char) && searchCharCounts.get(char)! > 0) {
       matchedIndices.add(index);
@@ -32,7 +32,10 @@ export const highlightWildcardLetter = (word: string, searchTerm: string): React
   return (
     <span className="inline-flex">
       {wordChars.map((char, index) => {
-        if (!matchedIndices.has(index) && (cleanSearchTerm.includes('*') || !searchChars.includes(char))) {
+        const isWildcardMatch = cleanSearchTerm.includes('*') && !matchedIndices.has(index);
+        const isAdditionalLetter = !matchedIndices.has(index);
+        
+        if (isWildcardMatch || isAdditionalLetter) {
           // Highlight both wildcard matches and additional letters in red
           return <span key={index} className="text-red-600 font-semibold">{char}</span>;
         } else {
