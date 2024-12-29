@@ -9,8 +9,11 @@ interface PatternResultsProps {
 export const PatternResults = ({ matches, searchTerm }: PatternResultsProps) => {
   if (matches.length === 0) return null;
 
-  // Group words by internal length
-  const groupedByLength = matches.reduce((acc, word) => {
+  // Remove duplicates using Set
+  const uniqueMatches = Array.from(new Set(matches));
+
+  // Group unique words by internal length
+  const groupedByLength = uniqueMatches.reduce((acc, word) => {
     const length = getInternalLength(word);
     if (!acc[length]) {
       acc[length] = [];
@@ -27,7 +30,7 @@ export const PatternResults = ({ matches, searchTerm }: PatternResultsProps) => 
   return (
     <div className="space-y-4 pb-8">
       <h3 className="font-semibold text-lg">
-        {`${matches.length} ${matches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que coinciden con el patrón:`}
+        {`${uniqueMatches.length} ${uniqueMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que coinciden con el patrón:`}
       </h3>
       {sortedLengths.map(length => (
         <div key={`length-${length}`} className="space-y-2">
