@@ -20,6 +20,8 @@ const findDigraphPositions = (word: string): { start: number, end: number }[] =>
 };
 
 export const highlightWildcardLetter = (word: string, searchTerm: string): React.ReactNode => {
+  if (!word || !searchTerm) return word;
+
   // Remove length filter if present
   const cleanSearchTerm = searchTerm.replace(/\/\d+$/, '');
   
@@ -70,7 +72,7 @@ export const highlightWildcardLetter = (word: string, searchTerm: string): React
     <span className="inline-flex">
       {word.split('').map((char, index) => {
         // Find if this position is part of a digraph
-        const digraph = digraphPositions.find(pos => pos.start === index || pos.end === index);
+        const digraph = digraphPositions.find(pos => pos?.start === index || pos?.end === index);
         
         // Only highlight if this is a wildcard match or an additional letter
         const isWildcardMatch = cleanSearchTerm.includes('*');
