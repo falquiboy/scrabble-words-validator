@@ -6,10 +6,20 @@ export const validateWordPattern = (
   pattern: string,
   rackLetters?: string
 ): boolean => {
-  // Process both the word and pattern with digraphs
+  // First process the word with digraphs
   const processedWord = processDigraphs(word);
-  const processedPattern = processDigraphs(pattern.replace(/[?-]/g, '?')); // Preserve ? and - while processing digraphs
   
+  // For the pattern, we need to handle special characters differently
+  // We'll split the pattern into parts that should and shouldn't be processed
+  const parts = pattern.split(/([?-])/);
+  const processedParts = parts.map(part => {
+    // Don't process special characters
+    if (part === '?' || part === '-') return part;
+    // Process other parts for digraphs
+    return processDigraphs(part);
+  });
+  const processedPattern = processedParts.join('');
+
   // Quick regex check using the processed pattern
   if (!convertPatternToRegex(processedPattern).test(processedWord)) {
     return false;
