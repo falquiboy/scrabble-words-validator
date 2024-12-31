@@ -17,8 +17,35 @@ export const useWordDatabase = () => {
     let mounted = true;
     let totalRetries = 0;
 
+    const checkSupabaseConnection = async () => {
+      try {
+        console.log('Testing Supabase connection...');
+        const { data, error } = await supabase.from('words').select('word').limit(1);
+        
+        if (error) {
+          console.error('Supabase connection test failed:', error);
+          throw new Error(`Database connection failed: ${error.message}`);
+        }
+        
+        if (!data || data.length === 0) {
+          throw new Error('Database connection test returned no data');
+        }
+        
+        console.log('Supabase connection test successful');
+        return true;
+      } catch (err) {
+        console.error('Connection test error:', err);
+        const message = err instanceof Error ? err.message : 'Failed to connect to database';
+        toast.error(message);
+        throw err;
+      }
+    };
+
     const initDB = async () => {
       try {
+        // First check database connection
+        await checkSupabaseConnection();
+        
         console.log('Initializing IndexedDB...');
         await wordDB.init();
         if (!mounted) return;
@@ -41,20 +68,6 @@ export const useWordDatabase = () => {
           while (hasMore && mounted) {
             try {
               console.log('Fetching batch starting after word:', lastWord);
-              console.log('Checking Supabase connection...');
-              
-              // Test Supabase connection first
-              const { data: testData, error: testError } = await supabase
-                .from('words')
-                .select('word')
-                .limit(1);
-                
-              if (testError) {
-                console.error('Supabase connection test failed:', testError);
-                throw new Error(`Supabase connection failed: ${testError.message}`);
-              }
-              
-              console.log('Supabase connection successful, fetching batch...');
               
               const { data: words, error: fetchError } = await supabase
                 .rpc('get_words_batch', {
