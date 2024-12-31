@@ -10,7 +10,7 @@ const Index = () => {
   
   // Initialize dictionary at the top level so it's shared between modules
   const { isLoading: isDBLoading, progress: dbProgress } = useWordDatabase();
-  const { isLoading: isTrieLoading, wordCount } = useWordTrie();
+  const { isLoading: isTrieLoading, wordCount, trie } = useWordTrie();
   
   const isDictionaryLoading = isDBLoading || isTrieLoading;
   const totalProgress = isTrieLoading ? 
