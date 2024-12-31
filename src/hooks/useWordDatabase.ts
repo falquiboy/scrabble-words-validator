@@ -3,8 +3,8 @@ import { wordDB } from '@/utils/wordDatabase';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-const MAX_RETRIES = 5; // Increased from 3 to 5 for more retry attempts
-const BATCH_SIZE = 5000; // Reduced from 10000 to 5000 for better stability
+const MAX_RETRIES = 5;
+const BATCH_SIZE = 5000;
 const MINIMUM_EXPECTED_WORDS = 600000;
 const BACKOFF_BASE = 2;
 
@@ -19,6 +19,7 @@ export const useWordDatabase = () => {
 
     const initDB = async () => {
       try {
+        console.log('Initializing IndexedDB...');
         await wordDB.init();
         if (!mounted) return;
 
@@ -40,6 +41,21 @@ export const useWordDatabase = () => {
           while (hasMore && mounted) {
             try {
               console.log('Fetching batch starting after word:', lastWord);
+              console.log('Checking Supabase connection...');
+              
+              // Test Supabase connection first
+              const { data: testData, error: testError } = await supabase
+                .from('words')
+                .select('word')
+                .limit(1);
+                
+              if (testError) {
+                console.error('Supabase connection test failed:', testError);
+                throw new Error(`Supabase connection failed: ${testError.message}`);
+              }
+              
+              console.log('Supabase connection successful, fetching batch...');
+              
               const { data: words, error: fetchError } = await supabase
                 .rpc('get_words_batch', {
                   batch_size: BATCH_SIZE,
@@ -52,7 +68,9 @@ export const useWordDatabase = () => {
                 
                 if (batchRetries <= MAX_RETRIES) {
                   const backoffTime = Math.pow(BACKOFF_BASE, batchRetries) * 1000;
-                  toast.error(`Error fetching words. Retrying in ${backoffTime/1000}s... (${batchRetries}/${MAX_RETRIES})`);
+                  const message = `Error fetching words. Retrying in ${backoffTime/1000}s... (${batchRetries}/${MAX_RETRIES})`;
+                  console.log(message);
+                  toast.error(message);
                   await new Promise(resolve => setTimeout(resolve, backoffTime));
                   continue;
                 }
@@ -61,13 +79,16 @@ export const useWordDatabase = () => {
               }
 
               if (!words || words.length === 0) {
+                console.log('No words returned in batch. Total words so far:', totalWords);
                 if (totalWords < MINIMUM_EXPECTED_WORDS) {
                   if (totalRetries < MAX_RETRIES) {
                     totalRetries++;
                     lastWord = null;
                     totalWords = 0;
                     const backoffTime = Math.pow(BACKOFF_BASE, totalRetries) * 1000;
-                    toast.error(`Incomplete word list. Restarting in ${backoffTime/1000}s... (${totalRetries}/${MAX_RETRIES})`);
+                    const message = `Incomplete word list. Restarting in ${backoffTime/1000}s... (${totalRetries}/${MAX_RETRIES})`;
+                    console.log(message);
+                    toast.error(message);
                     await new Promise(resolve => setTimeout(resolve, backoffTime));
                     continue;
                   }
@@ -78,6 +99,7 @@ export const useWordDatabase = () => {
               }
 
               if (mounted) {
+                console.log(`Processing batch of ${words.length} words...`);
                 await wordDB.addWords(words.map(w => w.word));
                 totalWords += words.length;
                 lastWord = words[words.length - 1].word;
@@ -99,7 +121,9 @@ export const useWordDatabase = () => {
               if (batchRetries < MAX_RETRIES) {
                 batchRetries++;
                 const backoffTime = Math.pow(BACKOFF_BASE, batchRetries) * 1000;
-                toast.error(`Error processing batch. Retrying in ${backoffTime/1000}s... (${batchRetries}/${MAX_RETRIES})`);
+                const message = `Error processing batch. Retrying in ${backoffTime/1000}s... (${batchRetries}/${MAX_RETRIES})`;
+                console.log(message);
+                toast.error(message);
                 await new Promise(resolve => setTimeout(resolve, backoffTime));
                 continue;
               }
