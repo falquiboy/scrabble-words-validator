@@ -3,7 +3,8 @@ import { wordDB } from '@/utils/wordDatabase';
 import { wordTrie } from '@/utils/trie';
 import { toast } from 'sonner';
 import { processDigraphs, generateAlphagram } from '@/utils/digraphs';
-import { supabase } from '@/integrations/supabase/client';
+
+const EXPECTED_WORD_COUNT = 639293;
 
 interface WordTrieState {
   isLoading: boolean;
@@ -40,33 +41,9 @@ export const useWordTrie = (): WordTrieState => {
       }
     };
 
-    const checkTotalWordsInDB = async () => {
-      const { count, error } = await supabase
-        .from('words')
-        .select('*', { count: 'exact', head: true });
-      
-      if (error) {
-        console.error('Error checking total words:', error);
-        throw error;
-      }
-      
-      return count || 0;
-    };
-
     const initTrie = async () => {
       if (isInitializedRef.current) {
-        const totalWordsInDB = await checkTotalWordsInDB();
-        
-        if (uniqueWordsRef.current.size === 0 || uniqueWordsRef.current.size < totalWordsInDB) {
-          console.log('Trie needs rebuild:', {
-            currentWords: uniqueWordsRef.current.size,
-            expectedWords: totalWordsInDB
-          });
-          isInitializedRef.current = false;
-          toastShownRef.current = false;
-          wordTrie.clear();
-          uniqueWordsRef.current.clear();
-        } else {
+        if (uniqueWordsRef.current.size === EXPECTED_WORD_COUNT) {
           if (mountedRef.current) {
             setState(prev => ({
               ...prev,
@@ -76,6 +53,12 @@ export const useWordTrie = (): WordTrieState => {
             showReadyToast(uniqueWordsRef.current.size);
           }
           return;
+        } else {
+          console.log('Trie needs rebuild: incorrect word count');
+          isInitializedRef.current = false;
+          toastShownRef.current = false;
+          wordTrie.clear();
+          uniqueWordsRef.current.clear();
         }
       }
 
@@ -91,13 +74,8 @@ export const useWordTrie = (): WordTrieState => {
           if (!mountedRef.current) return;
           
           const words = await wordDB.getAllWords();
-          const totalWordsInDB = await checkTotalWordsInDB();
           
           if (!mountedRef.current) return;
-
-          if (words.length === 0 || words.length < totalWordsInDB) {
-            throw new Error(`Incomplete word list: ${words.length}/${totalWordsInDB} words`);
-          }
 
           wordTrie.clear();
           uniqueWordsRef.current.clear();
@@ -130,10 +108,6 @@ export const useWordTrie = (): WordTrieState => {
 
           const endTime = performance.now();
           console.log(`Trie build completed in ${((endTime - startTime) / 1000).toFixed(2)} seconds`);
-
-          if (uniqueWordsRef.current.size < totalWordsInDB) {
-            throw new Error(`Failed to load all words: ${uniqueWordsRef.current.size}/${totalWordsInDB}`);
-          }
 
           if (mountedRef.current) {
             setState({

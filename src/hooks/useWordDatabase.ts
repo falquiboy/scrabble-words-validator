@@ -3,8 +3,9 @@ import { wordDB } from '@/utils/wordDatabase';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+const EXPECTED_WORD_COUNT = 639293;
 const MAX_RETRIES = 5;
-const BATCH_SIZE = 10000; // Increased from 1000 to load faster
+const BATCH_SIZE = 10000;
 const BACKOFF_BASE = 2;
 
 export const useWordDatabase = () => {
@@ -16,46 +17,20 @@ export const useWordDatabase = () => {
     let mounted = true;
     let totalRetries = 0;
 
-    const checkSupabaseConnection = async () => {
-      try {
-        console.log('Testing Supabase connection...');
-        const { data, error, count } = await supabase
-          .from('words')
-          .select('word', { count: 'exact' })
-          .limit(1)
-          .throwOnError();
-        
-        if (error) {
-          console.error('Supabase connection test failed:', error);
-          throw new Error(`Database connection failed: ${error.message}`);
-        }
-        
-        if (!data || data.length === 0) {
-          throw new Error('Database connection test returned no data');
-        }
-        
-        console.log('Supabase connection test successful. Total words:', count);
-        return count;
-      } catch (err) {
-        console.error('Connection test error:', err);
-        const message = err instanceof Error ? err.message : 'Failed to connect to database';
-        toast.error(message);
-        throw err;
-      }
-    };
-
     const initDB = async () => {
       try {
-        const totalWordsInSupabase = await checkSupabaseConnection();
-        
         console.log('Initializing IndexedDB...');
         await wordDB.init();
         if (!mounted) return;
 
-        let currentVersion = await wordDB.getVersion(); // Changed from const to let
+        let currentVersion = await wordDB.getVersion();
         console.log('Current DB version:', currentVersion);
 
-        if (currentVersion < 3 || !totalWordsInSupabase) {
+        // Check if we have exactly the expected number of words
+        const existingWords = await wordDB.getAllWords();
+        console.log('Words in IndexedDB:', existingWords.length);
+
+        if (currentVersion < 3 || existingWords.length !== EXPECTED_WORD_COUNT) {
           console.log('Database needs rebuild. Clearing existing data...');
           await wordDB.clear();
           
@@ -63,9 +38,9 @@ export const useWordDatabase = () => {
           let totalWords = 0;
           let hasMore = true;
 
-          while (hasMore && mounted && totalWords < totalWordsInSupabase) {
+          while (hasMore && mounted && totalWords < EXPECTED_WORD_COUNT) {
             try {
-              console.log(`Fetching batch starting after word: "${lastWord}". Progress: ${totalWords}/${totalWordsInSupabase}`);
+              console.log(`Fetching batch starting after word: "${lastWord}". Progress: ${totalWords}/${EXPECTED_WORD_COUNT}`);
               
               const { data: words, error: fetchError } = await supabase
                 .from('words')
@@ -88,20 +63,11 @@ export const useWordDatabase = () => {
               if (mounted) {
                 console.log(`Processing batch of ${words.length} words...`);
                 
-                // Log any suspicious two-letter words
-                const shortWords = words.filter(w => w.word.length === 2);
-                if (shortWords.length > 0) {
-                  console.log('Two-letter words found in batch:', shortWords.map(w => ({
-                    word: w.word,
-                    charCodes: Array.from(w.word).map(c => c.charCodeAt(0))
-                  })));
-                }
-
                 await wordDB.addWords(words.map(w => w.word));
                 totalWords += words.length;
                 lastWord = words[words.length - 1].word;
                 
-                const estimatedProgress = Math.min((totalWords / totalWordsInSupabase) * 100, 100);
+                const estimatedProgress = Math.min((totalWords / EXPECTED_WORD_COUNT) * 100, 100);
                 setProgress(Math.floor(estimatedProgress));
 
                 if (totalWords % 50000 === 0) {
@@ -130,19 +96,8 @@ export const useWordDatabase = () => {
             toast.success(`Dictionary loaded: ${totalWords.toLocaleString()} words`);
           }
         } else {
-          console.log('Database is up to date');
-          const existingWords = await wordDB.getAllWords();
-          console.log('Existing words in IndexedDB:', existingWords.length);
-          
-          // Verify if we have all words
-          if (existingWords.length < totalWordsInSupabase) {
-            console.log('Missing words detected. Triggering rebuild...');
-            currentVersion = 0; // Now we can reassign the value
-            await initDB();
-            return;
-          }
-          
-          toast.success(`Dictionary ready: ${existingWords.length.toLocaleString()} words`);
+          console.log('Database is up to date with', EXPECTED_WORD_COUNT, 'words');
+          toast.success(`Dictionary ready: ${EXPECTED_WORD_COUNT.toLocaleString()} words`);
         }
       } catch (err) {
         console.error('Error initializing word database:', err);
