@@ -12,19 +12,20 @@ interface WordTrieState {
   wordCount: number;
 }
 
+const initialState: WordTrieState = {
+  isLoading: true,
+  error: null,
+  trie: wordTrie,
+  wordCount: 0
+};
+
 export const useWordTrie = (): WordTrieState => {
+  const [state, setState] = useState<WordTrieState>(initialState);
   const isInitializedRef = useRef(false);
   const initializationPromiseRef = useRef<Promise<void> | null>(null);
   const toastShownRef = useRef(false);
   const mountedRef = useRef(true);
   const uniqueWordsRef = useRef(new Set<string>());
-  
-  const [state, setState] = useState<WordTrieState>({
-    isLoading: true,
-    error: null,
-    trie: wordTrie,
-    wordCount: 0
-  });
 
   useEffect(() => {
     mountedRef.current = true;
@@ -56,13 +57,6 @@ export const useWordTrie = (): WordTrieState => {
       if (isInitializedRef.current) {
         const totalWordsInDB = await checkTotalWordsInDB();
         
-        console.log('Checking Trie state:', {
-          isInitialized: isInitializedRef.current,
-          uniqueWords: uniqueWordsRef.current.size,
-          totalWordsInDB,
-          sampleWords: Array.from(uniqueWordsRef.current).slice(0, 5)
-        });
-        
         if (uniqueWordsRef.current.size === 0 || uniqueWordsRef.current.size < totalWordsInDB) {
           console.log('Trie needs rebuild:', {
             currentWords: uniqueWordsRef.current.size,
@@ -86,14 +80,12 @@ export const useWordTrie = (): WordTrieState => {
       }
 
       if (initializationPromiseRef.current) {
-        console.log('Waiting for existing initialization to complete...');
         await initializationPromiseRef.current;
         return;
       }
 
       initializationPromiseRef.current = (async () => {
         try {
-          console.log('Starting fresh Trie initialization...');
           await wordDB.init();
           
           if (!mountedRef.current) return;
@@ -110,9 +102,6 @@ export const useWordTrie = (): WordTrieState => {
           wordTrie.clear();
           uniqueWordsRef.current.clear();
           
-          console.log('Building Trie with', words.length, 'words');
-          console.log('Sample of first 10 words:', words.slice(0, 10));
-
           const startTime = performance.now();
           const batchSize = 10000;
           let processedCount = 0;
@@ -141,12 +130,6 @@ export const useWordTrie = (): WordTrieState => {
 
           const endTime = performance.now();
           console.log(`Trie build completed in ${((endTime - startTime) / 1000).toFixed(2)} seconds`);
-          
-          console.log('Final Trie state:', {
-            uniqueWords: uniqueWordsRef.current.size,
-            expectedWords: totalWordsInDB,
-            sampleWords: Array.from(uniqueWordsRef.current).slice(0, 5)
-          });
 
           if (uniqueWordsRef.current.size < totalWordsInDB) {
             throw new Error(`Failed to load all words: ${uniqueWordsRef.current.size}/${totalWordsInDB}`);
