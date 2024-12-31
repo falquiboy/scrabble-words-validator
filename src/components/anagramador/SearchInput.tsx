@@ -32,6 +32,12 @@ const SearchInput = ({
   const [isPatternMode, setIsPatternMode] = useState(false);
   const cursorPositionRef = useRef<number | null>(null);
   
+  // Auto-detect pattern mode based on input
+  useEffect(() => {
+    const hasPatternChars = letters.includes('?') || letters.includes('-');
+    setIsPatternMode(hasPatternChars);
+  }, [letters]);
+
   useEffect(() => {
     const handleGlobalF2 = (e: KeyboardEvent) => {
       if (e.key === "F2") {
@@ -57,9 +63,13 @@ const SearchInput = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     cursorPositionRef.current = e.target.selectionStart;
     let value = e.target.value.toUpperCase();
-    value = isPatternMode ? 
+    
+    // Automatically determine which validation to use based on input
+    const hasPatternChars = value.includes('?') || value.includes('-');
+    value = hasPatternChars ? 
       validateAndCleanPatternInput(value) : 
       validateAndCleanAnagramInput(value);
+    
     onInputChange(value);
   };
 
@@ -76,6 +86,7 @@ const SearchInput = ({
       <SearchModes
         isPatternMode={isPatternMode}
         onPatternModeChange={setIsPatternMode}
+        isReadOnly={true}
       />
       <SearchTooltip isPatternMode={isPatternMode}>
         <div className="relative flex-1">
