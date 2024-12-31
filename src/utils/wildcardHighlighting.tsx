@@ -32,10 +32,10 @@ export const highlightWildcardLetter = (word: string, searchTerm: string): React
   // Find digraph positions in the original word
   const digraphPositions = findDigraphPositions(word);
   
-  // Create a map of character counts in the processed search term
-  const searchCharCounts = new Map<string, number>();
+  // Create a map to track letter usage from the search term
+  const letterUsage = new Map<string, number>();
   for (const char of processedSearch) {
-    searchCharCounts.set(char, (searchCharCounts.get(char) || 0) + 1);
+    letterUsage.set(char, (letterUsage.get(char) || 0) + 1);
   }
   
   // Track which characters have been matched
@@ -53,16 +53,16 @@ export const highlightWildcardLetter = (word: string, searchTerm: string): React
       const digraphStr = word.slice(digraph.start, digraph.end + 1);
       const processedDigraph = processDigraphs(digraphStr);
       
-      if (searchCharCounts.has(processedDigraph) && searchCharCounts.get(processedDigraph)! > 0) {
+      if (letterUsage.has(processedDigraph) && letterUsage.get(processedDigraph)! > 0) {
         matchedIndices.add(digraph.start);
         matchedIndices.add(digraph.end);
-        searchCharCounts.set(processedDigraph, searchCharCounts.get(processedDigraph)! - 1);
+        letterUsage.set(processedDigraph, letterUsage.get(processedDigraph)! - 1);
       }
     } else {
       const char = word[i];
-      if (searchCharCounts.has(char) && searchCharCounts.get(char)! > 0) {
+      if (letterUsage.has(char) && letterUsage.get(char)! > 0) {
         matchedIndices.add(i);
-        searchCharCounts.set(char, searchCharCounts.get(char)! - 1);
+        letterUsage.set(char, letterUsage.get(char)! - 1);
       }
     }
   }
@@ -74,20 +74,14 @@ export const highlightWildcardLetter = (word: string, searchTerm: string): React
         // Find if this position is part of a digraph
         const digraph = digraphPositions.find(pos => pos?.start === index || pos?.end === index);
         
-        // Only highlight if this is a wildcard match or an additional letter
-        const isWildcardMatch = cleanSearchTerm.includes('*');
+        // Check if this character or digraph is unmatched
         const isUnmatched = !matchedIndices.has(index);
-        
-        // Determine if this character should be highlighted
-        const shouldHighlight = isUnmatched && 
-          (isWildcardMatch || !cleanSearchTerm.includes(char)) &&
-          (!digraph || (!matchedIndices.has(digraph.start) && !matchedIndices.has(digraph.end)));
         
         // Handle digraphs
         if (digraph) {
           if (index === digraph.start) {
             // Only render the digraph at its start position
-            return shouldHighlight ? (
+            return isUnmatched ? (
               <span key={index} className="text-red-600 font-semibold">
                 {char}{word[index + 1]}
               </span>
@@ -101,7 +95,7 @@ export const highlightWildcardLetter = (word: string, searchTerm: string): React
         }
         
         // Handle regular characters
-        return shouldHighlight ? (
+        return isUnmatched ? (
           <span key={index} className="text-red-600 font-semibold">{char}</span>
         ) : (
           <span key={index}>{char}</span>
