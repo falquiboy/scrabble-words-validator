@@ -92,8 +92,25 @@ export const useWordDatabase = () => {
                 break;
               }
 
+              // Debug log for the first few words in each batch
+              console.log('Sample of fetched words:', words.slice(0, 5).map(w => ({
+                word: w.word,
+                length: w.word.length,
+                charCodes: Array.from(w.word).map(c => c.charCodeAt(0))
+              })));
+
               if (mounted) {
                 console.log(`Processing batch of ${words.length} words...`);
+                
+                // Log any suspicious two-letter words
+                const shortWords = words.filter(w => w.word.length === 2);
+                if (shortWords.length > 0) {
+                  console.log('Two-letter words found in batch:', shortWords.map(w => ({
+                    word: w.word,
+                    charCodes: Array.from(w.word).map(c => c.charCodeAt(0))
+                  })));
+                }
+
                 await wordDB.addWords(words.map(w => w.word));
                 totalWords += words.length;
                 lastWord = words[words.length - 1].word;
