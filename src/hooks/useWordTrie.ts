@@ -32,7 +32,7 @@ export const useWordTrie = (): WordTrieState => {
 
     const showReadyToast = (wordCount: number) => {
       if (!toastShownRef.current && mountedRef.current) {
-        toast.success(`Lexicón listo: ${wordCount.toLocaleString()} palabras`, {
+        toast.success(`${wordCount.toLocaleString()} palabras cargadas`, {
           duration: 3000,
           position: 'top-right',
         });
