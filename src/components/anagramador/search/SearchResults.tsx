@@ -94,14 +94,6 @@ const SearchResults = ({
               title="palabras encontradas usando todas las fichas más una letra adicional"
             />
           )}
-          {results.shorterMatches?.length > 0 && (
-            <ShorterResults
-              matches={results.shorterMatches}
-              highlightWildcardLetter={highlightWildcardLetter}
-              searchTerm={searchTerm}
-              title="palabras más cortas encontradas"
-            />
-          )}
         </>
       )}
     </>
