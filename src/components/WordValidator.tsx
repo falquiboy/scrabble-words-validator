@@ -19,6 +19,7 @@ const WordValidator = ({ isDictionaryLoading, progress }: WordValidatorProps) =>
     words: string[];
   }>({ isValid: false, checked: false, words: [] });
   const [isEditing, setIsEditing] = useState(false);
+  const [loadStartTime] = useState(Date.now());
 
   const handleValidate = async () => {
     if (!word.trim() || isDictionaryLoading) return;
@@ -142,7 +143,9 @@ const WordValidator = ({ isDictionaryLoading, progress }: WordValidatorProps) =>
         {isDictionaryLoading && (
           <div className="space-y-2">
             <Progress value={progress} className="w-full" />
-            <p className="text-sm text-center text-gray-500">Cargando lexicón...</p>
+            <p className="text-sm text-center text-gray-500">
+              Cargando lexicón... ({((Date.now() - loadStartTime) / 1000).toFixed(1)}s)
+            </p>
           </div>
         )}
       </div>
