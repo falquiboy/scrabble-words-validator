@@ -3,20 +3,22 @@ import { processDigraphs } from '@/utils/digraphs';
 import { validateWordPattern } from './validation';
 
 export const findPatternMatches = (pattern: string, trie: Trie): string[] => {
-  const results: string[] = [];
-  const [boardPattern, rackLetters] = pattern.split(',').map(p => p?.trim().toUpperCase());
-  
-  if (!boardPattern) return results;
+  // Early return if no pattern
+  if (!pattern) return [];
 
-  // Process the pattern to handle digraphs
+  // Split pattern and rack letters, defaulting to empty string for rack
+  const [boardPattern = '', rackLetters = ''] = pattern.split(',').map(p => p?.trim().toUpperCase());
+  
+  // Process pattern for digraphs once
   const processedPattern = processDigraphs(boardPattern);
+  
   console.log('Pattern search:', {
-    originalPattern: boardPattern,
+    pattern: boardPattern,
     processedPattern,
     rackLetters
   });
 
-  // Get all words from trie and filter them
-  const allWords = trie.getAllWords();
-  return allWords.filter(word => validateWordPattern(word, processedPattern, rackLetters));
+  // Get words and filter in one pass
+  return trie.getAllWords()
+    .filter(word => validateWordPattern(word, processedPattern, rackLetters));
 };

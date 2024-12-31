@@ -1,69 +1,53 @@
 import { processDigraphs } from '@/utils/digraphs';
+import { convertPatternToRegex } from './conversion';
 
-/**
- * Validates if a word matches a given pattern and available rack letters
- */
 export const validateWordPattern = (
   word: string,
   pattern: string,
   rackLetters?: string
 ): boolean => {
-  // First check if the word matches the position pattern
-  const regex = convertPatternToRegex(pattern);
+  // Process word once
   const processedWord = processDigraphs(word);
-  const processedPattern = processDigraphs(pattern);
   
+  // Quick regex check first
+  const regex = convertPatternToRegex(pattern);
   if (!regex.test(processedWord)) return false;
 
-  // If no rack letters provided, we're done - the regex match is sufficient
+  // If no rack letters, we're done
   if (!rackLetters) return true;
 
-  // Process digraphs in rack letters
+  // Process rack letters once
   const processedRack = processDigraphs(rackLetters);
-
-  // Extract fixed letters from pattern (excluding ? and -)
-  const fixedLetters = processedPattern
-    .split('-')
-    .join('')
-    .replace(/\?/g, '')
-    .toUpperCase();
-
-  // Create frequency maps for rack letters and handle wildcards
-  const availableLetters = new Map<string, number>();
-  let wildcardCount = 0;
+  
+  // Count available letters (including wildcards)
+  const available = new Map<string, number>();
+  let wildcards = 0;
 
   for (const letter of processedRack) {
     if (letter === '*') {
-      wildcardCount++;
+      wildcards++;
     } else {
-      availableLetters.set(letter, (availableLetters.get(letter) || 0) + 1);
+      available.set(letter, (available.get(letter) || 0) + 1);
     }
   }
 
-  // Add fixed letters to available letters
-  for (const letter of fixedLetters) {
-    availableLetters.set(letter, (availableLetters.get(letter) || 0) + 1);
+  // Add fixed pattern letters to available
+  const fixedLetters = pattern.replace(/[-?]/g, '');
+  for (const letter of processDigraphs(fixedLetters)) {
+    available.set(letter, (available.get(letter) || 0) + 1);
   }
 
-  // Count letters needed for the word
-  const neededLetters = new Map<string, number>();
+  // Check if we have enough letters
   for (const letter of processedWord) {
-    neededLetters.set(letter, (neededLetters.get(letter) || 0) + 1);
-  }
-
-  // Check if we have enough letters, considering wildcards
-  let remainingWildcards = wildcardCount;
-  for (const [letter, count] of neededLetters) {
-    const available = availableLetters.get(letter) || 0;
-    if (count > available) {
-      // If we don't have enough of this letter, try to use wildcards
-      const needed = count - available;
-      if (needed > remainingWildcards) return false;
-      remainingWildcards -= needed;
+    const count = available.get(letter) || 0;
+    if (count > 0) {
+      available.set(letter, count - 1);
+    } else if (wildcards > 0) {
+      wildcards--;
+    } else {
+      return false;
     }
   }
 
   return true;
 };
-
-import { convertPatternToRegex } from './conversion';
