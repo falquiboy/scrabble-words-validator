@@ -18,7 +18,7 @@ export const findPatternMatches = async (pattern: string, trie: Trie): Promise<s
   const processedPattern = processDigraphs(trimmedPattern);
   console.log('Processed pattern:', processedPattern);
 
-  // Convert pattern to SQL SIMILAR TO pattern
+  // Convert pattern to SQL LIKE pattern
   let sqlPattern = processedPattern
     .replace(/\?/g, '_')  // ? becomes _ (single character wildcard)
     .replace(/-/g, '%');  // - becomes % (multiple character wildcard)
@@ -39,7 +39,7 @@ export const findPatternMatches = async (pattern: string, trie: Trie): Promise<s
     const { data: matches, error } = await supabase
       .from('words')
       .select('word')
-      .filter('word', 'similar to', sqlPattern) // Fixed: removed the dot
+      .ilike('word', sqlPattern)
       .order('word');
 
     if (error) {
