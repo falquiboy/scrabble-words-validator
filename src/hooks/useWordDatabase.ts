@@ -47,7 +47,6 @@ export const useWordDatabase = () => {
 
     const initDB = async () => {
       try {
-        // First check database connection
         await checkSupabaseConnection();
         
         console.log('Initializing IndexedDB...');
@@ -59,7 +58,6 @@ export const useWordDatabase = () => {
         console.log('Current DB version:', currentVersion);
         console.log('Existing words in IndexedDB:', existingWords.length);
 
-        // Check if database needs rebuilding
         if (currentVersion < 3 || existingWords.length < MINIMUM_EXPECTED_WORDS) {
           console.log('Database needs rebuild. Clearing existing data...');
           await wordDB.clear();
@@ -76,17 +74,21 @@ export const useWordDatabase = () => {
               const { data: words, error: fetchError } = await supabase
                 .rpc('get_words_batch', {
                   batch_size: BATCH_SIZE,
-                  last_word: lastWord
-                })
-                .throwOnError();
+                  last_word: lastWord || null
+                });
 
               if (fetchError) {
                 console.error('Error fetching words:', fetchError);
                 throw fetchError;
               }
 
-              if (!words || words.length === 0) {
-                console.log('No more words to fetch. Total words:', totalWords);
+              if (!words) {
+                console.error('No data returned from batch fetch');
+                throw new Error('No data returned from batch fetch');
+              }
+
+              if (words.length === 0) {
+                console.log('No words returned in batch. Total words so far:', totalWords);
                 if (totalWords < MINIMUM_EXPECTED_WORDS) {
                   if (totalRetries < MAX_RETRIES) {
                     totalRetries++;
@@ -121,21 +123,29 @@ export const useWordDatabase = () => {
               batchRetries = 0;
             } catch (err) {
               console.error('Error in batch processing:', err);
+              const errorMessage = err instanceof Error ? err.message : 'Unknown batch processing error';
+              console.log('Detailed error:', errorMessage);
+              
               if (batchRetries < MAX_RETRIES) {
                 batchRetries++;
                 const backoffTime = Math.pow(BACKOFF_BASE, batchRetries) * 1000;
                 console.log(`Retrying batch in ${backoffTime/1000}s... (${batchRetries}/${MAX_RETRIES})`);
+                toast.error(`Error loading words. Retrying... (${batchRetries}/${MAX_RETRIES})`);
                 await new Promise(resolve => setTimeout(resolve, backoffTime));
                 continue;
               }
-              throw err;
+              throw new Error(`Failed to process batch after ${MAX_RETRIES} retries: ${errorMessage}`);
             }
           }
 
           if (mounted) {
-            await wordDB.updateMetadata();
-            console.log('Dictionary loaded successfully:', totalWords, 'words');
-            toast.success(`Dictionary loaded: ${totalWords.toLocaleString()} words`);
+            if (totalWords >= MINIMUM_EXPECTED_WORDS) {
+              await wordDB.updateMetadata();
+              console.log('Dictionary loaded successfully:', totalWords, 'words');
+              toast.success(`Dictionary loaded: ${totalWords.toLocaleString()} words`);
+            } else {
+              throw new Error(`Failed to fetch minimum required words (${totalWords}/${MINIMUM_EXPECTED_WORDS})`);
+            }
           }
         } else {
           console.log('Database is up to date');
