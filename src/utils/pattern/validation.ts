@@ -21,7 +21,10 @@ export const validateWordPattern = (
   const processedPattern = processedParts.join('');
 
   // Quick regex check using the processed pattern
-  if (!convertPatternToRegex(processedPattern).test(processedWord)) {
+  const regex = convertPatternToRegex(processedPattern);
+  console.log('Pattern matching:', { word, processedWord, pattern, processedPattern, regex });
+  
+  if (!regex.test(processedWord)) {
     return false;
   }
 

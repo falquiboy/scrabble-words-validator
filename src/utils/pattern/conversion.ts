@@ -22,5 +22,5 @@ export const convertPatternToRegex = (pattern: string): RegExp => {
     regexPattern += '.*';
   }
 
-  return new RegExp(`^${regexPattern}$`);
+  return new RegExp(`^${regexPattern}$`, 'i'); // Added 'i' flag for case-insensitive matching
 };

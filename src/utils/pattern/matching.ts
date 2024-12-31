@@ -6,24 +6,17 @@ export const findPatternMatches = (pattern: string, trie: Trie): string[] => {
   if (!pattern) return [];
 
   const [boardPattern = '', rackLetters = ''] = pattern.split(',');
-  
-  // We'll process the pattern parts separately to preserve special characters
-  const parts = boardPattern.trim().toUpperCase().split(/([?-])/);
-  const processedParts = parts.map(part => {
-    // Don't process special characters
-    if (part === '?' || part === '-') return part;
-    // Process other parts for digraphs
-    return processDigraphs(part);
-  });
-  const processedPattern = processedParts.join('');
+  const trimmedPattern = boardPattern.trim().toUpperCase();
   
   console.log('Pattern search:', {
-    pattern: boardPattern,
-    processedPattern,
+    pattern: trimmedPattern,
     rackLetters: rackLetters.trim()
   });
 
   // Get all words at once and filter
-  return trie.getAllWords()
-    .filter(word => validateWordPattern(word, processedPattern, rackLetters.trim()));
+  const matches = trie.getAllWords()
+    .filter(word => validateWordPattern(word, trimmedPattern, rackLetters.trim()));
+
+  console.log('Pattern matches found:', matches);
+  return matches;
 };
