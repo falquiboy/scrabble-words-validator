@@ -1,7 +1,7 @@
 import { TrieNode } from './types';
 import { findNode } from './nodeOperations';
 import { processDigraphs } from '@/utils/digraphs';
-import { convertPatternToRegex, validateWordPattern } from '@/utils/patternMatching';
+import { convertPatternToRegex, validateWordPattern } from '@/utils/pattern';
 
 export const searchExact = (root: TrieNode, word: string): boolean => {
   const node = findNode(root, word);
