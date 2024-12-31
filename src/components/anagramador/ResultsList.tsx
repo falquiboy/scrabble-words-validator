@@ -60,7 +60,7 @@ const ResultsList = ({
     navigator.clipboard.writeText(allWords.join('\n')).then(() => {
       toast({
         title: "¡Copiado!",
-        description: `${allWords.length} palabras copiadas al portapapeles`,
+        description: `${allWords.length} ${allWords.length === 1 ? 'palabra copiada' : 'palabras copiadas'}`,
       });
     }).catch(() => {
       toast({
