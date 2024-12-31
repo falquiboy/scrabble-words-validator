@@ -36,10 +36,12 @@ export const findPatternMatches = async (pattern: string, trie: Trie): Promise<s
   console.log('SQL pattern:', sqlPattern);
 
   try {
+    // First, get all words that match the pattern length
     const { data: matches, error } = await supabase
       .from('words')
       .select('word')
-      .ilike('word', sqlPattern)
+      .eq('lenght', processedPattern.length) // First filter by exact length
+      .ilike('word', sqlPattern.replace(/[\^$]/g, '')) // Remove ^ and $ as they're not needed with ilike
       .order('word');
 
     if (error) {
