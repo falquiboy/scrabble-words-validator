@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import SearchContainer from "./anagramador/search/SearchContainer";
 import ResultsList from "./anagramador/ResultsList";
 import { useOfflineAnagramSearch } from "@/hooks/useOfflineAnagramSearch";
 import { highlightWildcardLetter } from "@/utils/wildcardHighlighting";
 import { Trie } from "@/utils/trie/types";
+import { SearchResults } from "@/hooks/anagramSearch/types";
 
 interface AnagramadorProps {
   trie: Trie;
@@ -14,8 +15,32 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
   const [showShorter, setShowShorter] = useState(false);
   const [targetLength, setTargetLength] = useState<number | null>(null);
   const [isSearchAborted, setIsSearchAborted] = useState(false);
+  const [searchResults, setSearchResults] = useState<SearchResults>({
+    exactMatches: [],
+    wildcardMatches: [],
+    additionalWildcardMatches: [],
+    shorterMatches: [],
+    patternMatches: []
+  });
+  const [isLoading, setIsLoading] = useState(false);
 
-  const { data: results } = useOfflineAnagramSearch(searchTerm, showShorter, targetLength, trie);
+  useEffect(() => {
+    const performSearch = async () => {
+      if (!searchTerm) return;
+      
+      setIsLoading(true);
+      try {
+        const { data } = await useOfflineAnagramSearch(searchTerm, showShorter, targetLength, trie);
+        setSearchResults(data);
+      } catch (error) {
+        console.error('Search error:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    performSearch();
+  }, [searchTerm, showShorter, targetLength, trie]);
 
   const handleSearch = (letters: string, newTargetLength: number | null) => {
     setIsSearchAborted(false);
@@ -46,15 +71,9 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
         hasActiveSearch={!!searchTerm}
       />
       <ResultsList
-        isLoading={false}
+        isLoading={isLoading}
         searchTerm={searchTerm}
-        results={{
-          exactMatches: results?.exactMatches || [],
-          wildcardMatches: results?.wildcardMatches || [],
-          additionalWildcardMatches: results?.additionalWildcardMatches || [],
-          shorterMatches: showShorter ? (results?.shorterMatches || []) : [],
-          patternMatches: results?.patternMatches || []
-        }}
+        results={searchResults}
         highlightWildcardLetter={highlightWildcardLetter}
         isSearchAborted={isSearchAborted}
       />
