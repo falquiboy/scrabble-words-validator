@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { findAnagrams } from "@/hooks/anagramSearch/utils";
-import { findPatternMatches } from "@/utils/patternMatching";
+import { findPatternMatches } from "@/utils/pattern/matching";
 import { Trie } from "@/utils/trie/types";
 import { SearchResults } from "./anagramSearch/types";
 
