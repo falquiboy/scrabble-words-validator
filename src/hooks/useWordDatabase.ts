@@ -20,7 +20,11 @@ export const useWordDatabase = () => {
     const checkSupabaseConnection = async () => {
       try {
         console.log('Testing Supabase connection...');
-        const { data, error } = await supabase.from('words').select('word').limit(1);
+        const { data, error } = await supabase
+          .from('words')
+          .select('word')
+          .limit(1)
+          .throwOnError();
         
         if (error) {
           console.error('Supabase connection test failed:', error);
@@ -69,29 +73,28 @@ export const useWordDatabase = () => {
             try {
               console.log('Fetching batch starting after word:', lastWord);
               
+              if (!lastWord && batchRetries > 0) {
+                console.log('Retrying initial batch fetch...');
+              }
+              
               const { data: words, error: fetchError } = await supabase
                 .rpc('get_words_batch', {
                   batch_size: BATCH_SIZE,
-                  last_word: lastWord
-                });
+                  last_word: lastWord || null
+                })
+                .throwOnError();
 
               if (fetchError) {
                 console.error('Error fetching words:', fetchError);
-                batchRetries++;
-                
-                if (batchRetries <= MAX_RETRIES) {
-                  const backoffTime = Math.pow(BACKOFF_BASE, batchRetries) * 1000;
-                  const message = `Error fetching words. Retrying in ${backoffTime/1000}s... (${batchRetries}/${MAX_RETRIES})`;
-                  console.log(message);
-                  toast.error(message);
-                  await new Promise(resolve => setTimeout(resolve, backoffTime));
-                  continue;
-                }
-                
-                throw new Error(`Failed to fetch batch after ${MAX_RETRIES} retries: ${fetchError.message}`);
+                throw fetchError;
               }
 
-              if (!words || words.length === 0) {
+              if (!words) {
+                console.error('No data returned from batch fetch');
+                throw new Error('No data returned from batch fetch');
+              }
+
+              if (words.length === 0) {
                 console.log('No words returned in batch. Total words so far:', totalWords);
                 if (totalWords < MINIMUM_EXPECTED_WORDS) {
                   if (totalRetries < MAX_RETRIES) {
