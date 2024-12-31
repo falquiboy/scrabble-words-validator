@@ -29,7 +29,7 @@ export const ShorterResults = ({ matches, highlightWildcardLetter, searchTerm, t
   return (
     <div className="space-y-4 pb-8">
       <h3 className="font-semibold text-lg">
-        {`${matches.length} ${title}:`}
+        {`${matches.length} palabras encontradas usando todas las fichas más una letra adicional:`}
       </h3>
       {sortedLengths.map(length => (
         <div key={`length-${length}`} className="space-y-2">
