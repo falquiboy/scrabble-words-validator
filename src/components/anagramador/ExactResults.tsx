@@ -29,11 +29,7 @@ export const ExactResults = ({ matches, wildcardCount, highlightWildcardLetter, 
   return (
     <div className="space-y-4 pb-8">
       <h3 className="font-semibold text-lg">
-        {wildcardCount === 0 ? (
-          `${matches.length} ${matches.length === 1 ? "palabra encontrada" : "palabras encontradas"} usando todas las letras:`
-        ) : (
-          `${matches.length} ${matches.length === 1 ? "palabra encontrada" : "palabras encontradas"} usando todas las letras y ${wildcardCount} ${wildcardCount === 1 ? "comodín" : "comodines"}:`
-        )}
+        {`${matches.length} ${matches.length === 1 ? "palabra encontrada" : "palabras encontradas"} usando todas las fichas:`}
       </h3>
       {sortedLengths.map(length => (
         <div key={`length-${length}`} className="space-y-2">
