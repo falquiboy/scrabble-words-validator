@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { wordTrie } from "@/utils/trie";
+import { processDigraphs } from "@/utils/digraphs";
 import Header from "./word-validator/Header";
 import WordInput from "./word-validator/WordInput";
 import LoadingIndicator from "./word-validator/LoadingIndicator";
@@ -27,7 +28,10 @@ const WordValidator = ({ isDictionaryLoading, progress }: WordValidatorProps) =>
     setIsLoading(true);
     try {
       const words = word.trim().split(" ");
-      const isValid = words.every(w => wordTrie.search(w.toUpperCase()));
+      const isValid = words.every(w => {
+        const processedWord = processDigraphs(w.toUpperCase());
+        return wordTrie.search(processedWord);
+      });
       setResult({ 
         isValid, 
         checked: true, 

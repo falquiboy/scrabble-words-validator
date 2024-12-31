@@ -21,12 +21,19 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
     setIsSearchAborted(false);
     setSearchTerm(letters);
     setTargetLength(newTargetLength);
+    setShowShorter(false); // Reset showShorter on new search
   };
 
   const handleClear = () => {
     setSearchTerm("");
     setTargetLength(null);
     setIsSearchAborted(false);
+    setShowShorter(false);
+  };
+
+  const handleShowShorterChange = (show: boolean) => {
+    setShowShorter(show);
+    setTargetLength(null); // Clear target length when showing shorter words
   };
 
   return (
@@ -34,6 +41,8 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
       <SearchContainer
         onSearch={handleSearch}
         onClear={handleClear}
+        onShowShorterChange={handleShowShorterChange}
+        showShorter={showShorter}
         hasActiveSearch={!!searchTerm}
       />
       <ResultsList
@@ -43,7 +52,7 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
           exactMatches: results?.exactMatches || [],
           wildcardMatches: results?.wildcardMatches || [],
           additionalWildcardMatches: results?.additionalWildcardMatches || [],
-          shorterMatches: results?.shorterMatches || [],
+          shorterMatches: showShorter ? (results?.shorterMatches || []) : [],
           patternMatches: results?.patternMatches || []
         }}
         highlightWildcardLetter={highlightWildcardLetter}
