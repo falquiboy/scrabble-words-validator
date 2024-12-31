@@ -2,7 +2,6 @@ import { Input } from "@/components/ui/input";
 import { RefObject, useState, useEffect, useRef } from "react";
 import { SearchTooltip } from "./SearchTooltip";
 import { validateAndCleanAnagramInput, validateAndCleanPatternInput } from "@/utils/inputValidation";
-import { SearchModes } from "./search/SearchModes";
 import SearchButton from "./search/SearchButton";
 import ShorterWordsToggle from "./search/ShorterWordsToggle";
 
@@ -83,11 +82,6 @@ const SearchInput = ({
 
   return (
     <div className="space-y-2">
-      <SearchModes
-        isPatternMode={isPatternMode}
-        onPatternModeChange={setIsPatternMode}
-        isReadOnly={true}
-      />
       <SearchTooltip isPatternMode={isPatternMode}>
         <div className="relative flex-1">
           <Input
