@@ -95,12 +95,16 @@ const ResultsList = ({
               />
             ) : (
               <>
-                <ExactResults
-                  matches={wildcardCount === 0 ? (results.exactMatches || []) : (results.wildcardMatches || [])}
-                  wildcardCount={wildcardCount}
-                  highlightWildcardLetter={highlightWildcardLetter}
-                  searchTerm={searchTerm}
-                />
+                {/* Show either exact matches or wildcard matches */}
+                {(wildcardCount === 0 ? results.exactMatches?.length > 0 : results.wildcardMatches?.length > 0) && (
+                  <ExactResults
+                    matches={wildcardCount === 0 ? (results.exactMatches || []) : (results.wildcardMatches || [])}
+                    wildcardCount={wildcardCount}
+                    highlightWildcardLetter={highlightWildcardLetter}
+                    searchTerm={searchTerm}
+                  />
+                )}
+                {/* Show additional wildcard matches if any */}
                 {results.additionalWildcardMatches?.length > 0 && (
                   <ShorterResults
                     matches={results.additionalWildcardMatches}
@@ -109,6 +113,7 @@ const ResultsList = ({
                     title="palabras encontradas usando una letra adicional"
                   />
                 )}
+                {/* Show shorter matches if any */}
                 {results.shorterMatches?.length > 0 && (
                   <ShorterResults
                     matches={results.shorterMatches}
