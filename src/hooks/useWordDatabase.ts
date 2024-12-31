@@ -66,18 +66,20 @@ export const useWordDatabase = () => {
           console.log('Database needs rebuild. Clearing existing data...');
           await wordDB.clear();
           
-          let offset = 0;
+          let lastWord = '';
           let totalWords = 0;
+          let hasMore = true;
 
-          while (offset < totalWordsInSupabase && mounted) {
+          while (hasMore && mounted && totalWords < totalWordsInSupabase) {
             try {
-              console.log(`Fetching batch starting from offset: ${offset}`);
+              console.log(`Fetching batch starting after word: "${lastWord}"`);
               
               const { data: words, error: fetchError } = await supabase
                 .from('words')
                 .select('word')
-                .range(offset, offset + BATCH_SIZE - 1)
-                .order('word');
+                .gt('word', lastWord)
+                .order('word')
+                .limit(BATCH_SIZE);
 
               if (fetchError) {
                 console.error('Error fetching words:', fetchError);
@@ -86,6 +88,7 @@ export const useWordDatabase = () => {
 
               if (!words || words.length === 0) {
                 console.log('No more words to fetch. Total words loaded:', totalWords);
+                hasMore = false;
                 break;
               }
 
@@ -93,7 +96,7 @@ export const useWordDatabase = () => {
                 console.log(`Processing batch of ${words.length} words...`);
                 await wordDB.addWords(words.map(w => w.word));
                 totalWords += words.length;
-                offset += BATCH_SIZE;
+                lastWord = words[words.length - 1].word;
                 
                 const estimatedProgress = Math.min((totalWords / totalWordsInSupabase) * 100, 100);
                 setProgress(Math.floor(estimatedProgress));
@@ -109,7 +112,7 @@ export const useWordDatabase = () => {
               if (totalRetries < MAX_RETRIES) {
                 totalRetries++;
                 const backoffTime = Math.pow(BACKOFF_BASE, totalRetries) * 1000;
-                console.log(`Retrying from offset ${offset} in ${backoffTime/1000}s... (${totalRetries}/${MAX_RETRIES})`);
+                console.log(`Retrying after word "${lastWord}" in ${backoffTime/1000}s... (${totalRetries}/${MAX_RETRIES})`);
                 toast.error(`Error loading words. Retrying... (${totalRetries}/${MAX_RETRIES})`);
                 await new Promise(resolve => setTimeout(resolve, backoffTime));
                 continue;
