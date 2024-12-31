@@ -5,7 +5,6 @@ import { toast } from 'sonner';
 
 const MAX_RETRIES = 5;
 const BATCH_SIZE = 1000;
-const MINIMUM_EXPECTED_WORDS = 600000;
 const BACKOFF_BASE = 2;
 
 export const useWordDatabase = () => {
@@ -56,7 +55,7 @@ export const useWordDatabase = () => {
         const currentVersion = await wordDB.getVersion();
         console.log('Current DB version:', currentVersion);
 
-        // Always fetch from Supabase first to get the total count
+        // Get total count from Supabase
         const { count: totalWordsInSupabase } = await supabase
           .from('words')
           .select('*', { count: 'exact', head: true });
@@ -69,9 +68,8 @@ export const useWordDatabase = () => {
           
           let offset = 0;
           let totalWords = 0;
-          let hasMore = true;
 
-          while (hasMore && mounted) {
+          while (offset < totalWordsInSupabase && mounted) {
             try {
               console.log(`Fetching batch starting from offset: ${offset}`);
               
@@ -86,24 +84,18 @@ export const useWordDatabase = () => {
                 throw fetchError;
               }
 
-              if (!words) {
-                console.error('No data returned from batch fetch');
-                throw new Error('No data returned from batch fetch');
-              }
-
-              if (words.length === 0) {
+              if (!words || words.length === 0) {
                 console.log('No more words to fetch. Total words loaded:', totalWords);
-                hasMore = false;
-                continue;
+                break;
               }
 
               if (mounted) {
                 console.log(`Processing batch of ${words.length} words...`);
                 await wordDB.addWords(words.map(w => w.word));
                 totalWords += words.length;
-                offset += words.length;
+                offset += BATCH_SIZE;
                 
-                const estimatedProgress = Math.min((totalWords / MINIMUM_EXPECTED_WORDS) * 100, 100);
+                const estimatedProgress = Math.min((totalWords / totalWordsInSupabase) * 100, 100);
                 setProgress(Math.floor(estimatedProgress));
 
                 if (totalWords % 50000 === 0) {
