@@ -7,9 +7,10 @@ import { Progress } from "@/components/ui/progress";
 
 interface WordValidatorProps {
   isDictionaryLoading: boolean;
+  progress: number;
 }
 
-const WordValidator = ({ isDictionaryLoading }: WordValidatorProps) => {
+const WordValidator = ({ isDictionaryLoading, progress }: WordValidatorProps) => {
   const [word, setWord] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<{

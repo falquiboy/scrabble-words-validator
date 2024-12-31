@@ -9,7 +9,7 @@ const Index = () => {
   const [activeModule, setActiveModule] = useState<'judge' | 'anagram'>('judge');
   
   // Initialize dictionary at the top level so it's shared between modules
-  const { isLoading: isDBLoading } = useWordDatabase();
+  const { isLoading: isDBLoading, progress } = useWordDatabase();
   const { isLoading: isTrieLoading, trie } = useWordTrie();
   const isDictionaryLoading = isDBLoading || isTrieLoading;
 
@@ -18,7 +18,10 @@ const Index = () => {
       <ModuleSelector activeModule={activeModule} onModuleChange={setActiveModule} />
       <div className="mt-20 flex-1">
         {activeModule === 'judge' ? (
-          <WordValidator isDictionaryLoading={isDictionaryLoading} />
+          <WordValidator 
+            isDictionaryLoading={isDictionaryLoading} 
+            progress={progress}
+          />
         ) : (
           <Anagramador trie={trie} />
         )}
