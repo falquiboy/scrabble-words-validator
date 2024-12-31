@@ -73,14 +73,10 @@ export const useWordDatabase = () => {
             try {
               console.log('Fetching batch starting after word:', lastWord);
               
-              if (!lastWord && batchRetries > 0) {
-                console.log('Retrying initial batch fetch...');
-              }
-              
               const { data: words, error: fetchError } = await supabase
                 .rpc('get_words_batch', {
                   batch_size: BATCH_SIZE,
-                  last_word: lastWord || null
+                  last_word: lastWord
                 })
                 .throwOnError();
 
@@ -89,26 +85,19 @@ export const useWordDatabase = () => {
                 throw fetchError;
               }
 
-              if (!words) {
-                console.error('No data returned from batch fetch');
-                throw new Error('No data returned from batch fetch');
-              }
-
-              if (words.length === 0) {
-                console.log('No words returned in batch. Total words so far:', totalWords);
+              if (!words || words.length === 0) {
+                console.log('No more words to fetch. Total words:', totalWords);
                 if (totalWords < MINIMUM_EXPECTED_WORDS) {
                   if (totalRetries < MAX_RETRIES) {
                     totalRetries++;
                     lastWord = null;
                     totalWords = 0;
                     const backoffTime = Math.pow(BACKOFF_BASE, totalRetries) * 1000;
-                    const message = `Incomplete word list. Restarting in ${backoffTime/1000}s... (${totalRetries}/${MAX_RETRIES})`;
-                    console.log(message);
-                    toast.error(message);
+                    console.log(`Retrying from start in ${backoffTime/1000}s... (${totalRetries}/${MAX_RETRIES})`);
                     await new Promise(resolve => setTimeout(resolve, backoffTime));
                     continue;
                   }
-                  throw new Error(`Failed to fetch minimum required words. Got ${totalWords}, expected ${MINIMUM_EXPECTED_WORDS}`);
+                  throw new Error(`Failed to fetch minimum required words (${totalWords}/${MINIMUM_EXPECTED_WORDS})`);
                 }
                 hasMore = false;
                 continue;
@@ -120,7 +109,6 @@ export const useWordDatabase = () => {
                 totalWords += words.length;
                 lastWord = words[words.length - 1].word;
                 
-                // Update progress
                 const estimatedProgress = Math.min((totalWords / MINIMUM_EXPECTED_WORDS) * 100, 100);
                 setProgress(Math.floor(estimatedProgress));
 
@@ -130,16 +118,13 @@ export const useWordDatabase = () => {
                 }
               }
 
-              // Reset batch retries on successful fetch
               batchRetries = 0;
             } catch (err) {
               console.error('Error in batch processing:', err);
               if (batchRetries < MAX_RETRIES) {
                 batchRetries++;
                 const backoffTime = Math.pow(BACKOFF_BASE, batchRetries) * 1000;
-                const message = `Error processing batch. Retrying in ${backoffTime/1000}s... (${batchRetries}/${MAX_RETRIES})`;
-                console.log(message);
-                toast.error(message);
+                console.log(`Retrying batch in ${backoffTime/1000}s... (${batchRetries}/${MAX_RETRIES})`);
                 await new Promise(resolve => setTimeout(resolve, backoffTime));
                 continue;
               }
@@ -148,13 +133,9 @@ export const useWordDatabase = () => {
           }
 
           if (mounted) {
-            if (totalWords >= MINIMUM_EXPECTED_WORDS) {
-              await wordDB.updateMetadata();
-              console.log('Total words loaded:', totalWords);
-              toast.success(`Dictionary loaded successfully: ${totalWords.toLocaleString()} words`);
-            } else {
-              throw new Error(`Failed to fetch minimum required words. Got ${totalWords}, expected ${MINIMUM_EXPECTED_WORDS}`);
-            }
+            await wordDB.updateMetadata();
+            console.log('Dictionary loaded successfully:', totalWords, 'words');
+            toast.success(`Dictionary loaded: ${totalWords.toLocaleString()} words`);
           }
         } else {
           console.log('Database is up to date');
@@ -162,10 +143,11 @@ export const useWordDatabase = () => {
         }
       } catch (err) {
         console.error('Error initializing word database:', err);
-        if (!mounted) return;
-        const errorMessage = err instanceof Error ? err.message : 'Unknown error initializing dictionary';
-        setError(errorMessage);
-        toast.error(errorMessage);
+        if (mounted) {
+          const message = err instanceof Error ? err.message : 'Failed to initialize dictionary';
+          setError(message);
+          toast.error(message);
+        }
       } finally {
         if (mounted) {
           setIsLoading(false);
