@@ -9,9 +9,13 @@ const Index = () => {
   const [activeModule, setActiveModule] = useState<'judge' | 'anagram'>('judge');
   
   // Initialize dictionary at the top level so it's shared between modules
-  const { isLoading: isDBLoading, progress } = useWordDatabase();
-  const { isLoading: isTrieLoading, trie } = useWordTrie();
+  const { isLoading: isDBLoading, progress: dbProgress } = useWordDatabase();
+  const { isLoading: isTrieLoading, wordCount } = useWordTrie();
+  
   const isDictionaryLoading = isDBLoading || isTrieLoading;
+  const totalProgress = isTrieLoading ? 
+    (dbProgress * 0.5) + ((wordCount / 639293) * 50) : 
+    dbProgress;
 
   return (
     <div className={`fixed inset-0 bg-gray-50 flex flex-col items-center`}>
@@ -20,7 +24,7 @@ const Index = () => {
         {activeModule === 'judge' ? (
           <WordValidator 
             isDictionaryLoading={isDictionaryLoading} 
-            progress={progress}
+            progress={totalProgress}
           />
         ) : (
           <Anagramador trie={trie} />
