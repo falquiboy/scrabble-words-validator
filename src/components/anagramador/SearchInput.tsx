@@ -1,10 +1,10 @@
 import { Input } from "@/components/ui/input";
-import { Search, X } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
 import { RefObject, useState, useEffect, useRef } from "react";
 import { SearchTooltip } from "./SearchTooltip";
 import { validateAndCleanAnagramInput, validateAndCleanPatternInput } from "@/utils/inputValidation";
 import { SearchModes } from "./search/SearchModes";
+import SearchButton from "./search/SearchButton";
+import ShorterWordsToggle from "./search/ShorterWordsToggle";
 
 interface SearchInputProps {
   letters: string;
@@ -45,7 +45,6 @@ const SearchInput = ({
   }, [inputRef]);
 
   useEffect(() => {
-    // Restore cursor position after state update
     if (cursorPositionRef.current !== null && inputRef.current) {
       inputRef.current.setSelectionRange(
         cursorPositionRef.current,
@@ -56,17 +55,11 @@ const SearchInput = ({
   }, [letters]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Store cursor position before state update
     cursorPositionRef.current = e.target.selectionStart;
-    
     let value = e.target.value.toUpperCase();
-    
-    if (isPatternMode) {
-      value = validateAndCleanPatternInput(value);
-    } else {
-      value = validateAndCleanAnagramInput(value);
-    }
-    
+    value = isPatternMode ? 
+      validateAndCleanPatternInput(value) : 
+      validateAndCleanAnagramInput(value);
     onInputChange(value);
   };
 
@@ -105,33 +98,18 @@ const SearchInput = ({
             autoCapitalize="off"
           />
           <div className="absolute right-2 top-1/2 -translate-y-1/2">
-            <button 
+            <SearchButton
               onClick={handleButtonClick}
-              className="h-8 w-8 p-0 hover:text-gray-600"
-              disabled={!letters.trim()}
-            >
-              {hasActiveSearch ? (
-                <X className="h-4 w-4" />
-              ) : (
-                <Search className="h-4 w-4" />
-              )}
-            </button>
+              hasActiveSearch={hasActiveSearch}
+              isDisabled={!letters.trim()}
+            />
           </div>
         </div>
       </SearchTooltip>
-      <div className="flex items-center space-x-2">
-        <Switch
-          id="show-shorter"
-          checked={showShorter}
-          onCheckedChange={onShowShorterChange}
-        />
-        <label
-          htmlFor="show-shorter"
-          className="text-sm text-gray-600 cursor-pointer"
-        >
-          Mostrar solo palabras más cortas
-        </label>
-      </div>
+      <ShorterWordsToggle
+        checked={showShorter}
+        onCheckedChange={onShowShorterChange}
+      />
     </div>
   );
 };
