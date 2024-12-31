@@ -3,6 +3,7 @@ import { processDigraphs } from "@/utils/digraphs";
 import { wordTrie } from "@/utils/trie";
 import Header from "./word-validator/Header";
 import WordInput from "./word-validator/WordInput";
+import { Progress } from "@/components/ui/progress";
 
 interface WordValidatorProps {
   isDictionaryLoading: boolean;
@@ -25,10 +26,8 @@ const WordValidator = ({ isDictionaryLoading }: WordValidatorProps) => {
     try {
       const words = word.trim().split(" ");
       const processedWords = words.map(w => {
-        // First convert to uppercase and handle special characters
         let upperWord = w.toUpperCase();
         upperWord = upperWord.split('').map(char => {
-          // Allow direct digraph input (Ç, K, W) to pass through
           if (['Ç', 'K', 'W'].includes(char)) return char;
           if (char === 'Ñ' || char === 'ñ') return 'Ñ';
           return char
@@ -37,7 +36,6 @@ const WordValidator = ({ isDictionaryLoading }: WordValidatorProps) => {
             .normalize('NFC');
         }).join('');
         
-        // Then process digraphs
         const processed = processDigraphs(upperWord);
         
         console.log('Word validation debug:', {
@@ -47,7 +45,7 @@ const WordValidator = ({ isDictionaryLoading }: WordValidatorProps) => {
           length: processed.length,
           trieContains: wordTrie.search(processed),
           wordsInTrie: Array.from(wordTrie.getWordsStartingWith(processed)),
-          allWords: Array.from(wordTrie.getAllWords()).slice(0, 10) // Show first 10 words for debugging
+          allWords: Array.from(wordTrie.getAllWords()).slice(0, 10)
         });
         
         return processed;
@@ -112,8 +110,9 @@ const WordValidator = ({ isDictionaryLoading }: WordValidatorProps) => {
           onEditEnd={() => setIsEditing(false)}
         />
         {isDictionaryLoading && (
-          <div className="text-center">
-            <p className="text-sm text-gray-500">Cargando lexicón...</p>
+          <div className="space-y-2">
+            <Progress value={progress} className="w-full" />
+            <p className="text-sm text-center text-gray-500">Cargando lexicón...</p>
           </div>
         )}
       </div>
