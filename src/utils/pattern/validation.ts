@@ -6,42 +6,43 @@ export const validateWordPattern = (
   pattern: string,
   rackLetters?: string
 ): boolean => {
-  // Process word once
   const processedWord = processDigraphs(word);
   
-  // Quick regex check first
-  const regex = convertPatternToRegex(pattern);
-  if (!regex.test(processedWord)) return false;
+  // Quick regex check
+  if (!convertPatternToRegex(pattern).test(processedWord)) {
+    return false;
+  }
 
-  // If no rack letters, we're done
-  if (!rackLetters) return true;
+  // If no rack letters provided, pattern match is sufficient
+  if (!rackLetters) {
+    return true;
+  }
 
-  // Process rack letters once
+  // Process rack letters and count available letters
   const processedRack = processDigraphs(rackLetters);
-  
-  // Count available letters (including wildcards)
-  const available = new Map<string, number>();
+  const letterCounts = new Map<string, number>();
   let wildcards = 0;
 
+  // Count rack letters
   for (const letter of processedRack) {
     if (letter === '*') {
       wildcards++;
     } else {
-      available.set(letter, (available.get(letter) || 0) + 1);
+      letterCounts.set(letter, (letterCounts.get(letter) || 0) + 1);
     }
   }
 
-  // Add fixed pattern letters to available
+  // Add fixed pattern letters to available counts
   const fixedLetters = pattern.replace(/[-?]/g, '');
   for (const letter of processDigraphs(fixedLetters)) {
-    available.set(letter, (available.get(letter) || 0) + 1);
+    letterCounts.set(letter, (letterCounts.get(letter) || 0) + 1);
   }
 
   // Check if we have enough letters
   for (const letter of processedWord) {
-    const count = available.get(letter) || 0;
+    const count = letterCounts.get(letter) || 0;
     if (count > 0) {
-      available.set(letter, count - 1);
+      letterCounts.set(letter, count - 1);
     } else if (wildcards > 0) {
       wildcards--;
     } else {
