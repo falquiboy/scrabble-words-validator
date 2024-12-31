@@ -31,6 +31,15 @@ const ResultsList = ({
   const wildcardCount = (searchTerm.match(/\*/g) || []).length;
   const isPatternSearch = searchTerm.includes('?') || searchTerm.includes('-');
 
+  // Remove any duplicates between wildcardMatches and additionalWildcardMatches
+  const filteredAdditionalMatches = results.additionalWildcardMatches.filter(word => {
+    if (wildcardCount === 0) {
+      return !results.exactMatches.includes(word);
+    } else {
+      return !results.wildcardMatches.includes(word);
+    }
+  });
+
   const handleCopyAll = () => {
     if (!results) return;
 
@@ -46,9 +55,9 @@ const ResultsList = ({
         allWords = [...(results.wildcardMatches || [])];
       }
       
-      // Include additional letter matches
-      if (results.additionalWildcardMatches?.length > 0) {
-        allWords = [...allWords, ...(results.additionalWildcardMatches || [])];
+      // Include additional letter matches (filtered)
+      if (filteredAdditionalMatches.length > 0) {
+        allWords = [...allWords, ...filteredAdditionalMatches];
       }
       
       // Include shorter matches if any
@@ -82,7 +91,7 @@ const ResultsList = ({
         ) : results && (
           (results.exactMatches?.length > 0 || 
           results.wildcardMatches?.length > 0 || 
-          results.additionalWildcardMatches?.length > 0 ||
+          filteredAdditionalMatches.length > 0 ||
           results.shorterMatches?.length > 0 ||
           results.patternMatches?.length > 0)
         ) ? (
@@ -98,19 +107,19 @@ const ResultsList = ({
                 {/* Show either exact matches or wildcard matches */}
                 {(wildcardCount === 0 ? results.exactMatches?.length > 0 : results.wildcardMatches?.length > 0) && (
                   <ExactResults
-                    matches={wildcardCount === 0 ? (results.exactMatches || []) : (results.wildcardMatches || [])}
+                    matches={wildcardCount === 0 ? results.exactMatches : results.wildcardMatches}
                     wildcardCount={wildcardCount}
                     highlightWildcardLetter={highlightWildcardLetter}
                     searchTerm={searchTerm}
                   />
                 )}
                 {/* Show additional wildcard matches if any */}
-                {results.additionalWildcardMatches?.length > 0 && (
+                {filteredAdditionalMatches.length > 0 && (
                   <ShorterResults
-                    matches={results.additionalWildcardMatches}
+                    matches={filteredAdditionalMatches}
                     highlightWildcardLetter={highlightWildcardLetter}
                     searchTerm={searchTerm}
-                    title="palabras encontradas usando una letra adicional"
+                    title="palabras encontradas usando todas las fichas más una letra adicional"
                   />
                 )}
                 {/* Show shorter matches if any */}
