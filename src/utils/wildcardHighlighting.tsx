@@ -40,16 +40,14 @@ export const highlightWildcardLetter = (word: string, searchTerm: string): React
   const matchedIndices = new Set<number>();
   
   // First pass: mark exact matches
-  let currentDigraphIndex = 0;
   for (let i = 0; i < word.length; i++) {
     // Skip if this index is part of an already matched digraph
     if (matchedIndices.has(i)) continue;
     
     // Check if this position is part of a digraph
-    const isPartOfDigraph = digraphPositions.some(pos => pos.start === i || pos.end === i);
+    const digraph = digraphPositions.find(pos => pos.start === i || pos.end === i);
     
-    if (isPartOfDigraph) {
-      const digraph = digraphPositions[currentDigraphIndex];
+    if (digraph) {
       const digraphStr = word.slice(digraph.start, digraph.end + 1);
       const processedDigraph = processDigraphs(digraphStr);
       
@@ -58,7 +56,6 @@ export const highlightWildcardLetter = (word: string, searchTerm: string): React
         matchedIndices.add(digraph.end);
         searchCharCounts.set(processedDigraph, searchCharCounts.get(processedDigraph)! - 1);
       }
-      currentDigraphIndex++;
     } else {
       const char = word[i];
       if (searchCharCounts.has(char) && searchCharCounts.get(char)! > 0) {
@@ -72,7 +69,7 @@ export const highlightWildcardLetter = (word: string, searchTerm: string): React
   return (
     <span className="inline-flex">
       {word.split('').map((char, index) => {
-        // Check if this position is part of a digraph
+        // Find if this position is part of a digraph
         const digraph = digraphPositions.find(pos => pos.start === index || pos.end === index);
         
         // Only highlight if this is a wildcard match or an additional letter
@@ -84,27 +81,29 @@ export const highlightWildcardLetter = (word: string, searchTerm: string): React
           (isWildcardMatch || !cleanSearchTerm.includes(char)) &&
           (!digraph || (!matchedIndices.has(digraph.start) && !matchedIndices.has(digraph.end)));
         
-        if (shouldHighlight) {
-          if (digraph && index === digraph.start) {
-            return (
+        // Handle digraphs
+        if (digraph) {
+          if (index === digraph.start) {
+            // Only render the digraph at its start position
+            return shouldHighlight ? (
               <span key={index} className="text-red-600 font-semibold">
                 {char}{word[index + 1]}
               </span>
+            ) : (
+              <span key={index}>{char}{word[index + 1]}</span>
             );
-          } else if (digraph && index === digraph.end) {
+          } else if (index === digraph.end) {
+            // Skip the second character of the digraph
             return null;
-          } else {
-            return <span key={index} className="text-red-600 font-semibold">{char}</span>;
-          }
-        } else {
-          if (digraph && index === digraph.start) {
-            return <span key={index}>{char}{word[index + 1]}</span>;
-          } else if (digraph && index === digraph.end) {
-            return null;
-          } else {
-            return <span key={index}>{char}</span>;
           }
         }
+        
+        // Handle regular characters
+        return shouldHighlight ? (
+          <span key={index} className="text-red-600 font-semibold">{char}</span>
+        ) : (
+          <span key={index}>{char}</span>
+        );
       })}
     </span>
   );
