@@ -1,4 +1,4 @@
-import { processDigraphs, getInternalLength } from "@/utils/digraphs";
+import { processDigraphs, getInternalLength, toDisplayFormat } from "@/utils/digraphs";
 import { calculateWordScore } from "@/utils/scrabbleScore";
 
 interface BaseResultsProps {
@@ -38,17 +38,20 @@ export const BaseResults = ({ matches, title, highlightWildcardLetter, searchTer
           </h4>
           <div className="flex flex-wrap gap-2">
             {groupedByLength[length].map((word, index) => {
-              const score = calculateWordScore(word);
+              const displayWord = toDisplayFormat(word);
+              const score = calculateWordScore(displayWord);
               return (
                 <a
                   key={`word-${length}-${index}`}
-                  href={`https://dle.rae.es/?w=${word}`}
+                  href={`https://dle.rae.es/?w=${displayWord}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:bg-gray-100 p-1.5 rounded transition-colors text-lg"
                 >
                   <span className="flex items-center gap-2">
-                    {highlightWildcardLetter && searchTerm ? highlightWildcardLetter(word, searchTerm) : word}
+                    {highlightWildcardLetter && searchTerm 
+                      ? highlightWildcardLetter(displayWord, searchTerm)
+                      : displayWord}
                     <span className="text-sm text-gray-500">({score})</span>
                   </span>
                 </a>
