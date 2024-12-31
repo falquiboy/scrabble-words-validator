@@ -17,6 +17,7 @@ export const useWordTrie = (): WordTrieState => {
   const initializationPromiseRef = useRef<Promise<void> | null>(null);
   const toastShownRef = useRef(false);
   const mountedRef = useRef(true);
+  const uniqueWordsRef = useRef(new Set<string>());
   
   const [state, setState] = useState<WordTrieState>({
     isLoading: true,
@@ -53,34 +54,32 @@ export const useWordTrie = (): WordTrieState => {
 
     const initTrie = async () => {
       if (isInitializedRef.current) {
-        const currentWords = Array.from(wordTrie.getAllWords());
         const totalWordsInDB = await checkTotalWordsInDB();
         
         console.log('Checking Trie state:', {
           isInitialized: isInitializedRef.current,
-          wordCount: currentWords.length,
+          uniqueWords: uniqueWordsRef.current.size,
           totalWordsInDB,
-          sampleWords: currentWords.slice(0, 5)
+          sampleWords: Array.from(uniqueWordsRef.current).slice(0, 5)
         });
         
-        // Reset if Trie is empty or doesn't have all words
-        if (currentWords.length === 0 || currentWords.length < totalWordsInDB) {
+        if (uniqueWordsRef.current.size === 0 || uniqueWordsRef.current.size < totalWordsInDB) {
           console.log('Trie needs rebuild:', {
-            currentWords: currentWords.length,
+            currentWords: uniqueWordsRef.current.size,
             expectedWords: totalWordsInDB
           });
           isInitializedRef.current = false;
           toastShownRef.current = false;
           wordTrie.clear();
+          uniqueWordsRef.current.clear();
         } else {
-          console.log('Trie is properly initialized with words:', currentWords.length);
           if (mountedRef.current) {
             setState(prev => ({
               ...prev,
               isLoading: false,
-              wordCount: currentWords.length
+              wordCount: uniqueWordsRef.current.size
             }));
-            showReadyToast(currentWords.length);
+            showReadyToast(uniqueWordsRef.current.size);
           }
           return;
         }
@@ -89,12 +88,6 @@ export const useWordTrie = (): WordTrieState => {
       if (initializationPromiseRef.current) {
         console.log('Waiting for existing initialization to complete...');
         await initializationPromiseRef.current;
-        if (mountedRef.current) {
-          setState(prev => ({
-            ...prev,
-            isLoading: false
-          }));
-        }
         return;
       }
 
@@ -115,6 +108,8 @@ export const useWordTrie = (): WordTrieState => {
           }
 
           wordTrie.clear();
+          uniqueWordsRef.current.clear();
+          
           console.log('Building Trie with', words.length, 'words');
           console.log('Sample of first 10 words:', words.slice(0, 10));
 
@@ -128,48 +123,33 @@ export const useWordTrie = (): WordTrieState => {
             const batch = words.slice(i, i + batchSize);
             batch.forEach(word => {
               const upperWord = word.toUpperCase();
+              uniqueWordsRef.current.add(upperWord);
               const processedWord = processDigraphs(upperWord);
               const alphagram = generateAlphagram(processedWord);
               
-              // Insert both the processed word and its alphagram
               wordTrie.insert(processedWord, upperWord);
               wordTrie.insert(alphagram, upperWord);
               processedCount++;
-              
-              // Debug specific words
-              if (upperWord === 'FOWEAR') {
-                console.log('Found FOWEAR during insertion:', {
-                  original: word,
-                  processed: processedWord,
-                  alphagram,
-                  length: processedWord.length,
-                  isInTrie: wordTrie.search(processedWord),
-                  alphagramInTrie: wordTrie.search(alphagram)
-                });
-              }
             });
 
             if (processedCount % 50000 === 0) {
               console.log('Words processed:', processedCount);
             }
 
-            // Add small delay to prevent UI blocking
             await new Promise(resolve => setTimeout(resolve, 0));
           }
 
           const endTime = performance.now();
           console.log(`Trie build completed in ${((endTime - startTime) / 1000).toFixed(2)} seconds`);
           
-          const trieWords = Array.from(wordTrie.getAllWords());
-          
           console.log('Final Trie state:', {
-            totalWords: trieWords.length,
+            uniqueWords: uniqueWordsRef.current.size,
             expectedWords: totalWordsInDB,
-            sampleWords: trieWords.slice(0, 5)
+            sampleWords: Array.from(uniqueWordsRef.current).slice(0, 5)
           });
 
-          if (trieWords.length < totalWordsInDB) {
-            throw new Error(`Failed to load all words: ${trieWords.length}/${totalWordsInDB}`);
+          if (uniqueWordsRef.current.size < totalWordsInDB) {
+            throw new Error(`Failed to load all words: ${uniqueWordsRef.current.size}/${totalWordsInDB}`);
           }
 
           if (mountedRef.current) {
@@ -177,11 +157,11 @@ export const useWordTrie = (): WordTrieState => {
               isLoading: false,
               error: null,
               trie: wordTrie,
-              wordCount: trieWords.length
+              wordCount: uniqueWordsRef.current.size
             });
             
             isInitializedRef.current = true;
-            showReadyToast(trieWords.length);
+            showReadyToast(uniqueWordsRef.current.size);
           }
         } catch (err) {
           console.error('Error initializing trie:', err);
