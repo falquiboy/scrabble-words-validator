@@ -3,9 +3,10 @@ import { wordDB } from '@/utils/wordDatabase';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-const MAX_RETRIES = 3;
-const BATCH_SIZE = 10000;
+const MAX_RETRIES = 5; // Increased from 3 to 5 for more retry attempts
+const BATCH_SIZE = 5000; // Reduced from 10000 to 5000 for better stability
 const MINIMUM_EXPECTED_WORDS = 600000;
+const BACKOFF_BASE = 2;
 
 export const useWordDatabase = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -50,23 +51,24 @@ export const useWordDatabase = () => {
                 batchRetries++;
                 
                 if (batchRetries <= MAX_RETRIES) {
-                  toast.error(`Error fetching words. Retrying... (${batchRetries}/${MAX_RETRIES})`);
-                  // Add exponential backoff
-                  await new Promise(resolve => setTimeout(resolve, Math.pow(2, batchRetries) * 1000));
+                  const backoffTime = Math.pow(BACKOFF_BASE, batchRetries) * 1000;
+                  toast.error(`Error fetching words. Retrying in ${backoffTime/1000}s... (${batchRetries}/${MAX_RETRIES})`);
+                  await new Promise(resolve => setTimeout(resolve, backoffTime));
                   continue;
                 }
                 
-                throw fetchError;
+                throw new Error(`Failed to fetch batch after ${MAX_RETRIES} retries: ${fetchError.message}`);
               }
 
               if (!words || words.length === 0) {
                 if (totalWords < MINIMUM_EXPECTED_WORDS) {
-                  // If we haven't reached minimum words, retry from the beginning
                   if (totalRetries < MAX_RETRIES) {
                     totalRetries++;
                     lastWord = null;
                     totalWords = 0;
-                    toast.error(`Incomplete word list. Starting over... (${totalRetries}/${MAX_RETRIES})`);
+                    const backoffTime = Math.pow(BACKOFF_BASE, totalRetries) * 1000;
+                    toast.error(`Incomplete word list. Restarting in ${backoffTime/1000}s... (${totalRetries}/${MAX_RETRIES})`);
+                    await new Promise(resolve => setTimeout(resolve, backoffTime));
                     continue;
                   }
                   throw new Error(`Failed to fetch minimum required words. Got ${totalWords}, expected ${MINIMUM_EXPECTED_WORDS}`);
@@ -96,8 +98,9 @@ export const useWordDatabase = () => {
               console.error('Error in batch processing:', err);
               if (batchRetries < MAX_RETRIES) {
                 batchRetries++;
-                toast.error(`Error processing batch. Retrying... (${batchRetries}/${MAX_RETRIES})`);
-                await new Promise(resolve => setTimeout(resolve, Math.pow(2, batchRetries) * 1000));
+                const backoffTime = Math.pow(BACKOFF_BASE, batchRetries) * 1000;
+                toast.error(`Error processing batch. Retrying in ${backoffTime/1000}s... (${batchRetries}/${MAX_RETRIES})`);
+                await new Promise(resolve => setTimeout(resolve, backoffTime));
                 continue;
               }
               throw err;
