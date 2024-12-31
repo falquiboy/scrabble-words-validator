@@ -1,10 +1,6 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { ResultsHeader } from "./ResultsHeader";
-import { ExactResults } from "./ExactResults";
-import { ShorterResults } from "./ShorterResults";
-import { PatternResults } from "./PatternResults";
+import SearchResults from "./search/SearchResults";
 
 interface ResultsListProps {
   isLoading: boolean;
@@ -28,20 +24,12 @@ const ResultsList = ({
   isSearchAborted 
 }: ResultsListProps) => {
   const { toast } = useToast();
-  const wildcardCount = (searchTerm.match(/\*/g) || []).length;
-  const isPatternSearch = searchTerm.includes('?') || searchTerm.includes('-');
-
-  // Remove any duplicates between wildcardMatches and additionalWildcardMatches
-  const filteredAdditionalMatches = results.additionalWildcardMatches.filter(word => {
-    if (wildcardCount === 0) {
-      return !results.exactMatches.includes(word);
-    } else {
-      return !results.wildcardMatches.includes(word);
-    }
-  });
 
   const handleCopyAll = () => {
     if (!results) return;
+
+    const isPatternSearch = searchTerm.includes('?') || searchTerm.includes('-');
+    const wildcardCount = (searchTerm.match(/\*/g) || []).length;
 
     let allWords: string[] = [];
 
@@ -55,7 +43,15 @@ const ResultsList = ({
         allWords = [...(results.wildcardMatches || [])];
       }
       
-      // Include additional letter matches (filtered)
+      // Include additional letter matches
+      const filteredAdditionalMatches = results.additionalWildcardMatches.filter(word => {
+        if (wildcardCount === 0) {
+          return !results.exactMatches.includes(word);
+        } else {
+          return !results.wildcardMatches.includes(word);
+        }
+      });
+      
       if (filteredAdditionalMatches.length > 0) {
         allWords = [...allWords, ...filteredAdditionalMatches];
       }
@@ -80,71 +76,16 @@ const ResultsList = ({
     });
   };
 
-  const hasExactMatches = wildcardCount === 0 ? results.exactMatches?.length > 0 : results.wildcardMatches?.length > 0;
-
   return (
     <ScrollArea className="h-[calc(100vh-12rem)] px-1">
       <div className="space-y-4 pb-4">
-        {isLoading ? (
-          <div className="flex items-center gap-2 text-gray-500">
-            <Loader className="h-4 w-4 animate-spin" />
-            Preparando búsqueda...
-          </div>
-        ) : results && (
-          (results.exactMatches?.length > 0 || 
-          results.wildcardMatches?.length > 0 || 
-          filteredAdditionalMatches.length > 0 ||
-          results.shorterMatches?.length > 0 ||
-          results.patternMatches?.length > 0)
-        ) ? (
-          <>
-            <ResultsHeader onCopyAll={handleCopyAll} />
-            {isPatternSearch ? (
-              <PatternResults
-                matches={results.patternMatches || []}
-                searchTerm={searchTerm}
-              />
-            ) : (
-              <>
-                {/* Show either exact matches or wildcard matches */}
-                {hasExactMatches && (
-                  <ExactResults
-                    matches={wildcardCount === 0 ? results.exactMatches : results.wildcardMatches}
-                    wildcardCount={wildcardCount}
-                    highlightWildcardLetter={highlightWildcardLetter}
-                    searchTerm={searchTerm}
-                  />
-                )}
-                {/* Show "no exact matches" message when appropriate */}
-                {!hasExactMatches && searchTerm && !isPatternSearch && (
-                  <p className="text-gray-500 text-lg mb-4">
-                    No se encontraron palabras usando exactamente las fichas dadas.
-                  </p>
-                )}
-                {/* Show additional wildcard matches if any */}
-                {filteredAdditionalMatches.length > 0 && (
-                  <ShorterResults
-                    matches={filteredAdditionalMatches}
-                    highlightWildcardLetter={highlightWildcardLetter}
-                    searchTerm={searchTerm}
-                    title="palabras encontradas usando todas las fichas más una letra adicional"
-                  />
-                )}
-                {/* Show shorter matches if any */}
-                {results.shorterMatches?.length > 0 && (
-                  <ShorterResults
-                    matches={results.shorterMatches}
-                    highlightWildcardLetter={highlightWildcardLetter}
-                    searchTerm={searchTerm}
-                    title="palabras más cortas encontradas"
-                  />
-                )}
-              </>
-            )}
-          </>
-        ) : searchTerm ? (
-          <p className="text-gray-500 text-lg">No se encontraron palabras.</p>
-        ) : null}
+        <SearchResults
+          isLoading={isLoading}
+          searchTerm={searchTerm}
+          results={results}
+          highlightWildcardLetter={highlightWildcardLetter}
+          onCopyAll={handleCopyAll}
+        />
       </div>
     </ScrollArea>
   );
