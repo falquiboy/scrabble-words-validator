@@ -3,6 +3,7 @@ import { wordDB } from '@/utils/wordDatabase';
 import { wordTrie } from '@/utils/trie';
 import { toast } from 'sonner';
 import { processDigraphs, generateAlphagram } from '@/utils/digraphs';
+import { supabase } from '@/integrations/supabase/client';
 
 interface WordTrieState {
   isLoading: boolean;
@@ -37,30 +38,37 @@ export const useWordTrie = (): WordTrieState => {
       }
     };
 
+    const checkTotalWordsInDB = async () => {
+      const { count, error } = await supabase
+        .from('words')
+        .select('*', { count: 'exact', head: true });
+      
+      if (error) {
+        console.error('Error checking total words:', error);
+        throw error;
+      }
+      
+      return count || 0;
+    };
+
     const initTrie = async () => {
       if (isInitializedRef.current) {
         const currentWords = Array.from(wordTrie.getAllWords());
-        const testWord = 'FOWEAR';
-        const processedTestWord = processDigraphs(testWord);
-        const testAlphagram = generateAlphagram(processedTestWord);
+        const totalWordsInDB = await checkTotalWordsInDB();
         
         console.log('Checking Trie state:', {
           isInitialized: isInitializedRef.current,
           wordCount: currentWords.length,
-          sampleWords: currentWords.slice(0, 5),
-          hasFOWEAR: currentWords.includes(testWord),
-          containsFOWEAR: wordTrie.search(testWord),
-          containsProcessedFOWEAR: wordTrie.search(processedTestWord),
-          testWordDetails: {
-            original: testWord,
-            processed: processedTestWord,
-            alphagram: testAlphagram,
-            length: processedTestWord.length
-          }
+          totalWordsInDB,
+          sampleWords: currentWords.slice(0, 5)
         });
         
-        if (currentWords.length === 0) {
-          console.log('Trie is empty but marked as initialized, resetting...');
+        // Reset if Trie is empty or doesn't have all words
+        if (currentWords.length === 0 || currentWords.length < totalWordsInDB) {
+          console.log('Trie needs rebuild:', {
+            currentWords: currentWords.length,
+            expectedWords: totalWordsInDB
+          });
           isInitializedRef.current = false;
           toastShownRef.current = false;
           wordTrie.clear();
@@ -98,10 +106,12 @@ export const useWordTrie = (): WordTrieState => {
           if (!mountedRef.current) return;
           
           const words = await wordDB.getAllWords();
+          const totalWordsInDB = await checkTotalWordsInDB();
+          
           if (!mountedRef.current) return;
 
-          if (words.length === 0) {
-            throw new Error('No words found in IndexedDB');
+          if (words.length === 0 || words.length < totalWordsInDB) {
+            throw new Error(`Incomplete word list: ${words.length}/${totalWordsInDB} words`);
           }
 
           wordTrie.clear();
@@ -151,33 +161,27 @@ export const useWordTrie = (): WordTrieState => {
           console.log(`Trie build completed in ${((endTime - startTime) / 1000).toFixed(2)} seconds`);
           
           const trieWords = Array.from(wordTrie.getAllWords());
-          const testWord = 'FOWEAR';
-          const processedTestWord = processDigraphs(testWord);
-          const testAlphagram = generateAlphagram(processedTestWord);
           
           console.log('Final Trie state:', {
             totalWords: trieWords.length,
-            sampleWords: trieWords.slice(0, 5),
-            testWordDetails: {
-              original: testWord,
-              processed: processedTestWord,
-              alphagram: testAlphagram,
-              length: processedTestWord.length,
-              isInTrie: wordTrie.search(processedTestWord),
-              alphagramInTrie: wordTrie.search(testAlphagram)
-            }
+            expectedWords: totalWordsInDB,
+            sampleWords: trieWords.slice(0, 5)
           });
+
+          if (trieWords.length < totalWordsInDB) {
+            throw new Error(`Failed to load all words: ${trieWords.length}/${totalWordsInDB}`);
+          }
 
           if (mountedRef.current) {
             setState({
               isLoading: false,
               error: null,
               trie: wordTrie,
-              wordCount: processedCount
+              wordCount: trieWords.length
             });
             
             isInitializedRef.current = true;
-            showReadyToast(processedCount);
+            showReadyToast(trieWords.length);
           }
         } catch (err) {
           console.error('Error initializing trie:', err);
