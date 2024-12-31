@@ -4,13 +4,13 @@ import { findPatternMatches } from "@/utils/pattern/matching";
 import { Trie } from "@/utils/trie/types";
 import { SearchResults } from "./anagramSearch/types";
 
-export const useOfflineAnagramSearch = (
+export const useOfflineAnagramSearch = async (
   searchTerm: string,
   showShorter: boolean,
   targetLength: number | null,
   trie: Trie
-) => {
-  const results = useMemo(() => {
+): Promise<{ data: SearchResults; isLoading: boolean }> => {
+  const results = await useMemo(async () => {
     if (!searchTerm || !trie) {
       console.log('No search term or trie not ready:', { searchTerm, trieExists: !!trie });
       return {
@@ -26,7 +26,7 @@ export const useOfflineAnagramSearch = (
     const isPatternSearch = searchTerm.includes('?') || searchTerm.includes('-');
     
     if (isPatternSearch) {
-      const matches = findPatternMatches(searchTerm, trie);
+      const matches = await findPatternMatches(searchTerm, trie);
       console.log('Pattern search results:', matches);
       return {
         exactMatches: [],
@@ -39,15 +39,6 @@ export const useOfflineAnagramSearch = (
 
     // Regular anagram search
     const { exactMatches, wildcardMatches, additionalWildcardMatches, shorterMatches } = findAnagrams(searchTerm, trie, true);
-
-    console.log('Anagram search results:', { 
-      exactMatches, 
-      wildcardMatches, 
-      additionalWildcardMatches,
-      shorterMatches,
-      showShorter,
-      targetLength 
-    });
 
     // Filter by target length if specified
     if (targetLength !== null) {

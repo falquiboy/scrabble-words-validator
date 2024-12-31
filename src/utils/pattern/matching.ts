@@ -1,8 +1,9 @@
 import { Trie } from '@/utils/trie/types';
 import { processDigraphs } from '@/utils/digraphs';
 import { validateWordPattern } from './validation';
+import { supabase } from '@/integrations/supabase/client';
 
-export const findPatternMatches = (pattern: string, trie: Trie): string[] => {
+export const findPatternMatches = async (pattern: string, trie: Trie): Promise<string[]> => {
   if (!pattern) return [];
 
   const [boardPattern = '', rackLetters = ''] = pattern.split(',');
@@ -13,10 +14,45 @@ export const findPatternMatches = (pattern: string, trie: Trie): string[] => {
     rackLetters: rackLetters.trim()
   });
 
-  // Get all words at once and filter
-  const matches = trie.getAllWords()
-    .filter(word => validateWordPattern(word, trimmedPattern, rackLetters.trim()));
+  // Convert pattern to SQL SIMILAR TO pattern
+  let sqlPattern = trimmedPattern
+    .replace(/\?/g, '_')  // ? becomes _ (single character wildcard)
+    .replace(/-/g, '%');  // - becomes % (multiple character wildcard)
 
-  console.log('Pattern matches found:', matches);
-  return matches;
+  // If pattern doesn't start with %, add ^ anchor
+  if (!sqlPattern.startsWith('%')) {
+    sqlPattern = '^' + sqlPattern;
+  }
+  
+  // If pattern doesn't end with %, add $ anchor
+  if (!sqlPattern.endsWith('%')) {
+    sqlPattern += '$';
+  }
+
+  console.log('SQL pattern:', sqlPattern);
+
+  try {
+    const { data: matches, error } = await supabase
+      .from('words')
+      .select('word')
+      .filter('word', 'similar to', sqlPattern)
+      .order('word');
+
+    if (error) {
+      console.error('Pattern search error:', error);
+      return [];
+    }
+
+    // If we have rack letters, we need to filter the results
+    if (rackLetters.trim()) {
+      return matches
+        .map(m => m.word)
+        .filter(word => validateWordPattern(word, trimmedPattern, rackLetters.trim()));
+    }
+
+    return matches.map(m => m.word);
+  } catch (err) {
+    console.error('Pattern search error:', err);
+    return [];
+  }
 };
