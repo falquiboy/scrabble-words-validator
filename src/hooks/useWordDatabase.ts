@@ -52,7 +52,7 @@ export const useWordDatabase = () => {
         await wordDB.init();
         if (!mounted) return;
 
-        const currentVersion = await wordDB.getVersion();
+        let currentVersion = await wordDB.getVersion(); // Changed from const to let
         console.log('Current DB version:', currentVersion);
 
         if (currentVersion < 3 || !totalWordsInSupabase) {
@@ -137,7 +137,7 @@ export const useWordDatabase = () => {
           // Verify if we have all words
           if (existingWords.length < totalWordsInSupabase) {
             console.log('Missing words detected. Triggering rebuild...');
-            currentVersion = 0; // Force rebuild
+            currentVersion = 0; // Now we can reassign the value
             await initDB();
             return;
           }
