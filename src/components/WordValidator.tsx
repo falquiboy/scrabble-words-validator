@@ -28,13 +28,36 @@ const WordValidator = ({ isDictionaryLoading, progress }: WordValidatorProps) =>
       const words = word.trim().split(" ");
       const processedWords = words.map(w => {
         let upperWord = w.toUpperCase();
+        
+        console.log('Word processing debug:', {
+          step: 'initial',
+          originalWord: w,
+          upperWord,
+          length: upperWord.length
+        });
+        
         upperWord = upperWord.split('').map(char => {
-          if (['Ç', 'K', 'W'].includes(char)) return char;
-          if (char === 'Ñ' || char === 'ñ') return 'Ñ';
-          return char
+          if (['Ç', 'K', 'W'].includes(char)) {
+            console.log('Special character found:', { char });
+            return char;
+          }
+          if (char === 'Ñ' || char === 'ñ') {
+            console.log('Ñ character found');
+            return 'Ñ';
+          }
+          
+          const normalized = char
             .normalize('NFD')
             .replace(/[\u0300-\u036f]/g, '')
             .normalize('NFC');
+          
+          console.log('Character normalization:', {
+            original: char,
+            normalized,
+            charCode: char.charCodeAt(0)
+          });
+          
+          return normalized;
         }).join('');
         
         const processed = processDigraphs(upperWord);
@@ -45,8 +68,8 @@ const WordValidator = ({ isDictionaryLoading, progress }: WordValidatorProps) =>
           processedWord: processed,
           length: processed.length,
           trieContains: wordTrie.search(processed),
-          wordsInTrie: Array.from(wordTrie.getWordsStartingWith(processed)),
-          allWords: Array.from(wordTrie.getAllWords()).slice(0, 10)
+          wordsInTrie: Array.from(wordTrie.getWordsStartingWith(processed)).slice(0, 5),
+          charCodes: Array.from(processed).map(c => c.charCodeAt(0))
         });
         
         return processed;
@@ -55,6 +78,12 @@ const WordValidator = ({ isDictionaryLoading, progress }: WordValidatorProps) =>
       const isValid = processedWords.every(w => {
         if (!w) return false;
         const result = wordTrie.search(w);
+        console.log('Word validation result:', {
+          word: w,
+          isValid: result,
+          length: w.length,
+          charCodes: Array.from(w).map(c => c.charCodeAt(0))
+        });
         return result;
       });
       
