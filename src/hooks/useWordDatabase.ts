@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 const MAX_RETRIES = 5;
-const BATCH_SIZE = 5000;
+const BATCH_SIZE = 1000; // Reduced batch size to handle data more efficiently
 const MINIMUM_EXPECTED_WORDS = 600000;
 const BACKOFF_BASE = 2;
 
@@ -87,12 +87,14 @@ export const useWordDatabase = () => {
                 throw new Error('No data returned from batch fetch');
               }
 
+              console.log('Batch sample:', words.slice(0, 5));
+
               if (words.length === 0) {
                 console.log('No words returned in batch. Total words so far:', totalWords);
                 if (totalWords < MINIMUM_EXPECTED_WORDS) {
                   if (totalRetries < MAX_RETRIES) {
                     totalRetries++;
-                    lastWord = null;
+                    lastWord = null; // Reset to start
                     totalWords = 0;
                     const backoffTime = Math.pow(BACKOFF_BASE, totalRetries) * 1000;
                     console.log(`Retrying from start in ${backoffTime/1000}s... (${totalRetries}/${MAX_RETRIES})`);
@@ -120,6 +122,7 @@ export const useWordDatabase = () => {
                 }
               }
 
+              // Reset batch retries on successful processing
               batchRetries = 0;
             } catch (err) {
               console.error('Error in batch processing:', err);
@@ -128,6 +131,12 @@ export const useWordDatabase = () => {
               
               if (batchRetries < MAX_RETRIES) {
                 batchRetries++;
+                // On error, move back one batch to ensure we don't miss words
+                if (lastWord) {
+                  const prevBatchStart = await getPreviousBatchStart(lastWord);
+                  lastWord = prevBatchStart;
+                  console.log('Moving back to previous batch starting at:', prevBatchStart);
+                }
                 const backoffTime = Math.pow(BACKOFF_BASE, batchRetries) * 1000;
                 console.log(`Retrying batch in ${backoffTime/1000}s... (${batchRetries}/${MAX_RETRIES})`);
                 toast.error(`Error loading words. Retrying... (${batchRetries}/${MAX_RETRIES})`);
@@ -163,6 +172,18 @@ export const useWordDatabase = () => {
           setIsLoading(false);
         }
       }
+    };
+
+    const getPreviousBatchStart = async (currentWord: string): Promise<string> => {
+      const { data } = await supabase
+        .from('words')
+        .select('word')
+        .lt('word', currentWord)
+        .order('word', { ascending: false })
+        .limit(BATCH_SIZE)
+        .single();
+      
+      return data?.word || '';
     };
 
     initDB();
