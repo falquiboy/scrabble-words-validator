@@ -57,29 +57,32 @@ export const validateWordPattern = (
 ): boolean => {
   // First check if the word matches the position pattern
   const regex = convertPatternToRegex(pattern);
-  if (!regex.test(word)) return false;
+  const processedWord = processDigraphs(word);
+  const processedPattern = processDigraphs(pattern);
+  
+  if (!regex.test(processedWord)) return false;
 
   // If no rack letters provided, we're done - the regex match is sufficient
   if (!rackLetters) return true;
 
-  // Process digraphs in rack letters and word
+  // Process digraphs in rack letters
   const processedRack = processDigraphs(rackLetters);
-  const processedWord = processDigraphs(word);
   
   console.log('Pattern validation:', {
     word,
     pattern,
     originalRack: rackLetters,
-    processedRack
+    processedRack,
+    processedWord,
+    processedPattern
   });
 
   // Extract fixed letters from pattern (excluding ? and -)
-  const fixedLetters = pattern
+  const fixedLetters = processedPattern
     .split('-')
     .join('')
     .replace(/\?/g, '')
     .toUpperCase();
-  const processedFixedLetters = processDigraphs(fixedLetters);
 
   // Create frequency maps for rack letters and handle wildcards
   const availableLetters = new Map<string, number>();
@@ -94,7 +97,7 @@ export const validateWordPattern = (
   }
 
   // Add fixed letters to available letters
-  for (const letter of processedFixedLetters) {
+  for (const letter of fixedLetters) {
     availableLetters.set(letter, (availableLetters.get(letter) || 0) + 1);
   }
 
