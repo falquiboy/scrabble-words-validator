@@ -5,12 +5,19 @@ import { useToast } from "@/hooks/use-toast";
 interface SearchContainerProps {
   onSearch: (letters: string, targetLength: number | null) => void;
   onClear: () => void;
+  onShowShorterChange: (show: boolean) => void;
+  showShorter: boolean;
   hasActiveSearch: boolean;
 }
 
-const SearchContainer = ({ onSearch, onClear, hasActiveSearch }: SearchContainerProps) => {
+const SearchContainer = ({ 
+  onSearch, 
+  onClear, 
+  onShowShorterChange,
+  showShorter,
+  hasActiveSearch 
+}: SearchContainerProps) => {
   const [letters, setLetters] = useState("");
-  const [showShorter, setShowShorter] = useState(false);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -76,7 +83,7 @@ const SearchContainer = ({ onSearch, onClear, hasActiveSearch }: SearchContainer
       onSearch={handleSearch}
       onClear={handleClear}
       onKeyPress={handleKeyPress}
-      onShowShorterChange={setShowShorter}
+      onShowShorterChange={onShowShorterChange}
       inputRef={inputRef}
       hasActiveSearch={hasActiveSearch}
     />
