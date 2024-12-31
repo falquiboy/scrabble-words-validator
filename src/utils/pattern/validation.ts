@@ -8,6 +8,7 @@ export const validateWordPattern = (
 ): boolean => {
   // First process the word with digraphs
   const processedWord = processDigraphs(word);
+  console.log('Validating pattern:', { word, processedWord, pattern });
   
   // For the pattern, we need to handle special characters differently
   // We'll split the pattern into parts that should and shouldn't be processed

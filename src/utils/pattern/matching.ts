@@ -14,8 +14,12 @@ export const findPatternMatches = async (pattern: string, trie: Trie): Promise<s
     rackLetters: rackLetters.trim()
   });
 
+  // Process digraphs in the pattern
+  const processedPattern = processDigraphs(trimmedPattern);
+  console.log('Processed pattern:', processedPattern);
+
   // Convert pattern to SQL SIMILAR TO pattern
-  let sqlPattern = trimmedPattern
+  let sqlPattern = processedPattern
     .replace(/\?/g, '_')  // ? becomes _ (single character wildcard)
     .replace(/-/g, '%');  // - becomes % (multiple character wildcard)
 
@@ -42,6 +46,8 @@ export const findPatternMatches = async (pattern: string, trie: Trie): Promise<s
       console.error('Pattern search error:', error);
       return [];
     }
+
+    console.log('Raw matches:', matches);
 
     // If we have rack letters, we need to filter the results
     if (rackLetters.trim()) {

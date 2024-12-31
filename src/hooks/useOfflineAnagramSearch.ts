@@ -10,6 +10,8 @@ export const useOfflineAnagramSearch = async (
   targetLength: number | null,
   trie: Trie
 ): Promise<{ data: SearchResults; isLoading: boolean }> => {
+  console.log('Starting search with:', { searchTerm, showShorter, targetLength });
+  
   const results = await useMemo(async () => {
     if (!searchTerm || !trie) {
       console.log('No search term or trie not ready:', { searchTerm, trieExists: !!trie });
@@ -26,6 +28,7 @@ export const useOfflineAnagramSearch = async (
     const isPatternSearch = searchTerm.includes('?') || searchTerm.includes('-');
     
     if (isPatternSearch) {
+      console.log('Executing pattern search for:', searchTerm);
       const matches = await findPatternMatches(searchTerm, trie);
       console.log('Pattern search results:', matches);
       return {
