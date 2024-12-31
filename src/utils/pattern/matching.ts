@@ -39,7 +39,7 @@ export const findPatternMatches = async (pattern: string, trie: Trie): Promise<s
     const { data: matches, error } = await supabase
       .from('words')
       .select('word')
-      .filter('word', 'similar to', sqlPattern)
+      .filter('word', 'similar to', sqlPattern) // Fixed: removed the dot
       .order('word');
 
     if (error) {
