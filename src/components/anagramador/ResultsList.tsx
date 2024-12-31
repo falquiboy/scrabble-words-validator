@@ -80,6 +80,8 @@ const ResultsList = ({
     });
   };
 
+  const hasExactMatches = wildcardCount === 0 ? results.exactMatches?.length > 0 : results.wildcardMatches?.length > 0;
+
   return (
     <ScrollArea className="h-[calc(100vh-12rem)] px-1">
       <div className="space-y-4 pb-4">
@@ -105,13 +107,19 @@ const ResultsList = ({
             ) : (
               <>
                 {/* Show either exact matches or wildcard matches */}
-                {(wildcardCount === 0 ? results.exactMatches?.length > 0 : results.wildcardMatches?.length > 0) && (
+                {hasExactMatches && (
                   <ExactResults
                     matches={wildcardCount === 0 ? results.exactMatches : results.wildcardMatches}
                     wildcardCount={wildcardCount}
                     highlightWildcardLetter={highlightWildcardLetter}
                     searchTerm={searchTerm}
                   />
+                )}
+                {/* Show "no exact matches" message when appropriate */}
+                {!hasExactMatches && searchTerm && !isPatternSearch && (
+                  <p className="text-gray-500 text-lg mb-4">
+                    No se encontraron palabras usando exactamente las fichas dadas.
+                  </p>
                 )}
                 {/* Show additional wildcard matches if any */}
                 {filteredAdditionalMatches.length > 0 && (
