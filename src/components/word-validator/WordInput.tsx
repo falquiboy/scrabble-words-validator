@@ -54,6 +54,12 @@ const WordInput = ({
     onValidate();
   };
 
+  const handleClearClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onClear();
+    inputRef.current?.focus();
+  };
+
   const isValidWord = word.trim().length > 0;
   const bgColor = 'bg-white';
   const textColor = 'text-gray-900';
@@ -68,14 +74,25 @@ const WordInput = ({
         value={word}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
-        className={`w-full text-2xl font-bold ${bgColor} ${textColor} outline-none ${placeholderColor} p-4 min-h-40 border border-gray-200 rounded-md`}
+        className={`w-full text-2xl font-bold ${bgColor} ${textColor} outline-none ${placeholderColor} p-4 min-h-40 border border-gray-200 rounded-md pr-24`}
         autoFocus
         spellCheck="false"
         autoCorrect="off"
         autoCapitalize="off"
         autoComplete="off"
       />
-      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+      <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-2">
+        {word && (
+          <Button
+            onClick={handleClearClick}
+            variant="ghost"
+            size="icon"
+            className="h-10 w-10 rounded-full hover:bg-red-50"
+            type="button"
+          >
+            <X className="h-5 w-5 text-red-500" />
+          </Button>
+        )}
         {word && (
           <Button
             onClick={handleButtonClick}
