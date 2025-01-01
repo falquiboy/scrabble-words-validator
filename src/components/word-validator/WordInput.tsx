@@ -5,7 +5,6 @@ import { Check, X } from "lucide-react";
 interface WordInputProps {
   word: string;
   isLoading: boolean;
-  isValidated: boolean;
   onWordChange: (value: string) => void;
   onValidate: () => void;
   onClear: () => void;
@@ -14,7 +13,6 @@ interface WordInputProps {
 const WordInput = ({
   word,
   isLoading,
-  isValidated,
   onWordChange,
   onValidate,
   onClear
@@ -22,10 +20,8 @@ const WordInput = ({
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!isValidated) {
-      inputRef.current?.focus();
-    }
-  }, [isValidated]);
+    inputRef.current?.focus();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target;
@@ -55,12 +51,13 @@ const WordInput = ({
 
   const handleButtonClick = () => {
     if (!word.trim()) return;
-    if (isValidated) {
-      onClear();
-    } else {
-      onValidate();
-    }
+    onValidate();
   };
+
+  const isValidWord = word.trim().length > 0;
+  const bgColor = 'bg-white';
+  const textColor = 'text-gray-900';
+  const placeholderColor = 'placeholder:text-gray-400';
 
   return (
     <div className="relative">
@@ -71,35 +68,30 @@ const WordInput = ({
         value={word}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
-        className={`w-full text-4xl font-bold bg-transparent outline-none placeholder:text-gray-400 p-4 transition-colors duration-300 ${
-          isValidated ? 'text-white' : 'text-gray-900'
-        }`}
+        className={`w-full text-2xl font-bold ${bgColor} ${textColor} outline-none ${placeholderColor} p-4 min-h-40 border border-gray-200 rounded-md`}
         autoFocus
         spellCheck="false"
         autoCorrect="off"
         autoCapitalize="off"
         autoComplete="off"
-        readOnly={isValidated}
       />
-      {word && (
-        <Button
-          onClick={handleButtonClick}
-          variant="ghost"
-          className={`absolute right-2 top-1/2 -translate-y-1/2 h-12 w-12 p-0 hover:bg-white/10 transition-colors rounded-full ${
-            isValidated ? 'text-white' : ''
-          }`}
-          type="button"
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-current" />
-          ) : isValidated ? (
-            <X className="h-6 w-6" />
-          ) : (
-            <Check className="h-6 w-6" />
-          )}
-        </Button>
-      )}
+      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+        {word && (
+          <Button
+            onClick={handleButtonClick}
+            variant="ghost"
+            className="h-12 w-12 p-0 hover:bg-gray-100 transition-colors rounded-full"
+            type="button"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900" />
+            ) : (
+              <Check className="h-6 w-6 text-scrabble-valid" />
+            )}
+          </Button>
+        )}
+      </div>
     </div>
   );
 };
