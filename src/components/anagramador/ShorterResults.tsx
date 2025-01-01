@@ -5,13 +5,14 @@ interface ShorterResultsProps {
   highlightWildcardLetter: (word: string, originalWord: string) => React.ReactNode;
   searchTerm: string;
   title: string;
+  showTitle: boolean;
 }
 
-export const ShorterResults = ({ matches, highlightWildcardLetter, searchTerm, title }: ShorterResultsProps) => {
+export const ShorterResults = ({ matches, highlightWildcardLetter, searchTerm, title, showTitle }: ShorterResultsProps) => {
   return (
     <BaseResults
       matches={matches}
-      title={`${matches.length} palabras encontradas usando todas las fichas más una letra adicional:`}
+      title={showTitle ? title : undefined}
       highlightWildcardLetter={highlightWildcardLetter}
       searchTerm={searchTerm}
     />
