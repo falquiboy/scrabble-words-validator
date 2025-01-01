@@ -91,8 +91,7 @@ const SearchResults = ({
               matches={filteredAdditionalMatches}
               highlightWildcardLetter={highlightWildcardLetter}
               searchTerm={searchTerm}
-              title={`${filteredAdditionalMatches.length} palabras encontradas usando todas las fichas más una letra adicional`}
-              showTitle={true}
+              title="palabras encontradas usando todas las fichas más una letra adicional"
             />
           )}
           {results.shorterMatches?.length > 0 && (
@@ -100,8 +99,7 @@ const SearchResults = ({
               matches={results.shorterMatches}
               highlightWildcardLetter={highlightWildcardLetter}
               searchTerm={searchTerm}
-              title={`${results.shorterMatches.length} palabras más cortas encontradas`}
-              showTitle={false}
+              title="palabras más cortas encontradas"
             />
           )}
         </>

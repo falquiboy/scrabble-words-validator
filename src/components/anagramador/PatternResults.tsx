@@ -1,4 +1,4 @@
-import BaseResults from "./results/BaseResults";
+import { BaseResults } from "./results/BaseResults";
 
 interface PatternResultsProps {
   matches: string[];
@@ -13,8 +13,6 @@ export const PatternResults = ({ matches, searchTerm }: PatternResultsProps) => 
     <BaseResults
       matches={uniqueMatches}
       title={`${uniqueMatches.length} ${uniqueMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que coinciden con el patrón:`}
-      highlightWildcardLetter={(word) => word}
-      searchTerm={searchTerm}
     />
   );
 };

@@ -1,60 +1,65 @@
-import React from 'react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Copy } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { processDigraphs, getInternalLength, toDisplayFormat } from "@/utils/digraphs";
+import { calculateWordScore } from "@/utils/scrabbleScore";
 
 interface BaseResultsProps {
   matches: string[];
-  title?: string;
-  highlightWildcardLetter: (word: string, originalWord: string) => React.ReactNode;
-  searchTerm: string;
+  title: string;
+  highlightWildcardLetter?: (word: string, originalWord: string) => React.ReactNode;
+  searchTerm?: string;
 }
 
-const BaseResults = ({ matches, title, highlightWildcardLetter, searchTerm }: BaseResultsProps) => {
-  const { toast } = useToast();
+export const BaseResults = ({ matches, title, highlightWildcardLetter, searchTerm }: BaseResultsProps) => {
+  if (matches.length === 0) return null;
 
-  const handleCopy = (word: string) => {
-    navigator.clipboard.writeText(word).then(() => {
-      toast({
-        title: "¡Copiado!",
-        description: word,
-      });
-    }).catch(() => {
-      toast({
-        title: "Error",
-        description: "No se pudo copiar la palabra",
-        variant: "destructive",
-      });
-    });
-  };
+  // Group words by internal length
+  const groupedByLength = matches.reduce((acc, word) => {
+    const length = getInternalLength(word);
+    if (!acc[length]) {
+      acc[length] = [];
+    }
+    acc[length].push(word);
+    return acc;
+  }, {} as Record<number, string[]>);
+
+  // Sort lengths in descending order
+  const sortedLengths = Object.keys(groupedByLength)
+    .map(Number)
+    .sort((a, b) => b - a);
 
   return (
-    <Card className="w-full">
-      {title && (
-        <CardHeader className="py-3">
-          <p className="text-sm text-muted-foreground">{title}</p>
-        </CardHeader>
-      )}
-      <CardContent className="grid grid-cols-1 gap-2 py-3">
-        {matches.map((word, index) => (
-          <div key={`${word}-${index}`} className="flex items-center justify-between">
-            <div className="text-lg font-medium">
-              {highlightWildcardLetter(word, searchTerm)}
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handleCopy(word)}
-              className="h-8 w-8"
-            >
-              <Copy className="h-4 w-4" />
-            </Button>
+    <div className="space-y-4 pb-8">
+      <h3 className="font-semibold text-lg">
+        {title}
+      </h3>
+      {sortedLengths.map(length => (
+        <div key={`length-${length}`} className="space-y-2">
+          <h4 className="font-medium text-gray-600">
+            {`Palabras de ${length} ${length === 1 ? 'letra' : 'letras'} (${groupedByLength[length].length}):`}
+          </h4>
+          <div className="flex flex-wrap gap-2">
+            {groupedByLength[length].map((word, index) => {
+              const displayWord = toDisplayFormat(word);
+              const score = calculateWordScore(displayWord);
+              return (
+                <a
+                  key={`word-${length}-${index}`}
+                  href={`https://dle.rae.es/?w=${displayWord}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:bg-gray-100 p-1.5 rounded transition-colors text-lg"
+                >
+                  <span className="flex items-center gap-2">
+                    {highlightWildcardLetter && searchTerm 
+                      ? highlightWildcardLetter(displayWord, searchTerm)
+                      : displayWord}
+                    <span className="text-sm text-gray-500">({score})</span>
+                  </span>
+                </a>
+              );
+            })}
           </div>
-        ))}
-      </CardContent>
-    </Card>
+        </div>
+      ))}
+    </div>
   );
 };
-
-export default BaseResults;

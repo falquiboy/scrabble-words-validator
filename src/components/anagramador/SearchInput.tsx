@@ -2,7 +2,7 @@ import { Input } from "@/components/ui/input";
 import { RefObject, useState, useEffect, useRef } from "react";
 import { SearchTooltip } from "./SearchTooltip";
 import { validateAndCleanAnagramInput, validateAndCleanPatternInput } from "@/utils/inputValidation";
-import { Search, X } from "lucide-react";
+import SearchButton from "./search/SearchButton";
 import ShorterWordsToggle from "./search/ShorterWordsToggle";
 
 interface SearchInputProps {
@@ -29,9 +29,9 @@ const SearchInput = ({
   onClear
 }: SearchInputProps) => {
   const [isPatternMode, setIsPatternMode] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
   const cursorPositionRef = useRef<number | null>(null);
   
+  // Auto-detect pattern mode based on input
   useEffect(() => {
     const hasPatternChars = letters.includes('?') || letters.includes('^') || letters.includes('$');
     setIsPatternMode(hasPatternChars);
@@ -63,6 +63,7 @@ const SearchInput = ({
     cursorPositionRef.current = e.target.selectionStart;
     let value = e.target.value.toUpperCase();
     
+    // Automatically determine which validation to use based on input
     const hasPatternChars = value.includes('?') || value.includes('^') || value.includes('$');
     value = hasPatternChars ? 
       validateAndCleanPatternInput(value) : 
@@ -77,14 +78,6 @@ const SearchInput = ({
     } else {
       onSearch();
     }
-  };
-
-  const handleFocus = () => {
-    setIsFocused(true);
-  };
-
-  const handleBlur = () => {
-    setIsFocused(false);
   };
 
   return (
@@ -102,9 +95,7 @@ const SearchInput = ({
             value={letters}
             onChange={handleInputChange}
             onKeyDown={onKeyPress}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            className="text-xl h-12 text-left pr-12 border border-gray-200 rounded-md w-full transition-all duration-200"
+            className="text-xl h-12 text-left pr-12 border border-gray-200 rounded-md w-full"
             style={{ paddingRight: '3rem' }}
             autoFocus
             spellCheck={false}
@@ -112,22 +103,11 @@ const SearchInput = ({
             autoCapitalize="off"
           />
           <div className="absolute right-2 top-1/2 -translate-y-1/2">
-            {letters ? (
-              <button 
-                onClick={handleButtonClick}
-                className="h-12 w-12 p-0 hover:text-gray-600 transition-colors duration-200 rounded-full flex items-center justify-center touch-manipulation"
-                disabled={!letters.trim()}
-                aria-label={hasActiveSearch ? "Clear search" : "Search"}
-              >
-                {hasActiveSearch ? (
-                  <X className="h-5 w-5" />
-                ) : (
-                  <Search className="h-5 w-5" />
-                )}
-              </button>
-            ) : !isFocused && (
-              <Search className="h-5 w-5 text-gray-400" />
-            )}
+            <SearchButton
+              onClick={handleButtonClick}
+              hasActiveSearch={hasActiveSearch}
+              isDisabled={!letters.trim()}
+            />
           </div>
         </div>
       </SearchTooltip>
