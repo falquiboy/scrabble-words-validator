@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 export const findPatternMatches = async (pattern: string, trie: Trie): Promise<string[]> => {
   if (!pattern) return [];
 
-  const [boardPattern = '', rackLetters = ''] = pattern.split(',');
+  const [boardPattern = '', rackLetters = ''] = pattern.split(',').map(p => p?.trim().toUpperCase());
   const trimmedPattern = boardPattern.trim().toUpperCase();
   
   console.log('Pattern search:', {
@@ -23,25 +23,27 @@ export const findPatternMatches = async (pattern: string, trie: Trie): Promise<s
     .replace(/\?/g, '_')  // ? becomes _ (single character wildcard)
     .replace(/-/g, '%');  // - becomes % (multiple character wildcard)
 
-  // If pattern doesn't start with %, add ^ anchor
-  if (!sqlPattern.startsWith('%')) {
-    sqlPattern = '^' + sqlPattern;
+  // Handle SQL pattern anchors properly
+  if (processedPattern.startsWith('^')) {
+    sqlPattern = sqlPattern.substring(1); // Remove the ^
+  } else {
+    sqlPattern = '%' + sqlPattern;
   }
   
-  // If pattern doesn't end with %, add $ anchor
-  if (!sqlPattern.endsWith('%')) {
-    sqlPattern += '$';
+  if (processedPattern.endsWith('$')) {
+    sqlPattern = sqlPattern.slice(0, -1); // Remove the $
+  } else {
+    sqlPattern = sqlPattern + '%';
   }
 
   console.log('SQL pattern:', sqlPattern);
 
   try {
-    // First, get all words that match the pattern length
+    // Get all words that match the pattern length and LIKE pattern
     const { data: matches, error } = await supabase
       .from('words')
       .select('word')
-      .eq('lenght', processedPattern.length) // First filter by exact length
-      .ilike('word', sqlPattern.replace(/[\^$]/g, '')) // Remove ^ and $ as they're not needed with ilike
+      .ilike('word', sqlPattern)
       .order('word');
 
     if (error) {
@@ -51,7 +53,7 @@ export const findPatternMatches = async (pattern: string, trie: Trie): Promise<s
 
     console.log('Raw matches:', matches);
 
-    // If we have rack letters, we need to filter the results
+    // If we have rack letters, filter the results
     if (rackLetters.trim()) {
       return matches
         .map(m => m.word)

@@ -2,11 +2,17 @@ export const convertPatternToRegex = (pattern: string): RegExp => {
   // Replace ? with . for single character matching
   let regexPattern = pattern.replace(/\?/g, '.');
   
-  // If no anchors are present, allow pattern to match anywhere in word
+  // Handle anchors - don't add .* if anchors are present
   if (!pattern.includes('^') && !pattern.includes('$')) {
     regexPattern = `.*${regexPattern}.*`;
+  } else {
+    // Remove existing anchors to prevent doubles
+    regexPattern = regexPattern.replace(/^\^/, '').replace(/\$$/, '');
+    // Add them back properly
+    if (pattern.startsWith('^')) regexPattern = '^' + regexPattern;
+    if (pattern.endsWith('$')) regexPattern = regexPattern + '$';
   }
 
   // Create regex with case insensitivity
-  return new RegExp(`^${regexPattern}$`, 'i');
+  return new RegExp(`${regexPattern}`, 'i');
 };
