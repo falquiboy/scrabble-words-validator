@@ -114,7 +114,6 @@ const SearchInput = ({
       <ShorterWordsToggle
         checked={showShorter}
         onCheckedChange={onShowShorterChange}
-        disabled={isPatternMode}
       />
     </div>
   );

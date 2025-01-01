@@ -36,12 +36,12 @@ const findWildcardMatches = (processedInput: string, wildcardCount: number, trie
   return matches;
 };
 
-const findShorterMatches = (letters: string, targetLength: number, trie: Trie): Set<string> => {
+const findShorterMatches = (letters: string, trie: Trie): Set<string> => {
   const matches = new Set<string>();
   const letterArray = letters.split('');
   
   // Generate all possible combinations of letters
-  for (let len = 1; len < targetLength; len++) {
+  for (let len = 1; len < letters.length; len++) {
     const combinations = generateCombinations(letterArray, len);
     
     for (const combo of combinations) {
@@ -113,7 +113,6 @@ export const findAnagrams = (searchTerm: string, trie: Trie, showShorter: boolea
   // Count wildcards and process input
   const wildcardCount = (searchTerm.match(/\*/g) || []).length;
   const lettersOnly = searchTerm.replace(/\*/g, '');
-  const targetLength = lettersOnly.length + wildcardCount;
   
   // Process digraphs ONCE at the beginning
   const processedInput = processDigraphs(lettersOnly);
@@ -122,8 +121,7 @@ export const findAnagrams = (searchTerm: string, trie: Trie, showShorter: boolea
     searchTerm,
     wildcardCount,
     processedInput,
-    showShorter,
-    targetLength
+    showShorter
   });
 
   // Find matches based on wildcards
@@ -135,10 +133,8 @@ export const findAnagrams = (searchTerm: string, trie: Trie, showShorter: boolea
   // Find additional matches with one more letter
   const additionalWildcardMatches = Array.from(findAdditionalMatches(processedInput, wildcardCount, trie));
 
-  // Find shorter matches if requested AND if we're not using pattern search
-  const shorterMatches = (showShorter && !searchTerm.includes('?') && !searchTerm.includes('-')) ? 
-    Array.from(findShorterMatches(processedInput, targetLength, trie)) : 
-    [];
+  // Find shorter matches if requested
+  const shorterMatches = showShorter ? Array.from(findShorterMatches(processedInput, trie)) : [];
 
   return {
     exactMatches,

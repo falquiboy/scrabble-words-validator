@@ -46,10 +46,13 @@ export const useOfflineAnagramSearch = async (
   }
 
   // Regular anagram search
-  const { exactMatches, wildcardMatches, additionalWildcardMatches, shorterMatches } = findAnagrams(searchTerm, trie, showShorter);
+  const { exactMatches, wildcardMatches, additionalWildcardMatches, shorterMatches } = findAnagrams(searchTerm, trie, true);
 
   // Filter by target length if specified
   if (targetLength !== null) {
+    // Remove the length filter from the search term for comparison
+    const lettersOnly = searchTerm.replace(/\/\d+$/, '');
+    
     return {
       data: {
         exactMatches: exactMatches.filter(word => word.length === targetLength),
@@ -62,12 +65,28 @@ export const useOfflineAnagramSearch = async (
     };
   }
 
+  // Return results based on showShorter toggle
+  if (showShorter) {
+    // When toggle is ON, show only shorter matches
+    return {
+      data: {
+        exactMatches: [],
+        wildcardMatches: [],
+        additionalWildcardMatches: [],
+        shorterMatches,
+        patternMatches: []
+      },
+      isLoading: false
+    };
+  }
+
+  // When toggle is OFF, show only full-length and additional letter matches
   return {
     data: {
       exactMatches,
       wildcardMatches,
       additionalWildcardMatches,
-      shorterMatches: showShorter ? shorterMatches : [],
+      shorterMatches: [],
       patternMatches: []
     },
     isLoading: false

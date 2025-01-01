@@ -81,6 +81,11 @@ const SearchResults = ({
               searchTerm={searchTerm}
             />
           )}
+          {!hasExactMatches && searchTerm && !isPatternSearch && results.shorterMatches?.length === 0 && (
+            <p className="text-gray-500 text-lg mb-4">
+              No se encontraron palabras con estas fichas.
+            </p>
+          )}
           {filteredAdditionalMatches.length > 0 && (
             <ShorterResults
               matches={filteredAdditionalMatches}
