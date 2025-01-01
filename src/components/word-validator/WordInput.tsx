@@ -65,32 +65,21 @@ const WordInput = ({
         autoCapitalize="off"
         autoComplete="off"
       />
-      <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-2">
+      <div className="absolute right-3 top-1/2 -translate-y-1/2">
         {word && (
-          <>
-            <Button
-              onClick={onValidate}
-              variant="ghost"
-              className="h-12 w-12 p-0 hover:bg-transparent"
-              type="button"
-              disabled={isLoading}
-            >
-              <Check className="h-6 w-6 text-gray-600 hover:text-gray-800" />
-            </Button>
-            <Button
-              onClick={onClear}
-              variant="ghost"
-              className="h-12 w-12 p-0 hover:bg-transparent"
-              type="button"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-600" />
-              ) : (
-                <X className="h-6 w-6 text-gray-600 hover:text-gray-800" />
-              )}
-            </Button>
-          </>
+          <Button
+            onClick={onClear}
+            variant="ghost"
+            className="h-12 w-12 p-0 hover:bg-transparent"
+            type="button"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-600" />
+            ) : (
+              <X className="h-6 w-6 text-gray-600 hover:text-gray-800" />
+            )}
+          </Button>
         )}
       </div>
     </div>
