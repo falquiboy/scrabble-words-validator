@@ -51,10 +51,19 @@ const WordInput = ({
 
   const handleButtonClick = () => {
     if (!word.trim()) return;
-    if (!isLoading) {
-      onValidate();
+    if (word && !isLoading) {
+      if (!word.trim()) {
+        onClear();
+      } else {
+        onValidate();
+      }
     }
   };
+
+  const isValidWord = word.trim().length > 0;
+  const bgColor = isValidWord ? 'bg-scrabble-green' : 'bg-white';
+  const textColor = isValidWord ? 'text-white' : 'text-gray-900';
+  const placeholderColor = isValidWord ? 'placeholder:text-gray-300' : 'placeholder:text-gray-400';
 
   return (
     <div className="relative">
@@ -65,7 +74,7 @@ const WordInput = ({
         value={word}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
-        className="w-full text-2xl font-bold bg-scrabble-green text-white outline-none placeholder:text-gray-300 p-4 min-h-40 border border-gray-200 rounded-md"
+        className={`w-full text-2xl font-bold ${bgColor} ${textColor} outline-none ${placeholderColor} p-4 min-h-40 border border-gray-200 rounded-md`}
         autoFocus
         spellCheck="false"
         autoCorrect="off"
@@ -77,14 +86,14 @@ const WordInput = ({
           <Button
             onClick={handleButtonClick}
             variant="ghost"
-            className="h-12 w-12 p-0 hover:bg-white/10 transition-colors rounded-full"
+            className={`h-12 w-12 p-0 ${isValidWord ? 'hover:bg-white/10' : 'hover:bg-gray-100'} transition-colors rounded-full`}
             type="button"
             disabled={isLoading}
           >
             {isLoading ? (
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white" />
             ) : (
-              word.trim() ? (
+              isValidWord ? (
                 <Check className="h-6 w-6 text-scrabble-valid" />
               ) : (
                 <X className="h-6 w-6 text-scrabble-invalid" />
