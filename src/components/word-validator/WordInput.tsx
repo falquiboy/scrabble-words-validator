@@ -44,20 +44,8 @@ const WordInput = ({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       onValidate();
-    } else if (e.key === "Escape") {
-      onClear();
     }
   };
-
-  const handleButtonClick = () => {
-    if (!word.trim()) return;
-    onValidate();
-  };
-
-  const isValidWord = word.trim().length > 0;
-  const bgColor = 'bg-white';
-  const textColor = 'text-gray-900';
-  const placeholderColor = 'placeholder:text-gray-400';
 
   return (
     <div className="relative">
@@ -68,30 +56,28 @@ const WordInput = ({
         value={word}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
-        className={`w-full text-2xl font-bold ${bgColor} ${textColor} outline-none ${placeholderColor} p-4 min-h-40 border border-gray-200 rounded-md`}
+        className="w-full text-2xl font-bold bg-transparent outline-none placeholder:text-gray-400 p-4 min-h-40 border border-gray-200 rounded-md"
         autoFocus
         spellCheck="false"
         autoCorrect="off"
         autoCapitalize="off"
         autoComplete="off"
       />
-      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-        {word && (
-          <Button
-            onClick={handleButtonClick}
-            variant="ghost"
-            className="h-12 w-12 p-0 hover:bg-gray-100 transition-colors rounded-full"
-            type="button"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900" />
-            ) : (
-              <Check className="h-6 w-6 text-scrabble-valid" />
-            )}
-          </Button>
-        )}
-      </div>
+      {word && (
+        <Button
+          onClick={onClear}
+          variant="ghost"
+          className="absolute right-3 top-1/2 -translate-y-1/2 h-12 w-12 p-0 hover:bg-transparent"
+          type="button"
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-600" />
+          ) : (
+            <X className="h-6 w-6 text-gray-600 hover:text-gray-800" />
+          )}
+        </Button>
+      )}
     </div>
   );
 };

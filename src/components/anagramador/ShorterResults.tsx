@@ -11,7 +11,7 @@ export const ShorterResults = ({ matches, highlightWildcardLetter, searchTerm, t
   return (
     <BaseResults
       matches={matches}
-      title={`${matches.length} palabras encontradas:`}
+      title={`${matches.length} palabras encontradas usando todas las fichas más una letra adicional:`}
       highlightWildcardLetter={highlightWildcardLetter}
       searchTerm={searchTerm}
     />

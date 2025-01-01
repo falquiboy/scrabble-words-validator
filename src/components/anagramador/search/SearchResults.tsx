@@ -39,8 +39,6 @@ const SearchResults = ({
   });
 
   const hasExactMatches = wildcardCount === 0 ? results.exactMatches?.length > 0 : results.wildcardMatches?.length > 0;
-  const hasAdditionalMatches = filteredAdditionalMatches.length > 0;
-  const hasShorterMatches = results.shorterMatches?.length > 0;
 
   if (isLoading) {
     return (
@@ -55,7 +53,11 @@ const SearchResults = ({
     return null;
   }
 
-  const hasResults = hasExactMatches || hasAdditionalMatches || hasShorterMatches || results.patternMatches?.length > 0;
+  const hasResults = results.exactMatches?.length > 0 || 
+    results.wildcardMatches?.length > 0 || 
+    filteredAdditionalMatches.length > 0 ||
+    results.shorterMatches?.length > 0 ||
+    results.patternMatches?.length > 0;
 
   if (!hasResults) {
     return <p className="text-gray-500 text-lg">No se encontraron palabras.</p>;
@@ -79,26 +81,18 @@ const SearchResults = ({
               searchTerm={searchTerm}
             />
           )}
+          {!hasExactMatches && searchTerm && !isPatternSearch && results.shorterMatches?.length === 0 && (
+            <p className="text-gray-500 text-lg mb-4">
+              No se encontraron palabras con estas fichas.
+            </p>
+          )}
           {filteredAdditionalMatches.length > 0 && (
             <ShorterResults
               matches={filteredAdditionalMatches}
               highlightWildcardLetter={highlightWildcardLetter}
               searchTerm={searchTerm}
-              title="palabras encontradas"
+              title="palabras encontradas usando todas las fichas más una letra adicional"
             />
-          )}
-          {!hasExactMatches && !hasAdditionalMatches && hasShorterMatches && (
-            <>
-              <p className="text-gray-500 text-lg mb-4">
-                No se encontraron palabras con estas fichas. A continuación se muestran resultados de menor longitud:
-              </p>
-              <ShorterResults
-                matches={results.shorterMatches}
-                highlightWildcardLetter={highlightWildcardLetter}
-                searchTerm={searchTerm}
-                title="palabras más cortas encontradas"
-              />
-            </>
           )}
         </>
       )}
