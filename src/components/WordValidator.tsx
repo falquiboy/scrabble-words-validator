@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { wordTrie } from "@/utils/trie";
+import { Trie } from "@/utils/trie";
 import { processDigraphs, toDisplayFormat } from "@/utils/digraphs";
 import Header from "./word-validator/Header";
 import WordInput from "./word-validator/WordInput";
@@ -9,9 +9,10 @@ import ValidationResult from "./word-validator/ValidationResult";
 interface WordValidatorProps {
   isDictionaryLoading: boolean;
   progress: number;
+  trie: Trie;
 }
 
-const WordValidator = ({ isDictionaryLoading, progress }: WordValidatorProps) => {
+const WordValidator = ({ isDictionaryLoading, progress, trie }: WordValidatorProps) => {
   const [word, setWord] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<{
@@ -33,7 +34,7 @@ const WordValidator = ({ isDictionaryLoading, progress }: WordValidatorProps) =>
         // Process the word to handle digraphs before searching
         const processedWord = processDigraphs(w.toUpperCase());
         console.log('Validating word:', w, 'processed as:', processedWord);
-        return wordTrie.search(processedWord);
+        return trie.search(processedWord);
       });
 
       // Store the original words in uppercase for display

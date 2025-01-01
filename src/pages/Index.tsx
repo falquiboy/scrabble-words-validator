@@ -36,6 +36,7 @@ const Index = () => {
           <WordValidator 
             isDictionaryLoading={isDictionaryLoading} 
             progress={totalProgress}
+            trie={trie}
           />
         ) : (
           <Anagramador trie={trie} />
