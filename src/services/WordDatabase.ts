@@ -1,3 +1,5 @@
+import { processDigraphs, toDisplayFormat } from '@/utils/digraphs';
+
 export class WordDatabase {
   private db: IDBDatabase | null = null;
   private initPromise: Promise<void> | null = null;
@@ -51,14 +53,15 @@ export class WordDatabase {
 
       transaction.onerror = () => {
         console.error('Transaction error:', transaction.error);
-        reject(new Error('Failed to add words to database'));
+        reject(transaction.error);
       };
 
       transaction.oncomplete = () => resolve();
 
+      // Process words with digraphs before storing
       words.forEach(word => {
-        const upperWord = word.toUpperCase();
-        store.put({ word: upperWord });
+        const processedWord = processDigraphs(word.toUpperCase());
+        store.put({ word: processedWord });
       });
     });
   }
@@ -74,11 +77,13 @@ export class WordDatabase {
 
       request.onerror = () => {
         console.error('GetAll error:', request.error);
-        reject(new Error('Failed to retrieve words'));
+        reject(request.error);
       };
 
       request.onsuccess = () => {
-        resolve(request.result.map(record => record.word));
+        // Convert internal format back to display format when retrieving
+        const words = request.result.map(record => toDisplayFormat(record.word));
+        resolve(words);
       };
     });
   }
@@ -97,5 +102,3 @@ export class WordDatabase {
     });
   }
 }
-
-export const wordDB = new WordDatabase();
