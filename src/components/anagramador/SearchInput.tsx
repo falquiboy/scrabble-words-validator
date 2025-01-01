@@ -35,12 +35,7 @@ const SearchInput = ({
   useEffect(() => {
     const hasPatternChars = letters.includes('?') || letters.includes('-');
     setIsPatternMode(hasPatternChars);
-    
-    // If entering pattern mode, ensure shorter words is disabled
-    if (hasPatternChars && showShorter) {
-      onShowShorterChange(false);
-    }
-  }, [letters, showShorter, onShowShorterChange]);
+  }, [letters]);
 
   useEffect(() => {
     const handleGlobalF2 = (e: KeyboardEvent) => {

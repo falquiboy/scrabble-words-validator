@@ -62,7 +62,6 @@ export const useOfflineAnagramSearch = async (
     };
   }
 
-  // Return all results, including shorter matches if showShorter is true
   return {
     data: {
       exactMatches,
