@@ -46,14 +46,12 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
     setIsSearchAborted(false);
     setSearchTerm(letters);
     setTargetLength(newTargetLength);
-    setShowShorter(false); // Reset showShorter on new search
   };
 
   const handleClear = () => {
     setSearchTerm("");
     setTargetLength(null);
     setIsSearchAborted(false);
-    setShowShorter(false);
   };
 
   const handleShowShorterChange = (show: boolean) => {
