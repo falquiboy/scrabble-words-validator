@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Check, X } from "lucide-react";
+import { X } from "lucide-react";
 
 interface WordInputProps {
   word: string;
@@ -44,6 +44,8 @@ const WordInput = ({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       onValidate();
+    } else if (e.key === "Escape") {
+      onClear();
     }
   };
 
