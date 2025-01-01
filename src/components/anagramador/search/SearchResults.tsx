@@ -88,20 +88,12 @@ const SearchResults = ({
             />
           )}
           {!hasExactMatches && !hasAdditionalMatches && hasShorterMatches && (
-            <>
-              <p className="text-gray-500 text-lg mb-4">
-                No se encontraron palabras con estas fichas.
-              </p>
-              <p className="text-gray-600 text-lg font-medium mb-4">
-                A continuación se muestran resultados de menor longitud:
-              </p>
-              <ShorterResults
-                matches={results.shorterMatches}
-                highlightWildcardLetter={highlightWildcardLetter}
-                searchTerm={searchTerm}
-                title="palabras más cortas encontradas"
-              />
-            </>
+            <ShorterResults
+              matches={results.shorterMatches}
+              highlightWildcardLetter={highlightWildcardLetter}
+              searchTerm={searchTerm}
+              title="palabras más cortas encontradas"
+            />
           )}
         </>
       )}
