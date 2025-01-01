@@ -20,16 +20,18 @@ export const SearchTooltip = ({ isPatternMode, children }: SearchTooltipProps) =
               <p>Busca palabras usando patrones:</p>
               <ul className="space-y-1 list-disc pl-4">
                 <li><strong>?</strong> - una letra cualquiera</li>
-                <li><strong>-</strong> - cero o más letras</li>
+                <li><strong>^</strong> - inicio de palabra</li>
+                <li><strong>$</strong> - fin de palabra</li>
                 <li>Opcionalmente, después de una coma, ingresa las fichas disponibles (máx. {MAX_RACK_LETTERS})</li>
                 <li><strong>*</strong> - en las fichas, representa cualquier letra</li>
               </ul>
               <p className="mt-2">Ejemplos:</p>
               <ul className="space-y-1 list-disc pl-4">
-                <li>"C?SA" - palabras como CASA, COSA (usando cualquier letra)</li>
+                <li>"C?SA" - palabras como CASA, COSA (cualquier letra)</li>
+                <li>"^PAT" - palabras que empiezan con PAT</li>
+                <li>"INA$" - palabras que terminan en INA</li>
+                <li>"^PAT$" - exactamente la palabra PAT</li>
                 <li>"C?SA,CASA" - palabras como CASA, COSA usando las letras CASA</li>
-                <li>"C-R,AEIOU" - palabras que empiezan con C y terminan en R usando AEIOU</li>
-                <li>"C?SA,CA*A" - palabras como CASA, COSA usando CA*A (donde * es cualquier letra)</li>
               </ul>
             </>
           ) : (
@@ -37,7 +39,7 @@ export const SearchTooltip = ({ isPatternMode, children }: SearchTooltipProps) =
               <p>Puedes buscar de tres formas:</p>
               <ul className="space-y-1 list-disc pl-4">
                 <li><strong>Modo normal:</strong> Ingresa letras (máx. {MAX_RACK_LETTERS})</li>
-                <li><strong>Modo patrón:</strong> Usa ? y - para buscar patrones específicos</li>
+                <li><strong>Modo patrón:</strong> Usa ?, ^ y $ para buscar patrones específicos</li>
                 <li><strong>Modo natural:</strong> Escribe tu consulta en español</li>
               </ul>
               <p className="mt-2">Ejemplos en lenguaje natural:</p>
