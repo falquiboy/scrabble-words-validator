@@ -16,23 +16,15 @@ const ValidationResult = ({ word, result, onEditStart }: ValidationResultProps) 
 
   return (
     <ScrollArea 
-      className={`rounded-xl transition-colors duration-300 ${
+      className={`h-40 rounded-md border border-gray-200 ${
         result.isValid ? "bg-scrabble-valid" : "bg-scrabble-invalid"
-      }`}
+      } text-white`}
     >
-      <div className="p-4 min-h-[200px] flex items-center justify-center">
-        <div 
-          className="relative w-full cursor-pointer" 
-          onClick={onEditStart}
-        >
-          <div className="flex flex-wrap gap-3 justify-center">
+      <div className="p-4 min-h-full flex items-center">
+        <div className="relative w-full" onClick={onEditStart}>
+          <div className="flex flex-wrap gap-3">
             {word.split(" ").map((w, i) => (
-              <span 
-                key={i} 
-                className="text-5xl font-bold text-white tracking-wide"
-              >
-                {w}
-              </span>
+              <span key={i} className="text-4xl font-bold">{w}</span>
             ))}
           </div>
         </div>
