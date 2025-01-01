@@ -1,7 +1,7 @@
 import { useState } from "react";
 import WordValidator from "@/components/WordValidator";
 import Anagramador from "@/components/Anagramador";
-import ModuleSelector from "@/components/ModuleSelector";
+import NewModuleSelector from "@/components/NewModuleSelector";
 import { useWordDatabase } from "@/hooks/useWordDatabase";
 import { useWordTrie } from "@/hooks/useWordTrie";
 
@@ -30,7 +30,7 @@ const Index = () => {
 
   return (
     <div className="fixed inset-0 bg-gray-50 flex flex-col items-center">
-      <ModuleSelector activeModule={activeModule} onModuleChange={setActiveModule} />
+      <NewModuleSelector activeModule={activeModule} onModuleChange={setActiveModule} />
       <div className="mt-20 flex-1">
         {activeModule === 'judge' ? (
           <WordValidator 
