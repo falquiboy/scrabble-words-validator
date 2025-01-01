@@ -3,7 +3,6 @@ import { RefObject, useState, useEffect, useRef } from "react";
 import { SearchTooltip } from "./SearchTooltip";
 import { validateAndCleanAnagramInput, validateAndCleanPatternInput } from "@/utils/inputValidation";
 import { Search, X } from "lucide-react";
-import SearchButton from "./search/SearchButton";
 import ShorterWordsToggle from "./search/ShorterWordsToggle";
 
 interface SearchInputProps {
@@ -33,7 +32,6 @@ const SearchInput = ({
   const [isFocused, setIsFocused] = useState(false);
   const cursorPositionRef = useRef<number | null>(null);
   
-  // Auto-detect pattern mode based on input
   useEffect(() => {
     const hasPatternChars = letters.includes('?') || letters.includes('^') || letters.includes('$');
     setIsPatternMode(hasPatternChars);
@@ -65,7 +63,6 @@ const SearchInput = ({
     cursorPositionRef.current = e.target.selectionStart;
     let value = e.target.value.toUpperCase();
     
-    // Automatically determine which validation to use based on input
     const hasPatternChars = value.includes('?') || value.includes('^') || value.includes('$');
     value = hasPatternChars ? 
       validateAndCleanPatternInput(value) : 
@@ -118,8 +115,9 @@ const SearchInput = ({
             {letters ? (
               <button 
                 onClick={handleButtonClick}
-                className="h-8 w-8 p-0 hover:text-gray-600 transition-colors duration-200"
+                className="h-12 w-12 p-0 hover:text-gray-600 transition-colors duration-200 rounded-full flex items-center justify-center touch-manipulation"
                 disabled={!letters.trim()}
+                aria-label={hasActiveSearch ? "Clear search" : "Search"}
               >
                 {hasActiveSearch ? (
                   <X className="h-5 w-5" />

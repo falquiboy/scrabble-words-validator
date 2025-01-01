@@ -77,9 +77,10 @@ const WordInput = ({
         {word ? (
           <button
             onClick={onClear}
-            className="h-12 w-12 p-0 hover:text-gray-600 transition-colors duration-200 rounded-full"
+            className="h-12 w-12 p-0 hover:text-gray-600 transition-colors duration-200 rounded-full flex items-center justify-center touch-manipulation"
             type="button"
             disabled={isLoading}
+            aria-label="Clear input"
           >
             {isLoading ? (
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-600" />
