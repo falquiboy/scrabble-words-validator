@@ -17,8 +17,19 @@ const Index = () => {
     (dbProgress * 0.5) + ((wordCount / 639293) * 50) : 
     dbProgress;
 
+  if (isDictionaryLoading) {
+    return (
+      <div className="fixed inset-0 bg-gray-50 flex flex-col items-center justify-center">
+        <div className="text-center">
+          <p className="text-lg font-medium mb-2">Loading dictionary...</p>
+          <p className="text-sm text-gray-600">{Math.round(totalProgress)}%</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className={`fixed inset-0 bg-gray-50 flex flex-col items-center`}>
+    <div className="fixed inset-0 bg-gray-50 flex flex-col items-center">
       <ModuleSelector activeModule={activeModule} onModuleChange={setActiveModule} />
       <div className="mt-20 flex-1">
         {activeModule === 'judge' ? (
