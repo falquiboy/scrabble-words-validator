@@ -50,9 +50,8 @@ const WordInput = ({
   };
 
   const handleButtonClick = () => {
-    if (word.trim()) {
-      onClear();
-    }
+    if (!word.trim()) return;
+    onValidate();
   };
 
   const isValidWord = word.trim().length > 0;
@@ -81,14 +80,14 @@ const WordInput = ({
           <Button
             onClick={handleButtonClick}
             variant="ghost"
-            className={`h-12 w-12 p-0 hover:bg-gray-100 transition-colors rounded-full`}
+            className="h-12 w-12 p-0 hover:bg-gray-100 transition-colors rounded-full"
             type="button"
             disabled={isLoading}
           >
             {isLoading ? (
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900" />
             ) : (
-              <X className="h-6 w-6 text-scrabble-invalid" />
+              <Check className="h-6 w-6 text-scrabble-valid" />
             )}
           </Button>
         )}
