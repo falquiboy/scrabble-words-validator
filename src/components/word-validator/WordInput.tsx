@@ -70,14 +70,14 @@ const WordInput = ({
           <Button
             onClick={onClear}
             variant="ghost"
-            className="h-12 w-12 p-0 hover:bg-transparent"
+            className="h-12 w-12 p-0 hover:bg-transparent transition-colors"
             type="button"
             disabled={isLoading}
           >
             {isLoading ? (
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-600" />
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white" />
             ) : (
-              <X className="h-6 w-6 text-gray-600 hover:text-gray-800" />
+              <X className="h-6 w-6 text-white hover:text-gray-200" />
             )}
           </Button>
         )}
