@@ -56,9 +56,9 @@ const WordInput = ({
   };
 
   const isValidWord = word.trim().length > 0;
-  const bgColor = isValidWord ? 'bg-scrabble-green' : 'bg-white';
-  const textColor = isValidWord ? 'text-white' : 'text-gray-900';
-  const placeholderColor = isValidWord ? 'placeholder:text-gray-300' : 'placeholder:text-gray-400';
+  const bgColor = 'bg-white';
+  const textColor = 'text-gray-900';
+  const placeholderColor = 'placeholder:text-gray-400';
 
   return (
     <div className="relative">
@@ -81,12 +81,12 @@ const WordInput = ({
           <Button
             onClick={handleButtonClick}
             variant="ghost"
-            className={`h-12 w-12 p-0 ${isValidWord ? 'hover:bg-white/10' : 'hover:bg-gray-100'} transition-colors rounded-full`}
+            className={`h-12 w-12 p-0 ${isValidWord ? 'hover:bg-gray-100' : 'hover:bg-gray-100'} transition-colors rounded-full`}
             type="button"
             disabled={isLoading}
           >
             {isLoading ? (
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white" />
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900" />
             ) : (
               isValidWord ? (
                 <Check className="h-6 w-6 text-scrabble-valid" />
