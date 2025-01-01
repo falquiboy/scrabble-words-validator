@@ -30,7 +30,8 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
       
       setIsLoading(true);
       try {
-        const { data } = await useOfflineAnagramSearch(searchTerm, showShorter, targetLength, trie);
+        // Always include shorter matches in the search
+        const { data } = await useOfflineAnagramSearch(searchTerm, true, targetLength, trie);
         setSearchResults(data);
       } catch (error) {
         console.error('Search error:', error);
@@ -40,7 +41,7 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
     };
 
     performSearch();
-  }, [searchTerm, showShorter, targetLength, trie]);
+  }, [searchTerm, targetLength, trie]);
 
   const handleSearch = (letters: string, newTargetLength: number | null) => {
     setIsSearchAborted(false);
