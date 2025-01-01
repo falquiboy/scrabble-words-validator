@@ -17,7 +17,7 @@ const SearchContainer = ({
   showShorter,
   hasActiveSearch 
 }: SearchContainerProps) => {
-  const [letters, setLetters] = useState("CASERON");
+  const [letters, setLetters] = useState("");
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);

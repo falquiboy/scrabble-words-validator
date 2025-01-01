@@ -11,7 +11,7 @@ interface AnagramadorProps {
 }
 
 const Anagramador = ({ trie }: AnagramadorProps) => {
-  const [searchTerm, setSearchTerm] = useState("CASERON");
+  const [searchTerm, setSearchTerm] = useState("");
   const [showShorter, setShowShorter] = useState(false);
   const [targetLength, setTargetLength] = useState<number | null>(null);
   const [isSearchAborted, setIsSearchAborted] = useState(false);
