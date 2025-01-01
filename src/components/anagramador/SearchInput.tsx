@@ -34,7 +34,7 @@ const SearchInput = ({
   
   // Auto-detect pattern mode based on input
   useEffect(() => {
-    const hasPatternChars = letters.includes('?') || letters.includes('-');
+    const hasPatternChars = letters.includes('?') || letters.includes('^') || letters.includes('$');
     setIsPatternMode(hasPatternChars);
   }, [letters]);
 
@@ -65,7 +65,7 @@ const SearchInput = ({
     let value = e.target.value.toUpperCase();
     
     // Automatically determine which validation to use based on input
-    const hasPatternChars = value.includes('?') || value.includes('-');
+    const hasPatternChars = value.includes('?') || value.includes('^') || value.includes('$');
     value = hasPatternChars ? 
       validateAndCleanPatternInput(value) : 
       validateAndCleanAnagramInput(value);
