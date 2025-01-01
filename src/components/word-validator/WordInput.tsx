@@ -44,6 +44,8 @@ const WordInput = ({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       onValidate();
+    } else if (e.key === "Escape") {
+      onClear();
     }
   };
 
