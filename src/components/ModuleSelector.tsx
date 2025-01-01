@@ -1,4 +1,6 @@
 import { Button } from "@/components/ui/button";
+import { Gavel, Shuffle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface ModuleSelectorProps {
   activeModule: 'judge' | 'anagram';
@@ -6,21 +8,32 @@ interface ModuleSelectorProps {
 }
 
 const ModuleSelector = ({ activeModule, onModuleChange }: ModuleSelectorProps) => {
+  const { toast } = useToast();
+
+  const handleModuleChange = () => {
+    const newModule = activeModule === 'judge' ? 'anagram' : 'judge';
+    onModuleChange(newModule);
+  };
+
   return (
-    <div className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 flex items-center justify-center space-x-4 px-4">
-      <Button
-        variant={activeModule === 'judge' ? 'default' : 'outline'}
-        onClick={() => onModuleChange('judge')}
-        className="w-32"
+    <div className="fixed top-4 right-4 flex gap-2 items-center bg-white/80 backdrop-blur-sm p-2 rounded-lg">
+      <Button 
+        variant="outline" 
+        size="default"
+        onClick={handleModuleChange}
+        className="flex items-center gap-2"
       >
-        Juez
-      </Button>
-      <Button
-        variant={activeModule === 'anagram' ? 'default' : 'outline'}
-        onClick={() => onModuleChange('anagram')}
-        className="w-32"
-      >
-        Anagramador
+        {activeModule === 'judge' ? (
+          <>
+            <Shuffle className="h-4 w-4" />
+            <span>Anagramador</span>
+          </>
+        ) : (
+          <>
+            <Gavel className="h-4 w-4" />
+            <span>Juez</span>
+          </>
+        )}
       </Button>
     </div>
   );
