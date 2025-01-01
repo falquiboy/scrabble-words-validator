@@ -50,13 +50,8 @@ const WordInput = ({
   };
 
   const handleButtonClick = () => {
-    if (!word.trim()) return;
-    if (word && !isLoading) {
-      if (!word.trim()) {
-        onClear();
-      } else {
-        onValidate();
-      }
+    if (word.trim()) {
+      onValidate();
     }
   };
 
