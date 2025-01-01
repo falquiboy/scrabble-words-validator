@@ -24,13 +24,17 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
   });
   const [isLoading, setIsLoading] = useState(false);
 
+  // Perform search when component mounts or when search parameters change
   useEffect(() => {
     const performSearch = async () => {
-      if (!searchTerm) return;
+      if (!searchTerm || !trie) return;
       
       setIsLoading(true);
+      console.log('Starting search for:', searchTerm);
+      
       try {
         const { data } = await useOfflineAnagramSearch(searchTerm, showShorter, targetLength, trie);
+        console.log('Search results:', data);
         setSearchResults(data);
       } catch (error) {
         console.error('Search error:', error);
