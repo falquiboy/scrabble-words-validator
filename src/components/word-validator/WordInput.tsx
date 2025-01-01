@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Check, X } from "lucide-react";
+import { X } from "lucide-react";
 
 interface WordInputProps {
   word: string;
@@ -45,8 +45,17 @@ const WordInput = ({
     if (e.key === "Enter") {
       onValidate();
     } else if (e.key === "Escape") {
+      e.preventDefault();
       onClear();
+      // Ensure input is focused after clearing
+      inputRef.current?.focus();
     }
+  };
+
+  const handleClearClick = () => {
+    onClear();
+    // Ensure input is focused after clearing via button
+    inputRef.current?.focus();
   };
 
   return (
@@ -67,7 +76,7 @@ const WordInput = ({
       />
       {word && (
         <Button
-          onClick={onClear}
+          onClick={handleClearClick}
           variant="ghost"
           className="absolute right-3 top-1/2 -translate-y-1/2 h-12 w-12 p-0 hover:bg-transparent"
           type="button"
