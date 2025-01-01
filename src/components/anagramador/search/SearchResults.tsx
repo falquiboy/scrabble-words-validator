@@ -84,16 +84,13 @@ const SearchResults = ({
               matches={filteredAdditionalMatches}
               highlightWildcardLetter={highlightWildcardLetter}
               searchTerm={searchTerm}
-              title="palabras encontradas usando todas las fichas más una letra adicional"
+              title="palabras encontradas"
             />
           )}
           {!hasExactMatches && !hasAdditionalMatches && hasShorterMatches && (
             <>
               <p className="text-gray-500 text-lg mb-4">
-                No se encontraron palabras con estas fichas.
-              </p>
-              <p className="text-gray-600 text-lg font-medium mb-4">
-                A continuación se muestran resultados de menor longitud:
+                No se encontraron palabras con estas fichas. A continuación se muestran resultados de menor longitud:
               </p>
               <ShorterResults
                 matches={results.shorterMatches}
