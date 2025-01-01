@@ -1,4 +1,4 @@
-import { BaseResults } from "./results/BaseResults";
+import BaseResults from "./results/BaseResults";
 
 interface ExactResultsProps {
   matches: string[];
