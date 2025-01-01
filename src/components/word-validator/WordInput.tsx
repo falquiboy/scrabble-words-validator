@@ -5,6 +5,7 @@ import { Check, X } from "lucide-react";
 interface WordInputProps {
   word: string;
   isLoading: boolean;
+  isValidated: boolean;
   onWordChange: (value: string) => void;
   onValidate: () => void;
   onClear: () => void;
@@ -13,6 +14,7 @@ interface WordInputProps {
 const WordInput = ({
   word,
   isLoading,
+  isValidated,
   onWordChange,
   onValidate,
   onClear
@@ -20,8 +22,10 @@ const WordInput = ({
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+    if (!isValidated) {
+      inputRef.current?.focus();
+    }
+  }, [isValidated]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target;
@@ -51,10 +55,13 @@ const WordInput = ({
 
   const handleButtonClick = () => {
     if (!word.trim()) return;
-    onValidate();
+    if (isValidated) {
+      onClear();
+    } else {
+      onValidate();
+    }
   };
 
-  const isValidWord = word.trim().length > 0;
   const bgColor = 'bg-white';
   const textColor = 'text-gray-900';
   const placeholderColor = 'placeholder:text-gray-400';
@@ -74,9 +81,10 @@ const WordInput = ({
         autoCorrect="off"
         autoCapitalize="off"
         autoComplete="off"
+        readOnly={isValidated}
       />
-      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-        {word && (
+      {word && (
+        <div className="absolute right-3 top-1/2 -translate-y-1/2">
           <Button
             onClick={handleButtonClick}
             variant="ghost"
@@ -86,12 +94,14 @@ const WordInput = ({
           >
             {isLoading ? (
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900" />
+            ) : isValidated ? (
+              <X className="h-6 w-6 text-scrabble-invalid" />
             ) : (
               <Check className="h-6 w-6 text-scrabble-valid" />
             )}
           </Button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
