@@ -2,7 +2,7 @@ export const convertPatternToRegex = (pattern: string): RegExp => {
   if (!pattern) return /.*/;
 
   // Split by hyphens but preserve question marks
-  const parts = pattern.split('-').filter(Boolean);
+  const parts = pattern.split('-');
   if (parts.length === 0) return /.*/;
 
   let regexPattern = '';
@@ -14,6 +14,7 @@ export const convertPatternToRegex = (pattern: string): RegExp => {
   
   // Convert parts to regex, preserving question marks
   regexPattern += parts
+    .filter(Boolean) // Remove empty strings
     .map(part => part.replace(/\?/g, '.'))
     .join('.*');
   
@@ -22,5 +23,15 @@ export const convertPatternToRegex = (pattern: string): RegExp => {
     regexPattern += '.*';
   }
 
-  return new RegExp(`^${regexPattern}$`, 'i'); // Added 'i' flag for case-insensitive matching
+  // If there are no parts (e.g., just hyphens), use .*
+  if (!regexPattern) {
+    regexPattern = '.*';
+  }
+
+  console.log('Pattern conversion:', {
+    original: pattern,
+    regex: regexPattern
+  });
+
+  return new RegExp(`^${regexPattern}$`, 'i');
 };
