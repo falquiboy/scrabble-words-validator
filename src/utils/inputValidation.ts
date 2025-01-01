@@ -40,8 +40,8 @@ export const validateAndCleanPatternInput = (value: string) => {
     // Keep only the first two parts if multiple commas
     let [patternPart, rackPart] = parts;
     
-    // Handle pattern part - allow ?, -, and letters (including digraph representations)
-    patternPart = patternPart.replace(/[^A-ZÑÇKW?\-,]/g, '');
+    // Handle pattern part - allow ?, ^, $ and letters (including digraph representations)
+    patternPart = patternPart.replace(/[^A-ZÑÇKW?\^$,]/g, '');
     
     // Handle rack part - allow letters and asterisk (*) (including digraph representations)
     rackPart = rackPart.replace(/[^A-ZÑÇKW*]/g, '');
@@ -50,5 +50,5 @@ export const validateAndCleanPatternInput = (value: string) => {
   }
   
   // If no comma, treat as pattern part (including digraph representations)
-  return value.replace(/[^A-ZÑÇKW?\-,]/g, '');
+  return value.replace(/[^A-ZÑÇKW?\^$,]/g, '');
 };
