@@ -102,3 +102,6 @@ export class WordDatabase {
     });
   }
 }
+
+// Export a singleton instance
+export const wordDB = new WordDatabase();
