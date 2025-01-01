@@ -45,28 +45,24 @@ const WordValidator = ({ isDictionaryLoading, progress }: WordValidatorProps) =>
 
   const handleClear = () => {
     if (isLoading) return;
-    if (word && !result.checked) {
-      handleValidate();
-    } else {
-      setWord("");
-      setResult({ isValid: false, checked: false, words: [] });
-      setIsEditing(false);
-    }
+    setWord("");
+    setResult({ isValid: false, checked: false, words: [] });
+    setIsEditing(true);
   };
 
   return (
     <div className="w-full max-w-md space-y-4 px-4">
       <Header />
       <div className="space-y-4">
-        {!result.checked || isEditing ? (
-          <WordInput
-            word={word}
-            isLoading={isLoading}
-            onWordChange={setWord}
-            onValidate={handleValidate}
-            onClear={handleClear}
-          />
-        ) : (
+        <WordInput
+          word={word}
+          isLoading={isLoading}
+          onWordChange={setWord}
+          onValidate={handleValidate}
+          onClear={handleClear}
+          isValidated={result.checked && !isEditing}
+        />
+        {result.checked && !isEditing && (
           <ValidationResult
             word={word}
             result={result}
