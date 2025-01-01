@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 
 const EXPECTED_WORD_COUNT = 639293;
 const MAX_RETRIES = 5;
-const BATCH_SIZE = 10000;
+const BATCH_SIZE = 1000;
 const BACKOFF_BASE = 2;
 
 export const useWordDatabase = () => {
@@ -50,12 +50,15 @@ export const useWordDatabase = () => {
                 .limit(BATCH_SIZE);
 
               if (fetchError) {
-                console.error('Error fetching words:', fetchError);
-                throw fetchError;
+                console.error('Supabase fetch error:', fetchError);
+                throw new Error(`Failed to fetch words: ${fetchError.message}`);
               }
 
               if (!words || words.length === 0) {
                 console.log('No more words to fetch. Total words loaded:', totalWords);
+                if (totalWords < EXPECTED_WORD_COUNT) {
+                  throw new Error(`Incomplete dictionary: loaded ${totalWords} of ${EXPECTED_WORD_COUNT} words`);
+                }
                 hasMore = false;
                 break;
               }
@@ -63,7 +66,13 @@ export const useWordDatabase = () => {
               if (mounted) {
                 console.log(`Processing batch of ${words.length} words...`);
                 
-                await wordDB.addWords(words.map(w => w.word));
+                try {
+                  await wordDB.addWords(words.map(w => w.word));
+                } catch (dbError) {
+                  console.error('IndexedDB error:', dbError);
+                  throw new Error(`Failed to add words to IndexedDB: ${dbError instanceof Error ? dbError.message : 'Unknown error'}`);
+                }
+                
                 totalWords += words.length;
                 lastWord = words[words.length - 1].word;
                 
@@ -86,7 +95,9 @@ export const useWordDatabase = () => {
                 await new Promise(resolve => setTimeout(resolve, backoffTime));
                 continue;
               }
-              throw new Error(`Failed to process batch after ${MAX_RETRIES} retries`);
+              
+              const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+              throw new Error(`Failed to process batch after ${MAX_RETRIES} retries: ${errorMessage}`);
             }
           }
 
