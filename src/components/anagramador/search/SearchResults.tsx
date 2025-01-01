@@ -81,17 +81,20 @@ const SearchResults = ({
               searchTerm={searchTerm}
             />
           )}
-          {!hasExactMatches && searchTerm && !isPatternSearch && results.shorterMatches?.length === 0 && (
-            <p className="text-gray-500 text-lg mb-4">
-              No se encontraron palabras con estas fichas.
-            </p>
-          )}
           {filteredAdditionalMatches.length > 0 && (
             <ShorterResults
               matches={filteredAdditionalMatches}
               highlightWildcardLetter={highlightWildcardLetter}
               searchTerm={searchTerm}
               title="palabras encontradas usando todas las fichas más una letra adicional"
+            />
+          )}
+          {results.shorterMatches?.length > 0 && (
+            <ShorterResults
+              matches={results.shorterMatches}
+              highlightWildcardLetter={highlightWildcardLetter}
+              searchTerm={searchTerm}
+              title="palabras más cortas encontradas"
             />
           )}
         </>
