@@ -2,6 +2,7 @@ import { Input } from "@/components/ui/input";
 import { RefObject, useState, useEffect, useRef } from "react";
 import { SearchTooltip } from "./SearchTooltip";
 import { validateAndCleanAnagramInput, validateAndCleanPatternInput } from "@/utils/inputValidation";
+import { Search, X } from "lucide-react";
 import SearchButton from "./search/SearchButton";
 import ShorterWordsToggle from "./search/ShorterWordsToggle";
 
@@ -29,6 +30,7 @@ const SearchInput = ({
   onClear
 }: SearchInputProps) => {
   const [isPatternMode, setIsPatternMode] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const cursorPositionRef = useRef<number | null>(null);
   
   // Auto-detect pattern mode based on input
@@ -80,6 +82,14 @@ const SearchInput = ({
     }
   };
 
+  const handleFocus = () => {
+    setIsFocused(true);
+  };
+
+  const handleBlur = () => {
+    setIsFocused(false);
+  };
+
   return (
     <div className="space-y-2">
       <SearchTooltip isPatternMode={isPatternMode}>
@@ -95,7 +105,9 @@ const SearchInput = ({
             value={letters}
             onChange={handleInputChange}
             onKeyDown={onKeyPress}
-            className="text-xl h-12 text-left pr-12 border border-gray-200 rounded-md w-full"
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            className="text-xl h-12 text-left pr-12 border border-gray-200 rounded-md w-full transition-all duration-200"
             style={{ paddingRight: '3rem' }}
             autoFocus
             spellCheck={false}
@@ -103,11 +115,21 @@ const SearchInput = ({
             autoCapitalize="off"
           />
           <div className="absolute right-2 top-1/2 -translate-y-1/2">
-            <SearchButton
-              onClick={handleButtonClick}
-              hasActiveSearch={hasActiveSearch}
-              isDisabled={!letters.trim()}
-            />
+            {letters ? (
+              <button 
+                onClick={handleButtonClick}
+                className="h-8 w-8 p-0 hover:text-gray-600 transition-colors duration-200"
+                disabled={!letters.trim()}
+              >
+                {hasActiveSearch ? (
+                  <X className="h-5 w-5" />
+                ) : (
+                  <Search className="h-5 w-5" />
+                )}
+              </button>
+            ) : !isFocused && (
+              <Search className="h-5 w-5 text-gray-400" />
+            )}
           </div>
         </div>
       </SearchTooltip>
