@@ -20,7 +20,7 @@ const WordValidator = ({ isDictionaryLoading, progress, trie }: WordValidatorPro
     checked: boolean;
     words: string[];
   }>({ isValid: false, checked: false, words: [] });
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(true);
   const [loadStartTime] = useState(Date.now());
 
   const handleValidate = async () => {
@@ -53,7 +53,7 @@ const WordValidator = ({ isDictionaryLoading, progress, trie }: WordValidatorPro
     if (isLoading) return;
     setWord("");
     setResult({ isValid: false, checked: false, words: [] });
-    setIsEditing(true); // This ensures we show the input component
+    setIsEditing(true);
   };
 
   return (

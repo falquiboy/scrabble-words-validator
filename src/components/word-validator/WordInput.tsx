@@ -42,21 +42,26 @@ const WordInput = ({ word, isLoading, onWordChange, onValidate, onClear }: WordI
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      if (!e.shiftKey) {
-        onValidate();
-      }
+      onValidate();
     } else if (e.key === 'Escape') {
       e.preventDefault();
       onClear();
+      // Ensure input gets focused after clearing
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
     }
   };
 
-  const handleClear = () => {
+  const handleClear = (e?: React.MouseEvent) => {
+    e?.preventDefault();
     onClear();
     // Focus the input after clearing
-    inputRef.current?.focus();
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
   };
 
   return (
@@ -76,12 +81,6 @@ const WordInput = ({ word, isLoading, onWordChange, onValidate, onClear }: WordI
           {word && (
             <button
               onClick={handleClear}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleClear();
-                }
-              }}
               className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
               disabled={isLoading}
             >
