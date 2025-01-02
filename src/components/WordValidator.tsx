@@ -53,14 +53,14 @@ const WordValidator = ({ isDictionaryLoading, progress, trie }: WordValidatorPro
     if (isLoading) return;
     setWord("");
     setResult({ isValid: false, checked: false, words: [] });
-    setIsEditing(false);
+    setIsEditing(true); // This ensures we show the input component
   };
 
   return (
     <div className="w-full max-w-md space-y-4 px-4">
       <Header />
       <div className="space-y-4">
-        {!result.checked || isEditing ? (
+        {(!result.checked || isEditing) ? (
           <WordInput
             word={word}
             isLoading={isLoading}
