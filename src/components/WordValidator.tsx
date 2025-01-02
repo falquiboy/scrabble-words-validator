@@ -61,17 +61,15 @@ const WordValidator = ({ isDictionaryLoading, progress, trie }: WordValidatorPro
     <div className="w-full max-w-md space-y-4 px-4">
       <Header />
       <div className="space-y-4">
-        {(!result.checked || isEditing) ? (
-          <div className="space-y-4">
-            <WordInput
-              word={word}
-              isLoading={isLoading}
-              onWordChange={setWord}
-              onValidate={handleValidate}
-              onClear={handleClear}
-            />
-          </div>
-        ) : (
+        <WordInput
+          word={word}
+          isLoading={isLoading}
+          onWordChange={setWord}
+          onValidate={handleValidate}
+          onClear={handleClear}
+        />
+        
+        {result.checked && !isEditing && (
           <div className="space-y-4">
             <ValidationResult
               word={word}
@@ -87,6 +85,7 @@ const WordValidator = ({ isDictionaryLoading, progress, trie }: WordValidatorPro
             </Button>
           </div>
         )}
+        
         {isDictionaryLoading && (
           <LoadingIndicator 
             progress={progress} 
