@@ -5,6 +5,8 @@ import { processDigraphs } from '@/utils/digraphs';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
+const EXPECTED_WORD_COUNT = 639293;
+
 export const useWordTrie = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -19,12 +21,13 @@ export const useWordTrie = () => {
       console.log('Words in local database:', words.length);
 
       // If local DB is empty or has too few words, fetch from Supabase
-      if (words.length < 10000) {
+      if (words.length < EXPECTED_WORD_COUNT) {
         console.log('Local DB incomplete, fetching from Supabase...');
         
         let allWords: string[] = [];
         let lastWord = '';
         const batchSize = 5000;
+        let totalFetched = 0;
         
         while (true) {
           console.log(`Fetching batch after word: ${lastWord}`);
@@ -44,7 +47,8 @@ export const useWordTrie = () => {
             break;
           }
           
-          console.log(`Fetched batch of ${data.length} words`);
+          totalFetched += data.length;
+          console.log(`Fetched batch of ${data.length} words. Total: ${totalFetched}`);
           allWords = [...allWords, ...data.map(w => w.word.toUpperCase())];
           lastWord = data[data.length - 1].word;
           
@@ -54,6 +58,11 @@ export const useWordTrie = () => {
         }
         
         console.log('Total words fetched from Supabase:', allWords.length);
+        
+        if (allWords.length < EXPECTED_WORD_COUNT) {
+          throw new Error(`Incomplete dictionary: got ${allWords.length} words, expected ${EXPECTED_WORD_COUNT}`);
+        }
+        
         words = allWords;
         
         // Clear and rebuild local DB
@@ -79,15 +88,14 @@ export const useWordTrie = () => {
         setLoadingProgress(50);
         trie.deserialize(serializedTrie);
         const words = trie.getAllWords();
-        setWordCount(words.length);
-        console.log('Trie loaded from cache with', words.length, 'words');
         
-        // Verify the trie has enough words
-        if (words.length < 10000) {
-          console.log('Cached trie is incomplete, rebuilding...');
+        if (words.length < EXPECTED_WORD_COUNT) {
+          console.log(`Cached trie is incomplete (${words.length}/${EXPECTED_WORD_COUNT} words), rebuilding...`);
           return false;
         }
         
+        setWordCount(words.length);
+        console.log('Trie loaded from cache with', words.length, 'words');
         return true;
       }
       
@@ -115,11 +123,17 @@ export const useWordTrie = () => {
         trie.insert(processedWord, word);
         processed++;
         
-        if (processed % 100 === 0) {
+        if (processed % 1000 === 0) {
           const progress = Math.floor((processed / totalWords) * 100);
           setLoadingProgress(progress);
           console.log(`Processing progress: ${progress}%`);
         }
+      }
+
+      // Validate trie size before saving
+      const trieWords = trie.getAllWords();
+      if (trieWords.length < EXPECTED_WORD_COUNT) {
+        throw new Error(`Trie build incomplete: got ${trieWords.length} words, expected ${EXPECTED_WORD_COUNT}`);
       }
 
       // Save serialized trie
