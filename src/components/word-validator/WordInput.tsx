@@ -41,10 +41,18 @@ const WordInput = ({ word, isLoading, onWordChange, onValidate, onClear }: WordI
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter') {
       e.preventDefault();
-      onValidate();
+      if (!e.shiftKey) {
+        onValidate();
+      }
     }
+  };
+
+  const handleClear = () => {
+    onClear();
+    // Focus the input after clearing
+    inputRef.current?.focus();
   };
 
   return (
@@ -63,7 +71,13 @@ const WordInput = ({ word, isLoading, onWordChange, onValidate, onClear }: WordI
           />
           {word && (
             <button
-              onClick={onClear}
+              onClick={handleClear}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleClear();
+                }
+              }}
               className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
               disabled={isLoading}
             >
