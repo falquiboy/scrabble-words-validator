@@ -27,6 +27,7 @@ const WordInput = ({ word, isLoading, onWordChange, onValidate, onClear }: WordI
     value = value.split('')
       .map(char => {
         if (char === 'Ñ' || char === 'ñ') return 'Ñ';
+        if (char === 'Ç' || char === 'ç') return 'Ç';
         return char
           .normalize('NFD')
           .replace(/[\u0300-\u036f]/g, '')
@@ -34,8 +35,8 @@ const WordInput = ({ word, isLoading, onWordChange, onValidate, onClear }: WordI
       })
       .join('');
     
-    // Allow Spanish characters and spaces
-    value = value.replace(/[^A-ZÑ\s]/g, '');
+    // Allow Spanish characters (including Ç) and spaces
+    value = value.replace(/[^A-ZÑÇKW\s]/g, '');
     onWordChange(value);
   };
 
