@@ -1,5 +1,6 @@
 import React from 'react';
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { toDisplayFormat } from "@/utils/digraphs";
 
 interface ValidationResultProps {
   word: string;
@@ -23,8 +24,10 @@ const ValidationResult = ({ word, result, onEditStart }: ValidationResultProps) 
       <div className="p-4 min-h-full flex items-center">
         <div className="relative w-full" onClick={onEditStart}>
           <div className="flex flex-wrap gap-3">
-            {word.split(" ").map((w, i) => (
-              <span key={i} className="text-4xl font-bold">{w}</span>
+            {result.words.map((w, i) => (
+              <span key={i} className="text-4xl font-bold">
+                {toDisplayFormat(w)}
+              </span>
             ))}
           </div>
         </div>
