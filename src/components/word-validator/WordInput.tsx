@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
+import { processDigraphs } from '@/utils/digraphs';
 
 interface WordInputProps {
   word: string;
@@ -25,20 +26,31 @@ const WordInput = ({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target;
-    let value = input.value.toUpperCase()
-      .split('')
+    let value = input.value.toUpperCase();
+
+    // First normalize accents and special characters, preserving Ñ
+    value = value.split('')
       .map(char => {
-        if (['Ç', 'K', 'W'].includes(char)) return char;
         if (char === 'Ñ' || char === 'ñ') return 'Ñ';
         return char
           .normalize('NFD')
           .replace(/[\u0300-\u036f]/g, '')
           .normalize('NFC');
       })
-      .join('')
-      .replace(/[^A-ZÑÇKWs\s]/g, '');
+      .join('');
+
+    // Allow only valid Spanish characters and spaces
+    value = value.replace(/[^A-ZÑÇKW\s]/g, '');
     
-    onWordChange(value);
+    // If the input contains internal representations (Ç, K, W), keep them as is
+    if (value.match(/[ÇKW]/)) {
+      onWordChange(value);
+      return;
+    }
+
+    // Otherwise, process natural digraphs
+    const processedValue = processDigraphs(value);
+    onWordChange(processedValue);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
