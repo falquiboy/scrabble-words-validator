@@ -20,7 +20,6 @@ const WordValidator = ({ isDictionaryLoading, progress, trie }: WordValidatorPro
     checked: boolean;
     words: string[];
   }>({ isValid: false, checked: false, words: [] });
-  const [isEditing, setIsEditing] = useState(true);
   const [loadStartTime] = useState(Date.now());
 
   const handleValidate = async () => {
@@ -43,7 +42,6 @@ const WordValidator = ({ isDictionaryLoading, progress, trie }: WordValidatorPro
         checked: true, 
         words: words.map(w => w.toUpperCase()) 
       });
-      setIsEditing(false);
     } finally {
       setIsLoading(false);
     }
@@ -53,7 +51,15 @@ const WordValidator = ({ isDictionaryLoading, progress, trie }: WordValidatorPro
     if (isLoading) return;
     setWord("");
     setResult({ isValid: false, checked: false, words: [] });
-    setIsEditing(true);
+  };
+
+  // When the word changes, we're in editing mode
+  const handleWordChange = (newWord: string) => {
+    setWord(newWord);
+    // Only reset validation if the word actually changed
+    if (newWord !== word) {
+      setResult(prev => ({ ...prev, checked: false }));
+    }
   };
 
   return (
@@ -63,17 +69,16 @@ const WordValidator = ({ isDictionaryLoading, progress, trie }: WordValidatorPro
         <WordInput
           word={word}
           isLoading={isLoading}
-          onWordChange={setWord}
-          onValidate={result.checked && !isEditing ? handleClear : handleValidate}
-          buttonText={result.checked && !isEditing ? "Limpiar" : "Validar"}
-          isChecked={result.checked && !isEditing}
+          onWordChange={handleWordChange}
+          onValidate={result.checked ? handleClear : handleValidate}
+          buttonText={result.checked ? "Limpiar" : "Validar"}
+          isChecked={result.checked}
         />
         
-        {result.checked && !isEditing && (
+        {result.checked && (
           <ValidationResult
             word={word}
             result={result}
-            onEditStart={() => setIsEditing(true)}
           />
         )}
         
