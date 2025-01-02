@@ -23,9 +23,11 @@ const Index = () => {
       <div className="fixed inset-0 bg-gray-50 flex flex-col items-center justify-center p-4">
         <div className="w-full max-w-md space-y-4">
           <div className="text-center">
-            <p className="text-lg font-medium mb-2">Loading dictionary...</p>
+            <p className="text-lg font-medium mb-2">
+              {isTrieLoading ? 'Inicializando lexicón' : 'Descargando lexicón'}
+            </p>
             <p className="text-sm text-gray-600 mb-4">
-              {isTrieLoading ? 'Building word index' : 'Fetching words'}
+              {isTrieLoading ? 'Construyendo índice de palabras' : 'Obteniendo palabras'}
             </p>
           </div>
           <Progress value={totalProgress} className="w-full" />
