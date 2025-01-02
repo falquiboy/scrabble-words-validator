@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
 const EXPECTED_WORD_COUNT = 639293;
+const BATCH_SIZE = 50000; // Increased batch size for faster loading
 
 export const useWordTrie = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -25,18 +26,16 @@ export const useWordTrie = () => {
         console.log('Local DB incomplete, fetching from Supabase...');
         
         let allWords: string[] = [];
-        let lastWord = '';
-        const batchSize = 5000;
-        let totalFetched = 0;
+        let offset = 0;
+        let hasMore = true;
         
-        while (true) {
-          console.log(`Fetching batch after word: ${lastWord}`);
+        while (hasMore) {
+          console.log(`Fetching batch with offset: ${offset}`);
           const { data, error } = await supabase
             .from('words')
             .select('word')
-            .gt('word', lastWord)
-            .order('word')
-            .limit(batchSize);
+            .range(offset, offset + BATCH_SIZE - 1)
+            .order('word');
           
           if (error) {
             console.error('Supabase fetch error:', error);
@@ -44,16 +43,23 @@ export const useWordTrie = () => {
           }
           
           if (!data || data.length === 0) {
+            hasMore = false;
             break;
           }
           
-          totalFetched += data.length;
-          console.log(`Fetched batch of ${data.length} words. Total: ${totalFetched}`);
-          allWords = [...allWords, ...data.map(w => w.word.toUpperCase())];
-          lastWord = data[data.length - 1].word;
+          const batchWords = data.map(w => w.word.toUpperCase());
+          allWords.push(...batchWords);
+          console.log(`Fetched batch of ${batchWords.length} words. Total: ${allWords.length}`);
           
-          if (data.length < batchSize) {
-            break;
+          // Update progress based on total words fetched
+          const progress = Math.min((allWords.length / EXPECTED_WORD_COUNT) * 100, 100);
+          setLoadingProgress(Math.floor(progress));
+          
+          offset += data.length;
+          
+          // Break if we got fewer words than the batch size
+          if (data.length < BATCH_SIZE) {
+            hasMore = false;
           }
         }
         
