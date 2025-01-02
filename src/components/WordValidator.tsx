@@ -29,11 +29,28 @@ const WordValidator = ({ isDictionaryLoading, progress, trie }: WordValidatorPro
     try {
       // Split into individual words and process each one
       const words = word.trim().split(" ");
+      console.log('Validating words:', words);
+      
+      // Get all words from trie for debugging
+      const allWords = trie.getAllWords();
+      console.log('Total words in trie:', allWords.length);
+      
       const isValid = words.every(w => {
         // Process digraphs before validation
         const processedWord = processDigraphs(w.toUpperCase());
         console.log('Validating word:', w, 'processed as:', processedWord);
-        return trie.search(processedWord);
+        
+        // Search in trie and log result
+        const found = trie.search(processedWord);
+        console.log('Word found in trie?', found);
+        
+        // If found, verify it exists in the complete word list
+        if (found) {
+          const exists = allWords.includes(processedWord);
+          console.log('Word exists in complete word list?', exists);
+          return exists;
+        }
+        return false;
       });
 
       // Store the original words in uppercase for display
