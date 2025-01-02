@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
 const EXPECTED_WORD_COUNT = 639293;
-const BATCH_SIZE = 50000;
+const BATCH_SIZE = 10000; // Reduced batch size for more stable fetching
 
 export const useWordTrie = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -24,46 +24,66 @@ export const useWordTrie = () => {
         console.log('Local DB incomplete, fetching from Supabase...');
         
         let allWords: string[] = [];
-        let offset = 0;
+        let currentOffset = 0;
         let lastProgress = 0;
+        let retryCount = 0;
+        const MAX_RETRIES = 3;
         
-        while (true) {
-          console.log(`Fetching batch with offset: ${offset}`);
-          const { data, error } = await supabase
-            .from('words')
-            .select('word')
-            .range(offset, offset + BATCH_SIZE - 1)
-            .order('word');
-          
-          if (error) {
-            console.error('Supabase fetch error:', error);
-            throw new Error(`Failed to fetch words: ${error.message}`);
-          }
-          
-          if (!data || data.length === 0) {
-            break;
-          }
-          
-          const batchWords = data.map(w => w.word.toUpperCase());
-          allWords.push(...batchWords);
-          
-          const currentProgress = Math.floor((allWords.length / EXPECTED_WORD_COUNT) * 100);
-          if (currentProgress > lastProgress) {
-            lastProgress = currentProgress;
-            setLoadingProgress(currentProgress);
-            console.log(`Loading progress: ${currentProgress}% (${allWords.length}/${EXPECTED_WORD_COUNT} words)`);
-          }
-          
-          if (data.length < BATCH_SIZE) {
-            break;
-          }
-          
-          offset += BATCH_SIZE;
-          
-          // Safety check to prevent infinite loops
-          if (offset > EXPECTED_WORD_COUNT) {
-            console.error('Exceeded expected word count, something went wrong');
-            break;
+        while (currentOffset < EXPECTED_WORD_COUNT && retryCount < MAX_RETRIES) {
+          try {
+            console.log(`Fetching batch starting at offset: ${currentOffset}`);
+            const { data, error } = await supabase
+              .from('words')
+              .select('word')
+              .range(currentOffset, currentOffset + BATCH_SIZE - 1)
+              .order('word');
+            
+            if (error) {
+              console.error('Supabase fetch error:', error);
+              retryCount++;
+              if (retryCount >= MAX_RETRIES) {
+                throw new Error(`Failed to fetch words after ${MAX_RETRIES} attempts: ${error.message}`);
+              }
+              continue;
+            }
+            
+            if (!data || data.length === 0) {
+              if (currentOffset === 0) {
+                throw new Error('No words found in database');
+              }
+              break;
+            }
+
+            // Reset retry count on successful fetch
+            retryCount = 0;
+            
+            const batchWords = data.map(w => w.word.toUpperCase());
+            allWords.push(...batchWords);
+            
+            const currentProgress = Math.floor((allWords.length / EXPECTED_WORD_COUNT) * 100);
+            if (currentProgress > lastProgress) {
+              lastProgress = currentProgress;
+              setLoadingProgress(currentProgress);
+              console.log(`Loading progress: ${currentProgress}% (${allWords.length}/${EXPECTED_WORD_COUNT} words)`);
+            }
+            
+            if (data.length < BATCH_SIZE) {
+              // If we got less than batch size, we've reached the end
+              break;
+            }
+            
+            currentOffset += data.length; // Increment by actual number of words received
+            
+            // Add a small delay between batches to prevent rate limiting
+            await new Promise(resolve => setTimeout(resolve, 100));
+          } catch (error) {
+            console.error('Error in batch fetch:', error);
+            retryCount++;
+            if (retryCount >= MAX_RETRIES) {
+              throw error;
+            }
+            // Wait a bit longer before retrying
+            await new Promise(resolve => setTimeout(resolve, 1000));
           }
         }
         
@@ -75,7 +95,9 @@ export const useWordTrie = () => {
           throw new Error(errorMsg);
         }
         
-        words = allWords;
+        // Deduplicate words before saving
+        words = [...new Set(allWords)];
+        console.log('Unique words after deduplication:', words.length);
         
         // Clear and rebuild local DB
         await wordDB.clear();
