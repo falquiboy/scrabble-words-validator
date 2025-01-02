@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-const BATCH_SIZE = 500;
+const BATCH_SIZE = 2000; // Increased from 500 to 2000
 
 export class WordLoader {
   private lastWord = '';
