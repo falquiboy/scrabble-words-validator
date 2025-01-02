@@ -13,28 +13,34 @@ export const useWordTrie = () => {
   const [loadingProgress, setLoadingProgress] = useState(0);
 
   const fetchWordsFromDB = async () => {
-    // First try to get words from IndexedDB
-    let words = await wordDB.getAllWords();
-    console.log('Words in local database:', words.length);
+    try {
+      // First try to get words from IndexedDB
+      let words = await wordDB.getAllWords();
+      console.log('Words in local database:', words.length);
 
-    // If local DB is empty, fetch from Supabase
-    if (words.length === 0) {
-      console.log('Local DB empty, fetching from Supabase...');
-      const { data, error } = await supabase
-        .from('words')
-        .select('word');
+      // If local DB is empty or has too few words, fetch from Supabase
+      if (words.length < 10000) {
+        console.log('Local DB incomplete, fetching from Supabase...');
+        const { data, error } = await supabase
+          .from('words')
+          .select('word');
+        
+        if (error) throw new Error(`Failed to fetch words: ${error.message}`);
+        if (!data) throw new Error('No words returned from database');
+        
+        words = data.map(w => w.word.toUpperCase());
+        
+        // Clear and rebuild local DB
+        await wordDB.clear();
+        await wordDB.addWords(words);
+        console.log('Words stored in local DB:', words.length);
+      }
       
-      if (error) throw new Error(`Failed to fetch words: ${error.message}`);
-      if (!data) throw new Error('No words returned from database');
-      
-      words = data.map(w => w.word.toUpperCase());
-      
-      // Store words in local DB for future use
-      await wordDB.addWords(words);
-      console.log('Words stored in local DB:', words.length);
+      return words;
+    } catch (error) {
+      console.error('Error fetching words:', error);
+      throw error;
     }
-    
-    return words;
   };
 
   const buildTrie = useCallback(async () => {
@@ -50,9 +56,9 @@ export const useWordTrie = () => {
         setWordCount(words.length);
         console.log('Trie loaded from cache with', words.length, 'words');
         
-        // Verify the trie has words
-        if (words.length === 0) {
-          console.log('Cached trie is empty, rebuilding...');
+        // Verify the trie has enough words
+        if (words.length < 10000) {
+          console.log('Cached trie is incomplete, rebuilding...');
           return false;
         }
         
@@ -71,6 +77,9 @@ export const useWordTrie = () => {
       console.log('Building new trie from database...');
       const words = await fetchWordsFromDB();
       console.log(`Building trie with ${words.length} words...`);
+
+      // Clear the trie before rebuilding
+      trie.clear();
 
       let processed = 0;
       for (const word of words) {
