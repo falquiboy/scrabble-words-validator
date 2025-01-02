@@ -22,22 +22,39 @@ export const useWordTrie = () => {
       if (words.length < 10000) {
         console.log('Local DB incomplete, fetching from Supabase...');
         
-        // Fetch all words from Supabase without limit
-        const { data, error } = await supabase
-          .from('words')
-          .select('word')
-          .order('word');
+        let allWords: string[] = [];
+        let lastWord = '';
+        const batchSize = 5000;
         
-        if (error) {
-          console.error('Supabase fetch error:', error);
-          throw new Error(`Failed to fetch words: ${error.message}`);
-        }
-        if (!data || data.length === 0) {
-          throw new Error('No words returned from database');
+        while (true) {
+          console.log(`Fetching batch after word: ${lastWord}`);
+          const { data, error } = await supabase
+            .from('words')
+            .select('word')
+            .gt('word', lastWord)
+            .order('word')
+            .limit(batchSize);
+          
+          if (error) {
+            console.error('Supabase fetch error:', error);
+            throw new Error(`Failed to fetch words: ${error.message}`);
+          }
+          
+          if (!data || data.length === 0) {
+            break;
+          }
+          
+          console.log(`Fetched batch of ${data.length} words`);
+          allWords = [...allWords, ...data.map(w => w.word.toUpperCase())];
+          lastWord = data[data.length - 1].word;
+          
+          if (data.length < batchSize) {
+            break;
+          }
         }
         
-        console.log('Fetched words from Supabase:', data.length);
-        words = data.map(w => w.word.toUpperCase());
+        console.log('Total words fetched from Supabase:', allWords.length);
+        words = allWords;
         
         // Clear and rebuild local DB
         await wordDB.clear();
@@ -91,13 +108,17 @@ export const useWordTrie = () => {
       trie.clear();
 
       let processed = 0;
+      const totalWords = words.length;
+      
       for (const word of words) {
         const processedWord = processDigraphs(word.toUpperCase());
         trie.insert(processedWord, word);
         processed++;
         
-        if (processed % 1000 === 0) {
-          setLoadingProgress(Math.floor((processed / words.length) * 100));
+        if (processed % 100 === 0) {
+          const progress = Math.floor((processed / totalWords) * 100);
+          setLoadingProgress(progress);
+          console.log(`Processing progress: ${progress}%`);
         }
       }
 
