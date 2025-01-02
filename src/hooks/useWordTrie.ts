@@ -28,6 +28,7 @@ export const useWordTrie = () => {
         let allWords: string[] = [];
         let offset = 0;
         let hasMore = true;
+        let lastProgress = 0;
         
         while (hasMore) {
           console.log(`Fetching batch with offset: ${offset}`);
@@ -49,13 +50,16 @@ export const useWordTrie = () => {
           
           const batchWords = data.map(w => w.word.toUpperCase());
           allWords.push(...batchWords);
-          console.log(`Fetched batch of ${batchWords.length} words. Total: ${allWords.length}`);
           
-          // Update progress based on total words fetched
-          const progress = Math.min((allWords.length / EXPECTED_WORD_COUNT) * 100, 100);
-          setLoadingProgress(Math.floor(progress));
+          // Calculate and update progress
+          const currentProgress = Math.floor((allWords.length / EXPECTED_WORD_COUNT) * 100);
+          if (currentProgress > lastProgress) {
+            lastProgress = currentProgress;
+            setLoadingProgress(currentProgress);
+            console.log(`Loading progress: ${currentProgress}% (${allWords.length}/${EXPECTED_WORD_COUNT} words)`);
+          }
           
-          offset += data.length;
+          offset += BATCH_SIZE;
           
           // Break if we got fewer words than the batch size
           if (data.length < BATCH_SIZE) {
@@ -123,16 +127,19 @@ export const useWordTrie = () => {
 
       let processed = 0;
       const totalWords = words.length;
+      let lastProgress = 0;
       
       for (const word of words) {
         const processedWord = processDigraphs(word.toUpperCase());
         trie.insert(processedWord, word);
         processed++;
         
-        if (processed % 1000 === 0) {
-          const progress = Math.floor((processed / totalWords) * 100);
-          setLoadingProgress(progress);
-          console.log(`Processing progress: ${progress}%`);
+        // Update progress every 1%
+        const currentProgress = Math.floor((processed / totalWords) * 100);
+        if (currentProgress > lastProgress) {
+          lastProgress = currentProgress;
+          setLoadingProgress(currentProgress);
+          console.log(`Building trie progress: ${currentProgress}% (${processed}/${totalWords} words)`);
         }
       }
 
