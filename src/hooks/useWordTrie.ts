@@ -21,13 +21,22 @@ export const useWordTrie = () => {
       // If local DB is empty or has too few words, fetch from Supabase
       if (words.length < 10000) {
         console.log('Local DB incomplete, fetching from Supabase...');
+        
+        // Fetch all words from Supabase without limit
         const { data, error } = await supabase
           .from('words')
-          .select('word');
+          .select('word')
+          .order('word');
         
-        if (error) throw new Error(`Failed to fetch words: ${error.message}`);
-        if (!data) throw new Error('No words returned from database');
+        if (error) {
+          console.error('Supabase fetch error:', error);
+          throw new Error(`Failed to fetch words: ${error.message}`);
+        }
+        if (!data || data.length === 0) {
+          throw new Error('No words returned from database');
+        }
         
+        console.log('Fetched words from Supabase:', data.length);
         words = data.map(w => w.word.toUpperCase());
         
         // Clear and rebuild local DB
