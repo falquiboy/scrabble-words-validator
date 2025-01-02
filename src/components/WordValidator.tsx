@@ -5,6 +5,7 @@ import Header from "./word-validator/Header";
 import WordInput from "./word-validator/WordInput";
 import LoadingIndicator from "./word-validator/LoadingIndicator";
 import ValidationResult from "./word-validator/ValidationResult";
+import { Button } from "./ui/button";
 
 interface WordValidatorProps {
   isDictionaryLoading: boolean;
@@ -61,19 +62,30 @@ const WordValidator = ({ isDictionaryLoading, progress, trie }: WordValidatorPro
       <Header />
       <div className="space-y-4">
         {(!result.checked || isEditing) ? (
-          <WordInput
-            word={word}
-            isLoading={isLoading}
-            onWordChange={setWord}
-            onValidate={handleValidate}
-            onClear={handleClear}
-          />
+          <div className="space-y-4">
+            <WordInput
+              word={word}
+              isLoading={isLoading}
+              onWordChange={setWord}
+              onValidate={handleValidate}
+              onClear={handleClear}
+            />
+          </div>
         ) : (
-          <ValidationResult
-            word={word}
-            result={result}
-            onEditStart={() => setIsEditing(true)}
-          />
+          <div className="space-y-4">
+            <ValidationResult
+              word={word}
+              result={result}
+              onEditStart={() => setIsEditing(true)}
+            />
+            <Button
+              onClick={handleClear}
+              className="w-full"
+              variant="outline"
+            >
+              Limpiar
+            </Button>
+          </div>
         )}
         {isDictionaryLoading && (
           <LoadingIndicator 

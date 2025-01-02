@@ -1,6 +1,5 @@
 import React, { useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
 import { processDigraphs } from '@/utils/digraphs';
 
 interface WordInputProps {
@@ -55,15 +54,6 @@ const WordInput = ({ word, isLoading, onWordChange, onValidate, onClear }: WordI
     }
   };
 
-  const handleClear = (e?: React.MouseEvent) => {
-    e?.preventDefault();
-    onClear();
-    // Focus the input after clearing
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
-  };
-
   return (
     <div className="relative">
       <div className="flex gap-2">
@@ -78,15 +68,6 @@ const WordInput = ({ word, isLoading, onWordChange, onValidate, onClear }: WordI
             placeholder="Escribe una palabra..."
             disabled={isLoading}
           />
-          {word && (
-            <button
-              onClick={handleClear}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              disabled={isLoading}
-            >
-              <X className="h-5 w-5" />
-            </button>
-          )}
         </div>
         <Button
           onClick={onValidate}
