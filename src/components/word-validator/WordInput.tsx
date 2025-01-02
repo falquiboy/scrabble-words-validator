@@ -47,6 +47,10 @@ const WordInput = ({ word, isLoading, onWordChange, onValidate, onClear }: WordI
       if (!e.shiftKey) {
         onValidate();
       }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      onClear();
+      // Focus is handled by the clear function which already focuses the input
     }
   };
 
