@@ -7,10 +7,18 @@ interface WordInputProps {
   isLoading: boolean;
   onWordChange: (word: string) => void;
   onValidate: () => void;
-  onClear: () => void;
+  buttonText: string;
+  isChecked: boolean;
 }
 
-const WordInput = ({ word, isLoading, onWordChange, onValidate, onClear }: WordInputProps) => {
+const WordInput = ({ 
+  word, 
+  isLoading, 
+  onWordChange, 
+  onValidate, 
+  buttonText,
+  isChecked 
+}: WordInputProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -46,7 +54,11 @@ const WordInput = ({ word, isLoading, onWordChange, onValidate, onClear }: WordI
       onValidate();
     } else if (e.key === 'Escape') {
       e.preventDefault();
-      onClear();
+      if (isChecked) {
+        onValidate(); // This will clear in checked state
+      } else if (word) {
+        onWordChange(''); // Just clear the input if we're not in checked state
+      }
       // Ensure input gets focused after clearing
       if (inputRef.current) {
         inputRef.current.focus();
@@ -71,10 +83,10 @@ const WordInput = ({ word, isLoading, onWordChange, onValidate, onClear }: WordI
         </div>
         <Button
           onClick={onValidate}
-          disabled={!word.trim() || isLoading}
+          disabled={(!word.trim() && !isChecked) || isLoading}
           className="px-6"
         >
-          Validar
+          {buttonText}
         </Button>
       </div>
     </div>
