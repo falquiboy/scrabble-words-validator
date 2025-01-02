@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
+import { processDigraphs } from '@/utils/digraphs';
 
 interface WordInputProps {
   word: string;
