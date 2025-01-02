@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Trie } from "@/utils/trie";
-import { processDigraphs, toDisplayFormat } from "@/utils/digraphs";
+import { toDisplayFormat } from "@/utils/digraphs";
 import Header from "./word-validator/Header";
 import WordInput from "./word-validator/WordInput";
 import LoadingIndicator from "./word-validator/LoadingIndicator";
@@ -28,13 +28,12 @@ const WordValidator = ({ isDictionaryLoading, progress, trie }: WordValidatorPro
 
     setIsLoading(true);
     try {
-      // Split into individual words and process each one
+      // Split into individual words
       const words = word.trim().split(" ");
       const isValid = words.every(w => {
-        // Process the word to handle digraphs before searching
-        const processedWord = processDigraphs(w.toUpperCase());
-        console.log('Validating word:', w, 'processed as:', processedWord);
-        return trie.search(processedWord);
+        // Send raw word to trie search, it will handle digraph processing
+        console.log('Validating word:', w);
+        return trie.search(w.toUpperCase());
       });
 
       // Store the original words in uppercase for display
