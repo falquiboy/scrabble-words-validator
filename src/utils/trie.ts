@@ -1,7 +1,7 @@
 import { TrieNode, LengthIndexedTrie, SerializedTrie, SerializedTrieNode } from './trie/types';
 import { createNode, findNode, collectWords } from './trie/nodeOperations';
 import { findWordsByLength, findWordsByAlphagram } from './trie/indexing';
-import { searchExact } from './trie/search';
+import { search } from './trie/search';
 
 export class Trie {
   private root: TrieNode;
@@ -49,7 +49,7 @@ export class Trie {
   }
 
   search(word: string): boolean {
-    return searchExact(this.root, word);
+    return search(this.root, word);
   }
 
   findAnagrams(letters: string): string[] {
