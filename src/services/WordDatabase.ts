@@ -1,4 +1,5 @@
 import { processDigraphs, toDisplayFormat } from '@/utils/digraphs';
+import { SerializedTrie, TrieNode } from '@/utils/trie/types';
 
 export class WordDatabase {
   private db: IDBDatabase | null = null;
@@ -10,7 +11,7 @@ export class WordDatabase {
     }
 
     this.initPromise = new Promise((resolve, reject) => {
-      const request = indexedDB.open('scrabbleDB', 4);
+      const request = indexedDB.open('scrabbleDB', 5); // Increment version for new store
 
       request.onerror = () => {
         console.error('IndexedDB error:', request.error);
@@ -33,10 +34,14 @@ export class WordDatabase {
         if (db.objectStoreNames.contains('metadata')) {
           db.deleteObjectStore('metadata');
         }
+        if (db.objectStoreNames.contains('trie')) {
+          db.deleteObjectStore('trie');
+        }
 
         db.createObjectStore('words', { keyPath: 'word' });
+        db.createObjectStore('trie', { keyPath: 'id' });
         const metaStore = db.createObjectStore('metadata', { keyPath: 'key' });
-        metaStore.put({ key: 'version', value: 4 });
+        metaStore.put({ key: 'version', value: 5 });
       };
     });
 
@@ -58,7 +63,6 @@ export class WordDatabase {
 
       transaction.oncomplete = () => resolve();
 
-      // Process words with digraphs before storing
       words.forEach(word => {
         const processedWord = processDigraphs(word.toUpperCase());
         store.put({ word: processedWord });
@@ -81,10 +85,37 @@ export class WordDatabase {
       };
 
       request.onsuccess = () => {
-        // Convert internal format back to display format when retrieving
         const words = request.result.map(record => toDisplayFormat(record.word));
         resolve(words);
       };
+    });
+  }
+
+  async saveTrie(serializedTrie: SerializedTrie): Promise<void> {
+    await this.init();
+    if (!this.db) throw new Error('Database not initialized');
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction('trie', 'readwrite');
+      const store = transaction.objectStore('trie');
+      const request = store.put({ id: 'main', data: serializedTrie });
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve();
+    });
+  }
+
+  async loadTrie(): Promise<SerializedTrie | null> {
+    await this.init();
+    if (!this.db) throw new Error('Database not initialized');
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction('trie', 'readonly');
+      const store = transaction.objectStore('trie');
+      const request = store.get('main');
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result?.data || null);
     });
   }
 
@@ -93,15 +124,17 @@ export class WordDatabase {
     if (!this.db) throw new Error('Database not initialized');
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction('words', 'readwrite');
-      const store = transaction.objectStore('words');
-      const request = store.clear();
+      const transaction = this.db!.transaction(['words', 'trie'], 'readwrite');
+      const wordsStore = transaction.objectStore('words');
+      const trieStore = transaction.objectStore('trie');
 
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve();
+      wordsStore.clear();
+      trieStore.clear();
+
+      transaction.onerror = () => reject(transaction.error);
+      transaction.oncomplete = () => resolve();
     });
   }
 }
 
-// Export a singleton instance
 export const wordDB = new WordDatabase();

@@ -1,4 +1,4 @@
-import { TrieNode, LengthIndexedTrie } from './trie/types';
+import { TrieNode, LengthIndexedTrie, SerializedTrie, SerializedTrieNode } from './trie/types';
 import { createNode, findNode, collectWords } from './trie/nodeOperations';
 import { findWordsByLength, findWordsByAlphagram } from './trie/indexing';
 import { searchExact } from './trie/search';
@@ -85,10 +85,58 @@ export class Trie {
     collectWords(node, words);
   }
 
+  serialize(): SerializedTrie {
+    const serializeNode = (node: TrieNode): SerializedTrieNode => {
+      return {
+        children: Array.from(node.children.entries()).map(([key, value]) => [
+          key,
+          serializeNode(value),
+        ]),
+        isEndOfWord: node.isEndOfWord,
+        word: node.word,
+      };
+    };
+
+    return {
+      root: serializeNode(this.root),
+    };
+  }
+
+  deserialize(data: SerializedTrie): void {
+    const deserializeNode = (serialized: SerializedTrieNode): TrieNode => {
+      const node = createNode();
+      node.isEndOfWord = serialized.isEndOfWord;
+      node.word = serialized.word;
+
+      serialized.children.forEach(([key, value]) => {
+        node.children.set(key, deserializeNode(value));
+      });
+
+      return node;
+    };
+
+    this.root = deserializeNode(data.root);
+    
+    // Rebuild length index
+    this.lengthIndex = {};
+    const words = this.getAllWords();
+    words.forEach(word => {
+      const length = word.length;
+      const alphagram = this.sortLetters(word);
+      
+      if (!this.lengthIndex[length]) {
+        this.lengthIndex[length] = {};
+      }
+      if (!this.lengthIndex[length][alphagram]) {
+        this.lengthIndex[length][alphagram] = [];
+      }
+      this.lengthIndex[length][alphagram].push(word);
+    });
+  }
+
   private sortLetters(letters: string): string {
     return letters.split('').sort().join('');
   }
 }
 
-// Create a singleton instance
 export const wordTrie = new Trie();

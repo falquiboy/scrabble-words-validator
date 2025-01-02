@@ -4,25 +4,34 @@ import Anagramador from "@/components/Anagramador";
 import NewModuleSelector from "@/components/NewModuleSelector";
 import { useWordDatabase } from "@/hooks/useWordDatabase";
 import { useWordTrie } from "@/hooks/useWordTrie";
+import { Progress } from "@/components/ui/progress";
 
 const Index = () => {
   const [activeModule, setActiveModule] = useState<'judge' | 'anagram'>('judge');
   
   // Initialize dictionary at the top level so it's shared between modules
   const { isLoading: isDBLoading, progress: dbProgress } = useWordDatabase();
-  const { isLoading: isTrieLoading, wordCount, trie } = useWordTrie();
+  const { isLoading: isTrieLoading, wordCount, trie, loadingProgress } = useWordTrie();
   
   const isDictionaryLoading = isDBLoading || isTrieLoading;
   const totalProgress = isTrieLoading ? 
-    (dbProgress * 0.5) + ((wordCount / 639293) * 50) : 
+    (dbProgress * 0.5) + (loadingProgress * 0.5) : 
     dbProgress;
 
   if (isDictionaryLoading) {
     return (
-      <div className="fixed inset-0 bg-gray-50 flex flex-col items-center justify-center">
-        <div className="text-center">
-          <p className="text-lg font-medium mb-2">Loading dictionary...</p>
-          <p className="text-sm text-gray-600">{Math.round(totalProgress)}%</p>
+      <div className="fixed inset-0 bg-gray-50 flex flex-col items-center justify-center p-4">
+        <div className="w-full max-w-md space-y-4">
+          <div className="text-center">
+            <p className="text-lg font-medium mb-2">Loading dictionary...</p>
+            <p className="text-sm text-gray-600 mb-4">
+              {isTrieLoading ? 'Building word index' : 'Fetching words'}
+            </p>
+          </div>
+          <Progress value={totalProgress} className="w-full" />
+          <p className="text-sm text-center text-gray-500">
+            {Math.round(totalProgress)}%
+          </p>
         </div>
       </div>
     );
