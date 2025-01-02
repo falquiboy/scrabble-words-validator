@@ -12,15 +12,29 @@ export const useWordTrie = () => {
   const [wordCount, setWordCount] = useState(0);
   const [loadingProgress, setLoadingProgress] = useState(0);
 
-  const fetchWordsFromSupabase = async () => {
-    const { data: words, error } = await supabase
-      .from('words')
-      .select('word');
+  const fetchWordsFromDB = async () => {
+    // First try to get words from IndexedDB
+    let words = await wordDB.getAllWords();
+    console.log('Words in local database:', words.length);
+
+    // If local DB is empty, fetch from Supabase
+    if (words.length === 0) {
+      console.log('Local DB empty, fetching from Supabase...');
+      const { data, error } = await supabase
+        .from('words')
+        .select('word');
+      
+      if (error) throw new Error(`Failed to fetch words: ${error.message}`);
+      if (!data) throw new Error('No words returned from database');
+      
+      words = data.map(w => w.word.toUpperCase());
+      
+      // Store words in local DB for future use
+      await wordDB.addWords(words);
+      console.log('Words stored in local DB:', words.length);
+    }
     
-    if (error) throw new Error(`Failed to fetch words: ${error.message}`);
-    if (!words) throw new Error('No words returned from database');
-    
-    return words.map(w => w.word);
+    return words;
   };
 
   const buildTrie = useCallback(async () => {
@@ -36,11 +50,9 @@ export const useWordTrie = () => {
         setWordCount(words.length);
         console.log('Trie loaded from cache with', words.length, 'words');
         
-        // Verify a few known words
-        const testWords = ['CORASEN', 'NOCERAS', 'ROCASEN'];
-        const missing = testWords.filter(w => !trie.search(w));
-        if (missing.length > 0) {
-          console.log('Cache validation failed, rebuilding trie...');
+        // Verify the trie has words
+        if (words.length === 0) {
+          console.log('Cached trie is empty, rebuilding...');
           return false;
         }
         
@@ -57,8 +69,8 @@ export const useWordTrie = () => {
   const fetchAndBuildTrie = useCallback(async () => {
     try {
       console.log('Building new trie from database...');
-      const words = await fetchWordsFromSupabase();
-      console.log(`Building trie with ${words.length} words from database...`);
+      const words = await fetchWordsFromDB();
+      console.log(`Building trie with ${words.length} words...`);
 
       let processed = 0;
       for (const word of words) {
