@@ -19,8 +19,7 @@ export const validateAndCleanAnagramInput = (value: string) => {
     // Only allow numbers after the slash
     const cleanLength = lengthStr.replace(/[^0-9]/g, '');
     
-    // Clean letters part (allow A-Z, Ñ, *, and commas)
-    // Now also allowing Ç, K, W for direct digraph input
+    // Clean letters part (allow A-Z, Ñ, Ç, *, and commas)
     const cleanLetters = letters.replace(/[^A-ZÑÇKW*,]/g, '');
     
     return cleanLetters + '/' + cleanLength;
@@ -28,7 +27,7 @@ export const validateAndCleanAnagramInput = (value: string) => {
   
   // If no slash, just clean input
   // Allow slash in the input by not removing it in the regex
-  // Now also allowing Ç, K, W for direct digraph input
+  // Now allowing Ç explicitly in the regex
   return value.replace(/[^A-ZÑÇKW*,/0-9]/g, '');
 };
 
@@ -40,15 +39,15 @@ export const validateAndCleanPatternInput = (value: string) => {
     // Keep only the first two parts if multiple commas
     let [patternPart, rackPart] = parts;
     
-    // Handle pattern part - allow ?, ^, $ and letters (including digraph representations)
+    // Handle pattern part - allow ?, ^, $ and letters (including Ç)
     patternPart = patternPart.replace(/[^A-ZÑÇKW?\^$,]/g, '');
     
-    // Handle rack part - allow letters and asterisk (*) (including digraph representations)
+    // Handle rack part - allow letters and asterisk (*) (including Ç)
     rackPart = rackPart.replace(/[^A-ZÑÇKW*]/g, '');
     
     return `${patternPart},${rackPart}`;
   }
   
-  // If no comma, treat as pattern part (including digraph representations)
+  // If no comma, treat as pattern part (including Ç)
   return value.replace(/[^A-ZÑÇKW?\^$,]/g, '');
 };
