@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
 const EXPECTED_WORD_COUNT = 639293;
-const BATCH_SIZE = 50000; // Increased batch size for faster loading
+const BATCH_SIZE = 50000;
 
 export const useWordTrie = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -17,20 +17,17 @@ export const useWordTrie = () => {
 
   const fetchWordsFromDB = async () => {
     try {
-      // First try to get words from IndexedDB
       let words = await wordDB.getAllWords();
       console.log('Words in local database:', words.length);
 
-      // If local DB is empty or has too few words, fetch from Supabase
       if (words.length < EXPECTED_WORD_COUNT) {
         console.log('Local DB incomplete, fetching from Supabase...');
         
         let allWords: string[] = [];
         let offset = 0;
-        let hasMore = true;
         let lastProgress = 0;
         
-        while (hasMore) {
+        while (true) {
           console.log(`Fetching batch with offset: ${offset}`);
           const { data, error } = await supabase
             .from('words')
@@ -44,14 +41,12 @@ export const useWordTrie = () => {
           }
           
           if (!data || data.length === 0) {
-            hasMore = false;
             break;
           }
           
           const batchWords = data.map(w => w.word.toUpperCase());
           allWords.push(...batchWords);
           
-          // Calculate and update progress
           const currentProgress = Math.floor((allWords.length / EXPECTED_WORD_COUNT) * 100);
           if (currentProgress > lastProgress) {
             lastProgress = currentProgress;
@@ -59,18 +54,25 @@ export const useWordTrie = () => {
             console.log(`Loading progress: ${currentProgress}% (${allWords.length}/${EXPECTED_WORD_COUNT} words)`);
           }
           
+          if (data.length < BATCH_SIZE) {
+            break;
+          }
+          
           offset += BATCH_SIZE;
           
-          // Break if we got fewer words than the batch size
-          if (data.length < BATCH_SIZE) {
-            hasMore = false;
+          // Safety check to prevent infinite loops
+          if (offset > EXPECTED_WORD_COUNT) {
+            console.error('Exceeded expected word count, something went wrong');
+            break;
           }
         }
         
         console.log('Total words fetched from Supabase:', allWords.length);
         
         if (allWords.length < EXPECTED_WORD_COUNT) {
-          throw new Error(`Incomplete dictionary: got ${allWords.length} words, expected ${EXPECTED_WORD_COUNT}`);
+          const errorMsg = `Incomplete dictionary: got ${allWords.length} words, expected ${EXPECTED_WORD_COUNT}`;
+          console.error(errorMsg);
+          throw new Error(errorMsg);
         }
         
         words = allWords;
@@ -122,7 +124,6 @@ export const useWordTrie = () => {
       const words = await fetchWordsFromDB();
       console.log(`Building trie with ${words.length} words...`);
 
-      // Clear the trie before rebuilding
       trie.clear();
 
       let processed = 0;
@@ -134,7 +135,6 @@ export const useWordTrie = () => {
         trie.insert(processedWord, word);
         processed++;
         
-        // Update progress every 1%
         const currentProgress = Math.floor((processed / totalWords) * 100);
         if (currentProgress > lastProgress) {
           lastProgress = currentProgress;
@@ -143,13 +143,11 @@ export const useWordTrie = () => {
         }
       }
 
-      // Validate trie size before saving
       const trieWords = trie.getAllWords();
       if (trieWords.length < EXPECTED_WORD_COUNT) {
         throw new Error(`Trie build incomplete: got ${trieWords.length} words, expected ${EXPECTED_WORD_COUNT}`);
       }
 
-      // Save serialized trie
       console.log('Saving trie to cache...');
       const serializedTrie = trie.serialize();
       await wordDB.saveTrie(serializedTrie);
