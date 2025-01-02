@@ -51,13 +51,9 @@ const WordValidator = ({ isDictionaryLoading, progress, trie }: WordValidatorPro
 
   const handleClear = () => {
     if (isLoading) return;
-    if (word && !result.checked) {
-      handleValidate();
-    } else {
-      setWord("");
-      setResult({ isValid: false, checked: false, words: [] });
-      setIsEditing(false);
-    }
+    setWord("");
+    setResult({ isValid: false, checked: false, words: [] });
+    setIsEditing(false);
   };
 
   return (
