@@ -3,6 +3,7 @@ import { wordDB } from '@/services/WordDatabase';
 import { Trie } from '@/utils/trie';
 import { processDigraphs } from '@/utils/digraphs';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useWordTrie = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -10,6 +11,17 @@ export const useWordTrie = () => {
   const [trie] = useState<Trie>(() => new Trie());
   const [wordCount, setWordCount] = useState(0);
   const [loadingProgress, setLoadingProgress] = useState(0);
+
+  const fetchWordsFromSupabase = async () => {
+    const { data: words, error } = await supabase
+      .from('words')
+      .select('word');
+    
+    if (error) throw new Error(`Failed to fetch words: ${error.message}`);
+    if (!words) throw new Error('No words returned from database');
+    
+    return words.map(w => w.word);
+  };
 
   const buildTrie = useCallback(async () => {
     try {
@@ -22,7 +34,16 @@ export const useWordTrie = () => {
         trie.deserialize(serializedTrie);
         const words = trie.getAllWords();
         setWordCount(words.length);
-        console.log('Trie loaded from cache');
+        console.log('Trie loaded from cache with', words.length, 'words');
+        
+        // Verify a few known words
+        const testWords = ['CORASEN', 'NOCERAS', 'ROCASEN'];
+        const missing = testWords.filter(w => !trie.search(w));
+        if (missing.length > 0) {
+          console.log('Cache validation failed, rebuilding trie...');
+          return false;
+        }
+        
         return true;
       }
       
@@ -35,17 +56,20 @@ export const useWordTrie = () => {
 
   const fetchAndBuildTrie = useCallback(async () => {
     try {
-      console.log('Building new trie...');
-      const words = await wordDB.getAllWords();
-      console.log(`Building trie with ${words.length} words...`);
+      console.log('Building new trie from database...');
+      const words = await fetchWordsFromSupabase();
+      console.log(`Building trie with ${words.length} words from database...`);
 
-      words.forEach((word, index) => {
-        const processedWord = processDigraphs(word);
+      let processed = 0;
+      for (const word of words) {
+        const processedWord = processDigraphs(word.toUpperCase());
         trie.insert(processedWord, word);
-        if (index % 1000 === 0) {
-          setLoadingProgress(Math.floor((index / words.length) * 100));
+        processed++;
+        
+        if (processed % 1000 === 0) {
+          setLoadingProgress(Math.floor((processed / words.length) * 100));
         }
-      });
+      }
 
       // Save serialized trie
       console.log('Saving trie to cache...');
@@ -53,7 +77,7 @@ export const useWordTrie = () => {
       await wordDB.saveTrie(serializedTrie);
 
       setWordCount(words.length);
-      console.log('Trie built and cached successfully');
+      console.log('Trie built and cached successfully with', words.length, 'words');
     } catch (err) {
       console.error('Error building trie:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to initialize trie';
