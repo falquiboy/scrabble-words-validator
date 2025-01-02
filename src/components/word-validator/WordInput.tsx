@@ -27,6 +27,13 @@ const WordInput = ({
     }
   }, []);
 
+  // Add effect to focus input when word is cleared
+  useEffect(() => {
+    if (!word && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [word]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target;
     let value = input.value.toUpperCase();
