@@ -1,21 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
 
-const BATCH_SIZE = 10000;
+const BATCH_SIZE = 2000;
 const MAX_RETRIES = 3;
-
-export const fetchWordBatch = async (startAfter: string | null = null) => {
-  let query = supabase
-    .from('words')
-    .select('word')
-    .order('word')
-    .limit(BATCH_SIZE);
-    
-  if (startAfter) {
-    query = query.gt('word', startAfter);
-  }
-  
-  return query;
-};
+const RETRY_DELAY = 1000;
 
 export const fetchAllWords = async (
   expectedCount: number,
@@ -23,27 +10,31 @@ export const fetchAllWords = async (
 ) => {
   let allWords: string[] = [];
   let lastWord: string | null = null;
-  let lastProgress = 0;
   let retryCount = 0;
+  let lastProgress = 0;
 
-  while (retryCount < MAX_RETRIES) {
+  while (true) {
     try {
-      const { data, error } = await fetchWordBatch(lastWord);
-      
+      console.log(`Fetching batch after word: ${lastWord}`);
+      const { data, error } = await supabase
+        .from('words')
+        .select('word')
+        .gt('word', lastWord || '')
+        .order('word')
+        .limit(BATCH_SIZE);
+
       if (error) {
         console.error('Supabase fetch error:', error);
         retryCount++;
         if (retryCount >= MAX_RETRIES) {
           throw new Error(`Failed to fetch words after ${MAX_RETRIES} attempts: ${error.message}`);
         }
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
         continue;
       }
 
       if (!data || data.length === 0) {
-        if (!lastWord) {
-          throw new Error('No words found in database');
-        }
+        console.log('No more words to fetch');
         break;
       }
 
@@ -60,24 +51,27 @@ export const fetchAllWords = async (
         onProgress(currentProgress);
         console.log(`Loading progress: ${currentProgress}% (${allWords.length}/${expectedCount} words)`);
       }
-      
-      if (data.length < BATCH_SIZE) {
-        break;
-      }
-      
+
       // Add a small delay between batches to prevent rate limiting
       await new Promise(resolve => setTimeout(resolve, 100));
+      
+      if (data.length < BATCH_SIZE) {
+        console.log('Last batch received (smaller than batch size)');
+        break;
+      }
     } catch (error) {
       console.error('Error in batch fetch:', error);
       retryCount++;
       if (retryCount >= MAX_RETRIES) {
         throw error;
       }
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
     }
   }
 
+  // Validate final word count
   if (allWords.length < expectedCount) {
+    console.error(`Incomplete dictionary: got ${allWords.length} words, expected ${expectedCount}`);
     throw new Error(`Incomplete dictionary: got ${allWords.length} words, expected ${expectedCount}`);
   }
 
