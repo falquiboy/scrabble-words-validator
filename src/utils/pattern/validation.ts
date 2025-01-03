@@ -34,7 +34,7 @@ export const validateWordPattern = (
     }
   }
 
-  // Function to check if we can form a segment with given letters
+  // Function to check if we can form a word segment with given letters
   const canFormSegment = (segment: string, letters: Map<string, number>, wildcardCount: number): boolean => {
     const letterCount = new Map<string, number>();
     for (const letter of segment) {
@@ -50,6 +50,8 @@ export const validateWordPattern = (
         } else {
           return false;
         }
+      } else {
+        letters.set(letter, available - count);
       }
     }
     return true;
@@ -77,39 +79,36 @@ export const validateWordPattern = (
   const matchEnd = matchStart + match[0].length;
   const matchedSegment = processedWord.slice(matchStart, matchEnd);
 
-  // Check if wildcards can be satisfied with rack letters
+  // First check if we can form the main pattern segment
   const remainingLetters = new Map(availableLetters);
   let remainingWildcards = wildcards;
 
-  // First, remove fixed letters from available letters
-  for (const [pos, letter] of fixedPositions.entries()) {
-    const available = remainingLetters.get(letter) || 0;
-    if (available > 0) {
-      remainingLetters.set(letter, available - 1);
-    } else if (remainingWildcards > 0) {
-      remainingWildcards--;
-    } else {
-      return false;
-    }
-  }
-
-  // Then check if wildcards can be satisfied with remaining letters
-  for (const pos of wildcardPositions) {
-    const letter = matchedSegment[pos];
-    const available = remainingLetters.get(letter) || 0;
-    if (available > 0) {
-      remainingLetters.set(letter, available - 1);
-    } else if (remainingWildcards > 0) {
-      remainingWildcards--;
-    } else {
-      return false;
+  // Check each position in the matched segment
+  for (let i = 0; i < matchedSegment.length; i++) {
+    const letter = matchedSegment[i];
+    
+    if (wildcardPositions.has(i)) {
+      // For wildcard positions, we must use a letter from the rack
+      const available = remainingLetters.get(letter) || 0;
+      if (available > 0) {
+        remainingLetters.set(letter, available - 1);
+      } else if (remainingWildcards > 0) {
+        remainingWildcards--;
+      } else {
+        return false;
+      }
+    } else if (fixedPositions.has(i)) {
+      // For fixed positions, the letter must match the pattern
+      if (letter !== fixedPositions.get(i)) {
+        return false;
+      }
     }
   }
 
   // Check prefix if pattern starts with dash
   if (hasStartDash) {
     const prefix = processedWord.slice(0, matchStart);
-    if (!canFormSegment(prefix, new Map(remainingLetters), remainingWildcards)) {
+    if (!canFormSegment(prefix, remainingLetters, remainingWildcards)) {
       return false;
     }
   } else if (matchStart > 0) {
@@ -120,7 +119,7 @@ export const validateWordPattern = (
   // Check suffix if pattern ends with dash
   if (hasEndDash) {
     const suffix = processedWord.slice(matchEnd);
-    if (!canFormSegment(suffix, new Map(remainingLetters), remainingWildcards)) {
+    if (!canFormSegment(suffix, remainingLetters, remainingWildcards)) {
       return false;
     }
   } else if (matchEnd < processedWord.length) {
