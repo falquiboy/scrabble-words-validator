@@ -12,10 +12,10 @@ export const validateWordPattern = (
   
   // For the pattern, we need to handle special characters differently
   // We'll split the pattern into parts that should and shouldn't be processed
-  const parts = pattern.split(/([?^$])/);
+  const parts = pattern.split(/([?^$-])/);
   const processedParts = parts.map(part => {
     // Don't process special characters
-    if (part === '?' || part === '^' || part === '$') return part;
+    if (part === '?' || part === '^' || part === '$' || part === '-') return part;
     // Process other parts for digraphs
     return processDigraphs(part);
   });
@@ -49,7 +49,7 @@ export const validateWordPattern = (
   }
 
   // Add fixed pattern letters to available counts
-  const fixedLetters = pattern.replace(/[\^$?]/g, '');
+  const fixedLetters = pattern.replace(/[\^$?-]/g, '');
   for (const letter of processDigraphs(fixedLetters)) {
     letterCounts.set(letter, (letterCounts.get(letter) || 0) + 1);
   }
