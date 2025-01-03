@@ -55,18 +55,61 @@ export const validateWordPattern = (
     return true;
   };
 
-  // Find the position of the main pattern in the word
+  // Find positions of wildcards and fixed letters in the pattern
+  const patternChars = mainPattern.split('');
+  const fixedPositions = new Map<number, string>();
+  const wildcardPositions = new Set<number>();
+  
+  patternChars.forEach((char, index) => {
+    if (char === '?') {
+      wildcardPositions.add(index);
+    } else {
+      fixedPositions.set(index, char);
+    }
+  });
+
+  // Find all possible matches in the word
   const regex = convertPatternToRegex(mainPattern);
   const match = regex.exec(processedWord);
   if (!match) return false;
 
   const matchStart = match.index;
   const matchEnd = matchStart + match[0].length;
+  const matchedSegment = processedWord.slice(matchStart, matchEnd);
+
+  // Check if wildcards can be satisfied with rack letters
+  const remainingLetters = new Map(availableLetters);
+  let remainingWildcards = wildcards;
+
+  // First, remove fixed letters from available letters
+  for (const [pos, letter] of fixedPositions.entries()) {
+    const available = remainingLetters.get(letter) || 0;
+    if (available > 0) {
+      remainingLetters.set(letter, available - 1);
+    } else if (remainingWildcards > 0) {
+      remainingWildcards--;
+    } else {
+      return false;
+    }
+  }
+
+  // Then check if wildcards can be satisfied with remaining letters
+  for (const pos of wildcardPositions) {
+    const letter = matchedSegment[pos];
+    const available = remainingLetters.get(letter) || 0;
+    if (available > 0) {
+      remainingLetters.set(letter, available - 1);
+    } else if (remainingWildcards > 0) {
+      remainingWildcards--;
+    } else {
+      return false;
+    }
+  }
 
   // Check prefix if pattern starts with dash
   if (hasStartDash) {
     const prefix = processedWord.slice(0, matchStart);
-    if (!canFormSegment(prefix, new Map(availableLetters), wildcards)) {
+    if (!canFormSegment(prefix, new Map(remainingLetters), remainingWildcards)) {
       return false;
     }
   } else if (matchStart > 0) {
@@ -77,7 +120,7 @@ export const validateWordPattern = (
   // Check suffix if pattern ends with dash
   if (hasEndDash) {
     const suffix = processedWord.slice(matchEnd);
-    if (!canFormSegment(suffix, new Map(availableLetters), wildcards)) {
+    if (!canFormSegment(suffix, new Map(remainingLetters), remainingWildcards)) {
       return false;
     }
   } else if (matchEnd < processedWord.length) {
