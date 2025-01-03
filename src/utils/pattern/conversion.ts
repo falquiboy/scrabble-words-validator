@@ -1,12 +1,18 @@
 export const convertPatternToRegex = (pattern: string): RegExp => {
-  // Remove dashes as they're handled in validation
-  const cleanPattern = pattern.replace(/-/g, '');
+  // Replace ? with . for single character matching
+  let regexPattern = pattern.replace(/\?/g, '.');
   
-  // Convert the pattern to a regex string
-  const regexStr = cleanPattern
-    .replace(/\?/g, '.')  // ? matches any single character
-    .replace(/\^/g, '^')  // ^ for start of word
-    .replace(/\$/g, '$'); // $ for end of word
-  
-  return new RegExp(regexStr);
+  // Handle anchors - don't add .* if anchors are present
+  if (!pattern.includes('^') && !pattern.includes('$')) {
+    regexPattern = `.*${regexPattern}.*`;
+  } else {
+    // Remove existing anchors to prevent doubles
+    regexPattern = regexPattern.replace(/^\^/, '').replace(/\$$/, '');
+    // Add them back properly
+    if (pattern.startsWith('^')) regexPattern = '^' + regexPattern;
+    if (pattern.endsWith('$')) regexPattern = regexPattern + '$';
+  }
+
+  // Create regex with case insensitivity
+  return new RegExp(`${regexPattern}`, 'i');
 };

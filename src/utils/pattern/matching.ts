@@ -21,22 +21,25 @@ export const findPatternMatches = async (pattern: string, trie: Trie): Promise<s
   // Convert pattern to SQL LIKE pattern
   let sqlPattern = processedPattern
     .replace(/\?/g, '_')  // ? becomes _ (single character wildcard)
-    .replace(/\^/g, '')   // Remove start anchor
-    .replace(/\$/g, '');  // Remove end anchor
+    .replace(/-/g, '%');  // - becomes % (multiple character wildcard)
 
-  // Handle start/end anchors and hyphens
-  const hasStartHyphen = trimmedPattern.startsWith('-');
-  const hasEndHyphen = trimmedPattern.endsWith('-');
+  // Handle SQL pattern anchors properly
+  const hasStartAnchor = processedPattern.startsWith('^');
+  const hasEndAnchor = processedPattern.endsWith('$');
 
-  // Remove hyphens for SQL pattern construction
-  sqlPattern = sqlPattern.replace(/-/g, '');
+  // Remove the anchors for SQL processing
+  if (hasStartAnchor) {
+    sqlPattern = sqlPattern.substring(1);
+  }
+  if (hasEndAnchor) {
+    sqlPattern = sqlPattern.slice(0, -1);
+  }
 
-  // Add SQL wildcards based on hyphens
-  if (hasStartHyphen && hasEndHyphen) {
-    sqlPattern = '%' + sqlPattern + '%';
-  } else if (hasStartHyphen) {
+  // Only add wildcards if there are no anchors
+  if (!hasStartAnchor) {
     sqlPattern = '%' + sqlPattern;
-  } else if (hasEndHyphen) {
+  }
+  if (!hasEndAnchor) {
     sqlPattern = sqlPattern + '%';
   }
 

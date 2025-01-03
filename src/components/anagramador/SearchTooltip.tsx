@@ -1,47 +1,63 @@
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { useToast } from "@/hooks/use-toast";
+import { MAX_RACK_LETTERS, MAX_PATTERN_LENGTH } from "@/utils/inputValidation";
 
 interface SearchTooltipProps {
-  children: React.ReactNode;
   isPatternMode: boolean;
+  children: React.ReactNode;
 }
 
-export const SearchTooltip = ({ children, isPatternMode }: SearchTooltipProps) => {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        {children}
-      </TooltipTrigger>
-      <TooltipContent className="w-80 p-4">
-        <div className="space-y-2">
-          <h3 className="font-semibold">
-            {isPatternMode ? 'Modo patrón' : 'Modo búsqueda'}
-          </h3>
+export const SearchTooltip = ({ isPatternMode, children }: SearchTooltipProps) => {
+  const { toast } = useToast();
+
+  const showHelp = () => {
+    toast({
+      title: isPatternMode ? "Modo patrón" : "Búsqueda",
+      description: (
+        <div className="mt-2 space-y-2">
           {isPatternMode ? (
             <>
-              <p>Sintaxis: PATRON,ATRIL</p>
-              <ul className="space-y-1 text-sm">
-                <li><strong>?</strong> - letra indefinida en posición definida</li>
-                <li><strong>-</strong> - al inicio/final permite extensión</li>
-                <li><strong>*</strong> - en el atril, representa cualquier letra</li>
+              <p>Busca palabras usando patrones:</p>
+              <ul className="space-y-1 list-disc pl-4">
+                <li><strong>?</strong> - una letra cualquiera</li>
+                <li><strong>^</strong> - inicio de palabra</li>
+                <li><strong>$</strong> - fin de palabra</li>
+                <li>Opcionalmente, después de una coma, ingresa las fichas disponibles (máx. {MAX_RACK_LETTERS})</li>
+                <li><strong>*</strong> - en las fichas, representa cualquier letra</li>
               </ul>
-              <p className="text-sm mt-2">Ejemplos:</p>
-              <ul className="space-y-1 text-sm">
-                <li><strong>C?SA</strong> - exactamente CASA o COSA</li>
-                <li><strong>-PAT</strong> - palabras que terminan en PAT</li>
-                <li><strong>PAT-</strong> - palabras que empiezan con PAT</li>
-                <li><strong>-PAT-</strong> - palabras que contienen PAT</li>
-                <li><strong>C?SA,CASA*</strong> - usando letras CASA + comodín</li>
+              <p className="mt-2">Ejemplos:</p>
+              <ul className="space-y-1 list-disc pl-4">
+                <li>"C?SA" - palabras como CASA, COSA (cualquier letra)</li>
+                <li>"^PAT" - palabras que empiezan con PAT</li>
+                <li>"INA$" - palabras que terminan en INA</li>
+                <li>"^PAT$" - exactamente la palabra PAT</li>
+                <li>"C?SA,CASA" - palabras como CASA, COSA usando las letras CASA</li>
               </ul>
             </>
           ) : (
-            <p>Usa * como comodín para representar cualquier letra</p>
+            <>
+              <p>Puedes buscar de tres formas:</p>
+              <ul className="space-y-1 list-disc pl-4">
+                <li><strong>Modo normal:</strong> Ingresa letras (máx. {MAX_RACK_LETTERS})</li>
+                <li><strong>Modo patrón:</strong> Usa ?, ^ y $ para buscar patrones específicos</li>
+                <li><strong>Modo natural:</strong> Escribe tu consulta en español</li>
+              </ul>
+              <p className="mt-2">Ejemplos en lenguaje natural:</p>
+              <ul className="space-y-1 list-disc pl-4">
+                <li>"palabras de 5 letras que contienen z"</li>
+                <li>"palabras que empiezan con a y terminan en z"</li>
+                <li>"palabras de 4 letras que empiezan con b"</li>
+              </ul>
+            </>
           )}
         </div>
-      </TooltipContent>
-    </Tooltip>
+      ),
+      duration: 10000,
+    });
+  };
+
+  return (
+    <div className="relative flex-1">
+      {children}
+    </div>
   );
 };

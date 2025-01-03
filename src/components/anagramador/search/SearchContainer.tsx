@@ -1,7 +1,6 @@
 import { useState, useRef } from "react";
 import SearchInput from "../SearchInput";
 import { useToast } from "@/hooks/use-toast";
-import { convertToInternalPattern } from "@/utils/pattern/syntaxConverter";
 
 interface SearchContainerProps {
   onSearch: (letters: string, targetLength: number | null) => void;
@@ -26,27 +25,21 @@ const SearchContainer = ({
 
   const handleInputChange = (value: string) => {
     setLetters(value);
+    let targetLength = null;
+    
+    const lengthMatch = value.match(/\/(\d+)$/);
+    if (lengthMatch) {
+      targetLength = parseInt(lengthMatch[1], 10);
+      value = value.replace(/\/\d+$/, '');
+    }
+
+    return targetLength;
   };
 
   const handleSearch = () => {
     if (letters.trim()) {
-      let searchValue = letters;
-      let targetLength = null;
-
-      // Convertir el patrón solo al momento de la búsqueda
-      if (letters.includes('?') || letters.includes('-') || letters.includes(',')) {
-        const { pattern, rack } = convertToInternalPattern(letters);
-        searchValue = pattern + (rack ? `,${rack}` : '');
-      }
-
-      // Extraer longitud objetivo si existe
-      const lengthMatch = searchValue.match(/\/(\d+)$/);
-      if (lengthMatch) {
-        targetLength = parseInt(lengthMatch[1], 10);
-        searchValue = searchValue.replace(/\/\d+$/, '');
-      }
-
-      onSearch(searchValue, targetLength);
+      const targetLength = handleInputChange(letters);
+      onSearch(letters, targetLength);
       
       if (!searchHistory.includes(letters)) {
         setSearchHistory([letters, ...searchHistory.slice(0, 9)]);

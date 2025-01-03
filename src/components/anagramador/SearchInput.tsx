@@ -33,7 +33,7 @@ const SearchInput = ({
   
   // Auto-detect pattern mode based on input
   useEffect(() => {
-    const hasPatternChars = letters.includes('?') || letters.includes('-') || letters.includes(',');
+    const hasPatternChars = letters.includes('?') || letters.includes('^') || letters.includes('$');
     setIsPatternMode(hasPatternChars);
   }, [letters]);
 
@@ -63,15 +63,11 @@ const SearchInput = ({
     cursorPositionRef.current = e.target.selectionStart;
     let value = e.target.value.toUpperCase();
     
-    try {
-      if (value.includes('?') || value.includes('-') || value.includes(',')) {
-        value = validateAndCleanPatternInput(value);
-      } else {
-        value = validateAndCleanAnagramInput(value);
-      }
-    } catch (error) {
-      console.error('Validation error:', error);
-    }
+    // Automatically determine which validation to use based on input
+    const hasPatternChars = value.includes('?') || value.includes('^') || value.includes('$');
+    value = hasPatternChars ? 
+      validateAndCleanPatternInput(value) : 
+      validateAndCleanAnagramInput(value);
     
     onInputChange(value);
   };
@@ -93,7 +89,7 @@ const SearchInput = ({
             type="text"
             placeholder={
               isPatternMode 
-                ? "PATRON,ATRIL (ej: -A??R-,EOCNS)" 
+                ? "Ingresa un patrón" 
                 : "asterisco es comodín"
             }
             value={letters}
