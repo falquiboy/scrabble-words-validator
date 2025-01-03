@@ -24,15 +24,22 @@ export const findPatternMatches = async (pattern: string, trie: Trie): Promise<s
     .replace(/-/g, '%');  // - becomes % (multiple character wildcard)
 
   // Handle SQL pattern anchors properly
-  if (processedPattern.startsWith('^')) {
-    sqlPattern = sqlPattern.substring(1); // Remove the ^
-  } else {
+  const hasStartAnchor = processedPattern.startsWith('^');
+  const hasEndAnchor = processedPattern.endsWith('$');
+
+  // Remove the anchors for SQL processing
+  if (hasStartAnchor) {
+    sqlPattern = sqlPattern.substring(1);
+  }
+  if (hasEndAnchor) {
+    sqlPattern = sqlPattern.slice(0, -1);
+  }
+
+  // Only add wildcards if there are no anchors
+  if (!hasStartAnchor) {
     sqlPattern = '%' + sqlPattern;
   }
-  
-  if (processedPattern.endsWith('$')) {
-    sqlPattern = sqlPattern.slice(0, -1); // Remove the $
-  } else {
+  if (!hasEndAnchor) {
     sqlPattern = sqlPattern + '%';
   }
 
