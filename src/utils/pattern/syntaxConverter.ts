@@ -6,32 +6,9 @@ export const convertToInternalPattern = (input: string): { pattern: string, rack
   // Early return if empty
   if (!pattern) return { pattern: '', rack: '' };
 
-  // Validate no internal hyphens
-  if (pattern.slice(1, -1).includes('-')) {
-    throw new Error("El guion (-) solo puede usarse al inicio o final del patrón");
-  }
-
-  // Convert pattern based on hyphens
-  let internalPattern = pattern;
-  const hasStartHyphen = pattern.startsWith('-');
-  const hasEndHyphen = pattern.endsWith('-');
-
-  // Remove hyphens for processing
-  internalPattern = internalPattern.replace(/-/g, '');
-
-  // Add anchors and wildcards based on hyphen positions
-  if (!hasStartHyphen && !hasEndHyphen) {
-    internalPattern = `^${internalPattern}$`;
-  } else if (hasStartHyphen && hasEndHyphen) {
-    internalPattern = `.*${internalPattern}.*`;
-  } else if (hasStartHyphen) {
-    internalPattern = `.*${internalPattern}$`;
-  } else if (hasEndHyphen) {
-    internalPattern = `^${internalPattern}.*`;
-  }
-
+  // Keep the pattern as is, since we handle dashes in validation
   return {
-    pattern: internalPattern,
+    pattern: pattern,
     rack: rack
   };
 };
