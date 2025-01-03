@@ -48,12 +48,6 @@ export const validateWordPattern = (
     }
   }
 
-  // Add fixed pattern letters to available counts
-  const fixedLetters = pattern.replace(/[\^$?-]/g, '');
-  for (const letter of processDigraphs(fixedLetters)) {
-    letterCounts.set(letter, (letterCounts.get(letter) || 0) + 1);
-  }
-
   // Check if we have enough letters
   for (const letter of processedWord) {
     const count = letterCounts.get(letter) || 0;
