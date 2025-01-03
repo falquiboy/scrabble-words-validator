@@ -79,25 +79,29 @@ const generateCombinations = (arr: string[], len: number): string[][] => {
 const findAdditionalMatches = (baseLetters: string, wildcardCount: number, trie: Trie): Set<string> => {
   const matches = new Set<string>();
   
-  // Process base letters first to handle existing digraphs
+  // Primero procesamos los dígrafos del input base
   const processedBase = processDigraphs(baseLetters);
+  console.log('Base procesada:', processedBase);
   
-  // For each additional letter, we'll process the combination
+  // Para cada letra adicional, la agregamos directamente sin procesar más dígrafos
   for (const letter of SPANISH_LETTERS) {
-    // Important: We add the letter directly without any further digraph processing
-    // since processedBase is already in internal format and letter is a single character
+    // Concatenamos la letra directamente al final
     const newCombo = processedBase + letter;
+    console.log('Nueva combinación con letra adicional:', newCombo);
+    
     const alphagram = generateAlphagram(newCombo);
+    console.log('Alfagrama generado:', alphagram);
+    
     const baseMatches = trie.findAnagrams(alphagram);
     baseMatches.forEach(match => matches.add(match));
   }
   
-  // Handle wildcards similarly
+  // Manejamos los comodines de manera similar
   if (wildcardCount > 0) {
     const wildcardCombos = generateWildcardCombinations(processedBase, wildcardCount);
     for (const combo of wildcardCombos) {
       for (const letter of SPANISH_LETTERS) {
-        // Same here: direct concatenation without additional processing
+        // Agregamos la letra adicional directamente
         const newCombo = combo + letter;
         const alphagram = generateAlphagram(newCombo);
         const comboMatches = trie.findAnagrams(alphagram);
