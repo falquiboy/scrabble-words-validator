@@ -5,8 +5,6 @@ import { toast } from 'sonner';
 import { fetchAllWords } from '@/utils/wordFetcher';
 import { buildTrieFromWords, loadCachedTrie, saveTrie } from '@/utils/trieOperations';
 
-const EXPECTED_WORD_COUNT = 639293;
-
 export const useWordTrie = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -19,9 +17,9 @@ export const useWordTrie = () => {
       let words = await wordDB.getAllWords();
       console.log('Words in local database:', words.length);
 
-      if (words.length < EXPECTED_WORD_COUNT) {
-        console.log('Local DB incomplete, fetching from Supabase...');
-        words = await fetchAllWords(EXPECTED_WORD_COUNT, setLoadingProgress);
+      if (words.length === 0) {
+        console.log('Local DB empty, fetching from Supabase...');
+        words = await fetchAllWords(0, setLoadingProgress);
         
         // Clear and rebuild local DB
         await wordDB.clear();
@@ -40,7 +38,7 @@ export const useWordTrie = () => {
     try {
       const cachedWordCount = await loadCachedTrie(trie);
       
-      if (cachedWordCount >= EXPECTED_WORD_COUNT) {
+      if (cachedWordCount > 0) {
         setWordCount(cachedWordCount);
         console.log('Trie loaded from cache with', cachedWordCount, 'words');
         return true;
