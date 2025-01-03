@@ -1,10 +1,12 @@
 export const convertPatternToRegex = (pattern: string): RegExp => {
-  // Replace ? with . for single character matching
-  let regexPattern = pattern.replace(/\?/g, '.');
+  // Remove dashes as they're handled in validation
+  const cleanPattern = pattern.replace(/-/g, '');
   
-  // Remove dashes as they're handled separately in validation
-  regexPattern = regexPattern.replace(/-/g, '');
+  // Convert the pattern to a regex string
+  const regexStr = cleanPattern
+    .replace(/\?/g, '.')  // ? matches any single character
+    .replace(/\^/g, '^')  // ^ for start of word
+    .replace(/\$/g, '$'); // $ for end of word
   
-  // Create regex with case insensitivity
-  return new RegExp(`${regexPattern}`, 'i');
+  return new RegExp(regexStr);
 };
