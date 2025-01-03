@@ -1,8 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
 
-const BATCH_SIZE = 500; // Reduced from 2000 to 500
-const MAX_RETRIES = 5; // Increased from 3 to 5
-const RETRY_DELAY = 2000; // Increased from 1000 to 2000
+const BATCH_SIZE = 500;
+const MAX_RETRIES = 5;
+const RETRY_DELAY = 2000;
 
 export const fetchAllWords = async (
   expectedCount: number,
@@ -18,14 +18,28 @@ export const fetchAllWords = async (
 
   while (true) {
     try {
+      // Add delay between requests to avoid rate limiting
+      if (lastWord) {
+        await delay(100);
+      }
+
       console.log(`Fetching batch after word: ${lastWord}, total words so far: ${allWords.length}`);
       
-      const { data, error } = await supabase
+      const { data, error, status } = await supabase
         .from('words')
         .select('word')
         .gt('word', lastWord || '')
         .order('word')
         .limit(BATCH_SIZE);
+
+      // Handle specific HTTP status codes
+      if (status === 429) { // Rate limit
+        const backoffDelay = RETRY_DELAY * Math.pow(2, retryCount);
+        console.log(`Rate limited. Waiting ${backoffDelay}ms before retry`);
+        await delay(backoffDelay);
+        retryCount++;
+        continue;
+      }
 
       if (error) {
         console.error('Supabase fetch error:', error);
