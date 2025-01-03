@@ -4,7 +4,6 @@ import { SearchTooltip } from "./SearchTooltip";
 import { validateAndCleanAnagramInput, validateAndCleanPatternInput } from "@/utils/inputValidation";
 import SearchButton from "./search/SearchButton";
 import ShorterWordsToggle from "./search/ShorterWordsToggle";
-import { convertToInternalPattern } from "@/utils/pattern/syntaxConverter";
 
 interface SearchInputProps {
   letters: string;
@@ -64,21 +63,13 @@ const SearchInput = ({
     cursorPositionRef.current = e.target.selectionStart;
     let value = e.target.value.toUpperCase();
     
-    // Automatically determine which validation to use based on input
-    const hasPatternChars = value.includes('?') || value.includes('-') || value.includes(',');
-    
     try {
-      if (hasPatternChars) {
-        // If it's a pattern, validate it using the new syntax
-        const { pattern, rack } = convertToInternalPattern(value);
-        if (pattern) {
-          value = validateAndCleanPatternInput(pattern + (rack ? `,${rack}` : ''));
-        }
+      if (value.includes('?') || value.includes('-') || value.includes(',')) {
+        value = validateAndCleanPatternInput(value);
       } else {
         value = validateAndCleanAnagramInput(value);
       }
     } catch (error) {
-      // Keep the input as is if there's a validation error
       console.error('Validation error:', error);
     }
     
