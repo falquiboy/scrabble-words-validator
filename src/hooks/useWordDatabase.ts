@@ -24,20 +24,9 @@ export const useWordDatabase = () => {
         const existingWords = await wordDB.getAllWords();
         console.log('Words in database:', existingWords.length);
 
-        // Only rebuild if we don't have the expected number of words
-        if (existingWords.length !== EXPECTED_WORD_COUNT) {
-          console.log('Dictionary needs rebuilding...');
-          
-          // Check if it's been less than 24 hours since the last attempt
-          const lastAttempt = localStorage.getItem('lastDictionaryBuildAttempt');
-          const now = Date.now();
-          
-          if (lastAttempt && (now - parseInt(lastAttempt)) < 24 * 60 * 60 * 1000) {
-            console.log('Using existing dictionary despite incomplete word count');
-            setIsLoading(false);
-            return;
-          }
-
+        // Only fetch words if database is completely empty
+        if (existingWords.length === 0) {
+          console.log('Database empty, fetching words...');
           await wordDB.clear();
           const loader = new WordLoader(EXPECTED_WORD_COUNT);
 
@@ -53,12 +42,10 @@ export const useWordDatabase = () => {
             }
           }
 
-          // Store the timestamp of this successful build
-          localStorage.setItem('lastDictionaryBuildAttempt', now.toString());
           toast.success(`Dictionary loaded: ${EXPECTED_WORD_COUNT.toLocaleString()} words`);
         } else {
-          console.log('Dictionary is up to date');
-          toast.success(`Dictionary ready: ${EXPECTED_WORD_COUNT.toLocaleString()} words`);
+          console.log('Using existing dictionary');
+          toast.success(`Dictionary ready: ${existingWords.length.toLocaleString()} words`);
         }
       } catch (err) {
         console.error('Dictionary initialization error:', err);
