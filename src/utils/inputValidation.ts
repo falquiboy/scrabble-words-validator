@@ -27,8 +27,8 @@ export const validateAndCleanAnagramInput = (value: string) => {
   
   // If no slash, just clean input
   // Allow slash in the input by not removing it in the regex
-  // Now allowing Ç explicitly in the regex
-  return value.replace(/[^A-ZÑÇKW*,/0-9]/g, '');
+  // Now allowing Ç and - explicitly in the regex
+  return value.replace(/[^A-ZÑÇKW*,/0-9-]/g, '');
 };
 
 export const validateAndCleanPatternInput = (value: string) => {
@@ -39,8 +39,8 @@ export const validateAndCleanPatternInput = (value: string) => {
     // Keep only the first two parts if multiple commas
     let [patternPart, rackPart] = parts;
     
-    // Handle pattern part - allow ?, ^, $ and letters (including Ç)
-    patternPart = patternPart.replace(/[^A-ZÑÇKW?\^$,]/g, '');
+    // Handle pattern part - allow ?, ^, $, - and letters (including Ç)
+    patternPart = patternPart.replace(/[^A-ZÑÇKW?\^$,-]/g, '');
     
     // Handle rack part - allow letters and asterisk (*) (including Ç)
     rackPart = rackPart.replace(/[^A-ZÑÇKW*]/g, '');
@@ -48,6 +48,6 @@ export const validateAndCleanPatternInput = (value: string) => {
     return `${patternPart},${rackPart}`;
   }
   
-  // If no comma, treat as pattern part (including Ç)
-  return value.replace(/[^A-ZÑÇKW?\^$,]/g, '');
+  // If no comma, treat as pattern part (including Ç and -)
+  return value.replace(/[^A-ZÑÇKW?\^$,-]/g, '');
 };
