@@ -1,6 +1,5 @@
 import { wordDB } from '@/services/WordDatabase';
 import { Trie } from '@/utils/trie';
-import { processDigraphs } from '@/utils/digraphs';
 
 export const buildTrieFromWords = async (
   words: string[],
@@ -14,8 +13,9 @@ export const buildTrieFromWords = async (
   trie.clear();
   
   for (const word of words) {
-    const processedWord = processDigraphs(word.toUpperCase());
-    trie.insert(processedWord, word);
+    // Store the word as-is in the trie, without processing digraphs
+    const upperWord = word.toUpperCase();
+    trie.insert(upperWord, upperWord);
     processed++;
     
     const currentProgress = Math.floor((processed / totalWords) * 100);

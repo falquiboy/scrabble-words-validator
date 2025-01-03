@@ -1,4 +1,3 @@
-import { processDigraphs, toDisplayFormat } from '@/utils/digraphs';
 import { SerializedTrie, TrieNode } from '@/utils/trie/types';
 
 export class WordDatabase {
@@ -11,7 +10,7 @@ export class WordDatabase {
     }
 
     this.initPromise = new Promise((resolve, reject) => {
-      const request = indexedDB.open('scrabbleDB', 5); // Increment version for new store
+      const request = indexedDB.open('scrabbleDB', 5);
 
       request.onerror = () => {
         console.error('IndexedDB error:', request.error);
@@ -64,8 +63,8 @@ export class WordDatabase {
       transaction.oncomplete = () => resolve();
 
       words.forEach(word => {
-        const processedWord = processDigraphs(word.toUpperCase());
-        store.put({ word: processedWord });
+        // Store the word as-is, without processing digraphs
+        store.put({ word: word.toUpperCase() });
       });
     });
   }
@@ -85,7 +84,8 @@ export class WordDatabase {
       };
 
       request.onsuccess = () => {
-        const words = request.result.map(record => toDisplayFormat(record.word));
+        // Return words as-is, without processing digraphs
+        const words = request.result.map(record => record.word);
         resolve(words);
       };
     });
