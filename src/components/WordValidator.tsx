@@ -36,21 +36,14 @@ const WordValidator = ({ isDictionaryLoading, progress, trie }: WordValidatorPro
       console.log('Total words in trie:', allWords.length);
       
       const isValid = words.every(w => {
-        // Process digraphs before validation
-        const processedWord = processDigraphs(w.toUpperCase());
-        console.log('Validating word:', w, 'processed as:', processedWord);
+        // Convert to uppercase without processing digraphs yet
+        const upperWord = w.toUpperCase();
+        console.log('Validating word:', w, 'uppercase:', upperWord);
         
-        // Search in trie and log result
-        const found = trie.search(processedWord);
+        // Search in trie directly with the original word
+        const found = trie.search(upperWord);
         console.log('Word found in trie?', found);
-        
-        // If found, verify it exists in the complete word list
-        if (found) {
-          const exists = allWords.includes(processedWord);
-          console.log('Word exists in complete word list?', exists);
-          return exists;
-        }
-        return false;
+        return found;
       });
 
       // Store the original words in uppercase for display
