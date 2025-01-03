@@ -4,6 +4,7 @@ import { SearchTooltip } from "./SearchTooltip";
 import { validateAndCleanAnagramInput, validateAndCleanPatternInput } from "@/utils/inputValidation";
 import SearchButton from "./search/SearchButton";
 import ShorterWordsToggle from "./search/ShorterWordsToggle";
+import { convertToInternalPattern } from "@/utils/pattern/syntaxConverter";
 
 interface SearchInputProps {
   letters: string;
@@ -33,7 +34,7 @@ const SearchInput = ({
   
   // Auto-detect pattern mode based on input
   useEffect(() => {
-    const hasPatternChars = letters.includes('?') || letters.includes('^') || letters.includes('$');
+    const hasPatternChars = letters.includes('?') || letters.includes('-') || letters.includes(',');
     setIsPatternMode(hasPatternChars);
   }, [letters]);
 
@@ -64,10 +65,22 @@ const SearchInput = ({
     let value = e.target.value.toUpperCase();
     
     // Automatically determine which validation to use based on input
-    const hasPatternChars = value.includes('?') || value.includes('^') || value.includes('$');
-    value = hasPatternChars ? 
-      validateAndCleanPatternInput(value) : 
-      validateAndCleanAnagramInput(value);
+    const hasPatternChars = value.includes('?') || value.includes('-') || value.includes(',');
+    
+    try {
+      if (hasPatternChars) {
+        // If it's a pattern, validate it using the new syntax
+        const { pattern, rack } = convertToInternalPattern(value);
+        if (pattern) {
+          value = validateAndCleanPatternInput(pattern + (rack ? `,${rack}` : ''));
+        }
+      } else {
+        value = validateAndCleanAnagramInput(value);
+      }
+    } catch (error) {
+      // Keep the input as is if there's a validation error
+      console.error('Validation error:', error);
+    }
     
     onInputChange(value);
   };
@@ -89,7 +102,7 @@ const SearchInput = ({
             type="text"
             placeholder={
               isPatternMode 
-                ? "Ingresa un patrón" 
+                ? "PATRON,ATRIL (ej: -A??R-,EOCNS)" 
                 : "asterisco es comodín"
             }
             value={letters}
