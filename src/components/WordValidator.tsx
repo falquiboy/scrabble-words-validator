@@ -78,7 +78,7 @@ const WordValidator = ({ isDictionaryLoading, progress, trie }: WordValidatorPro
       <div className="space-y-4">
         <WordInput
           word={word}
-          isLoading={isLoading}
+          isLoading={isDictionaryLoading || isLoading}
           onWordChange={handleWordChange}
           onValidate={result.checked ? handleClear : handleValidate}
           buttonText={result.checked ? "Limpiar" : "Validar"}

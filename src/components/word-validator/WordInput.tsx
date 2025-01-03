@@ -22,17 +22,17 @@ const WordInput = ({
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (inputRef.current) {
+    if (inputRef.current && !isLoading) {
       inputRef.current.focus();
     }
-  }, []);
+  }, [isLoading]);
 
   // Add effect to focus input when word is cleared
   useEffect(() => {
-    if (!word && inputRef.current) {
+    if (!word && inputRef.current && !isLoading) {
       inputRef.current.focus();
     }
-  }, [word]);
+  }, [word, isLoading]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target;
@@ -56,18 +56,18 @@ const WordInput = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey && !isLoading) {
       e.preventDefault();
       onValidate();
     } else if (e.key === 'Escape') {
       e.preventDefault();
-      if (isChecked) {
+      if (isChecked && !isLoading) {
         onValidate(); // This will clear in checked state
       } else if (word) {
         onWordChange(''); // Just clear the input if we're not in checked state
       }
       // Ensure input gets focused after clearing
-      if (inputRef.current) {
+      if (inputRef.current && !isLoading) {
         inputRef.current.focus();
       }
     }
@@ -84,7 +84,7 @@ const WordInput = ({
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             className="w-full px-4 py-2 text-lg border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Escribe una palabra..."
+            placeholder={isLoading ? "Cargando diccionario..." : "Escribe una palabra..."}
             disabled={isLoading}
           />
         </div>
