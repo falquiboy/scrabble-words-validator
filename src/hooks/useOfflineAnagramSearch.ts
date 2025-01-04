@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { findAnagrams } from "@/hooks/anagramSearch/utils";
 import { findPatternMatches } from "@/utils/pattern/matching";
-import { Trie } from "@/utils/trie";
+import { Trie } from "@/utils/trie/types";
 import { SearchResults } from "./anagramSearch/types";
 
 export const useOfflineAnagramSearch = async (
@@ -46,7 +46,7 @@ export const useOfflineAnagramSearch = async (
   }
 
   // Regular anagram search
-  const { exactMatches, wildcardMatches, additionalWildcardMatches, shorterMatches } = findAnagrams(searchTerm, trie, showShorter);
+  const { exactMatches, wildcardMatches, additionalWildcardMatches, shorterMatches } = findAnagrams(searchTerm, trie, true);
 
   // Filter by target length if specified
   if (targetLength !== null) {
