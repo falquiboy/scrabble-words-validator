@@ -1,10 +1,7 @@
-import { useState, useEffect } from "react";
-import { findAnagrams } from "@/hooks/anagramSearch/utils";
-import { findPatternMatches } from "@/utils/pattern/matching";
-import { Trie } from "@/utils/trie/types";
-import { SearchResults } from "./anagramSearch/types";
 import { SPANISH_LETTERS } from './constants';
 import { processDigraphs, generateAlphagram } from '@/utils/digraphs';
+import { Trie } from '@/utils/trie/types';
+import { SearchResults } from '@/hooks/anagramSearch/types';
 
 // Helper function to generate wildcard combinations
 export const generateWildcardCombinations = (base: string, remainingWildcards: number): string[] => {

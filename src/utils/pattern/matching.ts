@@ -16,7 +16,7 @@ export const findPatternMatches = async (pattern: string, trie: Trie): Promise<s
   
   try {
     // Get all words from trie that match the pattern
-    const matches = await searchTrie(trie, regexPattern, rackPart);
+    const matches = await searchTrie(trie.getRoot(), regexPattern, rackPart);
     return matches;
   } catch (error) {
     console.error('Error in pattern matching:', error);
