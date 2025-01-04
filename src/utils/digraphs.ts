@@ -74,5 +74,5 @@ export const getInternalLength = (word: string): number => {
   return processed.length;
 };
 
-// Custom alphabet order for sorting
+// Custom alphabet order for sorting - Added Ç after C to maintain proper ordering
 const CUSTOM_ALPHABET = "AEIOUBCÇDFGHJLKMNÑPQRWSTVXYZ";
