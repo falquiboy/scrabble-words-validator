@@ -128,30 +128,36 @@ export type Database = {
       user_progress: {
         Row: {
           id: string
+          last_challenge_word: string | null
           last_group: number
           last_practice_group: number | null
           last_practice_index: number | null
           last_word_index: number
+          preferred_mode: boolean | null
           solved_challenges: Json | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
           id?: string
+          last_challenge_word?: string | null
           last_group?: number
           last_practice_group?: number | null
           last_practice_index?: number | null
           last_word_index?: number
+          preferred_mode?: boolean | null
           solved_challenges?: Json | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
           id?: string
+          last_challenge_word?: string | null
           last_group?: number
           last_practice_group?: number | null
           last_practice_index?: number | null
           last_word_index?: number
+          preferred_mode?: boolean | null
           solved_challenges?: Json | null
           updated_at?: string | null
           user_id?: string
