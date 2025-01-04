@@ -40,7 +40,7 @@ export const validateAndCleanPatternInput = (value: string) => {
     let [patternPart, rackPart] = parts;
     
     // Handle pattern part - allow ?, ^, $, -, and letters (including Ç)
-    // Remove any validation that would prevent - without ^
+    // Allow hyphens at any position in the pattern
     patternPart = patternPart.replace(/[^A-ZÑÇKW?\^$\-]/g, '');
     
     // Handle rack part - allow letters and asterisk (*) (including Ç)
@@ -50,6 +50,6 @@ export const validateAndCleanPatternInput = (value: string) => {
   }
   
   // If no comma, treat as pattern part
-  // Remove any validation that would prevent - without ^
+  // Allow hyphens at any position in the pattern
   return value.replace(/[^A-ZÑÇKW?\^$\-]/g, '');
 };
