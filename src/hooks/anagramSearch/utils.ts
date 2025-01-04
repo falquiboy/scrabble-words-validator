@@ -56,6 +56,52 @@ const findShorterMatches = (letters: string, trie: Trie): Set<string> => {
   return matches;
 };
 
+const findAdditionalMatches = (baseLetters: string, wildcardCount: number, trie: Trie): Set<string> => {
+  const matches = new Set<string>();
+  
+  // First process the digraphs of the input base
+  const processedBase = processDigraphs(baseLetters);
+  console.log('Base procesada:', processedBase);
+  
+  // For each Spanish letter (including digraphs), add it to the base
+  for (const letter of SPANISH_LETTERS) {
+    // Create new combination by adding the letter directly (no need to process digraphs again)
+    const newCombo = processedBase + letter;
+    console.log('Nueva combinación con letra adicional:', newCombo);
+    
+    // Generate alphagram directly since letters are already in internal representation
+    const alphagram = generateAlphagram(newCombo);
+    console.log('Alfagrama generado:', alphagram);
+    
+    const baseMatches = trie.findAnagrams(alphagram);
+    baseMatches.forEach(match => {
+      // Only add matches that are exactly one letter longer than the base
+      if (processDigraphs(match).length === processedBase.length + 1) {
+        matches.add(match);
+      }
+    });
+  }
+  
+  // Handle wildcards similarly
+  if (wildcardCount > 0) {
+    const wildcardCombos = generateWildcardCombinations(processedBase, wildcardCount);
+    for (const combo of wildcardCombos) {
+      for (const letter of SPANISH_LETTERS) {
+        const newCombo = combo + letter;
+        const alphagram = generateAlphagram(newCombo);
+        const comboMatches = trie.findAnagrams(alphagram);
+        comboMatches.forEach(match => {
+          if (processDigraphs(match).length === processedBase.length + 1) {
+            matches.add(match);
+          }
+        });
+      }
+    }
+  }
+  
+  return matches;
+};
+
 // Helper function to generate all possible combinations of letters
 const generateCombinations = (arr: string[], len: number): string[][] => {
   const result: string[][] = [];
@@ -75,44 +121,6 @@ const generateCombinations = (arr: string[], len: number): string[][] => {
   
   backtrack(0, []);
   return result;
-};
-
-const findAdditionalMatches = (baseLetters: string, wildcardCount: number, trie: Trie): Set<string> => {
-  const matches = new Set<string>();
-  
-  // First process the digraphs of the input base
-  const processedBase = processDigraphs(baseLetters);
-  console.log('Base procesada:', processedBase);
-  
-  // For each Spanish letter (including digraphs), add it to the base
-  for (const letter of SPANISH_LETTERS) {
-    // Create new combination by adding the letter directly (no need to process digraphs again)
-    const newCombo = processedBase + letter;
-    console.log('Nueva combinación con letra adicional:', newCombo);
-    
-    // Generate alphagram directly since letters are already in internal representation
-    const alphagram = generateAlphagram(newCombo);
-    console.log('Alfagrama generado:', alphagram);
-    
-    const baseMatches = trie.findAnagrams(alphagram);
-    baseMatches.forEach(match => matches.add(match));
-  }
-  
-  // Handle wildcards similarly
-  if (wildcardCount > 0) {
-    const wildcardCombos = generateWildcardCombinations(processedBase, wildcardCount);
-    for (const combo of wildcardCombos) {
-      for (const letter of SPANISH_LETTERS) {
-        // Add letter directly since both combo and letter are in internal representation
-        const newCombo = combo + letter;
-        const alphagram = generateAlphagram(newCombo);
-        const comboMatches = trie.findAnagrams(alphagram);
-        comboMatches.forEach(match => matches.add(match));
-      }
-    }
-  }
-  
-  return matches;
 };
 
 export const findAnagrams = (searchTerm: string, trie: Trie, showShorter: boolean = false) => {
