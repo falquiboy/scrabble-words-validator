@@ -1,20 +1,6 @@
 import { SPANISH_LETTERS } from './constants';
 import { processDigraphs, generateAlphagram } from '@/utils/digraphs';
 import { Trie } from '@/utils/trie/types';
-import { SearchResults } from './types';
-
-// Helper function to generate wildcard combinations
-export const generateWildcardCombinations = (base: string, remainingWildcards: number): string[] => {
-  if (remainingWildcards === 0) return [base];
-  
-  const combinations: string[] = [];
-  for (const letter of SPANISH_LETTERS) {
-    // Process the combination immediately
-    const newCombo = base + letter;
-    combinations.push(...generateWildcardCombinations(newCombo, remainingWildcards - 1));
-  }
-  return combinations;
-};
 
 const findExactMatches = (processedInput: string, trie: Trie): Set<string> => {
   const alphagram = generateAlphagram(processedInput);
@@ -59,24 +45,30 @@ const findShorterMatches = (letters: string, trie: Trie): Set<string> => {
 const findAdditionalMatches = (baseLetters: string, wildcardCount: number, trie: Trie): Set<string> => {
   const matches = new Set<string>();
   
-  // First process the digraphs of the input base
+  // Process digraphs of the input base ONCE
   const processedBase = processDigraphs(baseLetters);
-  console.log('Base procesada:', processedBase);
+  const baseLength = processedBase.length;
+  console.log('Base procesada:', processedBase, 'Length:', baseLength);
   
   // For each Spanish letter (including digraphs), add it to the base
   for (const letter of SPANISH_LETTERS) {
-    // Create new combination by adding the letter directly (no need to process digraphs again)
+    // Create new combination by adding the letter directly
     const newCombo = processedBase + letter;
     console.log('Nueva combinación con letra adicional:', newCombo);
     
-    // Generate alphagram directly since letters are already in internal representation
+    // Generate alphagram from the new combination
     const alphagram = generateAlphagram(newCombo);
     console.log('Alfagrama generado:', alphagram);
     
     const baseMatches = trie.findAnagrams(alphagram);
     baseMatches.forEach(match => {
-      // Only add matches that are exactly one letter longer than the base
-      if (processDigraphs(match).length === processedBase.length + 1) {
+      // Process the match ONCE and store its length
+      const processedMatch = processDigraphs(match);
+      const matchLength = processedMatch.length;
+      
+      // Compare processed lengths
+      if (matchLength === baseLength + 1) {
+        console.log('Match found:', match, 'Processed length:', matchLength, 'Expected length:', baseLength + 1);
         matches.add(match);
       }
     });
@@ -91,7 +83,8 @@ const findAdditionalMatches = (baseLetters: string, wildcardCount: number, trie:
         const alphagram = generateAlphagram(newCombo);
         const comboMatches = trie.findAnagrams(alphagram);
         comboMatches.forEach(match => {
-          if (processDigraphs(match).length === processedBase.length + 1) {
+          const processedMatch = processDigraphs(match);
+          if (processedMatch.length === baseLength + 1) {
             matches.add(match);
           }
         });
@@ -102,7 +95,6 @@ const findAdditionalMatches = (baseLetters: string, wildcardCount: number, trie:
   return matches;
 };
 
-// Helper function to generate all possible combinations of letters
 const generateCombinations = (arr: string[], len: number): string[][] => {
   const result: string[][] = [];
   
