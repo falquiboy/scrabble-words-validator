@@ -2,19 +2,6 @@ import { SPANISH_LETTERS } from './constants';
 import { processDigraphs, generateAlphagram } from '@/utils/digraphs';
 import { Trie } from '@/utils/trie/types';
 
-// Helper function to generate wildcard combinations
-const generateWildcardCombinations = (base: string, remainingWildcards: number): string[] => {
-  if (remainingWildcards === 0) return [base];
-  
-  const combinations: string[] = [];
-  for (const letter of SPANISH_LETTERS) {
-    // Process the combination immediately
-    const newCombo = base + letter;
-    combinations.push(...generateWildcardCombinations(newCombo, remainingWildcards - 1));
-  }
-  return combinations;
-};
-
 const findExactMatches = (processedInput: string, trie: Trie): Set<string> => {
   const alphagram = generateAlphagram(processedInput);
   const matches = new Set<string>();
