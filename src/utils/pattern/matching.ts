@@ -1,4 +1,4 @@
-import { Trie } from "../trie/types";
+import { Trie } from "../trie";
 import { searchTrie } from "../trie/search";
 import { convertPatternToRegex } from "./conversion";
 
@@ -16,7 +16,8 @@ export const findPatternMatches = async (pattern: string, trie: Trie): Promise<s
   
   try {
     // Get all words from trie that match the pattern
-    const matches = await searchTrie(trie, regexPattern, rackPart);
+    // Pass the root node of the trie instead of the trie instance
+    const matches = await searchTrie(trie.getRoot(), regexPattern, rackPart);
     return matches;
   } catch (error) {
     console.error('Error in pattern matching:', error);
