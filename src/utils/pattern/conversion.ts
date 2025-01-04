@@ -1,18 +1,18 @@
 export const convertPatternToRegex = (pattern: string): RegExp => {
-  // Replace ? with . for single character matching
-  let regexPattern = pattern.replace(/\?/g, '.');
+  let regexStr = pattern
+    .replace(/\?/g, '.')  // Convert ? to . (any single character)
+    .replace(/\^/g, '^')  // Keep start anchor
+    .replace(/\$/g, '$'); // Keep end anchor
   
-  // Handle anchors - don't add .* if anchors are present
-  if (!pattern.includes('^') && !pattern.includes('$')) {
-    regexPattern = `.*${regexPattern}.*`;
-  } else {
-    // Remove existing anchors to prevent doubles
-    regexPattern = regexPattern.replace(/^\^/, '').replace(/\$$/, '');
-    // Add them back properly
-    if (pattern.startsWith('^')) regexPattern = '^' + regexPattern;
-    if (pattern.endsWith('$')) regexPattern = regexPattern + '$';
+  // If pattern doesn't start with ^, allow any characters at start
+  if (!pattern.startsWith('^')) {
+    regexStr = '.*' + regexStr;
   }
-
-  // Create regex with case insensitivity
-  return new RegExp(`${regexPattern}`, 'i');
+  
+  // If pattern doesn't end with $, allow any characters at end
+  if (!pattern.endsWith('$')) {
+    regexStr = regexStr + '.*';
+  }
+  
+  return new RegExp(`^${regexStr}$`, 'i');
 };
