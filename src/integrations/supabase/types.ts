@@ -132,7 +132,7 @@ export type Database = {
           last_practice_group: number | null
           last_practice_index: number | null
           last_word_index: number
-          solved_words: string[] | null
+          solved_challenges: Json | null
           updated_at: string | null
           user_id: string
         }
@@ -142,7 +142,7 @@ export type Database = {
           last_practice_group?: number | null
           last_practice_index?: number | null
           last_word_index?: number
-          solved_words?: string[] | null
+          solved_challenges?: Json | null
           updated_at?: string | null
           user_id: string
         }
@@ -152,7 +152,7 @@ export type Database = {
           last_practice_group?: number | null
           last_practice_index?: number | null
           last_word_index?: number
-          solved_words?: string[] | null
+          solved_challenges?: Json | null
           updated_at?: string | null
           user_id?: string
         }

@@ -1,6 +1,10 @@
+import { useState, useEffect } from "react";
+import { findAnagrams } from "@/hooks/anagramSearch/utils";
+import { findPatternMatches } from "@/utils/pattern/matching";
+import { Trie } from "@/utils/trie/types";
+import { SearchResults } from "./anagramSearch/types";
 import { SPANISH_LETTERS } from './constants';
 import { processDigraphs, generateAlphagram } from '@/utils/digraphs';
-import { Trie } from '@/utils/trie/types';
 
 // Helper function to generate wildcard combinations
 export const generateWildcardCombinations = (base: string, remainingWildcards: number): string[] => {
@@ -79,13 +83,13 @@ const generateCombinations = (arr: string[], len: number): string[][] => {
 const findAdditionalMatches = (baseLetters: string, wildcardCount: number, trie: Trie): Set<string> => {
   const matches = new Set<string>();
   
-  // Primero procesamos los dígrafos del input base
+  // First process the digraphs of the input base
   const processedBase = processDigraphs(baseLetters);
   console.log('Base procesada:', processedBase);
   
-  // Para cada letra adicional, la agregamos directamente sin procesar más dígrafos
+  // For each Spanish letter (including digraphs), add it to the processed base
   for (const letter of SPANISH_LETTERS) {
-    // Concatenamos la letra directamente al final
+    // Create new combination by adding the letter (which might be a digraph)
     const newCombo = processedBase + letter;
     console.log('Nueva combinación con letra adicional:', newCombo);
     
@@ -96,12 +100,12 @@ const findAdditionalMatches = (baseLetters: string, wildcardCount: number, trie:
     baseMatches.forEach(match => matches.add(match));
   }
   
-  // Manejamos los comodines de manera similar
+  // Handle wildcards similarly
   if (wildcardCount > 0) {
     const wildcardCombos = generateWildcardCombinations(processedBase, wildcardCount);
     for (const combo of wildcardCombos) {
       for (const letter of SPANISH_LETTERS) {
-        // Agregamos la letra adicional directamente
+        // Add the letter (which might be a digraph) directly
         const newCombo = combo + letter;
         const alphagram = generateAlphagram(newCombo);
         const comboMatches = trie.findAnagrams(alphagram);
