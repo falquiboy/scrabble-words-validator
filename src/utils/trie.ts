@@ -2,6 +2,7 @@ import { TrieNode, LengthIndexedTrie, SerializedTrie, SerializedTrieNode } from 
 import { createNode, findNode, collectWords } from './trie/nodeOperations';
 import { findWordsByLength, findWordsByAlphagram } from './trie/indexing';
 import { search } from './trie/search';
+import { sortSpanishLetters } from './spanishSort';
 
 export class Trie {
   private root: TrieNode;
@@ -46,6 +47,10 @@ export class Trie {
     }
     
     this.lengthIndex[length][alphagram].push(originalWord);
+  }
+
+  private sortLetters(letters: string): string {
+    return sortSpanishLetters(letters);
   }
 
   search(word: string): boolean {
@@ -132,10 +137,6 @@ export class Trie {
       }
       this.lengthIndex[length][alphagram].push(word);
     });
-  }
-
-  private sortLetters(letters: string): string {
-    return letters.split('').sort().join('');
   }
 }
 
