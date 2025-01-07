@@ -28,9 +28,11 @@ export const processDigraphs = (input: string): string => {
   result = result.replace(/#/g, 'Ñ');
   
   // Process digraphs in a specific order
-  Object.entries(DIGRAPHS).forEach(([digraph, replacement]) => {
-    result = result.replace(new RegExp(digraph, 'g'), replacement);
-  });
+  // First, handle CH to avoid conflicts
+  result = result.replace(/CH/g, 'Ç');
+  // Then handle the rest
+  result = result.replace(/LL/g, 'K');
+  result = result.replace(/RR/g, 'W');
   
   return result;
 };
@@ -44,22 +46,11 @@ export const toDisplayFormat = (word: string): string => {
   let result = word;
   
   // Convert back in reverse order to avoid conflicts
-  Object.entries(DIGRAPHS).forEach(([digraph, replacement]) => {
-    result = result.replace(new RegExp(replacement, 'g'), digraph);
-  });
+  result = result.replace(/W/g, 'RR');
+  result = result.replace(/K/g, 'LL');
+  result = result.replace(/Ç/g, 'CH');
   
   return result;
-};
-
-/**
- * Generates an alphagram (sorted letters) from input
- */
-export const generateAlphagram = (input: string): string => {
-  return [...input].sort((a, b) => {
-    const posA = CUSTOM_ALPHABET.indexOf(a);
-    const posB = CUSTOM_ALPHABET.indexOf(b);
-    return posA - posB;
-  }).join('');
 };
 
 /**

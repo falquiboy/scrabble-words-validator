@@ -3,6 +3,7 @@ import { createNode, findNode, collectWords } from './trie/nodeOperations';
 import { findWordsByLength, findWordsByAlphagram } from './trie/indexing';
 import { search } from './trie/search';
 import { sortSpanishLetters } from './spanishSort';
+import { processDigraphs } from './digraphs';
 
 export class Trie {
   private root: TrieNode;
@@ -23,9 +24,11 @@ export class Trie {
   }
 
   insert(word: string, originalWord: string): void {
+    // Primero procesamos los dígrafos
+    const processedWord = processDigraphs(word);
     let current = this.root;
     
-    for (const char of word) {
+    for (const char of processedWord) {
       if (!current.children.has(char)) {
         current.children.set(char, createNode());
       }
@@ -36,12 +39,12 @@ export class Trie {
     current.word = originalWord;
 
     // Update length index
-    const length = word.length;
+    const length = processedWord.length;
     if (!this.lengthIndex[length]) {
       this.lengthIndex[length] = {};
     }
     
-    const alphagram = this.sortLetters(word);
+    const alphagram = this.sortLetters(processedWord);
     if (!this.lengthIndex[length][alphagram]) {
       this.lengthIndex[length][alphagram] = [];
     }
@@ -54,12 +57,13 @@ export class Trie {
   }
 
   search(word: string): boolean {
-    return search(this.root, word);
+    return search(this.root, processDigraphs(word));
   }
 
   findAnagrams(letters: string): string[] {
-    const length = letters.length;
-    const alphagram = this.sortLetters(letters);
+    const processedLetters = processDigraphs(letters);
+    const length = processedLetters.length;
+    const alphagram = this.sortLetters(processedLetters);
     return findWordsByAlphagram(this.lengthIndex, length, alphagram);
   }
 
@@ -74,7 +78,8 @@ export class Trie {
   }
 
   getWordsStartingWith(prefix: string): string[] {
-    const node = findNode(this.root, prefix);
+    const processedPrefix = processDigraphs(prefix);
+    const node = findNode(this.root, processedPrefix);
     if (!node) return [];
     
     const words: string[] = [];
@@ -126,8 +131,9 @@ export class Trie {
     this.lengthIndex = {};
     const words = this.getAllWords();
     words.forEach(word => {
-      const length = word.length;
-      const alphagram = this.sortLetters(word);
+      const processedWord = processDigraphs(word);
+      const length = processedWord.length;
+      const alphagram = this.sortLetters(processedWord);
       
       if (!this.lengthIndex[length]) {
         this.lengthIndex[length] = {};
