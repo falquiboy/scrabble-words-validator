@@ -86,19 +86,16 @@ const findAdditionalMatches = (baseLetters: string, wildcardCount: number, trie:
   
   // For each Spanish letter (including digraphs), add it to the base
   for (const letter of SPANISH_LETTERS) {
-    // For each position in the processed base string
-    for (let i = 0; i <= processedBase.length; i++) {
-      // Insert the additional letter at position i
-      const newCombo = processedBase.slice(0, i) + letter + processedBase.slice(i);
-      console.log('Nueva combinación con letra adicional:', newCombo);
-      
-      // Generate alphagram directly since we're working with internal representation
-      const alphagram = generateAlphagram(newCombo);
-      console.log('Alfagrama generado:', alphagram);
-      
-      const comboMatches = trie.findAnagrams(alphagram);
-      comboMatches.forEach(match => matches.add(match));
-    }
+    // Create new combination by adding the letter directly (no need to process digraphs again)
+    const newCombo = processedBase + letter;
+    console.log('Nueva combinación con letra adicional:', newCombo);
+    
+    // Generate alphagram directly since letters are already in internal representation
+    const alphagram = generateAlphagram(newCombo);
+    console.log('Alfagrama generado:', alphagram);
+    
+    const baseMatches = trie.findAnagrams(alphagram);
+    baseMatches.forEach(match => matches.add(match));
   }
   
   // Handle wildcards similarly
@@ -106,14 +103,11 @@ const findAdditionalMatches = (baseLetters: string, wildcardCount: number, trie:
     const wildcardCombos = generateWildcardCombinations(processedBase, wildcardCount);
     for (const combo of wildcardCombos) {
       for (const letter of SPANISH_LETTERS) {
-        // For each position in the combo
-        for (let i = 0; i <= combo.length; i++) {
-          // Insert the additional letter at position i
-          const newCombo = combo.slice(0, i) + letter + combo.slice(i);
-          const alphagram = generateAlphagram(newCombo);
-          const comboMatches = trie.findAnagrams(alphagram);
-          comboMatches.forEach(match => matches.add(match));
-        }
+        // Add letter directly since both combo and letter are in internal representation
+        const newCombo = combo + letter;
+        const alphagram = generateAlphagram(newCombo);
+        const comboMatches = trie.findAnagrams(alphagram);
+        comboMatches.forEach(match => matches.add(match));
       }
     }
   }
