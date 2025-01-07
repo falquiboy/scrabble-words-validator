@@ -5,9 +5,6 @@ const DIGRAPHS = {
   RR: 'W'
 } as const;
 
-// Custom alphabet order for sorting
-const CUSTOM_ALPHABET = "AEIOUBCÇDFGHJLKMNÑPQRWSTVXYZ";
-
 /**
  * Processes digraphs in a word, converting them to internal representation
  * This handles the complete normalization process including case conversion and accents
@@ -31,11 +28,9 @@ export const processDigraphs = (input: string): string => {
   result = result.replace(/#/g, 'Ñ');
   
   // Process digraphs in a specific order
-  // First, handle CH to avoid conflicts
-  result = result.replace(/CH/g, 'Ç');
-  // Then handle the rest
-  result = result.replace(/LL/g, 'K');
-  result = result.replace(/RR/g, 'W');
+  Object.entries(DIGRAPHS).forEach(([digraph, replacement]) => {
+    result = result.replace(new RegExp(digraph, 'g'), replacement);
+  });
   
   return result;
 };
@@ -49,22 +44,18 @@ export const toDisplayFormat = (word: string): string => {
   let result = word;
   
   // Convert back in reverse order to avoid conflicts
-  result = result.replace(/W/g, 'RR');
-  result = result.replace(/K/g, 'LL');
-  result = result.replace(/Ç/g, 'CH');
+  Object.entries(DIGRAPHS).forEach(([digraph, replacement]) => {
+    result = result.replace(new RegExp(replacement, 'g'), digraph);
+  });
   
   return result;
 };
 
 /**
  * Generates an alphagram (sorted letters) from input
- * Ensures digraphs are processed before sorting
  */
 export const generateAlphagram = (input: string): string => {
-  // First process digraphs to ensure consistent handling
-  const processedInput = processDigraphs(input);
-  
-  return [...processedInput].sort((a, b) => {
+  return [...input].sort((a, b) => {
     const posA = CUSTOM_ALPHABET.indexOf(a);
     const posB = CUSTOM_ALPHABET.indexOf(b);
     return posA - posB;
@@ -82,3 +73,6 @@ export const getInternalLength = (word: string): number => {
   // Now the length will be correct as each digraph is represented by one character
   return processed.length;
 };
+
+// Custom alphabet order for sorting
+const CUSTOM_ALPHABET = "AEIOUBCÇDFGHJLKMNÑPQRWSTVXYZ";

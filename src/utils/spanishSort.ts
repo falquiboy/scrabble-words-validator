@@ -5,7 +5,6 @@ const SPANISH_ALPHABET = "AEIOUBCÇDFGHJLKMNÑPQRWSTVXYZ";
  * Ordena un string según el orden del alfabeto español
  */
 export const sortSpanishLetters = (input: string): string => {
-  // Primero procesamos los dígrafos para asegurar consistencia
   return [...input].sort((a, b) => {
     const posA = SPANISH_ALPHABET.indexOf(a);
     const posB = SPANISH_ALPHABET.indexOf(b);
