@@ -22,13 +22,13 @@ export const validateAndCleanAnagramInput = (value: string) => {
     // Clean letters part (allow A-Z, Ñ, Ç, *, and commas)
     const cleanLetters = letters.replace(/[^A-ZÑÇKW*,]/g, '');
     
+    // Return the cleaned format with slash
     return cleanLetters + '/' + cleanLength;
   }
   
   // If no slash, just clean input
-  // Allow slash in the input by not removing it in the regex
-  // Now allowing Ç explicitly in the regex
-  return value.replace(/[^A-ZÑÇKW*,/0-9]/g, '');
+  // Now explicitly allowing slash in the input
+  return value.replace(/[^A-ZÑÇKW*,\/0-9]/g, '');
 };
 
 export const validateAndCleanPatternInput = (value: string) => {
