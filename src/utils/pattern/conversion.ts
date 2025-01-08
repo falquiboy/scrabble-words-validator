@@ -15,8 +15,8 @@ export const convertPatternToRegex = (pattern: string): RegExp => {
     regexStr = '.*' + regexStr;
   }
   
-  // Don't add .* at the end if we have a $ anchor or already ends with .*
-  if (!regexStr.endsWith('$') && !regexStr.endsWith('.*')) {
+  // Always add .* at the end for prefix patterns to match rest of word
+  if (!regexStr.endsWith('$')) {
     regexStr = regexStr + '.*';
   }
   

@@ -25,8 +25,8 @@ export const translateHyphenPattern = (pattern: string): string => {
   } else if (cleanPattern.endsWith('-')) {
     // CON- → ^CON.*
     const startPattern = cleanPattern.slice(0, -1);
-    // Add the ^ anchor to ensure it matches from the start
-    return startPattern ? `^${startPattern}.*` : pattern;
+    // Add the ^ anchor and ensure it only matches from the start
+    return startPattern ? `^${startPattern}` : pattern;
   }
 
   return pattern;
