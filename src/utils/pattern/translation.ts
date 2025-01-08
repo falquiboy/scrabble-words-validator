@@ -25,6 +25,7 @@ export const translateHyphenPattern = (pattern: string): string => {
   } else if (cleanPattern.endsWith('-')) {
     // CON- → ^CON
     const startPattern = cleanPattern.slice(0, -1);
+    // Ensure we add the ^ anchor and don't allow any characters before
     return startPattern ? `^${startPattern}` : pattern;
   }
 
