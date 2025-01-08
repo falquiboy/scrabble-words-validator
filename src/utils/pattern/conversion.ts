@@ -9,9 +9,13 @@ export const convertPatternToRegex = (pattern: string): RegExp => {
   
   // Only add .* at start/end if there are no explicit anchors
   let regexStr = translatedPattern;
+  
+  // Don't add .* at the start if we have a ^ anchor
   if (!regexStr.startsWith('^')) {
     regexStr = '.*' + regexStr;
   }
+  
+  // Don't add .* at the end if we have a $ anchor or already ends with .*
   if (!regexStr.endsWith('$') && !regexStr.endsWith('.*')) {
     regexStr = regexStr + '.*';
   }
