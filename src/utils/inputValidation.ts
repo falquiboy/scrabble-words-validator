@@ -11,22 +11,23 @@ export const validateAndCleanAnagramInput = (value: string) => {
   
   if (parts.length > 2) {
     // Keep only the first slash
-    return parts[0] + '/' + parts[1];
+    const [letters, lengthStr, ...rest] = parts;
+    return letters + '/' + lengthStr;
   }
   
   if (parts.length === 2) {
     const [letters, lengthStr] = parts;
-    // Only allow numbers after the slash
-    const cleanLength = lengthStr.replace(/[^0-9]/g, '');
-    
     // Clean letters part (allow A-Z, Ñ, Ç, *, and commas)
     const cleanLetters = letters.replace(/[^A-ZÑÇKW*,]/g, '');
+    
+    // Only allow numbers after the slash
+    const cleanLength = lengthStr.replace(/[^0-9]/g, '');
     
     // Return the cleaned format with slash
     return cleanLetters + '/' + cleanLength;
   }
   
-  // If no slash, just clean input (allow letters and slash)
+  // If no slash, just clean input (allow A-Z, Ñ, Ç, *, commas and slash)
   return value.replace(/[^A-ZÑÇKW*,\/]/g, '');
 };
 
