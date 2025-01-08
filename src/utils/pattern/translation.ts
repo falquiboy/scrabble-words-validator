@@ -1,7 +1,7 @@
 /**
  * Translates hyphen-based patterns into regex-compatible patterns
  * -CON → CON$ (ends with)
- * CON- → ^CON (starts with)
+ * CON- → ^CON.* (starts with, followed by anything)
  * -CON- → .*CON.* (contains)
  */
 export const translateHyphenPattern = (pattern: string): string => {
@@ -23,10 +23,10 @@ export const translateHyphenPattern = (pattern: string): string => {
     const endPattern = cleanPattern.slice(1);
     return endPattern ? `${endPattern}$` : pattern;
   } else if (cleanPattern.endsWith('-')) {
-    // CON- → ^CON
+    // CON- → ^CON.*
     const startPattern = cleanPattern.slice(0, -1);
-    // Add the ^ anchor and remove the .* prefix that was being added in convertPatternToRegex
-    return startPattern ? `^${startPattern}` : pattern;
+    // Add the ^ anchor and .* suffix to match anything after the prefix
+    return startPattern ? `^${startPattern}.*` : pattern;
   }
 
   return pattern;
