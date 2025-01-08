@@ -21,35 +21,30 @@ export const search = (node: TrieNode, word: string): boolean => {
 };
 
 export const searchTrie = async (trie: TrieNode, pattern: RegExp, rackLetters: string = ''): Promise<string[]> => {
-  console.log('Searching trie with pattern:', pattern);
   const matches: string[] = [];
   
   const searchNode = (node: TrieNode, currentWord: string) => {
-    if (node.isEndOfWord) {
-      console.log('Testing word against pattern:', currentWord);
-      if (pattern.test(currentWord)) {
-        console.log('Word matches pattern:', currentWord);
-        // If we have rack letters, validate them
-        if (rackLetters) {
-          const availableLetters = [...rackLetters.toUpperCase()];
-          const wordLetters = [...currentWord];
-          let isValid = true;
-          
-          for (const letter of wordLetters) {
-            const index = availableLetters.indexOf(letter);
-            if (index === -1) {
-              isValid = false;
-              break;
-            }
-            availableLetters.splice(index, 1);
+    if (node.isEndOfWord && pattern.test(currentWord)) {
+      // If we have rack letters, validate them
+      if (rackLetters) {
+        const availableLetters = [...rackLetters.toUpperCase()];
+        const wordLetters = [...currentWord];
+        let isValid = true;
+        
+        for (const letter of wordLetters) {
+          const index = availableLetters.indexOf(letter);
+          if (index === -1) {
+            isValid = false;
+            break;
           }
-          
-          if (isValid) {
-            matches.push(node.word);
-          }
-        } else {
+          availableLetters.splice(index, 1);
+        }
+        
+        if (isValid) {
           matches.push(node.word);
         }
+      } else {
+        matches.push(node.word);
       }
     }
     
@@ -59,6 +54,5 @@ export const searchTrie = async (trie: TrieNode, pattern: RegExp, rackLetters: s
   };
   
   searchNode(trie, '');
-  console.log('Found matches:', matches);
   return matches;
 };

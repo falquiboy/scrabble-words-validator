@@ -1,6 +1,4 @@
 export const convertPatternToRegex = (pattern: string): RegExp => {
-  console.log('Converting pattern to regex:', pattern);
-  
   let regexStr = pattern
     .replace(/\?/g, '.')  // Convert ? to . (any single character)
     .replace(/\^/g, '^')  // Keep start anchor
@@ -16,6 +14,5 @@ export const convertPatternToRegex = (pattern: string): RegExp => {
     regexStr = regexStr + '.*';
   }
   
-  console.log('Generated regex string:', regexStr);
   return new RegExp(`^${regexStr}$`, 'i');
 };

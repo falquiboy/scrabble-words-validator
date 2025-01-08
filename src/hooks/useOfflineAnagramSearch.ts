@@ -26,11 +26,8 @@ export const useOfflineAnagramSearch = async (
     };
   }
 
-  // Check if it's a pattern search (includes ?, -, ^ or $)
-  const isPatternSearch = searchTerm.includes('?') || 
-                         searchTerm.includes('-') || 
-                         searchTerm.includes('^') || 
-                         searchTerm.includes('$');
+  // Check if it's a pattern search
+  const isPatternSearch = searchTerm.includes('?') || searchTerm.includes('-');
   
   if (isPatternSearch) {
     console.log('Executing pattern search for:', searchTerm);

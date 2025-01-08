@@ -29,7 +29,6 @@ const SearchInput = ({
   onClear
 }: SearchInputProps) => {
   const [isPatternMode, setIsPatternMode] = useState(false);
-  const [displayValue, setDisplayValue] = useState("");
   const cursorPositionRef = useRef<number | null>(null);
   
   // Auto-detect pattern mode based on input
@@ -39,20 +38,6 @@ const SearchInput = ({
                            letters.includes('$') || 
                            letters.includes('-');
     setIsPatternMode(hasPatternChars);
-  }, [letters]);
-
-  // Convert internal format back to display format
-  useEffect(() => {
-    let value = letters;
-    // Convert ^WORD to WORD-
-    if (value.startsWith('^')) {
-      value = value.slice(1) + '-';
-    }
-    // Convert WORD$ to -WORD
-    if (value.endsWith('$')) {
-      value = '-' + value.slice(0, -1);
-    }
-    setDisplayValue(value);
   }, [letters]);
 
   useEffect(() => {
@@ -75,7 +60,7 @@ const SearchInput = ({
       );
       cursorPositionRef.current = null;
     }
-  }, [displayValue]);
+  }, [letters]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     cursorPositionRef.current = e.target.selectionStart;
@@ -83,6 +68,8 @@ const SearchInput = ({
     
     // Automatically determine which validation to use based on input
     const hasPatternChars = value.includes('?') || 
+                           value.includes('^') || 
+                           value.includes('$') || 
                            value.includes('-');
     
     value = hasPatternChars ? 
@@ -112,7 +99,7 @@ const SearchInput = ({
                 ? "Ingresa un patrón" 
                 : "asterisco es comodín"
             }
-            value={displayValue}
+            value={letters}
             onChange={handleInputChange}
             onKeyDown={onKeyPress}
             className="text-xl h-12 text-left pr-12 border border-gray-200 rounded-md w-full"
