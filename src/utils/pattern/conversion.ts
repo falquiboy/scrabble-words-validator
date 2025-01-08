@@ -1,3 +1,5 @@
+import { translateHyphenPattern } from './translation';
+
 export const convertPatternToRegex = (pattern: string): RegExp => {
   // First translate any hyphen-based patterns
   const translatedPattern = translateHyphenPattern(pattern)
