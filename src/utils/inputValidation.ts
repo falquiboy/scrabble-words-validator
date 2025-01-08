@@ -26,7 +26,7 @@ export const validateAndCleanAnagramInput = (value: string) => {
     return cleanLetters + '/' + cleanLength;
   }
   
-  // If no slash, just clean input (don't allow numbers in the main input)
+  // If no slash, just clean input (allow letters and slash)
   return value.replace(/[^A-ZÑÇKW*,\/]/g, '');
 };
 
