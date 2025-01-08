@@ -24,15 +24,18 @@ const SearchContainer = ({
   const { toast } = useToast();
 
   const handleInputChange = (value: string) => {
-    setLetters(value);
     let targetLength = null;
+    let cleanedValue = value;
     
+    // Extract target length if present
     const lengthMatch = value.match(/\/(\d+)$/);
     if (lengthMatch) {
       targetLength = parseInt(lengthMatch[1], 10);
-      value = value.replace(/\/\d+$/, '');
+      cleanedValue = value.replace(/\/\d+$/, '');
     }
 
+    // Set the cleaned value in state
+    setLetters(cleanedValue);
     return targetLength;
   };
 
