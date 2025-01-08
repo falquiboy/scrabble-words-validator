@@ -1,16 +1,18 @@
+import { translateHyphenPattern } from './translation';
+
 export const convertPatternToRegex = (pattern: string): RegExp => {
-  let regexStr = pattern
+  // First translate any hyphen-based patterns
+  const translatedPattern = translateHyphenPattern(pattern)
     .replace(/\?/g, '.')  // Convert ? to . (any single character)
     .replace(/\^/g, '^')  // Keep start anchor
     .replace(/\$/g, '$'); // Keep end anchor
   
-  // If pattern doesn't start with ^, allow any characters at start
-  if (!pattern.startsWith('^')) {
+  // If pattern doesn't have explicit anchors, allow any characters at start/end
+  let regexStr = translatedPattern;
+  if (!translatedPattern.startsWith('^') && !translatedPattern.startsWith('.*')) {
     regexStr = '.*' + regexStr;
   }
-  
-  // If pattern doesn't end with $, allow any characters at end
-  if (!pattern.endsWith('$')) {
+  if (!translatedPattern.endsWith('$') && !translatedPattern.endsWith('.*')) {
     regexStr = regexStr + '.*';
   }
   
