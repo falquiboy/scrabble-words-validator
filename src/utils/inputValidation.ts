@@ -20,14 +20,14 @@ export const validateAndCleanAnagramInput = (value: string) => {
     const cleanLength = lengthStr.replace(/[^0-9]/g, '');
     
     // Clean letters part (allow A-Z, Ñ, Ç, *, and commas)
-    const cleanLetters = letters.replace(/[^A-ZÑÇKW*,]/g, '');
+    const cleanLetters = letters.replace(/[^A-ZÑÇKW*,0-9]/g, '');
     
     // Return the cleaned format with slash
     return cleanLetters + '/' + cleanLength;
   }
   
   // If no slash, just clean input
-  // Now explicitly allowing slash in the input
+  // Now explicitly allowing slash and numbers in the input
   return value.replace(/[^A-ZÑÇKW*,\/0-9]/g, '');
 };
 
