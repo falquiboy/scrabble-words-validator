@@ -6,17 +6,26 @@ export const findPatternMatches = async (pattern: string, trie: Trie): Promise<s
   // Split pattern and rack if comma exists
   const [patternPart, rackPart] = pattern.includes(',') ? pattern.split(',') : [pattern, ''];
   
-  // Convert hyphens to wildcards for any position
-  const processedPattern = patternPart
-    .replace(/\-/g, '?') // Convert hyphens to question marks (single character wildcards)
-    .replace(/\?\?+/g, '?'); // Collapse multiple consecutive wildcards
+  console.log('Pattern before processing:', patternPart);
+  
+  // Convert hyphens to anchors
+  let processedPattern = patternPart;
+  if (processedPattern.startsWith('-')) {
+    processedPattern = processedPattern.slice(1) + '$';
+  } else if (processedPattern.endsWith('-')) {
+    processedPattern = '^' + processedPattern.slice(0, -1);
+  }
+  
+  console.log('Pattern after processing:', processedPattern);
   
   // Create regex pattern
   const regexPattern = convertPatternToRegex(processedPattern);
+  console.log('Regex pattern:', regexPattern);
   
   try {
     // Get all words from trie that match the pattern
     const matches = await searchTrie(trie.getRoot(), regexPattern, rackPart);
+    console.log('Found matches:', matches);
     return matches;
   } catch (error) {
     console.error('Error in pattern matching:', error);
