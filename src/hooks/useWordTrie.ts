@@ -11,6 +11,8 @@ export const useWordTrie = () => {
   const [loadingProgress, setLoadingProgress] = useState(0);
 
   const initTrie = useCallback(async () => {
+    if (!isLoading) return;
+    
     try {
       console.log('Iniciando carga del diccionario binario...');
       const startTime = performance.now();
@@ -29,6 +31,7 @@ export const useWordTrie = () => {
         trie.insert(upperWord, upperWord);
         processed++;
         
+        // Actualizar progreso cada 1%
         const progress = Math.floor((processed / totalWords) * 100);
         if (progress > loadingProgress) {
           setLoadingProgress(progress);
@@ -48,7 +51,7 @@ export const useWordTrie = () => {
       setIsLoading(false);
       setLoadingProgress(100);
     }
-  }, [trie, loadingProgress]);
+  }, [isLoading, trie]); // Removida la dependencia de loadingProgress
 
   useEffect(() => {
     initTrie();
