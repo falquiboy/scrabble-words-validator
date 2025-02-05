@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync } from 'fs';
-import { sortSpanishLetters } from '../utils/spanishSort';
+import { sortSpanishLetters } from './utils/spanishSort';
 
 interface Word {
   word: string;
@@ -32,29 +32,38 @@ function readWordsFromFile(): string[] {
 
 function processWords(words: string[]): DictionaryData {
   console.log('Procesando palabras...');
-  const processedWords: Word[] = words.map(word => ({
-    word: word.toUpperCase(),
-    alphagram: sortSpanishLetters(word.toUpperCase()),
-    length: word.length
-  }));
-
-  // Crear índices
+  
+  // Crear arrays para almacenar datos e índices
+  const processedWords: Word[] = new Array(words.length);
   const lengthIndex = new Map<number, number[]>();
   const alphagramIndex = new Map<string, number[]>();
-
-  processedWords.forEach((word, index) => {
-    // Índice por longitud
-    if (!lengthIndex.has(word.length)) {
-      lengthIndex.set(word.length, []);
+  
+  // Procesar palabras en un solo bucle
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i].toUpperCase();
+    const alphagram = sortSpanishLetters(word);
+    const length = word.length;
+    
+    // Almacenar palabra procesada
+    processedWords[i] = { word, alphagram, length };
+    
+    // Actualizar índice por longitud
+    if (!lengthIndex.has(length)) {
+      lengthIndex.set(length, []);
     }
-    lengthIndex.get(word.length)!.push(index);
-
-    // Índice por alfagrama
-    if (!alphagramIndex.has(word.alphagram)) {
-      alphagramIndex.set(word.alphagram, []);
+    lengthIndex.get(length)!.push(i);
+    
+    // Actualizar índice por alfagrama
+    if (!alphagramIndex.has(alphagram)) {
+      alphagramIndex.set(alphagram, []);
     }
-    alphagramIndex.get(word.alphagram)!.push(index);
-  });
+    alphagramIndex.get(alphagram)!.push(i);
+    
+    // Mostrar progreso cada 10000 palabras
+    if ((i + 1) % 10000 === 0) {
+      console.log(`Procesadas ${i + 1} palabras...`);
+    }
+  }
 
   const header: DictionaryHeader = {
     magic: 'DICT',
@@ -178,13 +187,11 @@ async function main() {
     const binary = serializeDictionary(data);
     console.log(`Tamaño del binario: ${binary.byteLength} bytes`);
 
-    // Escribir el archivo con el tipo MIME correcto
     const binaryBuffer = Buffer.from(binary);
     writeFileSync('public/dictionary.bin', binaryBuffer, {
       encoding: null
     });
     
-    // Crear archivo .htaccess para asegurar el tipo MIME correcto
     writeFileSync('public/.htaccess', 
       'AddType application/octet-stream .bin\n' +
       '<Files "dictionary.bin">\n' +
