@@ -1,9 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { wordDB } from '@/services/WordDatabase';
 import { Trie } from '@/utils/trie';
 import { toast } from 'sonner';
-import { fetchAllWords } from '@/utils/wordFetcher';
-import { buildTrieFromWords, loadCachedTrie, saveTrie } from '@/utils/trieOperations';
+import { loadDictionary } from '@/utils/dictionary/loader';
 
 export const useWordTrie = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -12,83 +10,49 @@ export const useWordTrie = () => {
   const [wordCount, setWordCount] = useState(0);
   const [loadingProgress, setLoadingProgress] = useState(0);
 
-  const fetchWordsFromDB = async () => {
+  const initTrie = useCallback(async () => {
     try {
-      let words = await wordDB.getAllWords();
-      console.log('Words in local database:', words.length);
-
-      if (words.length === 0) {
-        console.log('Local DB empty, fetching from Supabase...');
-        words = await fetchAllWords(0, setLoadingProgress);
+      console.log('Iniciando carga del diccionario binario...');
+      const startTime = performance.now();
+      
+      // Cargar el diccionario binario
+      const dictionary = await loadDictionary();
+      console.log('Diccionario cargado:', dictionary);
+      
+      // Construir el trie con las palabras del diccionario
+      trie.clear();
+      let processed = 0;
+      const totalWords = dictionary.words.length;
+      
+      for (const { word } of dictionary.words) {
+        const upperWord = word.toUpperCase();
+        trie.insert(upperWord, upperWord);
+        processed++;
         
-        // Clear and rebuild local DB
-        await wordDB.clear();
-        await wordDB.addWords(words);
-        console.log('Words stored in local DB:', words.length);
+        const progress = Math.floor((processed / totalWords) * 100);
+        if (progress > loadingProgress) {
+          setLoadingProgress(progress);
+        }
       }
       
-      return words;
-    } catch (error) {
-      console.error('Error fetching words:', error);
-      throw error;
-    }
-  };
-
-  const buildTrie = useCallback(async () => {
-    try {
-      const cachedWordCount = await loadCachedTrie(trie);
+      setWordCount(totalWords);
+      const endTime = performance.now();
+      console.log(`Trie construido en ${((endTime - startTime) / 1000).toFixed(2)}s con ${totalWords} palabras`);
       
-      if (cachedWordCount > 0) {
-        setWordCount(cachedWordCount);
-        console.log('Trie loaded from cache with', cachedWordCount, 'words');
-        return true;
-      }
-      
-      return false;
     } catch (err) {
-      console.error('Error loading cached trie:', err);
-      return false;
-    }
-  }, [trie]);
-
-  const fetchAndBuildTrie = useCallback(async () => {
-    try {
-      const words = await fetchWordsFromDB();
-      console.log(`Building trie with ${words.length} words...`);
-
-      await buildTrieFromWords(words, trie, setLoadingProgress);
-      await saveTrie(trie);
-
-      setWordCount(words.length);
-      console.log('Trie built and cached successfully with', words.length, 'words');
-    } catch (err) {
-      console.error('Error building trie:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to initialize trie';
+      console.error('Error al cargar el diccionario:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Error al cargar el diccionario';
       setError(new Error(errorMessage));
       toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+      setLoadingProgress(100);
     }
-  }, [trie]);
+  }, [trie, loadingProgress]);
 
   useEffect(() => {
-    const initTrie = async () => {
-      try {
-        const loadedFromCache = await buildTrie();
-        if (!loadedFromCache) {
-          await fetchAndBuildTrie();
-        }
-      } catch (err) {
-        console.error('Error initializing trie:', err);
-        const errorMessage = err instanceof Error ? err.message : 'Failed to initialize trie';
-        setError(new Error(errorMessage));
-        toast.error(errorMessage);
-      } finally {
-        setIsLoading(false);
-        setLoadingProgress(100);
-      }
-    };
-
     initTrie();
-  }, [buildTrie, fetchAndBuildTrie]);
+  }, [initTrie]);
 
   return { isLoading, error, wordCount, trie, loadingProgress };
 };
