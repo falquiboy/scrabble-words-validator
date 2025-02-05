@@ -183,8 +183,21 @@ async function main() {
     const binary = serializeDictionary(data);
     console.log(`Binary size: ${binary.byteLength} bytes`);
 
-    writeFileSync('public/dictionary.bin', Buffer.from(binary));
-    console.log('Dictionary binary saved to public/dictionary.bin');
+    // Escribir el archivo con el tipo MIME correcto
+    const binaryBuffer = Buffer.from(binary);
+    writeFileSync('public/dictionary.bin', binaryBuffer, {
+      encoding: null
+    });
+    
+    // También crear un archivo .htaccess para asegurar el tipo MIME correcto
+    writeFileSync('public/.htaccess', 
+      'AddType application/octet-stream .bin\n' +
+      '<Files "dictionary.bin">\n' +
+      '  Header set Content-Type "application/octet-stream"\n' +
+      '</Files>'
+    );
+
+    console.log('Dictionary binary and .htaccess saved to public/');
   } catch (error) {
     console.error('Error generating dictionary:', error);
     process.exit(1);
