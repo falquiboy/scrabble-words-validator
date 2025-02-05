@@ -27,7 +27,7 @@ const Lists = () => {
       }
 
       const { data: words, error } = await supabase
-        .rpc('execute_natural_query', { query_text: processedQuery.sql });
+        .rpc('execute_natural_search', { query_text: processedQuery.sql });
 
       if (error) {
         toast.error('Error al ejecutar la consulta');
@@ -35,7 +35,8 @@ const Lists = () => {
         return;
       }
 
-      setResults(words || []);
+      // Type assertion since we know the shape of the data
+      setResults((words || []).map((w: { word: string }) => w.word));
       
       // Store query in history
       await supabase.from('query_history').insert({

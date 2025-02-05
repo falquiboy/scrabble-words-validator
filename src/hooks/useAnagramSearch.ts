@@ -9,6 +9,12 @@ const SPANISH_LETTERS = ["A", "B", "C", "Ç", "CH", "D", "E", "F", "G", "H", "I"
 // Increased batch size for more efficient querying
 const BATCH_SIZE = 50;
 
+type AnagramResults = {
+  exactMatches: string[];
+  wildcardMatches: string[];
+  additionalWildcardMatches: string[];
+};
+
 export const useAnagramSearch = (searchTerm: string) => {
   // Memoize the initial processing of the search term
   const { wildcardCount, processedInput, targetAlphagram, inputLength } = useMemo(() => {
@@ -23,7 +29,7 @@ export const useAnagramSearch = (searchTerm: string) => {
     };
   }, [searchTerm]);
 
-  return useQuery({
+  return useQuery<AnagramResults, Error>({
     queryKey: ["words", searchTerm],
     queryFn: async () => {
       if (!searchTerm) return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [] };
@@ -107,7 +113,7 @@ export const useAnagramSearch = (searchTerm: string) => {
             .in('alphagram', alphagrams);
 
           if (error) {
-            console.error(`Supabase error for additional batch ${i}:`, error);
+            console.error(`Supabase error for batch ${i}:`, error);
             continue;
           }
 
