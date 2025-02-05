@@ -68,7 +68,7 @@ export type Database = {
             columns: ["root_word", "alphagram", "lenght"]
             isOneToOne: false
             referencedRelation: "words"
-            referencedColumns: ["word", "alphagram", "lenght"]
+            referencedColumns: ["word", "alphagram", "length"]
           },
         ]
       }
@@ -101,6 +101,36 @@ export type Database = {
           },
         ]
       }
+      learning_examples: {
+        Row: {
+          approved_by: string | null
+          conversation_context: Json
+          created_at: string | null
+          id: string
+          notes: string | null
+          original_query: string
+          successful_sql: string
+        }
+        Insert: {
+          approved_by?: string | null
+          conversation_context: Json
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          original_query: string
+          successful_sql: string
+        }
+        Update: {
+          approved_by?: string | null
+          conversation_context?: Json
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          original_query?: string
+          successful_sql?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -122,6 +152,68 @@ export type Database = {
           id?: string
           updated_at?: string
           username?: string | null
+        }
+        Relationships: []
+      }
+      query_feedback: {
+        Row: {
+          created_at: string
+          feedback_type: Database["public"]["Enums"]["feedback_type"]
+          id: string
+          query_id: string
+          user_comment: string | null
+          was_helpful: boolean
+        }
+        Insert: {
+          created_at?: string
+          feedback_type: Database["public"]["Enums"]["feedback_type"]
+          id?: string
+          query_id: string
+          user_comment?: string | null
+          was_helpful: boolean
+        }
+        Update: {
+          created_at?: string
+          feedback_type?: Database["public"]["Enums"]["feedback_type"]
+          id?: string
+          query_id?: string
+          user_comment?: string | null
+          was_helpful?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "query_feedback_query_id_fkey"
+            columns: ["query_id"]
+            isOneToOne: false
+            referencedRelation: "query_history"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      query_history: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          natural_query: string
+          sql_query: string
+          successful: boolean
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          natural_query: string
+          sql_query: string
+          successful?: boolean
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          natural_query?: string
+          sql_query?: string
+          successful?: boolean
         }
         Relationships: []
       }
@@ -164,20 +256,38 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          role: Database["public"]["Enums"]["user_role"] | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       words: {
         Row: {
           alphagram: string | null
-          lenght: number | null
+          length: number | null
           word: string | null
         }
         Insert: {
           alphagram?: string | null
-          lenght?: number | null
+          length?: number | null
           word?: string | null
         }
         Update: {
           alphagram?: string | null
-          lenght?: number | null
+          length?: number | null
           word?: string | null
         }
         Relationships: []
@@ -187,18 +297,68 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      count_letters: {
+        Args: {
+          input_text: string
+        }
+        Returns: {
+          letter: string
+          count: number
+        }[]
+      }
       custom_sort_chars: {
         Args: {
           input_str: string
         }
         Returns: string
       }
-      execute_natural_query: {
+      execute_natural_search: {
         Args: {
           query_text: string
         }
         Returns: {
           word: string
+        }[]
+      }
+      find_exact_anagrams: {
+        Args: {
+          query_text: string
+        }
+        Returns: {
+          word: string
+        }[]
+      }
+      find_plus_one_letter: {
+        Args: {
+          query_text: string
+        }
+        Returns: {
+          word: string
+        }[]
+      }
+      find_shorter_words: {
+        Args: {
+          query_text: string
+        }
+        Returns: {
+          word: string
+        }[]
+      }
+      find_word_variations: {
+        Args: {
+          input_text: string
+        }
+        Returns: {
+          word: string
+          variation_type: string
+          wildcards_used: number
+          sort_order: number
+        }[]
+      }
+      get_spanish_alphabet: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          letter: string
         }[]
       }
       get_words_batch: {
@@ -266,6 +426,12 @@ export type Database = {
       }
     }
     Enums: {
+      feedback_type:
+        | "too_many_results"
+        | "too_few_results"
+        | "not_what_expected"
+        | "exactly_what_needed"
+        | "needs_clarification"
       se_property: "admite la terminación -se"
       sym_property:
         | "sin tratamiento especial"
@@ -273,6 +439,7 @@ export type Database = {
         | "admite participio femenino"
         | "admite participio masculino plural"
         | "no admite terminación -ad, -ed, -id, respectivamente"
+      user_role: "user" | "super_user"
       verb_kind:
         | "Infinitivo de un verbo transitivo"
         | "Infinitivo de un verbo intransitivo"

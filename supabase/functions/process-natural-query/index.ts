@@ -1,4 +1,3 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
@@ -92,22 +91,6 @@ async function generateSQLQuery(query: string, retries = 3): Promise<string> {
   throw new Error('Max retries reached');
 }
 
-async function executeQuery(sqlQuery: string) {
-  try {
-    console.log('Executing SQL query:', sqlQuery);
-    const { data, error } = await supabase.rpc('execute_natural_query', {
-      query_text: sqlQuery
-    });
-
-    if (error) throw error;
-    console.log(`Query returned ${data.length} results`);
-    return data.map((row: any) => row.word);
-  } catch (error) {
-    console.error('Error executing query:', error);
-    throw error;
-  }
-}
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -127,10 +110,8 @@ serve(async (req) => {
     }
 
     const sqlQuery = await generateSQLQuery(query);
-    const results = await executeQuery(sqlQuery);
     
     return new Response(JSON.stringify({ 
-      results,
       sql: sqlQuery
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

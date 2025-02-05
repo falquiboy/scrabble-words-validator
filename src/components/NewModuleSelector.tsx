@@ -10,8 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import { MAX_RACK_LETTERS, MAX_PATTERN_LENGTH } from "@/utils/inputValidation";
 
 interface ModuleSelectorProps {
-  activeModule: 'judge' | 'anagram';
-  onModuleChange: (module: 'judge' | 'anagram') => void;
+  activeModule: 'judge' | 'anagram' | 'lists';
+  onModuleChange: (module: 'judge' | 'anagram' | 'lists') => void;
 }
 
 const NewModuleSelector = ({ activeModule, onModuleChange }: ModuleSelectorProps) => {
@@ -19,53 +19,69 @@ const NewModuleSelector = ({ activeModule, onModuleChange }: ModuleSelectorProps
 
   const showHelp = () => {
     toast({
-      title: activeModule === 'anagram' ? "Modo patrón" : "Búsqueda",
+      title: getModuleTitle(),
       description: (
         <div className="mt-2 space-y-2">
-          {activeModule === 'anagram' ? (
-            <>
-              <p>Busca palabras usando patrones:</p>
-              <ul className="space-y-1 list-disc pl-4">
-                <li><strong>?</strong> - una letra cualquiera</li>
-                <li><strong>^</strong> - inicio de palabra</li>
-                <li><strong>$</strong> - fin de palabra</li>
-                <li>Opcionalmente, después de una coma, ingresa las fichas disponibles (máx. {MAX_RACK_LETTERS})</li>
-                <li><strong>*</strong> - en las fichas, representa cualquier letra</li>
-              </ul>
-              <p className="mt-2">Ejemplos:</p>
-              <ul className="space-y-1 list-disc pl-4">
-                <li>"C?SA" - palabras como CASA, COSA (cualquier letra)</li>
-                <li>"^PAT" - palabras que empiezan con PAT</li>
-                <li>"INA$" - palabras que terminan en INA</li>
-                <li>"^PAT$" - exactamente la palabra PAT</li>
-                <li>"C?SA,CASA" - palabras como CASA, COSA usando las letras CASA</li>
-              </ul>
-            </>
-          ) : (
-            <>
-              <p>Puedes buscar de tres formas:</p>
-              <ul className="space-y-1 list-disc pl-4">
-                <li><strong>Modo normal:</strong> Ingresa letras (máx. {MAX_RACK_LETTERS})</li>
-                <li><strong>Modo patrón:</strong> Usa ?, ^ y $ para buscar patrones específicos</li>
-                <li><strong>Modo natural:</strong> Escribe tu consulta en español</li>
-              </ul>
-              <p className="mt-2">Ejemplos en lenguaje natural:</p>
-              <ul className="space-y-1 list-disc pl-4">
-                <li>"palabras de 5 letras que contienen z"</li>
-                <li>"palabras que empiezan con a y terminan en z"</li>
-                <li>"palabras de 4 letras que empiezan con b"</li>
-              </ul>
-            </>
-          )}
+          {getModuleHelp()}
         </div>
       ),
       duration: 10000,
     });
   };
 
+  const getModuleTitle = () => {
+    switch (activeModule) {
+      case 'lists':
+        return "Generador de listas";
+      case 'anagram':
+        return "Modo patrón";
+      default:
+        return "Búsqueda";
+    }
+  };
+
+  const getModuleHelp = () => {
+    switch (activeModule) {
+      case 'lists':
+        return (
+          <>
+            <p>Genera listas de palabras usando lenguaje natural:</p>
+            <ul className="space-y-1 list-disc pl-4">
+              <li>palabras de 5 letras con dos eles</li>
+              <li>palabras que empiezan con a y terminan en z</li>
+              <li>palabras de 4 letras que empiezan con b</li>
+            </ul>
+          </>
+        );
+      case 'anagram':
+        return (
+          <>
+            <p>Busca palabras usando patrones:</p>
+            <ul className="space-y-1 list-disc pl-4">
+              <li><strong>?</strong> - una letra cualquiera</li>
+              <li><strong>^</strong> - inicio de palabra</li>
+              <li><strong>$</strong> - fin de palabra</li>
+              <li>Opcionalmente, después de una coma, ingresa las fichas disponibles (máx. {MAX_RACK_LETTERS})</li>
+              <li><strong>*</strong> - en las fichas, representa cualquier letra</li>
+            </ul>
+          </>
+        );
+      default:
+        return (
+          <>
+            <p>Puedes buscar de tres formas:</p>
+            <ul className="space-y-1 list-disc pl-4">
+              <li><strong>Modo normal:</strong> Ingresa letras (máx. {MAX_RACK_LETTERS})</li>
+              <li><strong>Modo patrón:</strong> Usa ?, ^ y $ para buscar patrones específicos</li>
+              <li><strong>Modo natural:</strong> Escribe tu consulta en español</li>
+            </ul>
+          </>
+        );
+    }
+  };
+
   return (
     <div className="fixed top-0 left-0 right-0 h-16 bg-white shadow-sm flex items-center px-4">
-      {/* Help button in the upper left corner */}
       <div className="absolute left-4">
         <Tooltip>
           <TooltipTrigger asChild>
@@ -84,7 +100,6 @@ const NewModuleSelector = ({ activeModule, onModuleChange }: ModuleSelectorProps
         </Tooltip>
       </div>
 
-      {/* Module selector buttons in the center */}
       <div className="flex gap-4 mx-auto">
         <Button
           variant={activeModule === 'judge' ? 'default' : 'outline'}
@@ -99,6 +114,13 @@ const NewModuleSelector = ({ activeModule, onModuleChange }: ModuleSelectorProps
           className="w-32"
         >
           Anagramador
+        </Button>
+        <Button
+          variant={activeModule === 'lists' ? 'default' : 'outline'}
+          onClick={() => onModuleChange('lists')}
+          className="w-32"
+        >
+          Listas
         </Button>
       </div>
     </div>
