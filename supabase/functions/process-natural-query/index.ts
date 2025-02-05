@@ -36,7 +36,18 @@ serve(async (req) => {
           3. SIEMPRE incluye ORDER BY word
           4. SIEMPRE incluye LIMIT 100
           5. SOLO retorna la consulta SQL, nada más
-          6. La consulta SOLO debe retornar la columna 'word'`
+          6. La consulta SOLO debe retornar la columna 'word'
+          7. Para contar ocurrencias de una letra usa regexp_matches() o similar
+          8. Para palabras que empiezan/terminan con una letra usa word LIKE 'a%' o word LIKE '%a'
+          
+          Ejemplos:
+          "palabras de 5 letras con dos eles" ->
+          SELECT word 
+          FROM words 
+          WHERE length = 5 
+          AND (LENGTH(word) - LENGTH(REPLACE(word, 'l', ''))) = 2
+          ORDER BY word 
+          LIMIT 100;`
         },
         {
           role: "user",
