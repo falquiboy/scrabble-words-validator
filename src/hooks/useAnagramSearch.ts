@@ -29,7 +29,7 @@ export const useAnagramSearch = (searchTerm: string) => {
     };
   }, [searchTerm]);
 
-  return useQuery<AnagramResults, Error>({
+  return useQuery<AnagramResults>({
     queryKey: ["words", searchTerm],
     queryFn: async () => {
       if (!searchTerm) return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [] };
@@ -42,7 +42,7 @@ export const useAnagramSearch = (searchTerm: string) => {
         const { data: exactData, error: exactError } = await supabase
           .from("words")
           .select("word")
-          .eq('lenght', inputLength)
+          .eq('length', inputLength)
           .eq('alphagram', targetAlphagram);
 
         if (exactError) {
@@ -84,7 +84,7 @@ export const useAnagramSearch = (searchTerm: string) => {
           const { data, error } = await supabase
             .from("words")
             .select("word")
-            .eq('lenght', inputLength + wildcardCount)
+            .eq('length', inputLength + wildcardCount)
             .in('alphagram', alphagrams);
 
           if (error) {
@@ -109,7 +109,7 @@ export const useAnagramSearch = (searchTerm: string) => {
           const { data, error } = await supabase
             .from("words")
             .select("word")
-            .eq('lenght', inputLength + wildcardCount + 1)
+            .eq('length', inputLength + wildcardCount + 1)
             .in('alphagram', alphagrams);
 
           if (error) {
