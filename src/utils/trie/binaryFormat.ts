@@ -1,13 +1,3 @@
-// Formato binario para el Trie:
-// [número total de nodos (4 bytes)]
-// Por cada nodo:
-//   [es fin de palabra (1 byte)]
-//   [número de hijos (1 byte)]
-//   [palabra si es fin de palabra (longitud variable)]
-//   Por cada hijo:
-//     [caracter (1 byte)]
-//     [índice del nodo hijo (4 bytes)]
-
 import { TrieNode } from './types';
 
 export function serializeTrieToBinary(root: TrieNode): ArrayBuffer {
@@ -29,20 +19,24 @@ export function serializeTrieToBinary(root: TrieNode): ArrayBuffer {
   
   // Calculamos el tamaño total necesario
   let totalSize = 4; // Número total de nodos
+  const textEncoder = new TextEncoder();
+  
+  // Pre-calculamos los tamaños de las palabras codificadas
+  const encodedWords = new Map<TrieNode, Uint8Array>();
   for (const node of nodes) {
-    totalSize += 1; // isEndOfWord flag
-    totalSize += 1; // Número de hijos
     if (node.isEndOfWord) {
-      totalSize += 2 + node.word.length; // 2 bytes para longitud + palabra
+      const encoded = textEncoder.encode(node.word);
+      encodedWords.set(node, encoded);
+      totalSize += 1 + 2 + encoded.length; // isEndOfWord + wordLength + word
+    } else {
+      totalSize += 1; // solo isEndOfWord
     }
-    totalSize += node.children.size * 5; // 1 byte por caracter + 4 bytes por índice
+    totalSize += 1 + (node.children.size * 5); // numChildren + (char + nodeIndex) por hijo
   }
   
   // Creamos el buffer y lo llenamos
   const buffer = new ArrayBuffer(totalSize);
   const view = new DataView(buffer);
-  const textEncoder = new TextEncoder();
-  
   let offset = 0;
   
   // Escribimos el número total de nodos
@@ -61,11 +55,11 @@ export function serializeTrieToBinary(root: TrieNode): ArrayBuffer {
     
     // Si es fin de palabra, escribimos la palabra
     if (node.isEndOfWord) {
-      const wordBytes = textEncoder.encode(node.word);
-      view.setUint16(offset, wordBytes.length);
+      const encoded = encodedWords.get(node)!;
+      view.setUint16(offset, encoded.length);
       offset += 2;
-      new Uint8Array(buffer, offset, wordBytes.length).set(wordBytes);
-      offset += wordBytes.length;
+      new Uint8Array(buffer, offset, encoded.length).set(encoded);
+      offset += encoded.length;
     }
     
     // Escribimos los hijos
@@ -133,6 +127,8 @@ export function deserializeTrieFromBinary(buffer: ArrayBuffer): TrieNode {
 
 // Función para pre-procesar el diccionario completo
 export async function preprocessDictionary(words: string[]): Promise<ArrayBuffer> {
+  console.log('Iniciando pre-procesamiento del diccionario...');
+  
   // Construimos el trie
   const root: TrieNode = {
     children: new Map(),
@@ -140,6 +136,7 @@ export async function preprocessDictionary(words: string[]): Promise<ArrayBuffer
     word: ''
   };
   
+  console.log(`Pre-procesando ${words.length} palabras...`);
   for (const word of words) {
     let current = root;
     const upperWord = word.toUpperCase();
@@ -160,5 +157,13 @@ export async function preprocessDictionary(words: string[]): Promise<ArrayBuffer
   }
   
   // Lo convertimos a formato binario
-  return serializeTrieToBinary(root);
+  console.log('Convirtiendo a formato binario...');
+  const startTime = performance.now();
+  const binaryData = serializeTrieToBinary(root);
+  const endTime = performance.now();
+  
+  console.log(`Conversión completada en ${((endTime - startTime) / 1000).toFixed(2)}s`);
+  console.log(`Tamaño del binario: ${(binaryData.byteLength / 1024 / 1024).toFixed(2)}MB`);
+  
+  return binaryData;
 }
