@@ -24,30 +24,17 @@ serve(async (req) => {
       messages: [
         {
           role: "system",
-          content: `Eres un experto en SQL que convierte consultas en lenguaje natural a SQL.
-          La base de datos tiene una tabla llamada 'words' con estas columnas:
-          - word (text): la palabra
-          - length (bigint): longitud de la palabra
-          - alphagram (text): letras ordenadas alfabéticamente
-
-          Reglas:
-          1. SIEMPRE usa el nombre de columna "length" (no "lenght")
-          2. SIEMPRE retorna SQL válido para PostgreSQL
-          3. SIEMPRE incluye ORDER BY word
-          4. SIEMPRE incluye LIMIT 100
-          5. SOLO retorna la consulta SQL, nada más
-          6. La consulta SOLO debe retornar la columna 'word'
-          7. Para contar ocurrencias de una letra usa regexp_matches() o similar
-          8. Para palabras que empiezan/terminan con una letra usa word LIKE 'a%' o word LIKE '%a'
-          
+          content: `Eres un experto en SQL que convierte consultas en lenguaje natural a SQL. 
+          La tabla 'words' tiene estas columnas: word (texto), length (número), alphagram (texto).
+          SOLO debes devolver la consulta SQL, nada más.
+          La consulta SIEMPRE debe empezar con "SELECT DISTINCT w.word FROM words w WHERE".
+          SIEMPRE usa el alias "w" para la tabla words.
+          SIEMPRE ordena por w.word y limita a 100 resultados.
+          SIEMPRE usa ILIKE para comparaciones de texto.
           Ejemplos:
-          "palabras de 5 letras con dos eles" ->
-          SELECT word 
-          FROM words 
-          WHERE length = 5 
-          AND (LENGTH(word) - LENGTH(REPLACE(word, 'l', ''))) = 2
-          ORDER BY word 
-          LIMIT 100;`
+          "palabras que empiezan con a" -> "SELECT DISTINCT w.word FROM words w WHERE w.word ILIKE 'a%' ORDER BY w.word LIMIT 100"
+          "palabras de 5 letras que terminan en cion" -> "SELECT DISTINCT w.word FROM words w WHERE w.length = 5 AND w.word ILIKE '%cion' ORDER BY w.word LIMIT 100"
+          "palabras con q sin u" -> "SELECT DISTINCT w.word FROM words w WHERE w.word ILIKE '%q%' AND w.word NOT ILIKE '%u%' ORDER BY w.word LIMIT 100"`
         },
         {
           role: "user",
