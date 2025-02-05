@@ -1,0 +1,4 @@
+AddType application/octet-stream .bin
+<Files "dictionary.bin">
+  Header set Content-Type "application/octet-stream"
+</Files>
