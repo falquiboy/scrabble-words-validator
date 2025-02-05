@@ -15,23 +15,38 @@ const Lists = () => {
       return;
     }
 
+    console.log('Iniciando búsqueda con query:', query);
     setIsLoading(true);
+    
     try {
-      const { data: processedQuery } = await supabase.functions.invoke('process-natural-query', {
+      console.log('Llamando a process-natural-query...');
+      const { data: processedQuery, error: processError } = await supabase.functions.invoke('process-natural-query', {
         body: { query: query.trim() }
       });
 
-      if (processedQuery.error) {
-        toast.error(processedQuery.error);
+      console.log('Respuesta de process-natural-query:', processedQuery, processError);
+
+      if (processError) {
+        console.error('Error al procesar la consulta:', processError);
+        toast.error(processError.message || 'Error al procesar la consulta');
         return;
       }
 
+      if (!processedQuery?.sql) {
+        console.error('No se recibió SQL de process-natural-query');
+        toast.error('Error al generar la consulta SQL');
+        return;
+      }
+
+      console.log('Ejecutando SQL:', processedQuery.sql);
       const { data: words, error } = await supabase
         .rpc('execute_natural_search', { query_text: processedQuery.sql });
 
+      console.log('Respuesta de execute_natural_search:', words, error);
+
       if (error) {
+        console.error('Error al ejecutar la consulta:', error);
         toast.error('Error al ejecutar la consulta');
-        console.error('Query error:', error);
         return;
       }
 
@@ -46,7 +61,7 @@ const Lists = () => {
       });
 
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error inesperado:', error);
       toast.error('Error al procesar la consulta');
     } finally {
       setIsLoading(false);
