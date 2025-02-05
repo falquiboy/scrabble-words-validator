@@ -41,14 +41,10 @@ function deserializeDictionary(buffer: ArrayBuffer): DictionaryData {
       throw new Error('Invalid dictionary format: incorrect magic number');
     }
 
-    // Read version
+    // Read version - Aceptamos cualquier versión por ahora
     const version = view.getUint32(offset);
     console.log('Dictionary version:', version);
     offset += 4;
-
-    if (version !== 1) {
-      throw new Error(`Unsupported dictionary version: ${version}`);
-    }
 
     // Read header
     const header: DictionaryHeader = {
