@@ -7,6 +7,7 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -22,7 +23,8 @@ serve(async (req) => {
     const systemPrompt = `You are a SQL expert that converts natural language queries about words into SQL queries.
     The database has a table called 'words' with columns: word (text), length (integer), alphagram (text).
     Always return valid PostgreSQL that works with these exact column names.
-    Only return the SQL query, nothing else.`;
+    Only return the SQL query, nothing else.
+    IMPORTANT: The column name is 'length' not 'lenght'.`;
 
     const response = await openai.createChatCompletion({
       model: "gpt-4o-mini",
@@ -37,6 +39,8 @@ serve(async (req) => {
     if (!sql) {
       throw new Error('No SQL generated');
     }
+
+    console.log('Generated SQL:', sql);
 
     return new Response(
       JSON.stringify({ sql }),
