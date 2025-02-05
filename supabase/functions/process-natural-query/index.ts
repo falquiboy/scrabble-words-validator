@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import OpenAI from "https://esm.sh/openai@4.28.0"
 
 const openai = new OpenAI({
@@ -18,26 +17,26 @@ serve(async (req) => {
 
   try {
     const { query } = await req.json()
-    console.log('Received query:', query)
+    console.log('Procesando consulta:', query)
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4",
       messages: [
         {
           role: "system",
-          content: `You are a SQL expert that converts natural language queries into SQL queries for a word search application.
-          The database has a table called 'words' with these columns:
-          - word (text): the actual word
-          - length (bigint): length of the word
-          - alphagram (text): letters sorted alphabetically
+          content: `Eres un experto en SQL que convierte consultas en lenguaje natural a SQL.
+          La base de datos tiene una tabla llamada 'words' con estas columnas:
+          - word (text): la palabra
+          - length (bigint): longitud de la palabra
+          - alphagram (text): letras ordenadas alfabéticamente
 
-          Rules:
-          1. ALWAYS use the column name "length" (not "lenght")
-          2. ALWAYS return valid PostgreSQL
-          3. ALWAYS include ORDER BY word
-          4. ALWAYS include LIMIT 100
-          5. ONLY return the SQL query, nothing else
-          6. The query should ONLY return the 'word' column`
+          Reglas:
+          1. SIEMPRE usa el nombre de columna "length" (no "lenght")
+          2. SIEMPRE retorna SQL válido para PostgreSQL
+          3. SIEMPRE incluye ORDER BY word
+          4. SIEMPRE incluye LIMIT 100
+          5. SOLO retorna la consulta SQL, nada más
+          6. La consulta SOLO debe retornar la columna 'word'`
         },
         {
           role: "user",
@@ -48,7 +47,7 @@ serve(async (req) => {
     })
 
     const sql = completion.choices[0].message.content
-    console.log('Generated SQL:', sql)
+    console.log('SQL generado:', sql)
 
     return new Response(
       JSON.stringify({ sql }),
