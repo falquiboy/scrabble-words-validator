@@ -14,6 +14,7 @@ serve(async (req) => {
 
   try {
     const { query } = await req.json();
+    console.log('Processing natural language query:', query);
 
     const configuration = new Configuration({
       apiKey: Deno.env.get('OPENAI_API_KEY'),
