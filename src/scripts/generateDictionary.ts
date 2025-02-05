@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync } from 'fs';
-import { sortSpanishLetters } from '@/utils/spanishSort';
+import { sortSpanishLetters } from '../../utils/spanishSort';
 
 interface Word {
   word: string;
