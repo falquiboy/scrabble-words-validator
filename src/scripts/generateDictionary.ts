@@ -80,20 +80,24 @@ function serializeDictionary(data: DictionaryData): ArrayBuffer {
   // Calcular tamaño de la sección de palabras
   let wordsSize = 0;
   for (const word of data.words) {
-    wordsSize += 2 + word.word.length; // length(2) + chars
-    wordsSize += 2 + word.alphagram.length; // length(2) + chars
-    wordsSize += 1; // length of word
+    if (word.word.length > 15) {
+      console.warn(`Advertencia: Palabra "${word.word}" excede el límite de 15 caracteres`);
+    }
+    wordsSize += 1; // length byte (uint8)
+    wordsSize += word.word.length; // chars
+    wordsSize += 1; // alphagram length byte (uint8)
+    wordsSize += word.alphagram.length; // chars
   }
 
   // Calcular tamaño de índices
   let indicesSize = 4; // número de entradas de longitud
   for (const [, indices] of data.lengthIndex) {
-    indicesSize += 4 + indices.length * 4; // longitud + índices
+    indicesSize += 1 + 2 + indices.length * 2; // longitud(1) + num_indices(2) + índices(2 cada uno)
   }
   
   indicesSize += 4; // número de entradas de alfagrama
   for (const [alphagram, indices] of data.alphagramIndex) {
-    indicesSize += 2 + alphagram.length + 4 + indices.length * 4; // longitud alfagrama + chars + longitud índices + índices
+    indicesSize += 1 + alphagram.length + 2 + indices.length * 2;
   }
 
   const totalSize = headerSize + wordsSize + indicesSize;
@@ -105,7 +109,7 @@ function serializeDictionary(data: DictionaryData): ArrayBuffer {
   // Escribir header
   encoder.encodeInto(data.header.magic, new Uint8Array(buffer, offset, 4));
   offset += 4;
-  view.setUint32(offset, data.header.version, true); // Usar little-endian
+  view.setUint32(offset, data.header.version, true);
   offset += 4;
   view.setUint32(offset, data.header.wordCount, true);
   offset += 4;
@@ -114,21 +118,17 @@ function serializeDictionary(data: DictionaryData): ArrayBuffer {
 
   // Escribir palabras
   for (const word of data.words) {
-    // Escribir palabra
-    view.setUint16(offset, word.word.length, true);
-    offset += 2;
+    // Escribir longitud y palabra
+    view.setUint8(offset, word.word.length);
+    offset += 1;
     encoder.encodeInto(word.word, new Uint8Array(buffer, offset, word.word.length));
     offset += word.word.length;
 
-    // Escribir alfagrama
-    view.setUint16(offset, word.alphagram.length, true);
-    offset += 2;
+    // Escribir longitud y alfagrama
+    view.setUint8(offset, word.alphagram.length);
+    offset += 1;
     encoder.encodeInto(word.alphagram, new Uint8Array(buffer, offset, word.alphagram.length));
     offset += word.alphagram.length;
-
-    // Escribir longitud
-    view.setUint8(offset, word.length);
-    offset += 1;
   }
 
   // Escribir índice de longitudes
@@ -137,11 +137,11 @@ function serializeDictionary(data: DictionaryData): ArrayBuffer {
   for (const [length, indices] of data.lengthIndex) {
     view.setUint8(offset, length);
     offset += 1;
-    view.setUint32(offset, indices.length, true);
-    offset += 4;
+    view.setUint16(offset, indices.length, true);
+    offset += 2;
     indices.forEach(index => {
-      view.setUint32(offset, index, true);
-      offset += 4;
+      view.setUint16(offset, index, true);
+      offset += 2;
     });
   }
 
@@ -149,15 +149,15 @@ function serializeDictionary(data: DictionaryData): ArrayBuffer {
   view.setUint32(offset, data.alphagramIndex.size, true);
   offset += 4;
   for (const [alphagram, indices] of data.alphagramIndex) {
-    view.setUint16(offset, alphagram.length, true);
-    offset += 2;
+    view.setUint8(offset, alphagram.length);
+    offset += 1;
     encoder.encodeInto(alphagram, new Uint8Array(buffer, offset, alphagram.length));
     offset += alphagram.length;
-    view.setUint32(offset, indices.length, true);
-    offset += 4;
+    view.setUint16(offset, indices.length, true);
+    offset += 2;
     indices.forEach(index => {
-      view.setUint32(offset, index, true);
-      offset += 4;
+      view.setUint16(offset, index, true);
+      offset += 2;
     });
   }
 
