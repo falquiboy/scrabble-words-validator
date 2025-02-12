@@ -3,6 +3,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { Trie } from '@/utils/trie';
 import { toast } from 'sonner';
 import { loadDictionary } from '@/utils/dictionary/loader';
+import { supabase } from '@/integrations/supabase/client';
+import { compressData, decompressData, calculateChecksum } from '@/utils/compression';
+import { serializeTrieToBinary, deserializeTrieFromBinary } from '@/utils/trie/binaryFormat';
 
 export const useWordTrie = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -15,12 +18,35 @@ export const useWordTrie = () => {
     if (!isLoading) return;
     
     try {
-      console.log('Iniciando carga del diccionario binario...');
+      console.log('Intentando cargar Trie desde cache...');
+      
+      // Intentar cargar desde Supabase primero
+      const { data: cacheData } = await supabase
+        .from('trie_cache')
+        .select('serialized_trie, checksum, total_words')
+        .single();
+
+      if (cacheData) {
+        console.log('Cache encontrado, descomprimiendo...');
+        const buffer = await decompressData(cacheData.serialized_trie);
+        const checksum = await calculateChecksum(buffer);
+        
+        if (checksum === cacheData.checksum) {
+          console.log('Checksum válido, cargando Trie...');
+          const root = deserializeTrieFromBinary(buffer);
+          trie.setRoot(root);
+          setWordCount(cacheData.total_words);
+          setLoadingProgress(100);
+          setIsLoading(false);
+          return;
+        }
+      }
+      
+      console.log('Cache no encontrado o inválido, construyendo Trie...');
       const startTime = performance.now();
       
       // Cargar el diccionario binario
       const dictionary = await loadDictionary();
-      console.log('Diccionario cargado:', dictionary);
       
       // Construir el trie con las palabras del diccionario
       trie.clear();
@@ -40,11 +66,27 @@ export const useWordTrie = () => {
       }
       
       setWordCount(totalWords);
+      
+      // Serializar y almacenar en cache
+      console.log('Serializando Trie...');
+      const serializedTrie = serializeTrieToBinary(trie.getRoot());
+      const checksum = await calculateChecksum(serializedTrie);
+      const compressed = await compressData(serializedTrie);
+      
+      console.log('Guardando en cache...');
+      await supabase
+        .from('trie_cache')
+        .upsert({
+          id: 1,
+          serialized_trie: compressed,
+          checksum,
+          total_words: totalWords,
+          compressed: true
+        })
+        .eq('id', 1);
+      
       const endTime = performance.now();
       console.log(`Trie construido en ${((endTime - startTime) / 1000).toFixed(2)}s con ${totalWords} palabras`);
-      
-      // Agregar logging temporal para obtener una copia del Trie
-      console.log('TRIE_DUMP:', JSON.stringify(trie.serialize()));
       
     } catch (err) {
       console.error('Error al cargar el diccionario:', err);
@@ -55,7 +97,7 @@ export const useWordTrie = () => {
       setIsLoading(false);
       setLoadingProgress(100);
     }
-  }, [isLoading, trie]); // Removida la dependencia de loadingProgress
+  }, [isLoading, trie]); 
 
   useEffect(() => {
     initTrie();
