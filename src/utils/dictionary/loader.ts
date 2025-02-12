@@ -1,3 +1,4 @@
+
 import { DictionaryData, DictionaryHeader, Word } from './types';
 
 export async function loadDictionary(): Promise<DictionaryData> {
@@ -42,7 +43,7 @@ function deserializeDictionary(buffer: ArrayBuffer): DictionaryData {
     }
 
     // Read version - Aceptamos cualquier versión por ahora
-    const version = view.getUint32(offset);
+    const version = view.getUint32(offset, true); // true para little-endian
     console.log('Dictionary version:', version);
     offset += 4;
 
@@ -50,8 +51,8 @@ function deserializeDictionary(buffer: ArrayBuffer): DictionaryData {
     const header: DictionaryHeader = {
       magic,
       version,
-      wordCount: view.getUint32(offset),
-      maxWordLength: view.getUint32(offset + 4)
+      wordCount: view.getUint32(offset, true), // true para little-endian
+      maxWordLength: view.getUint32(offset + 4, true) // true para little-endian
     };
     offset += 8;
 
@@ -61,7 +62,7 @@ function deserializeDictionary(buffer: ArrayBuffer): DictionaryData {
     const words: Word[] = [];
     for (let i = 0; i < header.wordCount; i++) {
       // Read word
-      const wordLength = view.getUint16(offset);
+      const wordLength = view.getUint16(offset, true); // true para little-endian
       offset += 2;
       
       if (wordLength > 100) {
@@ -73,7 +74,7 @@ function deserializeDictionary(buffer: ArrayBuffer): DictionaryData {
       offset += wordLength;
 
       // Read alphagram
-      const alphagramLength = view.getUint16(offset);
+      const alphagramLength = view.getUint16(offset, true); // true para little-endian
       offset += 2;
       
       if (alphagramLength > 100) {
@@ -98,7 +99,7 @@ function deserializeDictionary(buffer: ArrayBuffer): DictionaryData {
 
     // Read indices with validation
     const lengthIndex = new Map<number, number[]>();
-    const lengthIndexSize = view.getUint32(offset);
+    const lengthIndexSize = view.getUint32(offset, true); // true para little-endian
     offset += 4;
 
     if (lengthIndexSize > header.wordCount) {
@@ -110,7 +111,7 @@ function deserializeDictionary(buffer: ArrayBuffer): DictionaryData {
     for (let i = 0; i < lengthIndexSize; i++) {
       const length = view.getUint8(offset);
       offset += 1;
-      const indicesCount = view.getUint32(offset);
+      const indicesCount = view.getUint32(offset, true); // true para little-endian
       offset += 4;
       
       if (indicesCount > header.wordCount) {
@@ -119,7 +120,7 @@ function deserializeDictionary(buffer: ArrayBuffer): DictionaryData {
 
       const indices: number[] = [];
       for (let j = 0; j < indicesCount; j++) {
-        indices.push(view.getUint32(offset));
+        indices.push(view.getUint32(offset, true)); // true para little-endian
         offset += 4;
       }
       lengthIndex.set(length, indices);
@@ -127,7 +128,7 @@ function deserializeDictionary(buffer: ArrayBuffer): DictionaryData {
 
     // Read alphagram index
     const alphagramIndex = new Map<string, number[]>();
-    const alphagramIndexSize = view.getUint32(offset);
+    const alphagramIndexSize = view.getUint32(offset, true); // true para little-endian
     offset += 4;
 
     if (alphagramIndexSize > Math.pow(header.wordCount, 2)) {
@@ -137,7 +138,7 @@ function deserializeDictionary(buffer: ArrayBuffer): DictionaryData {
     console.log('Reading alphagram index, size:', alphagramIndexSize);
 
     for (let i = 0; i < alphagramIndexSize; i++) {
-      const alphagramLength = view.getUint16(offset);
+      const alphagramLength = view.getUint16(offset, true); // true para little-endian
       offset += 2;
       
       if (alphagramLength > 100) {
@@ -148,7 +149,7 @@ function deserializeDictionary(buffer: ArrayBuffer): DictionaryData {
       const alphagram = decoder.decode(alphagramBuffer);
       offset += alphagramLength;
       
-      const indicesCount = view.getUint32(offset);
+      const indicesCount = view.getUint32(offset, true); // true para little-endian
       offset += 4;
       
       if (indicesCount > header.wordCount) {
@@ -157,7 +158,7 @@ function deserializeDictionary(buffer: ArrayBuffer): DictionaryData {
 
       const indices: number[] = [];
       for (let j = 0; j < indicesCount; j++) {
-        indices.push(view.getUint32(offset));
+        indices.push(view.getUint32(offset, true)); // true para little-endian
         offset += 4;
       }
       alphagramIndex.set(alphagram, indices);
