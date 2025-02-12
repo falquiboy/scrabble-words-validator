@@ -28,7 +28,9 @@ export const useWordTrie = () => {
 
       if (cacheData) {
         console.log('Cache encontrado, descomprimiendo...');
-        const buffer = await decompressData(cacheData.serialized_trie);
+        // Convertir el array de bytes a Uint8Array
+        const compressedData = new Uint8Array(Object.values(cacheData.serialized_trie));
+        const buffer = await decompressData(compressedData);
         const checksum = await calculateChecksum(buffer);
         
         if (checksum === cacheData.checksum) {
@@ -97,7 +99,7 @@ export const useWordTrie = () => {
       setIsLoading(false);
       setLoadingProgress(100);
     }
-  }, [isLoading, trie]); 
+  }, [isLoading, trie, loadingProgress]); 
 
   useEffect(() => {
     initTrie();
