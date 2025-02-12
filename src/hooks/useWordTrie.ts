@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { Trie } from '@/utils/trie';
 import { toast } from 'sonner';
@@ -41,6 +42,9 @@ export const useWordTrie = () => {
       setWordCount(totalWords);
       const endTime = performance.now();
       console.log(`Trie construido en ${((endTime - startTime) / 1000).toFixed(2)}s con ${totalWords} palabras`);
+      
+      // Agregar logging temporal para obtener una copia del Trie
+      console.log('TRIE_DUMP:', JSON.stringify(trie.serialize()));
       
     } catch (err) {
       console.error('Error al cargar el diccionario:', err);
