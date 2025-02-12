@@ -20,16 +20,16 @@ export const useWordTrie = () => {
     try {
       console.log('Intentando cargar Trie desde cache...');
       
-      // Intentar cargar desde Supabase primero
+      // Usar maybeSingle() en lugar de single() para evitar error 406
       const { data: cacheData } = await supabase
         .from('trie_cache')
         .select('serialized_trie, checksum, total_words')
-        .single();
+        .maybeSingle();
 
       if (cacheData) {
         console.log('Cache encontrado, descomprimiendo...');
-        // Convertir el array de bytes a Uint8Array
-        const compressedData = new Uint8Array(Object.values(cacheData.serialized_trie));
+        // Convertir el array de bytes a Uint8Array usando Buffer
+        const compressedData = new Uint8Array(Buffer.from(cacheData.serialized_trie, 'base64'));
         const buffer = await decompressData(compressedData);
         const checksum = await calculateChecksum(buffer);
         
@@ -75,12 +75,15 @@ export const useWordTrie = () => {
       const checksum = await calculateChecksum(serializedTrie);
       const compressed = await compressData(serializedTrie);
       
+      // Convertir Uint8Array a string base64 para almacenar en Supabase
+      const base64Data = Buffer.from(compressed).toString('base64');
+      
       console.log('Guardando en cache...');
       await supabase
         .from('trie_cache')
         .upsert({
           id: 1,
-          serialized_trie: compressed,
+          serialized_trie: base64Data,
           checksum,
           total_words: totalWords,
           compressed: true
