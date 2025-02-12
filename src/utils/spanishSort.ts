@@ -1,3 +1,4 @@
+
 // Orden personalizado del alfabeto español incluyendo dígrafos
 const SPANISH_ALPHABET = "AEIOUBCÇDFGHJLKMNÑPQRWSTVXYZ";
 
@@ -10,7 +11,7 @@ const LETTER_POSITIONS = new Map(
  * Ordena un string según el orden del alfabeto español
  * Versión optimizada con caché de posiciones
  */
-export const sortSpanishLetters = (input: string): string => {
+export const sortSpanishLetters = (input: string | string[]): string => {
   const upperInput = typeof input === 'string' ? input.toUpperCase() : 
                     Array.isArray(input) ? input.join('').toUpperCase() : '';
                     
