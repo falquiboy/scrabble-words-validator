@@ -103,6 +103,42 @@ async function buildTrie(words: string[]): Promise<{serializedTrie: string, chec
   };
 }
 
+async function getAllWords(supabaseClient: any): Promise<string[]> {
+  const batchSize = 10000;
+  let lastWord: string | null = null;
+  const allWords: string[] = [];
+  let hasMore = true;
+
+  console.log('Starting to fetch words in batches...');
+
+  while (hasMore) {
+    const { data: words, error } = await supabaseClient
+      .rpc('get_words_batch', { 
+        batch_size: batchSize,
+        last_word: lastWord 
+      });
+
+    if (error) {
+      throw new Error(`Error fetching words batch: ${error.message}`);
+    }
+
+    if (!words || words.length === 0) {
+      hasMore = false;
+      break;
+    }
+
+    allWords.push(...words);
+    lastWord = words[words.length - 1];
+    console.log(`Fetched batch of ${words.length} words. Total words so far: ${allWords.length}`);
+
+    if (words.length < batchSize) {
+      hasMore = false;
+    }
+  }
+
+  return allWords.map(w => w);
+}
+
 Deno.serve(async (req) => {
   // Handle CORS
   if (req.method === 'OPTIONS') {
@@ -123,25 +159,19 @@ Deno.serve(async (req) => {
       }
     )
 
-    console.log('Fetching words from database...');
+    console.log('Starting word collection process...');
     
-    // Obtener todas las palabras de una vez usando service role
-    const { data: words, error: fetchError } = await supabaseClient
-      .from('words')
-      .select('word')
-      
-    if (fetchError) {
-      throw new Error(`Error fetching words: ${fetchError.message}`);
-    }
+    // Obtener todas las palabras usando el nuevo método por lotes
+    const words = await getAllWords(supabaseClient);
 
     if (!words || words.length === 0) {
       throw new Error('No words found in database');
     }
 
-    console.log(`Found ${words.length} words`);
+    console.log(`Found total of ${words.length} words`);
 
     // Construir y serializar el trie
-    const { serializedTrie, checksum } = await buildTrie(words.map(w => w.word));
+    const { serializedTrie, checksum } = await buildTrie(words);
 
     // Guardar en trie_cache
     const { error: upsertError } = await supabaseClient
@@ -187,3 +217,4 @@ Deno.serve(async (req) => {
     )
   }
 })
+
