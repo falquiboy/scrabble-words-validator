@@ -2,10 +2,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Trie } from '@/utils/trie';
 import { toast } from 'sonner';
-import { loadDictionary } from '@/utils/dictionary/loader';
 import { supabase } from '@/integrations/supabase/client';
 import { compressData, decompressData, calculateChecksum } from '@/utils/compression';
 import { serializeTrieToBinary, deserializeTrieFromBinary } from '@/utils/trie/binaryFormat';
+import { WordLoader } from '@/services/WordLoader';
 
 export const useWordTrie = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -20,7 +20,6 @@ export const useWordTrie = () => {
     try {
       console.log('Intentando cargar Trie desde cache...');
       
-      // Usar maybeSingle() en lugar de single() para evitar error 406
       const { data: cacheData } = await supabase
         .from('trie_cache')
         .select('serialized_trie, checksum, total_words')
@@ -28,7 +27,6 @@ export const useWordTrie = () => {
 
       if (cacheData) {
         console.log('Cache encontrado, descomprimiendo...');
-        // Convertir el array de bytes a Uint8Array usando Buffer
         const compressedData = new Uint8Array(Buffer.from(cacheData.serialized_trie, 'base64'));
         const buffer = await decompressData(compressedData);
         const checksum = await calculateChecksum(buffer);
@@ -47,23 +45,27 @@ export const useWordTrie = () => {
       console.log('Cache no encontrado o inválido, construyendo Trie...');
       const startTime = performance.now();
       
-      // Cargar el diccionario binario
-      const dictionary = await loadDictionary();
-      
+      // Get total word count first
+      const { count: totalWords, error: countError } = await supabase
+        .from('words')
+        .select('*', { count: 'exact', head: true });
+
+      if (countError) throw new Error(`Failed to get word count: ${countError.message}`);
+      if (!totalWords) throw new Error('No words found in database');
+
       // Construir el trie con las palabras del diccionario
       trie.clear();
-      let processed = 0;
-      const totalWords = dictionary.words.length;
+      const loader = new WordLoader(totalWords);
       
-      for (const { word } of dictionary.words) {
-        const upperWord = word.toUpperCase();
-        trie.insert(upperWord, upperWord);
-        processed++;
-        
-        // Actualizar progreso cada 1%
-        const progress = Math.floor((processed / totalWords) * 100);
+      for await (const words of loader.loadWords()) {
+        for (const word of words) {
+          const upperWord = word.toUpperCase();
+          trie.insert(upperWord, upperWord);
+        }
+        const progress = loader.getProgress();
         if (progress > loadingProgress) {
           setLoadingProgress(progress);
+          console.log(`Loading progress: ${progress.toFixed(1)}%`);
         }
       }
       
