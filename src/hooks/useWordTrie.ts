@@ -1,14 +1,10 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { wordDB } from '@/services/WordDatabase';
 import { Trie } from '@/utils/trie';
 import { toast } from 'sonner';
 import { fetchAllWords } from '@/utils/wordFetcher';
 import { buildTrieFromWords, loadCachedTrie, saveTrie } from '@/utils/trieOperations';
-
-// Known total word count from the database
-const TOTAL_WORDS = 639293;
-const PROGRESS_KEY = 'dictionary_progress';
+import { TOTAL_WORDS, PROGRESS_KEY } from '@/utils/dictionaryConstants';
 
 interface ProgressState {
   currentWords: number;
