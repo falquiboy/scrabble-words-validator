@@ -12,7 +12,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { wordDB } from "@/services/WordDatabase";
+import { TOTAL_WORDS } from "@/utils/dictionaryConstants";
 
 interface DictionaryStatusProps {
   totalWords: number;
@@ -34,11 +36,26 @@ export const DictionaryStatus = ({
   estimatedTimeRemaining,
 }: DictionaryStatusProps) => {
   const [showWifiDialog, setShowWifiDialog] = useState(false);
+  const [shouldShow, setShouldShow] = useState(false);
   const progress = Math.round((currentWords / totalWords) * 100);
   const isComplete = currentWords >= totalWords;
   const isPaused = !isLoading && !isComplete;
 
-  if (isComplete) return null;
+  useEffect(() => {
+    const checkDictionarySize = async () => {
+      try {
+        const words = await wordDB.getAllWords();
+        setShouldShow(words.length < TOTAL_WORDS);
+      } catch (error) {
+        console.error('Error checking dictionary size:', error);
+        setShouldShow(false);
+      }
+    };
+
+    checkDictionarySize();
+  }, []);
+
+  if (!shouldShow || isComplete) return null;
 
   return (
     <>
