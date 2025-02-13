@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { wordDB } from '@/services/WordDatabase';
 import { Trie } from '@/utils/trie';
@@ -5,6 +6,7 @@ import { toast } from 'sonner';
 import { fetchAllWords } from '@/utils/wordFetcher';
 import { buildTrieFromWords, loadCachedTrie, saveTrie } from '@/utils/trieOperations';
 import { TOTAL_WORDS, PROGRESS_KEY } from '@/utils/dictionaryConstants';
+import { trieCache } from '@/services/TrieCache';
 
 interface ProgressState {
   currentWords: number;
@@ -16,7 +18,7 @@ interface ProgressState {
 export const useWordTrie = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [trie] = useState<Trie>(() => new Trie());
+  const [trie, setTrie] = useState<Trie | null>(null);
   const [wordCount, setWordCount] = useState(0);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [downloadSpeed, setDownloadSpeed] = useState<number>();
@@ -46,10 +48,10 @@ export const useWordTrie = () => {
     const lastProgress = loadProgress();
     
     if (lastProgress) {
-      const timeDiff = (now - lastProgress.lastUpdated) / 1000; // seconds
+      const timeDiff = (now - lastProgress.lastUpdated) / 1000;
       const wordDiff = currentWords - lastProgress.currentWords;
       if (timeDiff > 0) {
-        const speed = (wordDiff * 10) / timeDiff; // Approx 10 bytes per word
+        const speed = (wordDiff * 10) / timeDiff;
         const remainingWords = TOTAL_WORDS - currentWords;
         const timeRemaining = remainingWords * 10 / speed;
         
@@ -79,7 +81,6 @@ export const useWordTrie = () => {
         console.log('Local DB empty or incomplete, fetching from Supabase...');
         words = await fetchAllWords(TOTAL_WORDS, updateProgress);
         
-        // Clear and rebuild local DB
         await wordDB.clear();
         await wordDB.addWords(words);
         console.log('Words stored in local DB:', words.length);
@@ -94,21 +95,26 @@ export const useWordTrie = () => {
 
   const buildTrie = useCallback(async () => {
     try {
-      const cachedWordCount = await loadCachedTrie(trie);
-      
-      if (cachedWordCount > 0 && cachedWordCount >= TOTAL_WORDS) {
-        setWordCount(cachedWordCount);
-        updateProgress(cachedWordCount);
-        console.log('Trie loaded from cache with', cachedWordCount, 'words');
-        return true;
+      const serializedTrie = await wordDB.loadTrie();
+      if (serializedTrie) {
+        trieCache.setSerializedTrie(serializedTrie);
+        const trie = await trieCache.getTrie();
+        const wordCount = trie.getAllWords().length;
+        
+        if (wordCount >= TOTAL_WORDS) {
+          setTrie(trie);
+          setWordCount(wordCount);
+          updateProgress(wordCount);
+          console.log('Trie loaded from cache with', wordCount, 'words');
+          return true;
+        }
       }
-      
       return false;
     } catch (err) {
       console.error('Error loading cached trie:', err);
       return false;
     }
-  }, [trie, updateProgress]);
+  }, [updateProgress]);
 
   const fetchAndBuildTrie = useCallback(async () => {
     if (isPaused) return;
@@ -118,16 +124,20 @@ export const useWordTrie = () => {
       const words = await fetchWordsFromDB();
       console.log(`Building trie with ${words.length} words...`);
 
-      await buildTrieFromWords(words, trie, (progress) => {
+      const newTrie = new Trie();
+      await buildTrieFromWords(words, newTrie, (progress) => {
         setLoadingProgress(Math.round((progress + loadingProgress) / 2));
       });
-      await saveTrie(trie);
-
+      
+      const serializedTrie = newTrie.serialize();
+      await saveTrie(newTrie);
+      trieCache.setSerializedTrie(serializedTrie);
+      
+      setTrie(newTrie);
       setWordCount(words.length);
       if (words.length >= TOTAL_WORDS) {
         clearProgress();
       }
-      console.log('Trie built and cached successfully with', words.length, 'words');
     } catch (err) {
       console.error('Error building trie:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to initialize trie';
@@ -136,7 +146,7 @@ export const useWordTrie = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [trie, isPaused, loadingProgress, clearProgress]);
+  }, [clearProgress, isPaused, loadingProgress]);
 
   const pauseDownload = useCallback(() => {
     setIsPaused(true);
@@ -171,11 +181,11 @@ export const useWordTrie = () => {
     initTrie();
   }, [buildTrie, fetchAndBuildTrie, isPaused]);
 
-  return { 
-    isLoading, 
-    error, 
-    wordCount, 
-    trie, 
+  return {
+    isLoading,
+    error,
+    wordCount,
+    trie: trie as Trie, // Type assertion since we know it will be initialized
     loadingProgress,
     downloadSpeed,
     estimatedTimeRemaining,
