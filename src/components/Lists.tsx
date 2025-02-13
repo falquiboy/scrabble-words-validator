@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -6,8 +5,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 // Word result component with RAE link
-const WordResult = ({ word, accentedWord }: { word: string; accentedWord?: string }) => {
-  const raeUrl = `https://dle.rae.es/${encodeURIComponent(accentedWord || word)}`;
+const WordResult = ({ word }: { word: string }) => {
+  const raeUrl = `https://dle.rae.es/${encodeURIComponent(word)}`;
   
   return (
     <a
@@ -24,7 +23,7 @@ const WordResult = ({ word, accentedWord }: { word: string; accentedWord?: strin
 
 const Lists = () => {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<Array<{ word: string; accentedWord?: string }>>([]);
+  const [results, setResults] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSearch = async () => {
@@ -68,26 +67,8 @@ const Lists = () => {
         return;
       }
 
-      // Extract just the words for processing
-      const wordsList = (words || []).map((w: { word: string }) => w.word);
-      
-      // Process words with diacritics
-      console.log('Procesando acentos para palabras:', wordsList);
-      const { data: accentedWords, error: accentError } = await supabase.functions.invoke('process-words-diacritics', {
-        body: { words: wordsList }
-      });
-
-      if (accentError) {
-        console.error('Error al procesar acentos:', accentError);
-        // Continue with unaccented words if there's an error
-        setResults(wordsList.map(word => ({ word })));
-      } else {
-        // Combine original words with their accented versions
-        setResults(wordsList.map(word => ({
-          word,
-          accentedWord: accentedWords[word]
-        })));
-      }
+      // Type assertion since we know the shape of the data
+      setResults((words || []).map((w: { word: string }) => w.word));
       
       // Store query in history
       await supabase.from('query_history').insert({
@@ -127,12 +108,8 @@ const Lists = () => {
           <h3 className="font-semibold mb-2">Resultados ({results.length})</h3>
           <div className="max-h-[400px] overflow-y-auto">
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {results.map((result, index) => (
-                <WordResult 
-                  key={index} 
-                  word={result.word}
-                  accentedWord={result.accentedWord}
-                />
+              {results.map((word, index) => (
+                <WordResult key={index} word={word} />
               ))}
             </div>
           </div>
