@@ -5,6 +5,7 @@ import Header from "./word-validator/Header";
 import WordInput from "./word-validator/WordInput";
 import LoadingIndicator from "./word-validator/LoadingIndicator";
 import ValidationResult from "./word-validator/ValidationResult";
+import { DictionaryStatus } from "./word-validator/DictionaryStatus";
 
 interface WordValidatorProps {
   isDictionaryLoading: boolean;
@@ -99,6 +100,16 @@ const WordValidator = ({ isDictionaryLoading, progress, trie }: WordValidatorPro
           />
         )}
       </div>
+
+      <DictionaryStatus
+        totalWords={TOTAL_WORDS}
+        currentWords={wordCount}
+        isLoading={isLoading}
+        onResume={resumeDownload}
+        onPause={pauseDownload}
+        downloadSpeed={downloadSpeed}
+        estimatedTimeRemaining={estimatedTimeRemaining}
+      />
     </div>
   );
 };
