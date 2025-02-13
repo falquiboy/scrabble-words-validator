@@ -42,17 +42,17 @@ export const DictionaryStatus = ({
   const isPaused = !isLoading && !isComplete;
 
   useEffect(() => {
-    const checkDictionarySize = async () => {
+    const checkDictionaryStatus = async () => {
       try {
-        const words = await wordDB.getAllWords();
-        setShouldShow(words.length < TOTAL_WORDS);
+        const status = await wordDB.getDictionaryStatus();
+        setShouldShow(!status.isComplete);
       } catch (error) {
-        console.error('Error checking dictionary size:', error);
+        console.error('Error checking dictionary status:', error);
         setShouldShow(false);
       }
     };
 
-    checkDictionarySize();
+    checkDictionaryStatus();
   }, []);
 
   if (!shouldShow || isComplete) return null;
