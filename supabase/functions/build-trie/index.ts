@@ -41,13 +41,13 @@ class Trie {
   }
 
   insert(word: string): void {
-    if (typeof word !== 'string') {
-      console.error('Invalid word type:', typeof word, 'Word value:', word);
+    if (!word || typeof word !== 'string') {
+      console.error('Invalid word:', word, 'Type:', typeof word);
       return;
     }
 
     let current = this.root;
-    const upperWord = word.toUpperCase();
+    const upperWord = String(word).toUpperCase();
     
     for (const char of upperWord) {
       if (!current.children.has(char)) {
@@ -83,9 +83,12 @@ async function buildTrie(words: string[]): Promise<{serializedTrie: string, chec
   
   const trie = new Trie();
   for (const word of words) {
-    // Verificar el tipo de dato antes de procesarlo
-    console.log('Processing word:', word, 'Type:', typeof word);
-    trie.insert(word);
+    try {
+      trie.insert(word);
+    } catch (error) {
+      console.error('Error inserting word:', word);
+      console.error('Error details:', error);
+    }
   }
   
   const serialized = trie.serialize();
@@ -119,41 +122,58 @@ async function getAllWords(supabaseClient: any): Promise<string[]> {
   console.log('Starting to fetch words in batches...');
 
   while (hasMore) {
-    const { data: words, error } = await supabaseClient
-      .rpc('get_words_batch', { 
-        batch_size: batchSize,
-        last_word: lastWord 
+    try {
+      const { data: words, error } = await supabaseClient
+        .rpc('get_words_batch', { 
+          batch_size: batchSize,
+          last_word: lastWord 
+        });
+
+      if (error) {
+        console.error('Database error:', error);
+        throw new Error(`Error fetching words batch: ${error.message}`);
+      }
+
+      if (!words || words.length === 0) {
+        console.log('No more words to fetch');
+        hasMore = false;
+        break;
+      }
+
+      // Log detallado de la primera palabra para debugging
+      console.log('First word in batch:', JSON.stringify(words[0]));
+      console.log('First word type:', typeof words[0]);
+      
+      if (typeof words[0] === 'object') {
+        console.log('First word keys:', Object.keys(words[0]));
+      }
+
+      const processedWords = words.map((w: any) => {
+        if (typeof w === 'string') return w;
+        if (w && typeof w === 'object') {
+          // Si es un objeto, intentamos obtener la propiedad 'word'
+          const wordValue = w.word || w.word_text || w.text || String(w);
+          console.log('Processing word object:', w, '-> processed as:', wordValue);
+          return wordValue;
+        }
+        console.error('Unexpected word format:', w);
+        return String(w);
       });
 
-    if (error) {
-      throw new Error(`Error fetching words batch: ${error.message}`);
-    }
+      allWords.push(...processedWords);
+      lastWord = processedWords[processedWords.length - 1];
+      console.log(`Batch processed. Current word count: ${allWords.length}`);
 
-    if (!words || words.length === 0) {
-      hasMore = false;
-      break;
-    }
-
-    // Verificar la estructura de los datos
-    console.log('Sample word from batch:', words[0], 'Type:', typeof words[0]);
-
-    // Mapear los resultados a strings si es necesario
-    const processedWords = words.map((w: any) => {
-      if (typeof w === 'string') return w;
-      if (typeof w === 'object' && w !== null && 'word' in w) return w.word;
-      console.error('Unexpected word format:', w);
-      return String(w);
-    });
-
-    allWords.push(...processedWords);
-    lastWord = processedWords[processedWords.length - 1];
-    console.log(`Fetched batch of ${words.length} words. Total words so far: ${allWords.length}`);
-
-    if (words.length < batchSize) {
-      hasMore = false;
+      if (words.length < batchSize) {
+        hasMore = false;
+      }
+    } catch (error) {
+      console.error('Error in batch processing:', error);
+      throw error;
     }
   }
 
+  console.log('Total words collected:', allWords.length);
   return allWords;
 }
 
@@ -223,7 +243,7 @@ Deno.serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Error:', error.message)
+    console.error('Error in main process:', error);
     return new Response(
       JSON.stringify({
         error: error.message,
