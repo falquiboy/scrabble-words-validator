@@ -1,8 +1,31 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { ExternalLink } from "lucide-react";
+
+// Word result component with RAE link
+const WordResult = ({ word }: { word: string }) => {
+  const raeUrl = `https://dle.rae.es/${encodeURIComponent(word)}`;
+  
+  return (
+    <a
+      href={raeUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="bg-gray-50 hover:bg-[#D6BCFA] p-2 rounded text-center transition-colors flex items-center justify-center gap-2 group"
+      aria-label={`Buscar "${word}" en el diccionario RAE`}
+    >
+      <span>{word}</span>
+      <ExternalLink 
+        className="h-4 w-4 text-[#1EAEDB] opacity-50 group-hover:opacity-100 transition-opacity" 
+        aria-hidden="true"
+      />
+    </a>
+  );
+};
 
 const Lists = () => {
   const [query, setQuery] = useState('');
@@ -92,12 +115,7 @@ const Lists = () => {
           <div className="max-h-[400px] overflow-y-auto">
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {results.map((word, index) => (
-                <div 
-                  key={index}
-                  className="bg-gray-50 p-2 rounded text-center"
-                >
-                  {word}
-                </div>
+                <WordResult key={index} word={word} />
               ))}
             </div>
           </div>
