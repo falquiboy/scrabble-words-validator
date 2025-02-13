@@ -301,6 +301,27 @@ export type Database = {
         }
         Relationships: []
       }
+      word_accents: {
+        Row: {
+          accented_word: string
+          confidence_score: number | null
+          created_at: string
+          original_word: string
+        }
+        Insert: {
+          accented_word: string
+          confidence_score?: number | null
+          created_at?: string
+          original_word: string
+        }
+        Update: {
+          accented_word?: string
+          confidence_score?: number | null
+          created_at?: string
+          original_word?: string
+        }
+        Relationships: []
+      }
       words: {
         Row: {
           alphagram: string | null
