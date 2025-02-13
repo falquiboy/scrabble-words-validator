@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+
+import React, { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { Mic, MicOff } from "lucide-react";
 
 // Word result component with RAE link
 const WordResult = ({ word }: { word: string }) => {
@@ -25,6 +27,8 @@ const Lists = () => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 
   const handleSearch = async () => {
     if (!query.trim()) {
@@ -85,15 +89,95 @@ const Lists = () => {
     }
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSearch();
+    }
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      const audioChunks: BlobPart[] = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        audioChunks.push(event.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        const reader = new FileReader();
+        
+        reader.onload = async () => {
+          if (typeof reader.result === 'string') {
+            const base64Audio = reader.result.split(',')[1];
+            
+            try {
+              const { data, error } = await supabase.functions.invoke('voice-to-text', {
+                body: { audio: base64Audio }
+              });
+
+              if (error) {
+                toast.error('Error al procesar el audio');
+                return;
+              }
+
+              if (data?.text) {
+                setQuery(data.text);
+                toast.success('Audio transcrito correctamente');
+              }
+            } catch (error) {
+              console.error('Error processing voice:', error);
+              toast.error('Error al procesar la voz');
+            }
+          }
+        };
+
+        reader.readAsDataURL(audioBlob);
+      };
+
+      mediaRecorderRef.current = mediaRecorder;
+      mediaRecorder.start();
+      setIsRecording(true);
+      toast.info('Grabando...');
+
+    } catch (error) {
+      console.error('Error accessing microphone:', error);
+      toast.error('Error al acceder al micrófono');
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+    }
+  };
+
   return (
     <div className="w-full max-w-2xl mx-auto p-4 space-y-4">
       <div className="space-y-2">
-        <Textarea
-          placeholder="Escribe tu consulta en español (ej: palabras de cinco letras con dos eles)"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="min-h-[100px]"
-        />
+        <div className="flex gap-2">
+          <Textarea
+            placeholder="Escribe tu consulta en español (ej: palabras de cinco letras con dos eles)"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleKeyPress}
+            className="min-h-[100px]"
+          />
+          <Button
+            onClick={isRecording ? stopRecording : startRecording}
+            variant="outline"
+            size="icon"
+            className="flex-shrink-0"
+            type="button"
+          >
+            {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+          </Button>
+        </div>
         <Button 
           onClick={handleSearch} 
           className="w-full"
