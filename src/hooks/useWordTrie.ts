@@ -1,9 +1,13 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { wordDB } from '@/services/WordDatabase';
 import { Trie } from '@/utils/trie';
 import { toast } from 'sonner';
 import { fetchAllWords } from '@/utils/wordFetcher';
 import { buildTrieFromWords, loadCachedTrie, saveTrie } from '@/utils/trieOperations';
+
+// Known total word count from the database
+const TOTAL_WORDS = 639293;
 
 export const useWordTrie = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -17,9 +21,9 @@ export const useWordTrie = () => {
       let words = await wordDB.getAllWords();
       console.log('Words in local database:', words.length);
 
-      if (words.length === 0) {
-        console.log('Local DB empty, fetching from Supabase...');
-        words = await fetchAllWords(0, setLoadingProgress);
+      if (words.length === 0 || words.length < TOTAL_WORDS) {
+        console.log('Local DB empty or incomplete, fetching from Supabase...');
+        words = await fetchAllWords(TOTAL_WORDS, setLoadingProgress);
         
         // Clear and rebuild local DB
         await wordDB.clear();
@@ -38,7 +42,7 @@ export const useWordTrie = () => {
     try {
       const cachedWordCount = await loadCachedTrie(trie);
       
-      if (cachedWordCount > 0) {
+      if (cachedWordCount > 0 && cachedWordCount >= TOTAL_WORDS) {
         setWordCount(cachedWordCount);
         console.log('Trie loaded from cache with', cachedWordCount, 'words');
         return true;
