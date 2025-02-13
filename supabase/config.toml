@@ -1,1 +1,5 @@
+
 project_id = "duxzmtvrcaphljakflod"
+
+[functions.build-trie]
+verify_jwt = false
