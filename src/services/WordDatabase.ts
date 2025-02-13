@@ -1,14 +1,4 @@
 import { SerializedTrie, TrieNode } from '@/utils/trie/types';
-import { TOTAL_WORDS } from '@/utils/dictionaryConstants';
-
-const INTEGRITY_CHECK_KEY = 'dictionary_integrity';
-const INTEGRITY_CHECK_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours
-
-interface IntegrityMetadata {
-  wordCount: number;
-  lastChecked: number;
-  isComplete: boolean;
-}
 
 export class WordDatabase {
   private db: IDBDatabase | null = null;
@@ -57,60 +47,6 @@ export class WordDatabase {
     return this.initPromise;
   }
 
-  private async getQuickIntegrityStatus(): Promise<IntegrityMetadata | null> {
-    const cached = localStorage.getItem(INTEGRITY_CHECK_KEY);
-    if (cached) {
-      const metadata: IntegrityMetadata = JSON.parse(cached);
-      const isRecent = Date.now() - metadata.lastChecked < INTEGRITY_CHECK_INTERVAL;
-      if (isRecent) {
-        return metadata;
-      }
-    }
-    return null;
-  }
-
-  private async updateIntegrityStatus(metadata: IntegrityMetadata): Promise<void> {
-    localStorage.setItem(INTEGRITY_CHECK_KEY, JSON.stringify(metadata));
-  }
-
-  async getDictionaryStatus(): Promise<{ isComplete: boolean; wordCount: number }> {
-    await this.init();
-    if (!this.db) throw new Error('Database not initialized');
-
-    // Try to get cached status first
-    const quickStatus = await this.getQuickIntegrityStatus();
-    if (quickStatus) {
-      return {
-        isComplete: quickStatus.isComplete,
-        wordCount: quickStatus.wordCount
-      };
-    }
-
-    // If no cached status or it's stale, do a quick count check
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction('words', 'readonly');
-      const store = transaction.objectStore('words');
-      const countRequest = store.count();
-
-      countRequest.onsuccess = () => {
-        const wordCount = countRequest.result;
-        const isComplete = wordCount >= TOTAL_WORDS;
-        
-        // Update integrity metadata
-        const metadata: IntegrityMetadata = {
-          wordCount,
-          lastChecked: Date.now(),
-          isComplete
-        };
-        this.updateIntegrityStatus(metadata);
-
-        resolve({ isComplete, wordCount });
-      };
-
-      countRequest.onerror = () => reject(countRequest.error);
-    });
-  }
-
   async addWords(words: string[]): Promise<void> {
     await this.init();
     if (!this.db) throw new Error('Database not initialized');
@@ -148,14 +84,8 @@ export class WordDatabase {
       };
 
       request.onsuccess = () => {
+        // Return words as-is, without processing digraphs
         const words = request.result.map(record => record.word);
-        // Update integrity metadata after successful retrieval
-        const metadata: IntegrityMetadata = {
-          wordCount: words.length,
-          lastChecked: Date.now(),
-          isComplete: words.length >= TOTAL_WORDS
-        };
-        this.updateIntegrityStatus(metadata);
         resolve(words);
       };
     });
@@ -202,16 +132,7 @@ export class WordDatabase {
       trieStore.clear();
 
       transaction.onerror = () => reject(transaction.error);
-      transaction.oncomplete = () => {
-        // Update integrity metadata after clearing
-        const metadata: IntegrityMetadata = {
-          wordCount: 0,
-          lastChecked: Date.now(),
-          isComplete: false
-        };
-        this.updateIntegrityStatus(metadata);
-        resolve();
-      };
+      transaction.oncomplete = () => resolve();
     });
   }
 }
