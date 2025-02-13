@@ -1,6 +1,7 @@
+
 import { useState } from "react";
 import { Trie } from "@/utils/trie";
-import { processDigraphs, toDisplayFormat } from "@/utils/digraphs";
+import { useWordTrie } from "@/hooks/useWordTrie";
 import Header from "./word-validator/Header";
 import WordInput from "./word-validator/WordInput";
 import LoadingIndicator from "./word-validator/LoadingIndicator";
@@ -14,6 +15,15 @@ interface WordValidatorProps {
 }
 
 const WordValidator = ({ isDictionaryLoading, progress, trie }: WordValidatorProps) => {
+  const { 
+    wordCount,
+    totalWords,
+    downloadSpeed,
+    estimatedTimeRemaining,
+    pauseDownload,
+    resumeDownload,
+  } = useWordTrie();
+  
   const [word, setWord] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<{
@@ -64,10 +74,8 @@ const WordValidator = ({ isDictionaryLoading, progress, trie }: WordValidatorPro
     setResult({ isValid: false, checked: false, words: [] });
   };
 
-  // When the word changes, we're in editing mode
   const handleWordChange = (newWord: string) => {
     setWord(newWord);
-    // Only reset validation if the word actually changed
     if (newWord !== word) {
       setResult(prev => ({ ...prev, checked: false }));
     }
@@ -102,7 +110,7 @@ const WordValidator = ({ isDictionaryLoading, progress, trie }: WordValidatorPro
       </div>
 
       <DictionaryStatus
-        totalWords={TOTAL_WORDS}
+        totalWords={totalWords}
         currentWords={wordCount}
         isLoading={isLoading}
         onResume={resumeDownload}
