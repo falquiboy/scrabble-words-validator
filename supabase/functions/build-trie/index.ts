@@ -41,6 +41,11 @@ class Trie {
   }
 
   insert(word: string): void {
+    if (typeof word !== 'string') {
+      console.error('Invalid word type:', typeof word, 'Word value:', word);
+      return;
+    }
+
     let current = this.root;
     const upperWord = word.toUpperCase();
     
@@ -78,6 +83,8 @@ async function buildTrie(words: string[]): Promise<{serializedTrie: string, chec
   
   const trie = new Trie();
   for (const word of words) {
+    // Verificar el tipo de dato antes de procesarlo
+    console.log('Processing word:', word, 'Type:', typeof word);
     trie.insert(word);
   }
   
@@ -127,8 +134,19 @@ async function getAllWords(supabaseClient: any): Promise<string[]> {
       break;
     }
 
-    allWords.push(...words);
-    lastWord = words[words.length - 1];
+    // Verificar la estructura de los datos
+    console.log('Sample word from batch:', words[0], 'Type:', typeof words[0]);
+
+    // Mapear los resultados a strings si es necesario
+    const processedWords = words.map((w: any) => {
+      if (typeof w === 'string') return w;
+      if (typeof w === 'object' && w !== null && 'word' in w) return w.word;
+      console.error('Unexpected word format:', w);
+      return String(w);
+    });
+
+    allWords.push(...processedWords);
+    lastWord = processedWords[processedWords.length - 1];
     console.log(`Fetched batch of ${words.length} words. Total words so far: ${allWords.length}`);
 
     if (words.length < batchSize) {
@@ -136,7 +154,7 @@ async function getAllWords(supabaseClient: any): Promise<string[]> {
     }
   }
 
-  return allWords.map(w => w);
+  return allWords;
 }
 
 Deno.serve(async (req) => {
@@ -217,4 +235,3 @@ Deno.serve(async (req) => {
     )
   }
 })
-
