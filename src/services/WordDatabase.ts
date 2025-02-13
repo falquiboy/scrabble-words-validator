@@ -63,8 +63,8 @@ export class WordDatabase {
       transaction.oncomplete = () => resolve();
 
       words.forEach(word => {
-        const upperWord = word.toUpperCase();
-        store.put({ word: upperWord });
+        // Store the word as-is, without processing digraphs
+        store.put({ word: word.toUpperCase() });
       });
     });
   }
@@ -84,13 +84,14 @@ export class WordDatabase {
       };
 
       request.onsuccess = () => {
+        // Return words as-is, without processing digraphs
         const words = request.result.map(record => record.word);
         resolve(words);
       };
     });
   }
 
-  async saveTrie(serializedTrie: ArrayBuffer): Promise<void> {
+  async saveTrie(serializedTrie: SerializedTrie): Promise<void> {
     await this.init();
     if (!this.db) throw new Error('Database not initialized');
 
@@ -104,7 +105,7 @@ export class WordDatabase {
     });
   }
 
-  async loadTrie(): Promise<ArrayBuffer | null> {
+  async loadTrie(): Promise<SerializedTrie | null> {
     await this.init();
     if (!this.db) throw new Error('Database not initialized');
 

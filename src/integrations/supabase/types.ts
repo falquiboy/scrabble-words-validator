@@ -217,33 +217,6 @@ export type Database = {
         }
         Relationships: []
       }
-      trie_cache: {
-        Row: {
-          checksum: string
-          compressed: boolean | null
-          created_at: string | null
-          id: number
-          serialized_trie: string
-          total_words: number
-        }
-        Insert: {
-          checksum: string
-          compressed?: boolean | null
-          created_at?: string | null
-          id?: number
-          serialized_trie: string
-          total_words: number
-        }
-        Update: {
-          checksum?: string
-          compressed?: boolean | null
-          created_at?: string | null
-          id?: number
-          serialized_trie?: string
-          total_words?: number
-        }
-        Relationships: []
-      }
       user_progress: {
         Row: {
           id: string

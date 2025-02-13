@@ -1,6 +1,5 @@
 import { wordDB } from '@/services/WordDatabase';
 import { Trie } from '@/utils/trie';
-import { serializeTrieToBinary, deserializeTrieFromBinary } from './trie/binaryFormat';
 
 export const buildTrieFromWords = async (
   words: string[],
@@ -14,6 +13,7 @@ export const buildTrieFromWords = async (
   trie.clear();
   
   for (const word of words) {
+    // Store the word as-is in the trie, without processing digraphs
     const upperWord = word.toUpperCase();
     trie.insert(upperWord, upperWord);
     processed++;
@@ -35,8 +35,7 @@ export const loadCachedTrie = async (trie: Trie) => {
   
   if (serializedTrie) {
     console.log('Found serialized trie, deserializing...');
-    const root = deserializeTrieFromBinary(serializedTrie);
-    trie.setRoot(root);
+    trie.deserialize(serializedTrie);
     return trie.getAllWords().length;
   }
   
@@ -45,6 +44,6 @@ export const loadCachedTrie = async (trie: Trie) => {
 
 export const saveTrie = async (trie: Trie) => {
   console.log('Saving trie to cache...');
-  const binaryTrie = serializeTrieToBinary(trie.getRoot());
-  await wordDB.saveTrie(binaryTrie);
+  const serializedTrie = trie.serialize();
+  await wordDB.saveTrie(serializedTrie);
 };

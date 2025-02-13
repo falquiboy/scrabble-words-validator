@@ -17,29 +17,6 @@ export class Trie {
     return this.root;
   }
 
-  setRoot(node: TrieNode) {
-    this.root = node;
-    // Reconstruir índice de longitud
-    this.rebuildLengthIndex();
-  }
-
-  private rebuildLengthIndex() {
-    this.lengthIndex = {};
-    const words = this.getAllWords();
-    for (const word of words) {
-      const length = word.length;
-      const alphagram = this.sortLetters(word);
-      
-      if (!this.lengthIndex[length]) {
-        this.lengthIndex[length] = {};
-      }
-      if (!this.lengthIndex[length][alphagram]) {
-        this.lengthIndex[length][alphagram] = [];
-      }
-      this.lengthIndex[length][alphagram].push(word);
-    }
-  }
-
   clear(): void {
     this.root = createNode();
     this.lengthIndex = {};
