@@ -1,12 +1,10 @@
-
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Mic, MicOff } from "lucide-react";
 
-// Word result component with RAE link
 const WordResult = ({ word }: { word: string }) => {
   const raeUrl = `https://dle.rae.es/${encodeURIComponent(word)}`;
   
@@ -29,6 +27,15 @@ const Lists = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+
+  useEffect(() => {
+    // Initialize AdSense ad
+    try {
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+    } catch (err) {
+      console.error('AdSense error:', err);
+    }
+  }, []);
 
   const handleSearch = async () => {
     if (!query.trim()) {
@@ -186,6 +193,16 @@ const Lists = () => {
           {isLoading ? 'Buscando...' : 'Buscar'}
         </Button>
       </div>
+
+      {/* AdSense Ad Unit */}
+      <ins 
+        className="adsbygoogle"
+        style={{ display: 'block' }}
+        data-ad-client="ca-pub-6198157256707928"
+        data-ad-slot="your-ad-slot-id"
+        data-ad-format="auto"
+        data-full-width-responsive="true"
+      />
 
       {results.length > 0 && (
         <div className="bg-white rounded-lg shadow p-4">

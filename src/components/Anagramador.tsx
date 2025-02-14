@@ -24,7 +24,15 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
   });
   const [isLoading, setIsLoading] = useState(false);
 
-  // Perform search when component mounts or when search parameters change
+  useEffect(() => {
+    // Initialize AdSense ad
+    try {
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+    } catch (err) {
+      console.error('AdSense error:', err);
+    }
+  }, []);
+
   useEffect(() => {
     const performSearch = async () => {
       if (!searchTerm || !trie) return;
@@ -74,6 +82,17 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
         showShorter={showShorter}
         hasActiveSearch={!!searchTerm}
       />
+      
+      {/* AdSense Ad Unit */}
+      <ins 
+        className="adsbygoogle"
+        style={{ display: 'block' }}
+        data-ad-client="ca-pub-6198157256707928"
+        data-ad-slot="your-ad-slot-id"
+        data-ad-format="auto"
+        data-full-width-responsive="true"
+      />
+
       <ResultsList
         isLoading={isLoading}
         searchTerm={searchTerm}
