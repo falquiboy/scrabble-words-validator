@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import SearchInput from './lists/SearchInput';
@@ -12,15 +12,6 @@ const Lists = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-
-  useEffect(() => {
-    // Initialize AdSense ad
-    try {
-      (window.adsbygoogle = window.adsbygoogle || []).push({});
-    } catch (err) {
-      console.error('AdSense error:', err);
-    }
-  }, []);
 
   const handleSearch = async () => {
     if (!query.trim()) {
@@ -151,16 +142,6 @@ const Lists = () => {
         onStartRecording={startRecording}
         onStopRecording={stopRecording}
         isLoading={isLoading}
-      />
-
-      {/* AdSense Ad Unit */}
-      <ins 
-        className="adsbygoogle"
-        style={{ display: 'block' }}
-        data-ad-client="ca-pub-6198157256707928"
-        data-ad-slot="your-ad-slot-id"
-        data-ad-format="auto"
-        data-full-width-responsive="true"
       />
 
       <ResultsList results={results} />
