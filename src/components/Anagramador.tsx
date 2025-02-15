@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import SearchContainer from "./anagramador/search/SearchContainer";
 import ResultsList from "./anagramador/ResultsList";
@@ -27,7 +28,13 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
   useEffect(() => {
     const trimmedSearchTerm = searchTerm.trim();
     if (!trimmedSearchTerm) {
-      setSearchResults({ exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [], shorterMatches: [], patternMatches: [] });
+      setSearchResults({
+        exactMatches: [],
+        wildcardMatches: [],
+        additionalWildcardMatches: [],
+        shorterMatches: [],
+        patternMatches: []
+      });
       setIsLoading(false);
       return;
     }
@@ -42,8 +49,7 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
           trimmedSearchTerm,
           trie,
           showShorter,
-          targetLength,
-          abortController.signal
+          targetLength
         );
         setSearchResults(results);
       } catch (error: any) {
@@ -72,7 +78,13 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
 
   const handleClear = () => {
     setSearchTerm("");
-    setSearchResults({ exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [], shorterMatches: [], patternMatches: [] });
+    setSearchResults({
+      exactMatches: [],
+      wildcardMatches: [],
+      additionalWildcardMatches: [],
+      shorterMatches: [],
+      patternMatches: []
+    });
     setIsSearchAborted(false);
   };
 
