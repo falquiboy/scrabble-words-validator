@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Mic, MicOff } from "lucide-react";
 
@@ -23,8 +23,8 @@ const SearchInput = ({
   onStopRecording,
   isLoading
 }: SearchInputProps) => {
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
       e.preventDefault();
       onSearch();
     }
@@ -32,31 +32,25 @@ const SearchInput = ({
 
   return (
     <div className="space-y-2">
-      <div className="flex gap-2">
-        <Textarea
-          placeholder="Escribe tu consulta en español (ej: palabras de cinco letras con dos eles)"
+      <div className="relative flex items-center">
+        <Input
+          placeholder="Hazlo como aquí"
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
           onKeyDown={handleKeyPress}
-          className="min-h-[64px] h-[64px]"
+          className="h-12 pl-4 pr-24 rounded-full bg-[#1A1A1A] border-none text-white placeholder:text-zinc-400"
         />
-        <Button
-          onClick={isRecording ? onStopRecording : onStartRecording}
-          variant="outline"
-          size="icon"
-          className="flex-shrink-0"
-          type="button"
-        >
-          {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-        </Button>
+        <div className="absolute right-2 flex gap-2">
+          <Button
+            onClick={isRecording ? onStopRecording : onStartRecording}
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full hover:bg-zinc-800"
+          >
+            {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+          </Button>
+        </div>
       </div>
-      <Button 
-        onClick={onSearch} 
-        className="w-full"
-        disabled={isLoading}
-      >
-        {isLoading ? 'Buscando...' : 'Buscar'}
-      </Button>
     </div>
   );
 };
