@@ -38,7 +38,7 @@ const SearchInput = ({
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
           onKeyDown={handleKeyPress}
-          className="min-h-[100px]"
+          className="min-h-[64px] h-[64px]"
         />
         <Button
           onClick={isRecording ? onStopRecording : onStartRecording}
