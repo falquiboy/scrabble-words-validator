@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import SearchInput from './lists/SearchInput';
 import ResultsList from './lists/ResultsList';
+import { toDisplayFormat } from "@/utils/digraphs";
 
 const Lists = () => {
   const [query, setQuery] = useState('');
@@ -62,7 +63,8 @@ const Lists = () => {
         return;
       }
 
-      setResults((words || []).map((w: { word: string }) => w.word));
+      // Convert internal representation to display format
+      setResults((words || []).map((w: { word: string }) => toDisplayFormat(w.word)));
       
       await supabase.from('query_history').insert({
         natural_query: query.trim(),
