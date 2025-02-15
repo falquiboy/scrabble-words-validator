@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import SearchContainer from "./anagramador/search/SearchContainer";
 import ResultsList from "./anagramador/ResultsList";
@@ -74,32 +75,34 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
   };
 
   return (
-    <div className="w-full max-w-md space-y-4 px-4">
-      <SearchContainer
-        onSearch={handleSearch}
-        onClear={handleClear}
-        onShowShorterChange={handleShowShorterChange}
-        showShorter={showShorter}
-        hasActiveSearch={!!searchTerm}
-      />
-      
-      {/* AdSense Ad Unit */}
-      <ins 
-        className="adsbygoogle"
-        style={{ display: 'block' }}
-        data-ad-client="ca-pub-6198157256707928"
-        data-ad-slot="your-ad-slot-id"
-        data-ad-format="auto"
-        data-full-width-responsive="true"
-      />
+    <div className="w-full max-w-2xl mx-auto p-4 flex flex-col items-center">
+      <div className="w-full max-w-md space-y-4">
+        <SearchContainer
+          onSearch={handleSearch}
+          onClear={handleClear}
+          onShowShorterChange={handleShowShorterChange}
+          showShorter={showShorter}
+          hasActiveSearch={!!searchTerm}
+        />
+        
+        {/* AdSense Ad Unit */}
+        <ins 
+          className="adsbygoogle"
+          style={{ display: 'block' }}
+          data-ad-client="ca-pub-6198157256707928"
+          data-ad-slot="your-ad-slot-id"
+          data-ad-format="auto"
+          data-full-width-responsive="true"
+        />
 
-      <ResultsList
-        isLoading={isLoading}
-        searchTerm={searchTerm}
-        results={searchResults}
-        highlightWildcardLetter={highlightWildcardLetter}
-        isSearchAborted={isSearchAborted}
-      />
+        <ResultsList
+          isLoading={isLoading}
+          searchTerm={searchTerm}
+          results={searchResults}
+          highlightWildcardLetter={highlightWildcardLetter}
+          isSearchAborted={isSearchAborted}
+        />
+      </div>
     </div>
   );
 };

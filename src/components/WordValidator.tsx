@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Trie } from "@/utils/trie";
 import { processDigraphs, toDisplayFormat } from "@/utils/digraphs";
@@ -63,41 +64,41 @@ const WordValidator = ({ isDictionaryLoading, progress, trie }: WordValidatorPro
     setResult({ isValid: false, checked: false, words: [] });
   };
 
-  // When the word changes, we're in editing mode
   const handleWordChange = (newWord: string) => {
     setWord(newWord);
-    // Only reset validation if the word actually changed
     if (newWord !== word) {
       setResult(prev => ({ ...prev, checked: false }));
     }
   };
 
   return (
-    <div className="w-full max-w-md space-y-4 px-4">
-      <Header />
-      <div className="space-y-4">
-        <WordInput
-          word={word}
-          isLoading={isDictionaryLoading || isLoading}
-          onWordChange={handleWordChange}
-          onValidate={result.checked ? handleClear : handleValidate}
-          buttonText={result.checked ? "Limpiar" : "Validar"}
-          isChecked={result.checked}
-        />
-        
-        {result.checked && (
-          <ValidationResult
+    <div className="w-full max-w-2xl mx-auto p-4 flex flex-col items-center">
+      <div className="w-full max-w-md space-y-4">
+        <Header />
+        <div className="space-y-4">
+          <WordInput
             word={word}
-            result={result}
+            isLoading={isDictionaryLoading || isLoading}
+            onWordChange={handleWordChange}
+            onValidate={result.checked ? handleClear : handleValidate}
+            buttonText={result.checked ? "Limpiar" : "Validar"}
+            isChecked={result.checked}
           />
-        )}
-        
-        {isDictionaryLoading && (
-          <LoadingIndicator 
-            progress={progress} 
-            loadStartTime={loadStartTime} 
-          />
-        )}
+          
+          {result.checked && (
+            <ValidationResult
+              word={word}
+              result={result}
+            />
+          )}
+          
+          {isDictionaryLoading && (
+            <LoadingIndicator 
+              progress={progress} 
+              loadStartTime={loadStartTime} 
+            />
+          )}
+        </div>
       </div>
     </div>
   );
