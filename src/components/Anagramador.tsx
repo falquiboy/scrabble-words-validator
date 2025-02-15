@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import SearchContainer from "./anagramador/search/SearchContainer";
 import ResultsList from "./anagramador/ResultsList";
@@ -26,52 +25,59 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    // Initialize AdSense ad
-    try {
-      (window.adsbygoogle = window.adsbygoogle || []).push({});
-    } catch (err) {
-      console.error('AdSense error:', err);
+    const trimmedSearchTerm = searchTerm.trim();
+    if (!trimmedSearchTerm) {
+      setSearchResults({ exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [], shorterMatches: [], patternMatches: [] });
+      setIsLoading(false);
+      return;
     }
-  }, []);
 
-  useEffect(() => {
-    const performSearch = async () => {
-      if (!searchTerm || !trie) return;
-      
+    const abortController = new AbortController();
+
+    const search = async () => {
       setIsLoading(true);
-      console.log('Starting search for:', searchTerm);
-      
+      setIsSearchAborted(false);
       try {
-        const { data } = await useOfflineAnagramSearch(searchTerm, showShorter, targetLength, trie);
-        console.log('Search results:', data);
-        setSearchResults(data);
-      } catch (error) {
-        console.error('Search error:', error);
+        const results = await useOfflineAnagramSearch(
+          trimmedSearchTerm,
+          trie,
+          showShorter,
+          targetLength,
+          abortController.signal
+        );
+        setSearchResults(results);
+      } catch (error: any) {
+        if (error.name === 'AbortError') {
+          setIsSearchAborted(true);
+          console.log("Search aborted:", error);
+        } else {
+          console.error("Error during anagram search:", error);
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
-    performSearch();
+    search();
+
+    return () => {
+      abortController.abort();
+    };
   }, [searchTerm, showShorter, targetLength, trie]);
 
   const handleSearch = (letters: string, newTargetLength: number | null) => {
-    setIsSearchAborted(false);
     setSearchTerm(letters);
     setTargetLength(newTargetLength);
-    setShowShorter(false); // Reset showShorter on new search
   };
 
   const handleClear = () => {
     setSearchTerm("");
-    setTargetLength(null);
+    setSearchResults({ exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [], shorterMatches: [], patternMatches: [] });
     setIsSearchAborted(false);
-    setShowShorter(false);
   };
 
   const handleShowShorterChange = (show: boolean) => {
     setShowShorter(show);
-    setTargetLength(null); // Clear target length when showing shorter words
   };
 
   return (
@@ -85,16 +91,6 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
           hasActiveSearch={!!searchTerm}
         />
         
-        {/* AdSense Ad Unit */}
-        <ins 
-          className="adsbygoogle"
-          style={{ display: 'block' }}
-          data-ad-client="ca-pub-6198157256707928"
-          data-ad-slot="your-ad-slot-id"
-          data-ad-format="auto"
-          data-full-width-responsive="true"
-        />
-
         <ResultsList
           isLoading={isLoading}
           searchTerm={searchTerm}
