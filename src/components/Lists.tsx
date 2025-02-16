@@ -60,9 +60,9 @@ const Lists = () => {
 
       // Notificar al usuario sobre los resultados
       if (formattedResults.length === 0) {
-        toast.info('No se encontraron palabras que cumplan con los criterios de búsqueda');
+        toast.info('La búsqueda no arrojó resultados, intente reformular la consulta');
       } else if (formattedResults.length === 100) {
-        toast.info('Mostrando los primeros 100 resultados. Puede haber más palabras disponibles.');
+        toast.info('Se muestran solo los primeros 100 resultados');
       }
       
       await supabase.from('query_history').insert({
