@@ -27,6 +27,24 @@ const preprocessLReferences = (input: string): string => {
   return processed;
 };
 
+// Process CH references before handling digraphs
+const preprocessChReferences = (input: string): string => {
+  if (!input) return '';
+  
+  let processed = input.toUpperCase();
+  
+  // First handle explicit separate C and H mentions
+  // Patterns like "C Y H", "C CON H", "C, H"
+  const separateLettersPattern = /\bC\s*(?:Y|CON|,)\s*H\b/g;
+  processed = processed.replace(separateLettersPattern, 'C H');
+  
+  // Then handle remaining CH occurrences as digraphs
+  processed = processed.replace(/\bCH\b/g, '__CH__');
+  processed = processed.replace(/CH/g, '__CH__');
+  
+  return processed;
+};
+
 // Process digraphs in query before SQL generation
 const processDigraphs = (input: string): string => {
   if (!input) return '';
@@ -45,21 +63,16 @@ const processDigraphs = (input: string): string => {
   // Restore Ñ
   result = result.replace(/#/g, 'Ñ');
   
-  // Process digraphs in specific order
-  // Note: We don't process LL here if it's marked with __LL__
-  const DIGRAPHS = {
-    CH: 'Ç',
-    RR: 'W'
-  };
+  // Process RR digraph
+  result = result.replace(/RR/g, 'W');
   
-  Object.entries(DIGRAPHS).forEach(([digraph, replacement]) => {
-    result = result.replace(new RegExp(digraph, 'g'), replacement);
-  });
+  // Process CH digraph only when marked
+  result = result.replace(/__CH__/g, 'Ç');
   
   // Process remaining LL occurrences (those not marked as explicit)
   result = result.replace(/LL/g, 'K');
   
-  // Finally, restore our special markers
+  // Finally, restore our special L/LL markers
   result = result
     .replace(/__L__/g, 'L')
     .replace(/__LL__/g, 'K');
@@ -77,11 +90,15 @@ serve(async (req) => {
     console.log('Query original:', query)
     
     // First process L/LL references
-    const preProcessed = preprocessLReferences(query)
-    console.log('Query con referencias L/LL procesadas:', preProcessed)
+    const preProcessedL = preprocessLReferences(query)
+    console.log('Query con referencias L/LL procesadas:', preProcessedL)
     
-    // Then process remaining digraphs
-    const processedQuery = processDigraphs(preProcessed)
+    // Then process CH references
+    const preProcessedCH = preprocessChReferences(preProcessedL)
+    console.log('Query con referencias CH procesadas:', preProcessedCH)
+    
+    // Finally process remaining digraphs
+    const processedQuery = processDigraphs(preProcessedCH)
     console.log('Query procesada final:', processedQuery)
 
     const completion = await openai.chat.completions.create({
@@ -154,3 +171,4 @@ serve(async (req) => {
     )
   }
 })
+
