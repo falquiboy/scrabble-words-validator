@@ -11,9 +11,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Independent digraph processing for natural language queries
-const processNaturalLanguageQuery = (input: string): string => {
-  if (!input) return '';
+// Natural language query processing
+const processNaturalLanguageQuery = (input: string): { 
+  processedQuery: string,
+  hasSeparateLetters: { ch?: boolean }
+} => {
+  if (!input) return { processedQuery: '', hasSeparateLetters: {} };
   
   let result = input.toUpperCase();
   console.log('Input original:', result);
@@ -40,19 +43,19 @@ const processNaturalLanguageQuery = (input: string): string => {
   
   console.log('Después de normalizar acentos:', result);
   
-  // 4. Process digraphs
+  // 4. Process digraphs ONLY if not explicitly separated
   if (!hasSeparateCH) {
-    // Only process CH as digraph if there's no explicit "C Y H"
     result = result.replace(/CH/g, 'Ç');
   }
   result = result.replace(/RR/g, 'W');
-  
-  // 5. Process remaining LL (not from explicit "elle")
   result = result.replace(/LL/g, 'K');
   
   console.log('Resultado final:', result);
   
-  return result;
+  return {
+    processedQuery: result,
+    hasSeparateLetters: { ch: hasSeparateCH }
+  };
 };
 
 serve(async (req) => {
@@ -65,43 +68,44 @@ serve(async (req) => {
     console.log('Query original:', query)
     
     // Process query with independent logic
-    const processedQuery = processNaturalLanguageQuery(query)
+    const { processedQuery, hasSeparateLetters } = processNaturalLanguageQuery(query)
     console.log('Query procesada:', processedQuery)
+    console.log('Letras separadas detectadas:', hasSeparateLetters)
+
+    let systemPrompt = `Eres un experto en SQL que convierte consultas en lenguaje natural a SQL. 
+    La tabla 'words' tiene estas columnas: word (texto), length (número), alphagram (texto).
+    SOLO debes devolver la consulta SQL, nada más.
+    La consulta SIEMPRE debe empezar con "SELECT DISTINCT w.word FROM words w WHERE".
+    SIEMPRE usa el alias "w" para la tabla words.
+    SIEMPRE ordena por w.word y limita a 100 resultados.
+    SIEMPRE usa ILIKE para comparaciones de texto (case-insensitive).
+
+    IMPORTANTE: Distinción entre L y LL:
+    - Las referencias a "ele", "eles", "l" representan la letra L simple
+    - Las referencias a "elle", "elles", "ll" representan el dígrafo LL (almacenado como K)
+
+    IMPORTANTE: Los dígrafos están almacenados internamente así:
+    - CH se almacena como Ç (CHICO → ÇICO)
+    - LL se almacena como K (LLUVIA → KUVIA)
+    - RR se almacena como W (PERRO → PEWO)
+
+    IMPORTANTE: Manejo de negaciones:
+    - "sin" y "ni" siempre indican NOT ILIKE
+    - "no" siempre indica NOT ILIKE`;
+
+    // Añadir instrucciones específicas para C y H separadas
+    if (hasSeparateLetters.ch) {
+      systemPrompt += `\n\nIMPORTANTE: En esta consulta, C y H deben buscarse como letras separadas:
+      - Usar: w.word ILIKE '%C%' AND w.word ILIKE '%H%'
+      - NO usar: w.word ILIKE '%Ç%'`;
+    }
 
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
         {
           role: "system",
-          content: `Eres un experto en SQL que convierte consultas en lenguaje natural a SQL. 
-          La tabla 'words' tiene estas columnas: word (texto), length (número), alphagram (texto).
-          SOLO debes devolver la consulta SQL, nada más.
-          La consulta SIEMPRE debe empezar con "SELECT DISTINCT w.word FROM words w WHERE".
-          SIEMPRE usa el alias "w" para la tabla words.
-          SIEMPRE ordena por w.word y limita a 100 resultados.
-          SIEMPRE usa ILIKE para comparaciones de texto (case-insensitive).
-
-          IMPORTANTE: Distinción entre L y LL:
-          - Las referencias a "ele", "eles", "l" representan la letra L simple
-          - Las referencias a "elle", "elles", "ll" representan el dígrafo LL (almacenado como K)
-
-          IMPORTANTE: Los dígrafos están almacenados internamente así:
-          - CH se almacena como Ç (CHICO → ÇICO)
-          - LL se almacena como K (LLUVIA → KUVIA)
-          - RR se almacena como W (PERRO → PEWO)
-
-          IMPORTANTE: Manejo de negaciones:
-          - "sin" y "ni" siempre indican NOT ILIKE
-          - "no" siempre indica NOT ILIKE
-
-          Ejemplos:
-          "palabras con ele" -> "SELECT DISTINCT w.word FROM words w WHERE w.word ILIKE '%L%' ORDER BY w.word LIMIT 100"
-          "palabras con elle" -> "SELECT DISTINCT w.word FROM words w WHERE w.word ILIKE '%K%' ORDER BY w.word LIMIT 100"
-          "palabras que empiezan con l" -> "SELECT DISTINCT w.word FROM words w WHERE w.word ILIKE 'L%' ORDER BY w.word LIMIT 100"
-          "palabras que terminan en ll" -> "SELECT DISTINCT w.word FROM words w WHERE w.word ILIKE '%K' ORDER BY w.word LIMIT 100"
-          "palabras sin a" -> "SELECT DISTINCT w.word FROM words w WHERE w.word NOT ILIKE '%A%' ORDER BY w.word LIMIT 100"
-          "palabras con q sin e ni i" -> "SELECT DISTINCT w.word FROM words w WHERE w.word ILIKE '%Q%' AND w.word NOT ILIKE '%E%' AND w.word NOT ILIKE '%I%' ORDER BY w.word LIMIT 100"
-          "palabras que no tengan n" -> "SELECT DISTINCT w.word FROM words w WHERE w.word NOT ILIKE '%N%' ORDER BY w.word LIMIT 100"`
+          content: systemPrompt
         },
         {
           role: "user",
@@ -138,4 +142,3 @@ serve(async (req) => {
     )
   }
 })
-
