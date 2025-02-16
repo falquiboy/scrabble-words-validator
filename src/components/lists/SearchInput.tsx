@@ -1,7 +1,7 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, ArrowUp } from "lucide-react";
+import { Mic, MicOff, ArrowUp, X } from "lucide-react";
 
 interface SearchInputProps {
   query: string;
@@ -22,11 +22,36 @@ const SearchInput = ({
   onStopRecording,
   isLoading
 }: SearchInputProps) => {
+  const [hasActiveSearch, setHasActiveSearch] = useState(false);
+  const [previousQuery, setPreviousQuery] = useState('');
+
+  useEffect(() => {
+    // If query changes and we have an active search, it means user is typing new text
+    if (hasActiveSearch && query !== previousQuery) {
+      setHasActiveSearch(false);
+    }
+  }, [query, hasActiveSearch, previousQuery]);
+
+  const handleSearch = () => {
+    if (hasActiveSearch) {
+      // Clear functionality
+      onQueryChange('');
+      setHasActiveSearch(false);
+    } else {
+      // Search functionality
+      if (query.trim()) {
+        onSearch();
+        setHasActiveSearch(true);
+        setPreviousQuery(query);
+      }
+    }
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (!isLoading && query.trim()) {
-        onSearch();
+        handleSearch();
       }
     }
   };
@@ -57,13 +82,17 @@ const SearchInput = ({
             {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
           </Button>
           <Button
-            onClick={onSearch}
+            onClick={handleSearch}
             variant="ghost"
             size="icon"
             className="h-7 w-7 rounded-full bg-white hover:bg-white/90 text-black translate-y-0.5"
-            disabled={isLoading || !query.trim()}
+            disabled={isLoading || (!hasActiveSearch && !query.trim())}
           >
-            <ArrowUp className="h-4 w-4" />
+            {hasActiveSearch ? (
+              <X className="h-4 w-4" />
+            ) : (
+              <ArrowUp className="h-4 w-4" />
+            )}
           </Button>
         </div>
       </div>
