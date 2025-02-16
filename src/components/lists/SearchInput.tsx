@@ -53,7 +53,7 @@ const SearchInput = ({
             onClick={onSearch}
             variant="ghost"
             size="icon"
-            className="h-8 w-8 rounded-full hover:bg-zinc-800 text-white"
+            className="h-8 w-8 rounded-full bg-white hover:bg-white/90 text-black"
           >
             <ArrowUp className="h-4 w-4" />
           </Button>
