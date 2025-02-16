@@ -85,7 +85,7 @@ serve(async (req) => {
     console.log('Query procesada final:', processedQuery)
 
     const completion = await openai.chat.completions.create({
-      model: "o3-mini-high",
+      model: "gpt-3.5-turbo",
       messages: [
         {
           role: "system",
