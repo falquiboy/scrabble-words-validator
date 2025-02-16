@@ -38,7 +38,7 @@ const SearchInput = ({
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
           onKeyDown={handleKeyPress}
-          className="h-12 pl-4 pr-32 rounded-full bg-[#1A1A1A] border-none text-white placeholder:text-zinc-400"
+          className="h-20 pl-4 pr-32 rounded-full bg-[#1A1A1A] border-none text-white placeholder:text-zinc-400"
         />
         <div className="absolute right-2 flex gap-2">
           <Button
