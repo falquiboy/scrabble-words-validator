@@ -80,6 +80,12 @@ serve(async (req) => {
     SIEMPRE ordena por w.word y limita a 100 resultados.
     SIEMPRE usa ILIKE para comparaciones de texto (case-insensitive).
 
+    IMPORTANTE: Distinciones en el lenguaje natural:
+    - Cuando se dice "palabras CON A y B" significa "palabras que contienen AMBAS letras A y B"
+      Ejemplo: "palabras con A y B" → w.word ILIKE '%A%' AND w.word ILIKE '%B%'
+    - Cuando se dice "palabras CON A" significa "palabras que contienen la letra A"
+      Ejemplo: "palabras con A" → w.word ILIKE '%A%'
+
     IMPORTANTE: Distinción entre L y LL:
     - Las referencias a "ele", "eles", "l" representan la letra L simple
     - Las referencias a "elle", "elles", "ll" representan el dígrafo LL (almacenado como K)
