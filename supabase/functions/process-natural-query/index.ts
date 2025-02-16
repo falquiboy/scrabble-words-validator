@@ -11,71 +11,46 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Process explicit L/LL references before handling digraphs
-const preprocessLReferences = (input: string): string => {
+// Independent digraph processing for natural language queries
+const processNaturalLanguageQuery = (input: string): string => {
   if (!input) return '';
   
-  let processed = input.toUpperCase();
+  let result = input.toUpperCase();
+  console.log('Input original:', result);
   
-  // Replace explicit mentions of "ele(s)" and "elle(s)"
-  processed = processed
-    .replace(/\b(ELE|ELES)\b/g, '__L__')
-    .replace(/\b(ELLE|ELLES)\b/g, '__LL__')
-    .replace(/\b([^A-Z]|^)L([^A-Z]|$)\b/g, '$1__L__$2')
-    .replace(/\b([^A-Z]|^)LL([^A-Z]|$)\b/g, '$1__LL__$2');
+  // 1. First handle explicit "C Y H" patterns
+  const hasSeparateCH = /\bC\s*(?:Y|CON|,)\s*H\b/g.test(result);
   
-  return processed;
-};
-
-// Process CH references before handling digraphs
-const preprocessChReferences = (input: string): string => {
-  if (!input) return '';
+  // 2. Handle L/LL explicit references
+  result = result
+    .replace(/\b(ELE|ELES)\b/g, 'L')
+    .replace(/\b(ELLE|ELLES)\b/g, 'K')
+    .replace(/\b([^A-Z]|^)L([^A-Z]|$)\b/g, '$1L$2')
+    .replace(/\b([^A-Z]|^)LL([^A-Z]|$)\b/g, '$1K$2');
   
-  let processed = input.toUpperCase();
+  console.log('Después de procesar L/LL:', result);
   
-  // First handle explicit separate C and H mentions
-  // Patterns like "C Y H", "C CON H", "C, H"
-  const separateLettersPattern = /\bC\s*(?:Y|CON|,)\s*H\b/g;
-  if (separateLettersPattern.test(processed)) {
-    // If we find an explicit "C y H" pattern, we don't process any CH as digraph
-    return processed.replace(separateLettersPattern, 'C H');
-  }
-  
-  // If no explicit separation is found, then process CH as digraph
-  return processed.replace(/CH/g, '__CH__');
-};
-
-// Process digraphs in query before SQL generation
-const processDigraphs = (input: string): string => {
-  if (!input) return '';
-  
-  let result = input;
-  
-  // Special handling for Ñ
+  // 3. Special handling for Ñ during accent removal
   result = result.replace(/Ñ/g, '#');
-  
-  // Remove accents
   result = result
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .normalize('NFC');
-  
-  // Restore Ñ
   result = result.replace(/#/g, 'Ñ');
   
-  // Process RR digraph
+  console.log('Después de normalizar acentos:', result);
+  
+  // 4. Process digraphs
+  if (!hasSeparateCH) {
+    // Only process CH as digraph if there's no explicit "C Y H"
+    result = result.replace(/CH/g, 'Ç');
+  }
   result = result.replace(/RR/g, 'W');
   
-  // Process CH digraph only when marked
-  result = result.replace(/__CH__/g, 'Ç');
-  
-  // Process remaining LL occurrences (those not marked as explicit)
+  // 5. Process remaining LL (not from explicit "elle")
   result = result.replace(/LL/g, 'K');
   
-  // Finally, restore our special L/LL markers
-  result = result
-    .replace(/__L__/g, 'L')
-    .replace(/__LL__/g, 'K');
+  console.log('Resultado final:', result);
   
   return result;
 };
@@ -89,17 +64,9 @@ serve(async (req) => {
     const { query } = await req.json()
     console.log('Query original:', query)
     
-    // First process L/LL references
-    const preProcessedL = preprocessLReferences(query)
-    console.log('Query con referencias L/LL procesadas:', preProcessedL)
-    
-    // Then process CH references
-    const preProcessedCH = preprocessChReferences(preProcessedL)
-    console.log('Query con referencias CH procesadas:', preProcessedCH)
-    
-    // Finally process remaining digraphs
-    const processedQuery = processDigraphs(preProcessedCH)
-    console.log('Query procesada final:', processedQuery)
+    // Process query with independent logic
+    const processedQuery = processNaturalLanguageQuery(query)
+    console.log('Query procesada:', processedQuery)
 
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
