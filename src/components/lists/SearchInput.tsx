@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Mic, MicOff, ArrowUp, X } from "lucide-react";
 
@@ -24,6 +24,7 @@ const SearchInput = ({
 }: SearchInputProps) => {
   const [hasActiveSearch, setHasActiveSearch] = useState(false);
   const [previousQuery, setPreviousQuery] = useState('');
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     // If query changes and we have an active search, it means user is typing new text
@@ -32,11 +33,20 @@ const SearchInput = ({
     }
   }, [query, hasActiveSearch, previousQuery]);
 
+  // Add effect to focus textarea when query is cleared
+  useEffect(() => {
+    if (!query && textAreaRef.current && !isLoading) {
+      textAreaRef.current.focus();
+    }
+  }, [query, isLoading]);
+
   const handleSearch = () => {
     if (hasActiveSearch) {
       // Clear functionality
       onQueryChange('');
       setHasActiveSearch(false);
+      // Focus the textarea after clearing
+      textAreaRef.current?.focus();
     } else {
       // Search functionality
       if (query.trim()) {
@@ -60,6 +70,7 @@ const SearchInput = ({
     <div className="space-y-2">
       <div className="relative flex items-center">
         <textarea
+          ref={textAreaRef}
           placeholder="Ejemplo: palabras con q sin e ni i"
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
