@@ -33,7 +33,7 @@ const SearchInput = ({
     <div className="space-y-2">
       <div className="relative flex items-center">
         <textarea
-          placeholder="Hazlo como aquí"
+          placeholder="Ej.: palabras con q sin e ni i"
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
           onKeyDown={handleKeyPress}
