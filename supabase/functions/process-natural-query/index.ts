@@ -85,7 +85,7 @@ serve(async (req) => {
     console.log('Query procesada final:', processedQuery)
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "o3-mini-high",
       messages: [
         {
           role: "system",
@@ -95,7 +95,7 @@ serve(async (req) => {
           La consulta SIEMPRE debe empezar con "SELECT DISTINCT w.word FROM words w WHERE".
           SIEMPRE usa el alias "w" para la tabla words.
           SIEMPRE ordena por w.word y limita a 100 resultados.
-          SIEMPRE usa ILIKE para comparaciones de texto.
+          SIEMPRE usa ILIKE para comparaciones de texto (case-insensitive).
 
           IMPORTANTE: Distinción entre L y LL:
           - Las referencias a "ele", "eles", "l" representan la letra L simple
@@ -106,11 +106,18 @@ serve(async (req) => {
           - LL se almacena como K (LLUVIA → KUVIA)
           - RR se almacena como W (PERRO → PEWO)
 
+          IMPORTANTE: Manejo de negaciones:
+          - "sin" y "ni" siempre indican NOT ILIKE
+          - "no" siempre indica NOT ILIKE
+
           Ejemplos:
           "palabras con ele" -> "SELECT DISTINCT w.word FROM words w WHERE w.word ILIKE '%L%' ORDER BY w.word LIMIT 100"
           "palabras con elle" -> "SELECT DISTINCT w.word FROM words w WHERE w.word ILIKE '%K%' ORDER BY w.word LIMIT 100"
           "palabras que empiezan con l" -> "SELECT DISTINCT w.word FROM words w WHERE w.word ILIKE 'L%' ORDER BY w.word LIMIT 100"
-          "palabras que terminan en ll" -> "SELECT DISTINCT w.word FROM words w WHERE w.word ILIKE '%K' ORDER BY w.word LIMIT 100"`
+          "palabras que terminan en ll" -> "SELECT DISTINCT w.word FROM words w WHERE w.word ILIKE '%K' ORDER BY w.word LIMIT 100"
+          "palabras sin a" -> "SELECT DISTINCT w.word FROM words w WHERE w.word NOT ILIKE '%A%' ORDER BY w.word LIMIT 100"
+          "palabras con q sin e ni i" -> "SELECT DISTINCT w.word FROM words w WHERE w.word ILIKE '%Q%' AND w.word NOT ILIKE '%E%' AND w.word NOT ILIKE '%I%' ORDER BY w.word LIMIT 100"
+          "palabras que no tengan n" -> "SELECT DISTINCT w.word FROM words w WHERE w.word NOT ILIKE '%N%' ORDER BY w.word LIMIT 100"`
         },
         {
           role: "user",
