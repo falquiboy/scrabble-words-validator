@@ -45,7 +45,7 @@ const SearchInput = ({
             onClick={isRecording ? onStopRecording : onStartRecording}
             variant="ghost"
             size="icon"
-            className="h-8 w-8 rounded-full hover:bg-zinc-800 text-white"
+            className={`h-8 w-8 rounded-full ${isRecording ? 'bg-white text-black' : 'text-white'} hover:bg-white hover:text-black transition-colors`}
           >
             {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
           </Button>
