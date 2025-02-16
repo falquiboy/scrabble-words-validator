@@ -22,7 +22,7 @@ const ResultsList = ({ results }: ResultsListProps) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-4">
+    <div className="bg-white rounded-lg shadow p-4 h-[calc(100vh-12rem)]">
       <div className="flex justify-between items-center mb-2">
         <h3 className="font-semibold">Resultados ({results.length})</h3>
         <Button
@@ -35,7 +35,7 @@ const ResultsList = ({ results }: ResultsListProps) => {
           <span>Copiar todo</span>
         </Button>
       </div>
-      <div className="max-h-[400px] overflow-y-auto">
+      <div className="h-[calc(100%-3rem)] overflow-y-auto">
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {results.map((word, index) => (
             <WordResult key={index} word={word} />
