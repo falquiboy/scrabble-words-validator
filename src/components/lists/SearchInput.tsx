@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Mic, MicOff, ArrowUp } from "lucide-react";
 
@@ -23,8 +22,8 @@ const SearchInput = ({
   onStopRecording,
   isLoading
 }: SearchInputProps) => {
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       onSearch();
     }
@@ -33,12 +32,16 @@ const SearchInput = ({
   return (
     <div className="space-y-2">
       <div className="relative flex items-center">
-        <Input
+        <textarea
           placeholder="Hazlo como aquí"
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
           onKeyDown={handleKeyPress}
-          className="h-20 pl-4 pr-16 rounded-full bg-[#1A1A1A] border-none text-white placeholder:text-zinc-400 whitespace-normal break-words"
+          className="w-full h-20 pl-4 pr-16 py-4 rounded-full bg-[#1A1A1A] border-none text-white placeholder:text-zinc-400 resize-none overflow-hidden focus:outline-none"
+          style={{
+            lineHeight: "1.5",
+            verticalAlign: "middle"
+          }}
         />
         <div className="absolute right-2 flex gap-2">
           <Button
