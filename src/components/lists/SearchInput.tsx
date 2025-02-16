@@ -2,7 +2,7 @@
 import React from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff } from "lucide-react";
+import { Mic, MicOff, ArrowUp } from "lucide-react";
 
 interface SearchInputProps {
   query: string;
@@ -38,7 +38,7 @@ const SearchInput = ({
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
           onKeyDown={handleKeyPress}
-          className="h-12 pl-4 pr-24 rounded-full bg-[#1A1A1A] border-none text-white placeholder:text-zinc-400"
+          className="h-12 pl-4 pr-32 rounded-full bg-[#1A1A1A] border-none text-white placeholder:text-zinc-400"
         />
         <div className="absolute right-2 flex gap-2">
           <Button
@@ -48,6 +48,14 @@ const SearchInput = ({
             className="h-8 w-8 rounded-full hover:bg-zinc-800 text-white"
           >
             {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+          </Button>
+          <Button
+            onClick={onSearch}
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full hover:bg-zinc-800 text-white"
+          >
+            <ArrowUp className="h-4 w-4" />
           </Button>
         </div>
       </div>
