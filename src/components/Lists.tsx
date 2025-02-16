@@ -43,10 +43,10 @@ const Lists = () => {
       }
 
       console.log('Ejecutando SQL:', processedQuery.sql);
-      const { data: words, error } = await supabase
+      const { data: words, error, count } = await supabase
         .rpc('execute_natural_search', { query_text: processedQuery.sql });
 
-      console.log('Respuesta de execute_natural_search:', words, error);
+      console.log('Respuesta de execute_natural_search:', words, error, count);
 
       if (error) {
         console.error('Error al ejecutar la consulta:', error);
@@ -55,7 +55,15 @@ const Lists = () => {
       }
 
       // Convert internal representation to display format
-      setResults((words || []).map((w: { word: string }) => toDisplayFormat(w.word)));
+      const formattedResults = (words || []).map((w: { word: string }) => toDisplayFormat(w.word));
+      setResults(formattedResults);
+
+      // Notificar al usuario sobre los resultados
+      if (formattedResults.length === 0) {
+        toast.info('No se encontraron palabras que cumplan con los criterios de búsqueda');
+      } else if (formattedResults.length === 100) {
+        toast.info('Mostrando los primeros 100 resultados. Puede haber más palabras disponibles.');
+      }
       
       await supabase.from('query_history').insert({
         natural_query: query.trim(),
