@@ -36,13 +36,13 @@ const preprocessChReferences = (input: string): string => {
   // First handle explicit separate C and H mentions
   // Patterns like "C Y H", "C CON H", "C, H"
   const separateLettersPattern = /\bC\s*(?:Y|CON|,)\s*H\b/g;
-  processed = processed.replace(separateLettersPattern, 'C H');
+  if (separateLettersPattern.test(processed)) {
+    // If we find an explicit "C y H" pattern, we don't process any CH as digraph
+    return processed.replace(separateLettersPattern, 'C H');
+  }
   
-  // Then handle remaining CH occurrences as digraphs
-  processed = processed.replace(/\bCH\b/g, '__CH__');
-  processed = processed.replace(/CH/g, '__CH__');
-  
-  return processed;
+  // If no explicit separation is found, then process CH as digraph
+  return processed.replace(/CH/g, '__CH__');
 };
 
 // Process digraphs in query before SQL generation
