@@ -25,7 +25,9 @@ const SearchInput = ({
   const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      onSearch();
+      if (!isLoading && query.trim()) {
+        onSearch();
+      }
     }
   };
 
@@ -42,6 +44,7 @@ const SearchInput = ({
             lineHeight: "1.5",
             verticalAlign: "middle"
           }}
+          disabled={isLoading}
         />
         <div className="absolute right-2 flex gap-2">
           <Button
@@ -49,6 +52,7 @@ const SearchInput = ({
             variant="ghost"
             size="icon"
             className={`h-8 w-8 rounded-full ${isRecording ? 'bg-white text-black' : 'text-white'} hover:bg-white hover:text-black transition-colors`}
+            disabled={isLoading}
           >
             {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
           </Button>
@@ -57,6 +61,7 @@ const SearchInput = ({
             variant="ghost"
             size="icon"
             className="h-7 w-7 rounded-full bg-white hover:bg-white/90 text-black translate-y-0.5"
+            disabled={isLoading || !query.trim()}
           >
             <ArrowUp className="h-4 w-4" />
           </Button>
