@@ -23,7 +23,7 @@ const ResultsList = ({ results }: ResultsListProps) => {
   };
 
   return (
-    <ScrollArea className="h-[calc(100vh-12rem)]">
+    <ScrollArea className="h-[calc(100vh-16rem)]">
       <div className="bg-white rounded-lg shadow p-4">
         <div className="flex justify-between items-center mb-2">
           <h3 className="font-semibold">Resultados ({results.length})</h3>
@@ -48,4 +48,3 @@ const ResultsList = ({ results }: ResultsListProps) => {
 };
 
 export default ResultsList;
-

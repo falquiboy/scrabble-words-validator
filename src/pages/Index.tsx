@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import WordValidator from "@/components/WordValidator";
 import Anagramador from "@/components/Anagramador";
@@ -19,7 +20,7 @@ const Index = () => {
     dbProgress;
 
   return (
-    <div className="fixed inset-0 bg-gray-50 flex flex-col items-center">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <NewModuleSelector activeModule={activeModule} onModuleChange={setActiveModule} />
       <div className="mt-20 flex-1 w-full">
         {activeModule === 'judge' ? (

@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -141,8 +140,8 @@ const Lists = () => {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto h-[calc(100vh-6rem)] flex flex-col">
-      <div className="flex-1 overflow-y-auto p-4">
+    <div className="w-full max-w-2xl mx-auto flex flex-col h-full">
+      <div className="flex-1">
         <ResultsList results={results} />
       </div>
       
@@ -162,4 +161,3 @@ const Lists = () => {
 };
 
 export default Lists;
-
