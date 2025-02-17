@@ -141,20 +141,25 @@ const Lists = () => {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto p-4 space-y-4">
-      <SearchInput 
-        query={query}
-        onQueryChange={setQuery}
-        onSearch={handleSearch}
-        isRecording={isRecording}
-        onStartRecording={startRecording}
-        onStopRecording={stopRecording}
-        isLoading={isLoading}
-      />
-
-      <ResultsList results={results} />
+    <div className="w-full max-w-2xl mx-auto h-[calc(100vh-6rem)] flex flex-col">
+      <div className="flex-1 overflow-y-auto p-4">
+        <ResultsList results={results} />
+      </div>
+      
+      <div className="p-4 border-t border-gray-200 bg-white">
+        <SearchInput 
+          query={query}
+          onQueryChange={setQuery}
+          onSearch={handleSearch}
+          isRecording={isRecording}
+          onStartRecording={startRecording}
+          onStopRecording={stopRecording}
+          isLoading={isLoading}
+        />
+      </div>
     </div>
   );
 };
 
 export default Lists;
+
