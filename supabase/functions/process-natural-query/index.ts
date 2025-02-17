@@ -74,30 +74,35 @@ serve(async (req) => {
 
     let systemPrompt = `Eres un experto en SQL que convierte consultas en lenguaje natural a SQL. 
     La tabla 'words' tiene estas columnas: word (texto), length (número), alphagram (texto).
-    SOLO debes devolver la consulta SQL, nada más.
-    La consulta SIEMPRE debe empezar con "SELECT DISTINCT w.word FROM words w WHERE".
-    SIEMPRE usa el alias "w" para la tabla words.
-    SIEMPRE ordena por w.word y limita a 100 resultados.
-    SIEMPRE usa ILIKE para comparaciones de texto (case-insensitive).
 
-    IMPORTANTE: Distinciones en el lenguaje natural:
-    - Cuando se dice "palabras CON A y B" significa "palabras que contienen AMBAS letras A y B"
-      Ejemplo: "palabras con A y B" → w.word ILIKE '%A%' AND w.word ILIKE '%B%'
-    - Cuando se dice "palabras CON A" significa "palabras que contienen la letra A"
+    Guía para interpretar el lenguaje natural:
+    - "con" generalmente indica inclusión (ILIKE)
       Ejemplo: "palabras con A" → w.word ILIKE '%A%'
+    - "sin" o "ni" generalmente indican exclusión (NOT ILIKE)
+      Ejemplo: "palabras sin A" → w.word NOT ILIKE '%A%'
 
-    IMPORTANTE: Distinción entre L y LL:
-    - Las referencias a "ele", "eles", "l" representan la letra L simple
-    - Las referencias a "elle", "elles", "ll" representan el dígrafo LL (almacenado como K)
+    Ejemplos de interpretación:
+    - "palabras con q sin e ni i" → 
+      w.word ILIKE '%Q%' AND w.word NOT ILIKE '%E%' AND w.word NOT ILIKE '%I%'
+    - "palabras que no tengan vocales" →
+      w.word NOT ILIKE '%A%' AND w.word NOT ILIKE '%E%' AND w.word NOT ILIKE '%I%' AND w.word NOT ILIKE '%O%' AND w.word NOT ILIKE '%U%'
+    - "palabras con ch pero sin ll" →
+      w.word ILIKE '%Ç%' AND w.word NOT ILIKE '%K%'
+
+    Casos especiales:
+    - Cuando hay combinaciones ("con X sin Y"), prioriza la interpretación natural de la frase
+    - Considera el contexto completo de la consulta
+
+    La consulta SIEMPRE debe:
+    - Empezar con "SELECT DISTINCT w.word FROM words w WHERE"
+    - Usar el alias "w" para la tabla words
+    - Ordenar por w.word y limitar a 100 resultados
+    - Usar ILIKE para comparaciones de texto (case-insensitive)
 
     IMPORTANTE: Los dígrafos están almacenados internamente así:
     - CH se almacena como Ç (CHICO → ÇICO)
     - LL se almacena como K (LLUVIA → KUVIA)
-    - RR se almacena como W (PERRO → PEWO)
-
-    IMPORTANTE: Manejo de negaciones:
-    - "sin" y "ni" siempre indican NOT ILIKE
-    - "no" siempre indica NOT ILIKE`;
+    - RR se almacena como W (PERRO → PEWO)`;
 
     // Añadir instrucciones específicas para C y H separadas
     if (hasSeparateLetters.ch) {
@@ -118,7 +123,7 @@ serve(async (req) => {
           content: processedQuery
         }
       ],
-      temperature: 0,
+      temperature: 0.3,
     })
 
     const sql = completion.choices[0].message.content
