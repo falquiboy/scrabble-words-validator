@@ -67,53 +67,53 @@ const SearchInput = ({
   };
 
   return (
-    <div className="space-y-2">
-      <div className="relative flex items-center">
+    <div className="space-y-3">
+      <div className="relative">
         <textarea
           ref={textAreaRef}
           placeholder="Ejemplo: palabras con q sin e ni i"
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
           onKeyDown={handleKeyPress}
-          className="w-full h-20 pl-4 pr-24 py-4 rounded-lg bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 resize-none overflow-hidden focus:outline-none focus:ring-2 focus:ring-zinc-200"
+          className="w-full h-20 px-4 py-4 rounded-lg bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 resize-none overflow-hidden focus:outline-none focus:ring-2 focus:ring-zinc-200"
           style={{
             lineHeight: "1.5",
             verticalAlign: "middle"
           }}
           disabled={isLoading}
         />
-        <div className="absolute right-3 bottom-3 flex gap-2">
-          <Button
-            onClick={isRecording ? onStopRecording : onStartRecording}
-            variant="ghost"
-            size="icon"
-            className={`h-10 w-10 rounded-full ${
-              isRecording 
-                ? 'bg-red-500 text-white hover:bg-red-600' 
-                : 'bg-zinc-100 text-zinc-900 hover:bg-zinc-200'
-            } transition-colors`}
-            disabled={isLoading}
-          >
-            {isRecording ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
-          </Button>
-          <Button
-            onClick={handleSearch}
-            variant="ghost"
-            size="icon"
-            className={`h-10 w-10 rounded-full ${
-              hasActiveSearch
-                ? 'bg-zinc-100 hover:bg-zinc-200 text-zinc-900'
-                : 'bg-zinc-900 hover:bg-zinc-800 text-white'
-            }`}
-            disabled={isLoading || (!hasActiveSearch && !query.trim())}
-          >
-            {hasActiveSearch ? (
-              <X className="h-5 w-5" />
-            ) : (
-              <ArrowUp className="h-5 w-5" />
-            )}
-          </Button>
-        </div>
+      </div>
+      <div className="flex justify-end gap-2 px-1">
+        <Button
+          onClick={isRecording ? onStopRecording : onStartRecording}
+          variant="ghost"
+          size="icon"
+          className={`h-10 w-10 rounded-full ${
+            isRecording 
+              ? 'bg-red-500 text-white hover:bg-red-600' 
+              : 'bg-zinc-100 text-zinc-900 hover:bg-zinc-200'
+          } transition-colors`}
+          disabled={isLoading}
+        >
+          {isRecording ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+        </Button>
+        <Button
+          onClick={handleSearch}
+          variant="ghost"
+          size="icon"
+          className={`h-10 w-10 rounded-full ${
+            hasActiveSearch
+              ? 'bg-zinc-100 hover:bg-zinc-200 text-zinc-900'
+              : 'bg-zinc-900 hover:bg-zinc-800 text-white'
+          }`}
+          disabled={isLoading || (!hasActiveSearch && !query.trim())}
+        >
+          {hasActiveSearch ? (
+            <X className="h-5 w-5" />
+          ) : (
+            <ArrowUp className="h-5 w-5" />
+          )}
+        </Button>
       </div>
     </div>
   );
