@@ -58,6 +58,25 @@ const processNaturalLanguageQuery = (input: string): {
   };
 };
 
+// Clean SQL response from any markdown or extra formatting
+const cleanSQLResponse = (sql: string): string => {
+  // Remove markdown code blocks
+  sql = sql.replace(/```sql\n?/g, '').replace(/```\n?/g, '');
+  
+  // Remove any leading/trailing whitespace
+  sql = sql.trim();
+  
+  // Ensure the SQL ends with proper clauses if they're missing
+  if (!sql.toLowerCase().includes('order by')) {
+    sql += ' ORDER BY w.word';
+  }
+  if (!sql.toLowerCase().includes('limit')) {
+    sql += ' LIMIT 100';
+  }
+  
+  return sql;
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -74,6 +93,8 @@ serve(async (req) => {
 
     let systemPrompt = `Eres un experto en SQL que convierte consultas en lenguaje natural a SQL. 
     La tabla 'words' tiene estas columnas: word (texto), length (número), alphagram (texto).
+
+    IMPORTANTE: SOLO debes devolver la consulta SQL, sin ningún formato adicional ni explicaciones.
 
     Guía para interpretar el lenguaje natural:
     - "con" generalmente indica inclusión (ILIKE)
@@ -126,8 +147,11 @@ serve(async (req) => {
       temperature: 0.3,
     })
 
-    const sql = completion.choices[0].message.content
-    console.log('SQL generado:', sql)
+    const rawSql = completion.choices[0].message.content;
+    console.log('SQL raw:', rawSql);
+    
+    const sql = cleanSQLResponse(rawSql);
+    console.log('SQL limpio:', sql);
 
     return new Response(
       JSON.stringify({ sql }),
