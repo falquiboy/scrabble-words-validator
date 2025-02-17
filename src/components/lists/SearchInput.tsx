@@ -75,7 +75,7 @@ const SearchInput = ({
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
           onKeyDown={handleKeyPress}
-          className="w-full h-20 pl-4 pr-16 py-4 rounded-full bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 resize-none overflow-hidden focus:outline-none focus:ring-2 focus:ring-zinc-200"
+          className="w-full h-20 pl-4 pr-16 py-4 rounded-lg bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 resize-none overflow-hidden focus:outline-none focus:ring-2 focus:ring-zinc-200"
           style={{
             lineHeight: "1.5",
             verticalAlign: "middle"
