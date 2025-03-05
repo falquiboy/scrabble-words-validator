@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -40,74 +39,36 @@
         max-width: 80%;
         filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
       }
-
-      .loading-text {
-        margin-top: 20px;
-        color: white;
-        font-size: 16px;
-        text-align: center;
-        font-family: Arial, sans-serif;
-      }
-
-      .progress-container {
-        width: 80%;
-        max-width: 300px;
-        height: 8px;
-        background-color: rgba(255, 255, 255, 0.3);
-        border-radius: 4px;
-        margin-top: 12px;
-        overflow: hidden;
-      }
-
-      .progress-bar {
-        height: 100%;
-        width: 0%;
-        background-color: white;
-        border-radius: 4px;
-        transition: width 0.3s ease;
-      }
       
       .splash-hidden {
         opacity: 0;
         pointer-events: none;
-      }
-
-      @keyframes rotation {
-        from {
-          transform: rotate(0deg);
-        }
-        to {
-          transform: rotate(360deg);
-        }
-      }
-
-      .loader {
-        display: inline-block;
-        width: 20px;
-        height: 20px;
-        border: 2px solid white;
-        border-radius: 50%;
-        border-top-color: transparent;
-        animation: rotation 1s linear infinite;
-        margin-right: 8px;
-        vertical-align: middle;
       }
     </style>
   </head>
   <body>
     <div id="splash-screen">
       <img src="/lovable-uploads/3a5a8e4f-456c-40df-b921-169d2ff52762.png" alt="+Léxico" />
-      <div class="loading-text">
-        <div class="loader"></div>
-        <span id="loading-message">Cargando diccionario...</span> 
-        <span id="loading-percentage">0%</span>
-      </div>
-      <div class="progress-container">
-        <div id="loading-progress-bar" class="progress-bar"></div>
-      </div>
     </div>
     <div id="root"></div>
     <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Hide splash screen when the app is loaded
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          const splash = document.getElementById('splash-screen');
+          if (splash) {
+            splash.classList.add('splash-hidden');
+            // Remove the splash screen element after transition completes
+            setTimeout(function() {
+              if (splash && splash.parentNode) {
+                splash.parentNode.removeChild(splash);
+              }
+            }, 500);
+          }
+        }, 1000); // Wait 1 second before hiding splash screen
+      });
+    </script>
   </body>
 </html>
