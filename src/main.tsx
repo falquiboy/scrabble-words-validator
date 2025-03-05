@@ -15,6 +15,7 @@ root.render(
 
 // Listen for the app-fully-loaded event to hide the splash screen
 document.addEventListener(APP_LOADED_EVENT, () => {
+  console.log('APP_LOADED_EVENT received, hiding splash screen');
   const splash = document.getElementById('splash-screen');
   if (splash) {
     splash.classList.add('splash-hidden');
@@ -22,6 +23,7 @@ document.addEventListener(APP_LOADED_EVENT, () => {
     setTimeout(function() {
       if (splash && splash.parentNode) {
         splash.parentNode.removeChild(splash);
+        console.log('Splash screen removed from DOM');
       }
     }, 500);
   }

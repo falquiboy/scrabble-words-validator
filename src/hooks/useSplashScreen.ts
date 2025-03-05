@@ -28,8 +28,12 @@ export const useSplashScreen = ({ progress, isLoading, message }: SplashScreenOp
       messageText.textContent = message;
     }
     
+    // Debug progress updates
+    console.log(`Splash screen update: ${message || 'Loading'} - ${Math.round(progress)}%`);
+    
     // If loading is complete, dispatch an event to hide the splash screen
     if (!isLoading && progress >= 100) {
+      console.log('Loading complete, hiding splash screen');
       setTimeout(() => {
         document.dispatchEvent(new Event(APP_LOADED_EVENT));
       }, 500); // Small delay to ensure everything is rendered
