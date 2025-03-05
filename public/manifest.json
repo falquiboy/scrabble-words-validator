@@ -1,6 +1,7 @@
+
 {
-  "name": "Juez de Léxico",
-  "short_name": "Juez Léxico",
+  "name": "+Léxico",
+  "short_name": "+Léxico",
   "description": "Validador de palabras para juegos de mesa",
   "start_url": "/",
   "display": "standalone",
@@ -9,7 +10,7 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/lovable-uploads/ca9a9ae9-40fb-4d60-a8f9-1ab45c41ee96.png",
+      "src": "/lovable-uploads/3a5a8e4f-456c-40df-b921-169d2ff52762.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

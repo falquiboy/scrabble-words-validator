@@ -7,21 +7,67 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <link rel="icon" type="image/png" href="/lovable-uploads/ca9a9ae9-40fb-4d60-a8f9-1ab45c41ee96.png" />
-    <title>Juez de Léxico</title>
+    <link rel="icon" type="image/png" href="/lovable-uploads/3a5a8e4f-456c-40df-b921-169d2ff52762.png" />
+    <title>+Léxico</title>
     <meta name="description" content="Validador de palabras para juegos de mesa" />
     <meta name="theme-color" content="#16417C" />
-    <meta name="apple-mobile-web-app-title" content="Juez de Léxico" />
+    <meta name="apple-mobile-web-app-title" content="+Léxico" />
     <link rel="manifest" href="/manifest.json" />
     <style>
       body {
         overscroll-behavior-y: none;
+        margin: 0;
+        padding: 0;
+      }
+      
+      #splash-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: #16417C;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        transition: opacity 0.5s ease-out;
+      }
+      
+      #splash-screen img {
+        max-width: 80%;
+        max-height: 80%;
+      }
+      
+      .splash-hidden {
+        opacity: 0;
+        pointer-events: none;
       }
     </style>
   </head>
   <body>
+    <div id="splash-screen">
+      <img src="/lovable-uploads/3a5a8e4f-456c-40df-b921-169d2ff52762.png" alt="+Léxico" />
+    </div>
     <div id="root"></div>
     <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Hide splash screen when the app is loaded
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          const splash = document.getElementById('splash-screen');
+          if (splash) {
+            splash.classList.add('splash-hidden');
+            // Remove the splash screen element after transition completes
+            setTimeout(function() {
+              if (splash && splash.parentNode) {
+                splash.parentNode.removeChild(splash);
+              }
+            }, 500);
+          }
+        }, 1000); // Wait 1 second before hiding splash screen
+      });
+    </script>
   </body>
 </html>
