@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { wordDB } from '@/services/WordDatabase';
 import { WordLoader } from '@/services/WordLoader';
