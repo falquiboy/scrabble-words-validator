@@ -5,7 +5,7 @@
   "description": "Validador de palabras para juegos de mesa",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#1D4B45",
+  "background_color": "#9F9EA1",
   "theme_color": "#1D4B45",
   "orientation": "portrait",
   "icons": [
