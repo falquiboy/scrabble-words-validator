@@ -1,16 +1,16 @@
-
 import React from 'react';
 
 const Header = () => (
   <div className="text-center mb-8">
-    <div className="flex flex-col items-center justify-center gap-2 mb-2 bg-[#16417C] p-4 rounded-md">
-      <div className="relative">
-        <img 
-          src="/lovable-uploads/b062dd1d-4002-4df6-a3b8-891d8d69e5c1.png" 
-          alt="+Léxico Logo" 
-          className="h-32 w-auto object-contain"
-        />
-      </div>
+    <div className="flex items-center justify-center gap-2 mb-2 bg-[#16417C] p-2 rounded-md">
+      <img 
+        src="/lovable-uploads/ca9a9ae9-40fb-4d60-a8f9-1ab45c41ee96.png" 
+        alt="File Logo" 
+        className="h-16 w-16 object-contain"  // Increased from h-10 w-10 to h-16 w-16
+      />
+      <h1 className="text-3xl font-bold text-white uppercase tracking-wide [text-shadow:_2px_2px_0_#F97316] border-[#F97316]">
+        Juez de Léxico
+      </h1>
     </div>
   </div>
 );
