@@ -19,6 +19,9 @@ const Index = () => {
     (dbProgress * 0.5) + (loadingProgress * 0.5) : 
     dbProgress;
 
+  // Add title
+  document.title = "+Léxico";
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <NewModuleSelector activeModule={activeModule} onModuleChange={setActiveModule} />
