@@ -29,7 +29,6 @@ const SearchResults = ({
   const wildcardCount = (searchTerm.match(/\*/g) || []).length;
   const isPatternSearch = searchTerm.includes('?') || searchTerm.includes('-');
 
-  // Remove duplicates between wildcardMatches and additionalWildcardMatches
   const filteredAdditionalMatches = results.additionalWildcardMatches.filter(word => {
     if (wildcardCount === 0) {
       return !results.exactMatches.includes(word);
@@ -80,11 +79,6 @@ const SearchResults = ({
               highlightWildcardLetter={highlightWildcardLetter}
               searchTerm={searchTerm}
             />
-          )}
-          {!hasExactMatches && searchTerm && !isPatternSearch && results.shorterMatches?.length === 0 && (
-            <p className="text-gray-500 text-lg mb-4">
-              No se encontraron palabras con estas fichas.
-            </p>
           )}
           {filteredAdditionalMatches.length > 0 && (
             <ShorterResults

@@ -9,13 +9,15 @@ interface ShorterResultsProps {
 }
 
 export const ShorterResults = ({ matches, highlightWildcardLetter, searchTerm, title }: ShorterResultsProps) => {
+  const isAdditionalLetterMode = title.includes("adicional");
+  
   return (
     <BaseResults
       matches={matches}
       title={title}
       highlightWildcardLetter={highlightWildcardLetter}
       searchTerm={searchTerm}
-      isShortMode={true}
+      isShortMode={!isAdditionalLetterMode}
     />
   );
 };
