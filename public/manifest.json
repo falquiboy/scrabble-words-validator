@@ -2,7 +2,7 @@
 {
   "name": "+Léxico",
   "short_name": "+Léxico",
-  "description": "Validador de palabras para juegos de mesa",
+  "description": "Herramientas para los que se toman en serio los juegos de palabras",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#9F9EA1",
