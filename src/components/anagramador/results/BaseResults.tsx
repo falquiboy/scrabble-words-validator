@@ -1,3 +1,4 @@
+
 import { processDigraphs, getInternalLength, toDisplayFormat } from "@/utils/digraphs";
 import { calculateWordScore } from "@/utils/scrabbleScore";
 
@@ -6,9 +7,10 @@ interface BaseResultsProps {
   title: string;
   highlightWildcardLetter?: (word: string, originalWord: string) => React.ReactNode;
   searchTerm?: string;
+  isShortMode?: boolean;
 }
 
-export const BaseResults = ({ matches, title, highlightWildcardLetter, searchTerm }: BaseResultsProps) => {
+export const BaseResults = ({ matches, title, highlightWildcardLetter, searchTerm, isShortMode }: BaseResultsProps) => {
   if (matches.length === 0) return null;
 
   // Group words by internal length
@@ -29,7 +31,7 @@ export const BaseResults = ({ matches, title, highlightWildcardLetter, searchTer
   return (
     <div className="space-y-4 pb-8">
       <h3 className="font-semibold text-lg">
-        {title}
+        {`${matches.length} ${matches.length === 1 ? "palabra encontrada" : "palabras encontradas"}${isShortMode ? "" : " usando todas las fichas"}:`}
       </h3>
       {sortedLengths.map(length => (
         <div key={`length-${length}`} className="space-y-2">

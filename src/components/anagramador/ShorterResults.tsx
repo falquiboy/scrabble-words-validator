@@ -1,3 +1,4 @@
+
 import { BaseResults } from "./results/BaseResults";
 
 interface ShorterResultsProps {
@@ -11,9 +12,10 @@ export const ShorterResults = ({ matches, highlightWildcardLetter, searchTerm, t
   return (
     <BaseResults
       matches={matches}
-      title={`${matches.length} palabras encontradas usando todas las fichas más una letra adicional:`}
+      title={title}
       highlightWildcardLetter={highlightWildcardLetter}
       searchTerm={searchTerm}
+      isShortMode={true}
     />
   );
 };
