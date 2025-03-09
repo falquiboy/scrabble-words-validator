@@ -11,7 +11,7 @@ const Index = () => {
   const [activeModule, setActiveModule] = useState<'judge' | 'anagram' | 'lists'>('judge');
   
   // Initialize dictionary at the top level so it's shared between modules
-  const { isLoading: isDBLoading, progress: dbProgress } = useWordDatabase();
+  const { isLoading: isDBLoading, progress: dbProgress, stage } = useWordDatabase();
   const { isLoading: isTrieLoading, wordCount, trie, loadingProgress } = useWordTrie();
   
   const isDictionaryLoading = isDBLoading || isTrieLoading;
@@ -28,6 +28,7 @@ const Index = () => {
             isDictionaryLoading={isDictionaryLoading} 
             progress={totalProgress}
             trie={trie}
+            stage={isTrieLoading ? 'building' : stage}
           />
         ) : activeModule === 'anagram' ? (
           <Anagramador trie={trie} />
