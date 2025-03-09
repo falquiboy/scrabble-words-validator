@@ -11,9 +11,10 @@ interface WordValidatorProps {
   isDictionaryLoading: boolean;
   progress: number;
   trie: Trie;
+  stage?: 'download' | 'processing' | 'building';
 }
 
-const WordValidator = ({ isDictionaryLoading, progress, trie }: WordValidatorProps) => {
+const WordValidator = ({ isDictionaryLoading, progress, trie, stage = 'processing' }: WordValidatorProps) => {
   const [word, setWord] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<{
@@ -96,6 +97,7 @@ const WordValidator = ({ isDictionaryLoading, progress, trie }: WordValidatorPro
             <LoadingIndicator 
               progress={progress} 
               loadStartTime={loadStartTime} 
+              stage={stage}
             />
           )}
         </div>
