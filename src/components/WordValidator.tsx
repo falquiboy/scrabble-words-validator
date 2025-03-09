@@ -1,7 +1,6 @@
 
 import { useState } from "react";
 import { Trie } from "@/utils/trie";
-import { processDigraphs, toDisplayFormat } from "@/utils/digraphs";
 import Header from "./word-validator/Header";
 import WordInput from "./word-validator/WordInput";
 import LoadingIndicator from "./word-validator/LoadingIndicator";

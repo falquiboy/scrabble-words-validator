@@ -58,13 +58,12 @@ export class CsvWordLoader {
     try {
       const text = await file.text();
       const lines = text.split('\n');
-      const header = lines[0]; // Not used but keeping for reference
-      
-      console.log(`CSV file loaded with ${lines.length - 1} lines`);
       
       // Skip header line
       const wordsData = lines.slice(1).filter(line => line.trim().length > 0);
       this.totalWords = wordsData.length;
+      
+      console.log(`CSV file loaded with ${this.totalWords} lines`);
       
       if (this.totalWords === 0) {
         console.error('CSV file contains no words');
@@ -86,9 +85,11 @@ export class CsvWordLoader {
         }
         
         const chunkWords = chunks[i].map(line => {
-          // Extract word from CSV line (assuming first column is the word)
+          // Extract columns from CSV line
+          // Format: alphagram,word,length (ignoring other columns if present)
           const columns = line.split(',');
-          return columns[0].trim().replace(/"/g, '');
+          // We want the word which is in the second column (index 1)
+          return columns.length > 1 ? columns[1].trim().replace(/"/g, '') : '';
         }).filter(word => word.length > 0);
         
         await wordDB.addWords(chunkWords);
