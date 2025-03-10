@@ -1,11 +1,10 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { wordDB } from '@/services/WordDatabase';
 import { toast } from 'sonner';
 
 const CSV_BUCKET_NAME = 'words';
 const CSV_FILE_PATH = 'words.csv';
-const CHUNK_SIZE = 5000;
+const CHUNK_SIZE = 10000;
 
 export class CsvWordLoader {
   private totalWords = 0;
