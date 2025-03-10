@@ -6,6 +6,7 @@ import WordInput from "./word-validator/WordInput";
 import LoadingIndicator from "./word-validator/LoadingIndicator";
 import ValidationResult from "./word-validator/ValidationResult";
 import { LoadingStage } from "@/hooks/useWordDatabase";
+import { Check } from "lucide-react";
 
 interface WordValidatorProps {
   isDictionaryLoading: boolean;
@@ -14,6 +15,7 @@ interface WordValidatorProps {
   stage?: LoadingStage;
   loadStartTime?: number;
   isFirstLoad?: boolean;
+  wordCount?: number;
 }
 
 const WordValidator = ({ 
@@ -22,7 +24,8 @@ const WordValidator = ({
   trie, 
   stage = 'processing',
   loadStartTime = Date.now(),
-  isFirstLoad = false
+  isFirstLoad = false,
+  wordCount = 0
 }: WordValidatorProps) => {
   const [word, setWord] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -81,7 +84,7 @@ const WordValidator = ({
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto p-4 flex flex-col items-center">
+    <div className="w-full max-w-2xl mx-auto p-4 flex flex-col items-center relative">
       <div className="w-full max-w-md space-y-4">
         <Header />
         <div className="space-y-4">
@@ -111,6 +114,14 @@ const WordValidator = ({
           )}
         </div>
       </div>
+      
+      {/* Permanent dictionary status indicator */}
+      {wordCount > 0 && !isDictionaryLoading && (
+        <div className="fixed bottom-4 right-4 bg-white shadow-md rounded-lg px-3 py-2 flex items-center gap-2 text-sm text-gray-700 border border-gray-200">
+          <Check size={16} className="text-green-600" />
+          <span>Diccionario cargado: {wordCount.toLocaleString()} palabras</span>
+        </div>
+      )}
     </div>
   );
 };

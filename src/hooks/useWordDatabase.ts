@@ -29,6 +29,7 @@ export const useWordDatabase = () => {
   });
   const [loadStartTime] = useState<number>(Date.now());
   const [isFirstLoad, setIsFirstLoad] = useState<boolean>(false);
+  const [wordCount, setWordCount] = useState<number>(0);
   const csvLoaderRef = useRef<CsvWordLoader | null>(null);
 
   useEffect(() => {
@@ -43,6 +44,9 @@ export const useWordDatabase = () => {
 
         const existingWords = await wordDB.getAllWords();
         console.log('Words in database:', existingWords.length);
+        
+        // Update word count
+        setWordCount(existingWords.length);
 
         // Only fetch words if database is completely empty or incomplete
         if (existingWords.length === 0 || existingWords.length < EXPECTED_WORD_COUNT) {
@@ -89,7 +93,8 @@ export const useWordDatabase = () => {
             });
             
             const updatedWordCount = await wordDB.getAllWords();
-            toast.success(`Diccionario cargado: ${updatedWordCount.length.toLocaleString()} palabras`);
+            setWordCount(updatedWordCount.length);
+            // Removed toast.success notification here
           } else {
             console.log('CSV loading failed');
             toast.error('Error al cargar el diccionario, por favor intente más tarde');
@@ -103,7 +108,7 @@ export const useWordDatabase = () => {
             percent: 100,
             message: 'Diccionario listo'
           });
-          toast.success(`Diccionario listo: ${existingWords.length.toLocaleString()} palabras`);
+          // Removed toast.success notification here
         }
       } catch (err) {
         console.error('Dictionary initialization error:', err);
@@ -139,6 +144,7 @@ export const useWordDatabase = () => {
     error, 
     progress, 
     loadStartTime, 
-    isFirstLoad 
+    isFirstLoad,
+    wordCount
   };
 };

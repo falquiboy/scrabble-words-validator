@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { wordDB } from '@/services/WordDatabase';
 import { toast } from 'sonner';
@@ -98,7 +99,7 @@ export class CsvWordLoader {
       }
       
       console.log('CSV processing complete');
-      toast.success(`Diccionario cargado: ${this.processedWords.toLocaleString()} palabras`);
+      // Removed the toast.success notification here
       return true;
       
     } catch (error) {
