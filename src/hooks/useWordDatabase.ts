@@ -1,21 +1,38 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { wordDB } from '@/services/WordDatabase';
 import { CsvWordLoader } from '@/services/CsvWordLoader';
 import { toast } from 'sonner';
 
 const EXPECTED_WORD_COUNT = 639293;
 
+// Loading stages definitions
+export type LoadingStage = 'initializing' | 'download' | 'processing' | 'building' | 'complete';
+
+export interface LoadingProgress {
+  stage: LoadingStage;
+  current: number;
+  total: number;
+  percent: number;
+  message: string;
+}
+
 export const useWordDatabase = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [progress, setProgress] = useState(0);
-  const [loadStartTime] = useState(Date.now());
-  const [stage, setStage] = useState<'download' | 'processing' | 'building'>('processing');
+  const [progress, setProgress] = useState<LoadingProgress>({
+    stage: 'initializing',
+    current: 0,
+    total: 100,
+    percent: 0,
+    message: 'Iniciando aplicación'
+  });
+  const [loadStartTime] = useState<number>(Date.now());
+  const [isFirstLoad, setIsFirstLoad] = useState<boolean>(false);
+  const csvLoaderRef = useRef<CsvWordLoader | null>(null);
 
   useEffect(() => {
     let mounted = true;
-    let csvLoader: CsvWordLoader | null = null;
 
     const initDB = async () => {
       try {
@@ -30,44 +47,79 @@ export const useWordDatabase = () => {
         // Only fetch words if database is completely empty or incomplete
         if (existingWords.length === 0 || existingWords.length < EXPECTED_WORD_COUNT) {
           console.log('Database empty or incomplete, loading from CSV file...');
+          setIsFirstLoad(true);
           await wordDB.clear();
           
-          setStage('download');
-          csvLoader = new CsvWordLoader(EXPECTED_WORD_COUNT);
+          // Start download stage
+          setProgress({
+            stage: 'download',
+            current: 0,
+            total: 100,
+            percent: 0,
+            message: 'Descargando diccionario'
+          });
+          
+          csvLoaderRef.current = new CsvWordLoader(EXPECTED_WORD_COUNT);
           
           // Create a progress update interval
           const progressInterval = setInterval(() => {
-            if (csvLoader) {
-              const currentProgress = csvLoader.getProgress();
-              setProgress(Math.floor(currentProgress));
+            if (csvLoaderRef.current && mounted) {
+              const currentProgress = csvLoaderRef.current.getProgress();
+              setProgress(prev => ({
+                ...prev,
+                current: Math.floor(currentProgress),
+                percent: Math.floor(currentProgress),
+              }));
             }
           }, 200);
           
-          const csvSuccess = await csvLoader.loadCsvFile();
+          const csvSuccess = await csvLoaderRef.current.loadCsvFile();
           clearInterval(progressInterval);
           
           if (csvSuccess) {
             console.log('Dictionary loaded from CSV file');
+            
+            // Transition to the processing/building stage for trie construction
+            setProgress({
+              stage: 'building',
+              current: 0,
+              total: 100,
+              percent: 0,
+              message: 'Preparando diccionario'
+            });
+            
             const updatedWordCount = await wordDB.getAllWords();
-            toast.success(`Dictionary loaded: ${updatedWordCount.length.toLocaleString()} words`);
+            toast.success(`Diccionario cargado: ${updatedWordCount.length.toLocaleString()} palabras`);
           } else {
             console.log('CSV loading failed');
-            toast.error('Error loading dictionary, please try again later');
+            toast.error('Error al cargar el diccionario, por favor intente más tarde');
           }
         } else {
           console.log('Using existing dictionary');
-          toast.success(`Dictionary ready: ${existingWords.length.toLocaleString()} words`);
+          setProgress({
+            stage: 'complete',
+            current: 100,
+            total: 100,
+            percent: 100,
+            message: 'Diccionario listo'
+          });
+          toast.success(`Diccionario listo: ${existingWords.length.toLocaleString()} palabras`);
         }
       } catch (err) {
         console.error('Dictionary initialization error:', err);
         if (mounted) {
-          const message = err instanceof Error ? err.message : 'Failed to initialize dictionary';
+          const message = err instanceof Error ? err.message : 'Error al inicializar el diccionario';
           setError(message);
           toast.error(message);
         }
       } finally {
         if (mounted) {
           setIsLoading(false);
+          setProgress(prev => ({
+            ...prev,
+            stage: 'complete',
+            percent: 100
+          }));
         }
       }
     };
@@ -76,11 +128,17 @@ export const useWordDatabase = () => {
 
     return () => {
       mounted = false;
-      if (csvLoader) {
-        csvLoader.cancel();
+      if (csvLoaderRef.current) {
+        csvLoaderRef.current.cancel();
       }
     };
   }, []);
 
-  return { isLoading, error, progress, loadStartTime, stage };
+  return { 
+    isLoading, 
+    error, 
+    progress, 
+    loadStartTime, 
+    isFirstLoad 
+  };
 };

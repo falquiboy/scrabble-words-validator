@@ -5,15 +5,25 @@ import Header from "./word-validator/Header";
 import WordInput from "./word-validator/WordInput";
 import LoadingIndicator from "./word-validator/LoadingIndicator";
 import ValidationResult from "./word-validator/ValidationResult";
+import { LoadingStage } from "@/hooks/useWordDatabase";
 
 interface WordValidatorProps {
   isDictionaryLoading: boolean;
   progress: number;
   trie: Trie;
-  stage?: 'download' | 'processing' | 'building';
+  stage?: LoadingStage;
+  loadStartTime?: number;
+  isFirstLoad?: boolean;
 }
 
-const WordValidator = ({ isDictionaryLoading, progress, trie, stage = 'processing' }: WordValidatorProps) => {
+const WordValidator = ({ 
+  isDictionaryLoading, 
+  progress, 
+  trie, 
+  stage = 'processing',
+  loadStartTime = Date.now(),
+  isFirstLoad = false
+}: WordValidatorProps) => {
   const [word, setWord] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<{
@@ -21,7 +31,6 @@ const WordValidator = ({ isDictionaryLoading, progress, trie, stage = 'processin
     checked: boolean;
     words: string[];
   }>({ isValid: false, checked: false, words: [] });
-  const [loadStartTime] = useState(Date.now());
 
   const handleValidate = async () => {
     if (!word.trim() || isDictionaryLoading) return;
@@ -95,8 +104,9 @@ const WordValidator = ({ isDictionaryLoading, progress, trie, stage = 'processin
           {isDictionaryLoading && (
             <LoadingIndicator 
               progress={progress} 
-              loadStartTime={loadStartTime} 
+              loadStartTime={loadStartTime}
               stage={stage}
+              isFirstLoad={isFirstLoad}
             />
           )}
         </div>

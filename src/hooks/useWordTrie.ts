@@ -4,6 +4,7 @@ import { wordDB } from '@/services/WordDatabase';
 import { Trie } from '@/utils/trie';
 import { toast } from 'sonner';
 import { buildTrieFromWords, loadCachedTrie, saveTrie } from '@/utils/trieOperations';
+import { LoadingStage } from './useWordDatabase';
 
 // Known total word count from the database
 const TOTAL_WORDS = 639293;
@@ -14,7 +15,7 @@ export const useWordTrie = () => {
   const [trie] = useState<Trie>(() => new Trie());
   const [wordCount, setWordCount] = useState(0);
   const [loadingProgress, setLoadingProgress] = useState(0);
-  const [stage, setStage] = useState<'download' | 'processing' | 'building'>('processing');
+  const [stage, setStage] = useState<LoadingStage>('initializing');
 
   const loadWordsFromCsv = async () => {
     try {
@@ -44,7 +45,7 @@ export const useWordTrie = () => {
         
         if (!csvSuccess) {
           setStage('processing');
-          toast.error('Error loading dictionary from CSV, please try again later');
+          toast.error('Error al cargar el diccionario, por favor intente más tarde');
         }
         
         // Get words from database again after CSV load
@@ -81,14 +82,17 @@ export const useWordTrie = () => {
       const words = await fetchWordsFromDB();
       console.log(`Building trie with ${words.length} words...`);
 
-      await buildTrieFromWords(words, trie, setLoadingProgress);
+      await buildTrieFromWords(words, trie, (progress) => {
+        setLoadingProgress(progress);
+      });
       await saveTrie(trie);
 
       setWordCount(words.length);
+      setStage('complete');
       console.log('Trie built and cached successfully with', words.length, 'words');
     } catch (err) {
       console.error('Error building trie:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to initialize trie';
+      const errorMessage = err instanceof Error ? err.message : 'Error al inicializar el diccionario';
       setError(new Error(errorMessage));
       toast.error(errorMessage);
     }
@@ -100,10 +104,12 @@ export const useWordTrie = () => {
         const loadedFromCache = await buildTrie();
         if (!loadedFromCache) {
           await buildTrieFromLocalDb();
+        } else {
+          setStage('complete');
         }
       } catch (err) {
         console.error('Error initializing trie:', err);
-        const errorMessage = err instanceof Error ? err.message : 'Failed to initialize trie';
+        const errorMessage = err instanceof Error ? err.message : 'Error al inicializar el diccionario';
         setError(new Error(errorMessage));
         toast.error(errorMessage);
       } finally {
@@ -115,7 +121,14 @@ export const useWordTrie = () => {
     initTrie();
   }, [buildTrie, buildTrieFromLocalDb]);
 
-  return { isLoading, error, wordCount, trie, loadingProgress, stage };
+  return { 
+    isLoading, 
+    error, 
+    wordCount, 
+    trie, 
+    loadingProgress, 
+    stage 
+  };
 };
 
 // Import and re-export CsvWordLoader to make TypeScript happy

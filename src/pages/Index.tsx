@@ -11,13 +11,42 @@ const Index = () => {
   const [activeModule, setActiveModule] = useState<'judge' | 'anagram' | 'lists'>('judge');
   
   // Initialize dictionary at the top level so it's shared between modules
-  const { isLoading: isDBLoading, progress: dbProgress, stage } = useWordDatabase();
-  const { isLoading: isTrieLoading, wordCount, trie, loadingProgress } = useWordTrie();
+  const { isLoading: isDBLoading, progress: dbProgress, loadStartTime, isFirstLoad } = useWordDatabase();
+  const { isLoading: isTrieLoading, trie, loadingProgress, stage: trieStage } = useWordTrie();
   
   const isDictionaryLoading = isDBLoading || isTrieLoading;
-  const totalProgress = isTrieLoading ? 
-    (dbProgress * 0.5) + (loadingProgress * 0.5) : 
-    dbProgress;
+  
+  // Calculate combined progress based on the current stage
+  const getCombinedProgress = () => {
+    if (isTrieLoading && trieStage === 'building') {
+      // If we're building the trie, the DB is already loaded, so combine the progress
+      // with 90% weight to DB loading and 10% to trie building
+      return Math.min(90 + (loadingProgress * 0.1), 100);
+    }
+    
+    if (isDBLoading) {
+      return dbProgress.percent;
+    }
+    
+    if (isTrieLoading) {
+      return loadingProgress;
+    }
+    
+    return 100;
+  };
+  
+  // Determine the current stage to display
+  const getCurrentStage = () => {
+    if (isTrieLoading && trieStage) {
+      return trieStage;
+    }
+    
+    if (isDBLoading && dbProgress.stage) {
+      return dbProgress.stage;
+    }
+    
+    return 'complete';
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -26,9 +55,11 @@ const Index = () => {
         {activeModule === 'judge' ? (
           <WordValidator 
             isDictionaryLoading={isDictionaryLoading} 
-            progress={totalProgress}
+            progress={getCombinedProgress()}
             trie={trie}
-            stage={isTrieLoading ? 'building' : stage}
+            stage={getCurrentStage()}
+            loadStartTime={loadStartTime}
+            isFirstLoad={isFirstLoad}
           />
         ) : activeModule === 'anagram' ? (
           <Anagramador trie={trie} />
