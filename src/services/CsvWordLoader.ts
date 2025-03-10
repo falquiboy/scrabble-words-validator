@@ -5,7 +5,10 @@ import { toast } from 'sonner';
 
 const CSV_BUCKET_NAME = 'words';
 const CSV_FILE_PATH = 'words.csv';
-const CHUNK_SIZE = 10000;
+// Reduced chunk size from 10000 to 1000 for better performance on mobile devices
+const CHUNK_SIZE = 1000;
+// Short delay between chunks to allow device to cool down
+const COOLING_PERIOD_MS = 10;
 
 export class CsvWordLoader {
   private totalWords = 0;
@@ -70,7 +73,7 @@ export class CsvWordLoader {
         return false;
       }
       
-      // Process in chunks
+      // Process in smaller chunks (now 1000 instead of 10000)
       const chunks: string[][] = [];
       for (let i = 0; i < wordsData.length; i += CHUNK_SIZE) {
         chunks.push(wordsData.slice(i, i + CHUNK_SIZE));
@@ -92,14 +95,29 @@ export class CsvWordLoader {
           return columns.length > 1 ? columns[1].trim().replace(/"/g, '') : '';
         }).filter(word => word.length > 0);
         
-        await wordDB.addWords(chunkWords);
-        
-        this.processedWords += chunkWords.length;
-        console.log(`Processed chunk ${i+1}/${chunks.length}, total: ${this.processedWords}/${this.totalWords} words`);
+        try {
+          await wordDB.addWords(chunkWords);
+          
+          this.processedWords += chunkWords.length;
+          console.log(`Processed chunk ${i+1}/${chunks.length}, total: ${this.processedWords}/${this.totalWords} words`);
+          
+          // Add a small cooling period between chunks to prevent overheating
+          if (i < chunks.length - 1 && COOLING_PERIOD_MS > 0) {
+            await new Promise(resolve => setTimeout(resolve, COOLING_PERIOD_MS));
+          }
+        } catch (error) {
+          console.error(`Error processing chunk ${i+1}:`, error);
+          // Continue with next chunk despite errors in current chunk
+          // But notify about the issue
+          if (error instanceof Error && error.name === 'QuotaExceededError') {
+            console.error('Storage quota exceeded. Consider clearing some browser data.');
+            toast.error('Error: Espacio de almacenamiento excedido');
+            return false;
+          }
+        }
       }
       
       console.log('CSV processing complete');
-      // Removed the toast.success notification here
       return true;
       
     } catch (error) {
