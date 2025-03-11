@@ -44,11 +44,6 @@
   color: #888;
 }
 
-/* Hide splash screen once the app is loaded */
-body.app-loaded #splash-screen {
-  display: none;
-}
-
 /* Aplicar sombra suave a elementos clave */
 .app-card {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
