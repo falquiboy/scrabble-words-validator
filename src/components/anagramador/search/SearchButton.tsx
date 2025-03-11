@@ -10,7 +10,7 @@ const SearchButton = ({
   isDisabled
 }: SearchButtonProps) => {
   return <button onClick={onClick} disabled={isDisabled} className="h-8 w-8 p-0 hover:text-gray-600 px-[2px] mx-0 my-[6px]">
-      {hasActiveSearch ? <X className="h-4 w-4" /> : <Search className="h-5 w-5 mx-[5px]" />}
+      {hasActiveSearch ? <X className="h-5 w-5 mx-[5px]" /> : <Search className="h-5 w-5 mx-[5px]" />}
     </button>;
 };
 export default SearchButton;
