@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { processDigraphs } from '@/utils/digraphs';
@@ -20,6 +21,7 @@ const WordInput = ({
   isChecked 
 }: WordInputProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
+  const cursorPositionRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (inputRef.current && !isLoading) {
@@ -34,8 +36,22 @@ const WordInput = ({
     }
   }, [word, isLoading]);
 
+  // Effect to restore cursor position after state update
+  useEffect(() => {
+    if (cursorPositionRef.current !== null && inputRef.current) {
+      inputRef.current.setSelectionRange(
+        cursorPositionRef.current,
+        cursorPositionRef.current
+      );
+      cursorPositionRef.current = null;
+    }
+  }, [word]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target;
+    // Save cursor position before state update
+    cursorPositionRef.current = input.selectionStart;
+    
     let value = input.value.toUpperCase();
 
     // Only normalize Ñ and remove accents, keeping all valid Spanish characters
@@ -52,6 +68,13 @@ const WordInput = ({
     
     // Allow Spanish characters (including Ç) and spaces
     value = value.replace(/[^A-ZÑÇKW\s]/g, '');
+    
+    // Calculate cursor position adjustment based on length difference
+    if (value.length !== input.value.length && cursorPositionRef.current !== null) {
+      const lengthDiff = value.length - input.value.length;
+      cursorPositionRef.current = Math.max(0, cursorPositionRef.current + lengthDiff);
+    }
+    
     onWordChange(value);
   };
 
