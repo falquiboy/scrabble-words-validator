@@ -16,15 +16,15 @@ export const translateHyphenPattern = (pattern: string): string => {
 
   // Handle the three main cases
   if (cleanPattern.startsWith('-') && cleanPattern.endsWith('-')) {
-    // -CON- → (?!^CON).*CON(?!.*$).*
-    // Matches words containing the pattern, but not at start or end
+    // -CON- → Match words containing the pattern, but not at start or end
     const innerPattern = cleanPattern.slice(1, -1);
     if (!innerPattern) return pattern;
     
-    // This regex ensures:
-    // 1. There's at least one character before the pattern
-    // 2. There's at least one character after the pattern
-    return `^(?!${innerPattern})(?=.*${innerPattern}.*$)(?!.*${innerPattern}$).*$`;
+    // Fix: Using lookahead and lookbehind logic to ensure the pattern is properly contained
+    // This matches words where:
+    // 1. The pattern is preceded by at least one character
+    // 2. The pattern is followed by at least one character
+    return `^.+${innerPattern}.+$`;
   } else if (cleanPattern.startsWith('-')) {
     // -CON → .*CON$
     // Words ending with the specified letters
