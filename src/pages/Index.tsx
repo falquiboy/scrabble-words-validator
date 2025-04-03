@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import WordValidator from "@/components/WordValidator";
 import Anagramador from "@/components/Anagramador";
 import Lists from "@/components/Lists";
@@ -47,6 +47,40 @@ const Index = () => {
     
     return 'complete';
   };
+
+  // Manejar navegación con Control + AvPág/RePág
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Verificar Ctrl + AvPág (Page Down)
+      if (e.ctrlKey && e.key === 'PageDown') {
+        e.preventDefault();
+        setActiveModule((current) => {
+          switch (current) {
+            case 'judge': return 'anagram';
+            case 'anagram': return 'lists';
+            case 'lists': return 'judge';
+            default: return current;
+          }
+        });
+      }
+      
+      // Verificar Ctrl + RePág (Page Up)
+      if (e.ctrlKey && e.key === 'PageUp') {
+        e.preventDefault();
+        setActiveModule((current) => {
+          switch (current) {
+            case 'judge': return 'lists';
+            case 'anagram': return 'judge';
+            case 'lists': return 'anagram';
+            default: return current;
+          }
+        });
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">

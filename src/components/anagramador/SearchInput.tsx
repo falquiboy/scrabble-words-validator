@@ -1,3 +1,4 @@
+
 import { Input } from "@/components/ui/input";
 import { RefObject, useState, useEffect, useRef } from "react";
 import { SearchTooltip } from "./SearchTooltip";
@@ -41,16 +42,20 @@ const SearchInput = ({
   }, [letters]);
 
   useEffect(() => {
-    const handleGlobalF2 = (e: KeyboardEvent) => {
+    const handleGlobalKeys = (e: KeyboardEvent) => {
       if (e.key === "F2") {
         e.preventDefault();
+        inputRef.current?.focus();
+      } else if (e.key === "Escape" && onClear) {
+        e.preventDefault();
+        onClear();
         inputRef.current?.focus();
       }
     };
 
-    window.addEventListener('keydown', handleGlobalF2);
-    return () => window.removeEventListener('keydown', handleGlobalF2);
-  }, [inputRef]);
+    window.addEventListener('keydown', handleGlobalKeys);
+    return () => window.removeEventListener('keydown', handleGlobalKeys);
+  }, [inputRef, onClear]);
 
   useEffect(() => {
     if (cursorPositionRef.current !== null && inputRef.current) {
@@ -79,6 +84,15 @@ const SearchInput = ({
     onInputChange(value);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Escape" && onClear) {
+      e.preventDefault();
+      onClear();
+    } else {
+      onKeyPress(e);
+    }
+  };
+
   const handleButtonClick = () => {
     if (hasActiveSearch && onClear) {
       onClear();
@@ -101,7 +115,7 @@ const SearchInput = ({
             }
             value={letters}
             onChange={handleInputChange}
-            onKeyDown={onKeyPress}
+            onKeyDown={handleKeyDown}
             className="text-xl h-12 text-left pr-12 border border-gray-200 rounded-md w-full"
             style={{ paddingRight: '3rem' }}
             autoFocus
