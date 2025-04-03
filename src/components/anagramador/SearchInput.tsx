@@ -110,8 +110,8 @@ const SearchInput = ({
             type="text"
             placeholder={
               isPatternMode 
-                ? "Ingresa un patrón" 
-                : "asterisco es comodín"
+                ? "Ej: -AR (termina con AR), CO- (empieza con CO)" 
+                : "Asterisco es comodín"
             }
             value={letters}
             onChange={handleInputChange}

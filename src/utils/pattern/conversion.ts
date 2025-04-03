@@ -1,24 +1,18 @@
+
 import { translateHyphenPattern } from './translation';
 
 export const convertPatternToRegex = (pattern: string): RegExp => {
-  // First translate any hyphen-based patterns
-  const translatedPattern = translateHyphenPattern(pattern)
-    .replace(/\?/g, '.')  // Convert ? to . (any single character)
-    .replace(/\^/g, '^')  // Keep start anchor
-    .replace(/\$/g, '$'); // Keep end anchor
+  // Check if the pattern is already a regex-formatted pattern
+  // (has explicit anchors or .* patterns from translateHyphenPattern)
+  const isProcessedPattern = pattern.includes('.*') || 
+                            pattern.startsWith('^') ||
+                            pattern.endsWith('$');
   
-  // Only add .* at start/end if there are no explicit anchors
-  let regexStr = translatedPattern;
-  
-  // Don't add .* at the start if we have a ^ anchor
-  if (!regexStr.startsWith('^')) {
-    regexStr = '.*' + regexStr;
+  // If already translated, don't modify further
+  if (isProcessedPattern) {
+    return new RegExp(`^${pattern}$`, 'i');
   }
   
-  // Always add .* at the end for prefix patterns to match rest of word
-  if (!regexStr.endsWith('$')) {
-    regexStr = regexStr + '.*';
-  }
-  
-  return new RegExp(`^${regexStr}$`, 'i');
+  // For simple patterns, add .* at start/end to match anywhere in the word
+  return new RegExp(`^.*${pattern}.*$`, 'i');
 };
