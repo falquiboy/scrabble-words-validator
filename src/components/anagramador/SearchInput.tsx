@@ -1,4 +1,3 @@
-
 import { Input } from "@/components/ui/input";
 import { RefObject, useState, useEffect, useRef } from "react";
 import { SearchTooltip } from "./SearchTooltip";
@@ -135,6 +134,7 @@ const SearchInput = ({
       <ShorterWordsToggle
         checked={showShorter}
         onCheckedChange={onShowShorterChange}
+        isPatternMode={isPatternMode}
       />
     </div>
   );
