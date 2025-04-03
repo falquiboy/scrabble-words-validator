@@ -28,8 +28,7 @@ export const useOfflineAnagramSearch = async (
   
   if (isPatternSearch) {
     console.log('Executing pattern search for:', searchTerm);
-    // For pattern searches, showShorter toggle actually means "show longer words" (>8 letters)
-    const matches = await findPatternMatches(searchTerm, trie, showShorter);
+    const matches = await findPatternMatches(searchTerm, trie);
     console.log('Pattern search results:', matches);
     return {
       exactMatches: [],
@@ -40,7 +39,7 @@ export const useOfflineAnagramSearch = async (
     };
   }
 
-  // Regular anagram search (behavior stays the same)
+  // Regular anagram search
   const { exactMatches, wildcardMatches, additionalWildcardMatches, shorterMatches } = findAnagrams(searchTerm, trie, true);
 
   // Filter by target length if specified
@@ -54,7 +53,7 @@ export const useOfflineAnagramSearch = async (
     };
   }
 
-  // Return results based on showShorter toggle (for regular anagram searches)
+  // Return results based on showShorter toggle
   if (showShorter) {
     return {
       exactMatches: [],

@@ -109,7 +109,6 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
           results={searchResults}
           highlightWildcardLetter={highlightWildcardLetter}
           isSearchAborted={isSearchAborted}
-          showShorter={showShorter}
         />
       </div>
     </div>

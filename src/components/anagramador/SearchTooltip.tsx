@@ -28,7 +28,6 @@ export const SearchTooltip = ({ isPatternMode, children }: SearchTooltipProps) =
                 <li><code>-CI-</code>: palabras que <b>contienen</b> "CI" (en el medio, no al inicio ni al final)</li>
                 <li><code>?</code>: una letra cualquiera</li>
               </ul>
-              <p className="mt-1 text-xs text-gray-500">Por defecto muestra palabras de hasta 8 letras. Usa el interruptor para ver palabras más largas.</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

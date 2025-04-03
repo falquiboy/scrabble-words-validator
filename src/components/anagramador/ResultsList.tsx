@@ -1,4 +1,3 @@
-
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import SearchResults from "./search/SearchResults";
@@ -15,7 +14,6 @@ interface ResultsListProps {
   };
   highlightWildcardLetter: (word: string, originalWord: string) => React.ReactNode;
   isSearchAborted?: boolean;
-  showShorter?: boolean;
 }
 
 const ResultsList = ({ 
@@ -23,8 +21,7 @@ const ResultsList = ({
   searchTerm, 
   results, 
   highlightWildcardLetter,
-  isSearchAborted,
-  showShorter
+  isSearchAborted 
 }: ResultsListProps) => {
   const { toast } = useToast();
 
@@ -88,7 +85,6 @@ const ResultsList = ({
           results={results}
           highlightWildcardLetter={highlightWildcardLetter}
           onCopyAll={handleCopyAll}
-          showShorter={showShorter}
         />
       </div>
     </ScrollArea>
