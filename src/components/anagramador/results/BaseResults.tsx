@@ -8,9 +8,17 @@ interface BaseResultsProps {
   highlightWildcardLetter?: (word: string, originalWord: string) => React.ReactNode;
   searchTerm?: string;
   isShortMode?: boolean;
+  isLongerPatternMode?: boolean;
 }
 
-export const BaseResults = ({ matches, title, highlightWildcardLetter, searchTerm, isShortMode }: BaseResultsProps) => {
+export const BaseResults = ({ 
+  matches, 
+  title, 
+  highlightWildcardLetter, 
+  searchTerm, 
+  isShortMode,
+  isLongerPatternMode = false
+}: BaseResultsProps) => {
   if (matches.length === 0) return null;
 
   // Group words by internal length
@@ -23,10 +31,10 @@ export const BaseResults = ({ matches, title, highlightWildcardLetter, searchTer
     return acc;
   }, {} as Record<number, string[]>);
 
-  // Sort lengths in descending order
+  // Sort lengths - for longer pattern words show descending order (biggest first)
   const sortedLengths = Object.keys(groupedByLength)
     .map(Number)
-    .sort((a, b) => b - a);
+    .sort((a, b) => isLongerPatternMode ? b - a : b - a); // Always sort in descending order
 
   return (
     <div className="space-y-4 pb-8">
