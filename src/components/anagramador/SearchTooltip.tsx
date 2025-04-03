@@ -25,7 +25,7 @@ export const SearchTooltip = ({ isPatternMode, children }: SearchTooltipProps) =
               <ul className="space-y-1 text-xs">
                 <li><code>-AR</code>: palabras que <b>terminan</b> con "AR"</li>
                 <li><code>CO-</code>: palabras que <b>empiezan</b> con "CO"</li>
-                <li><code>-CI-</code>: palabras que <b>contienen</b> "CI"</li>
+                <li><code>-CI-</code>: palabras que <b>contienen</b> "CI" (en el medio, no al inicio ni al final)</li>
                 <li><code>?</code>: una letra cualquiera</li>
               </ul>
             </TooltipContent>
