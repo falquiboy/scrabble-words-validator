@@ -17,7 +17,6 @@ interface SearchResultsProps {
   };
   highlightWildcardLetter: (word: string, originalWord: string) => React.ReactNode;
   onCopyAll: () => void;
-  showShorter?: boolean;
 }
 
 const SearchResults = ({ 
@@ -25,8 +24,7 @@ const SearchResults = ({
   searchTerm, 
   results,
   highlightWildcardLetter,
-  onCopyAll,
-  showShorter = false
+  onCopyAll
 }: SearchResultsProps) => {
   const wildcardCount = (searchTerm.match(/\*/g) || []).length;
   const isPatternSearch = searchTerm.includes('?') || searchTerm.includes('-');
@@ -71,7 +69,6 @@ const SearchResults = ({
         <PatternResults
           matches={results.patternMatches || []}
           searchTerm={searchTerm}
-          showLongerWords={showShorter}
         />
       ) : (
         <>

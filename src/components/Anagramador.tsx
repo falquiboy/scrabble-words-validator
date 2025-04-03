@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import SearchContainer from "./anagramador/search/SearchContainer";
 import ResultsList from "./anagramador/ResultsList";
@@ -108,7 +109,6 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
           results={searchResults}
           highlightWildcardLetter={highlightWildcardLetter}
           isSearchAborted={isSearchAborted}
-          showShorter={showShorter}
         />
       </div>
     </div>
