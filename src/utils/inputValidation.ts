@@ -35,21 +35,47 @@ export const validateAndCleanPatternInput = (value: string) => {
   // Split into pattern and rack parts if comma exists
   const parts = value.split(',');
   
+  // Handle length constraints with slash
   if (parts.length > 1) {
-    // Keep only the first two parts if multiple commas
+    // Split into pattern/length and rack parts
     let [patternPart, rackPart] = parts;
     
-    // Handle pattern part - allow ?, ^, $, -, and letters (including Ç)
-    // Allow hyphens at any position in the pattern
-    patternPart = patternPart.replace(/[^A-ZÑÇKW?\^$\-]/g, '');
+    // Check if pattern part contains a length constraint
+    const patternParts = patternPart.split('/');
+    if (patternParts.length > 1) {
+      const [pattern, lengthStr] = patternParts;
+      
+      // Clean pattern (allow A-Z, Ñ, Ç, ?, ^, $, -)
+      const cleanPattern = pattern.replace(/[^A-ZÑÇKW?\^$\-]/g, '');
+      
+      // Only allow numbers for length
+      const cleanLength = lengthStr.replace(/[^0-9]/g, '');
+      
+      // Clean rack (allow A-Z, Ñ, Ç, *)
+      const cleanRack = rackPart.replace(/[^A-ZÑÇKW*]/g, '');
+      
+      return `${cleanPattern}/${cleanLength},${cleanRack}`;
+    }
     
-    // Handle rack part - allow letters and asterisk (*) (including Ç)
-    rackPart = rackPart.replace(/[^A-ZÑÇKW*]/g, '');
+    // If no length constraint in pattern
+    const cleanPattern = patternPart.replace(/[^A-ZÑÇKW?\^$\-\/]/g, '');
+    const cleanRack = rackPart.replace(/[^A-ZÑÇKW*]/g, '');
     
-    return `${patternPart},${rackPart}`;
+    return `${cleanPattern},${cleanRack}`;
   }
   
-  // If no comma, treat as pattern part
-  // Allow hyphens at any position in the pattern
-  return value.replace(/[^A-ZÑÇKW?\^$\-]/g, '');
+  // Handle pattern with length but no rack
+  const patternParts = value.split('/');
+  if (patternParts.length > 1) {
+    const [pattern, lengthStr, ...rest] = patternParts;
+    
+    // Only keep first slash if multiple
+    const cleanPattern = pattern.replace(/[^A-ZÑÇKW?\^$\-]/g, '');
+    const cleanLength = lengthStr.replace(/[^0-9]/g, '');
+    
+    return `${cleanPattern}/${cleanLength}`;
+  }
+  
+  // Simple pattern with no length or rack constraints
+  return value.replace(/[^A-ZÑÇKW?\^$\-\/]/g, '');
 };

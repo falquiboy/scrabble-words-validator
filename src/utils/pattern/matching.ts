@@ -8,25 +8,45 @@ export const findPatternMatches = async (
   pattern: string, 
   trie: Trie, 
   showLongerWords: boolean = false,
-  maxDefaultLength: number = 8
+  maxDefaultLength: number = 8,
+  targetLength: number | null = null
 ): Promise<string[]> => {
+  // Process pattern to extract length if specified (pattern/length format)
+  const patternParts = pattern.split('/');
+  let processedPattern = pattern;
+  let specifiedLength = targetLength;
+  
+  if (patternParts.length > 1) {
+    processedPattern = patternParts[0];
+    const lengthStr = patternParts[1];
+    if (lengthStr && /^\d+$/.test(lengthStr)) {
+      specifiedLength = parseInt(lengthStr, 10);
+    }
+  }
+  
   // Split pattern and rack if comma exists
-  const [patternPart, rackPart] = pattern.includes(',') ? pattern.split(',') : [pattern, ''];
+  const [patternPart, rackPart] = processedPattern.includes(',') ? 
+    processedPattern.split(',') : [processedPattern, ''];
   
   // First translate any hyphen-based patterns like -CON to proper pattern format
   const translatedPattern = translateHyphenPattern(patternPart);
   
   // Then convert to regex pattern (handle wildcards)
   // Don't convert hyphens to wildcards - they've already been processed by translateHyphenPattern
-  const processedPattern = translatedPattern
+  const finalPattern = translatedPattern
     .replace(/\?/g, '.'); // Convert question marks to single character wildcards
   
   // Create regex pattern
-  const regexPattern = convertPatternToRegex(processedPattern);
+  const regexPattern = convertPatternToRegex(finalPattern);
   
   try {
     // Get all words from trie that match the pattern
     const allMatches = await searchTrie(trie.getRoot(), regexPattern, rackPart);
+    
+    // If target length is specified, filter by exact length
+    if (specifiedLength !== null) {
+      return allMatches.filter(word => word.length === specifiedLength);
+    }
     
     // Filter results based on the length preference
     if (showLongerWords) {

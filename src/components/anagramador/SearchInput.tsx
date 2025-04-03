@@ -1,3 +1,4 @@
+
 import { Input } from "@/components/ui/input";
 import { RefObject, useState, useEffect, useRef } from "react";
 import { SearchTooltip } from "./SearchTooltip";
@@ -29,15 +30,20 @@ const SearchInput = ({
   onClear
 }: SearchInputProps) => {
   const [isPatternMode, setIsPatternMode] = useState(false);
+  const [hasLengthSpecified, setHasLengthSpecified] = useState(false);
   const cursorPositionRef = useRef<number | null>(null);
   
-  // Auto-detect pattern mode based on input
+  // Auto-detect pattern mode and length specification based on input
   useEffect(() => {
     const hasPatternChars = letters.includes('?') || 
                            letters.includes('^') || 
                            letters.includes('$') || 
                            letters.includes('-');
     setIsPatternMode(hasPatternChars);
+    
+    // Check if length is specified using slash
+    const hasLengthSpec = letters.includes('/') && /\/\d+/.test(letters);
+    setHasLengthSpecified(hasLengthSpec);
   }, [letters]);
 
   useEffect(() => {
@@ -109,7 +115,7 @@ const SearchInput = ({
             type="text"
             placeholder={
               isPatternMode 
-                ? "Ej: -AR (termina con AR), CO- (empieza con CO)" 
+                ? "Ej: -AR (termina con AR), CO- (empieza con CO), -AR/6 (exactamente 6 letras)" 
                 : "Asterisco es comodín"
             }
             value={letters}
@@ -135,6 +141,7 @@ const SearchInput = ({
         checked={showShorter}
         onCheckedChange={onShowShorterChange}
         isPatternMode={isPatternMode}
+        isLengthSpecified={hasLengthSpecified}
       />
     </div>
   );

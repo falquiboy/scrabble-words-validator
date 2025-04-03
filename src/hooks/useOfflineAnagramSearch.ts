@@ -27,9 +27,21 @@ export const useOfflineAnagramSearch = async (
   const isPatternSearch = searchTerm.includes('?') || searchTerm.includes('-');
   
   if (isPatternSearch) {
-    console.log('Executing pattern search for:', searchTerm);
+    console.log('Executing pattern search for:', searchTerm, 'target length:', targetLength);
+    // Extract target length from the pattern if it contains a slash
+    let patternLength = targetLength;
+    
+    if (searchTerm.includes('/')) {
+      const [patternPart, lengthStr] = searchTerm.split('/');
+      if (lengthStr && /^\d+$/.test(lengthStr)) {
+        patternLength = parseInt(lengthStr, 10);
+        console.log('Length extracted from pattern:', patternLength);
+      }
+    }
+    
     // For pattern searches, showShorter toggle actually means "show longer words" (>8 letters)
-    const matches = await findPatternMatches(searchTerm, trie, showShorter);
+    // If we have a specific length, this toggle is ignored
+    const matches = await findPatternMatches(searchTerm, trie, showShorter, 8, patternLength);
     console.log('Pattern search results:', matches);
     return {
       exactMatches: [],
