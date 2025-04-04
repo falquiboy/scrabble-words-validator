@@ -32,9 +32,6 @@ export const searchTrie = async (trie: TrieNode, pattern: RegExp, rackLetters: s
   
   console.log('Searching trie with:', { pattern: patternStr, rackLetters, hasRackLetters });
   
-  // If we have rack letters with wildcards, we'll generate all possible combinations
-  const hasWildcard = rackLetters.includes('*');
-  
   const searchNode = (node: TrieNode, currentWord: string) => {
     if (node.isEndOfWord && pattern.test(currentWord)) {
       // If we have rack letters, validate them against the pattern and word
