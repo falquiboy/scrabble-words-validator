@@ -4,8 +4,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
-  TooltipTrigger,
-  TooltipClose
+  TooltipTrigger
 } from "@/components/ui/tooltip";
 import { X } from "lucide-react";
 
@@ -41,12 +40,12 @@ export const SearchTooltip = ({ isPatternMode, children }: SearchTooltipProps) =
             side="top" 
             className="w-80 p-2 text-sm relative"
           >
-            <TooltipClose 
+            <button 
               className="absolute top-1 right-1 hover:bg-accent rounded-full p-1"
               onClick={() => setShowTooltip(false)}
             >
               <X className="h-4 w-4" />
-            </TooltipClose>
+            </button>
             <p className="mb-1 font-medium">Patrones de búsqueda:</p>
             <ul className="space-y-1 text-xs">
               <li><code>-AR</code>: palabras que <b>terminan</b> con "AR"</li>
