@@ -41,8 +41,8 @@ const SearchInput = ({
                            letters.includes('-');
     setIsPatternMode(hasPatternChars);
     
-    // Check if length is specified using slash
-    const hasLengthSpec = letters.includes('/') && /\/\d+/.test(letters);
+    // Check if length is specified using colon
+    const hasLengthSpec = letters.includes(':') && /\:\d+/.test(letters);
     setHasLengthSpecified(hasLengthSpec);
   }, [letters]);
 
@@ -76,10 +76,10 @@ const SearchInput = ({
     cursorPositionRef.current = e.target.selectionStart;
     let value = e.target.value.toUpperCase();
     
-    // Preserve cursor position for slash + number cases
-    const hasSlash = value.includes('/');
+    // Preserve cursor position for colon + number cases
+    const hasColon = value.includes(':');
     const cursorPosition = e.target.selectionStart || 0;
-    const isAfterSlash = hasSlash && cursorPosition > value.indexOf('/');
+    const isAfterColon = hasColon && cursorPosition > value.indexOf(':');
     
     // Automatically determine which validation to use based on input
     const hasPatternChars = value.includes('?') || 
@@ -92,13 +92,13 @@ const SearchInput = ({
       validateAndCleanPatternInput(value) : 
       validateAndCleanAnagramInput(value);
     
-    // Adjust cursor position if we're after a slash and typing numbers
-    if (isAfterSlash && cleanedValue !== value) {
+    // Adjust cursor position if we're after a colon and typing numbers
+    if (isAfterColon && cleanedValue !== value) {
       // Calculate new cursor position
-      const slashPosInCleaned = cleanedValue.indexOf('/');
-      if (slashPosInCleaned >= 0) {
-        const charsAfterSlash = cursorPosition - value.indexOf('/') - 1;
-        cursorPositionRef.current = slashPosInCleaned + Math.min(charsAfterSlash + 1, cleanedValue.length - slashPosInCleaned);
+      const colonPosInCleaned = cleanedValue.indexOf(':');
+      if (colonPosInCleaned >= 0) {
+        const charsAfterColon = cursorPosition - value.indexOf(':') - 1;
+        cursorPositionRef.current = colonPosInCleaned + Math.min(charsAfterColon + 1, cleanedValue.length - colonPosInCleaned);
       }
     }
     
@@ -131,7 +131,7 @@ const SearchInput = ({
             type="text"
             placeholder={
               isPatternMode 
-                ? "Ej: -AR (termina con AR), CO- (empieza con CO), -AR/6 (exactamente 6 letras)" 
+                ? "Ej: -AR (termina con AR), CO- (empieza con CO), -AR:6 (exactamente 6 letras)" 
                 : "Asterisco es comodín"
             }
             value={letters}

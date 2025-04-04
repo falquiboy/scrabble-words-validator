@@ -1,18 +1,16 @@
-import { toast } from "@/components/ui/use-toast";
 import { processDigraphs } from "./digraphs";
 
-// Removing the 7-letter constraint
-export const MAX_RACK_LETTERS = 15; // Increased to a more reasonable limit
+export const MAX_RACK_LETTERS = 15;
 export const MAX_PATTERN_LENGTH = 10;
 
 export const validateAndCleanAnagramInput = (value: string) => {
   // Split into parts if there's a length constraint
-  const parts = value.split('/');
+  const parts = value.split(':');
   
   if (parts.length > 2) {
-    // Keep only the first slash
+    // Keep only the first colon
     const [letters, lengthStr, ...rest] = parts;
-    return letters + '/' + lengthStr;
+    return letters + ':' + lengthStr;
   }
   
   if (parts.length === 2) {
@@ -20,15 +18,15 @@ export const validateAndCleanAnagramInput = (value: string) => {
     // Clean letters part (allow A-Z, Ñ, Ç, *, and commas)
     const cleanLetters = letters.replace(/[^A-ZÑÇKW*,]/g, '');
     
-    // Only allow numbers after the slash
+    // Only allow numbers after the colon
     const cleanLength = lengthStr.replace(/[^0-9]/g, '');
     
-    // Return the cleaned format with slash
-    return cleanLetters + '/' + cleanLength;
+    // Return the cleaned format with colon
+    return cleanLetters + ':' + cleanLength;
   }
   
-  // If no slash, just clean input (allow A-Z, Ñ, Ç, *, commas and slash)
-  return value.replace(/[^A-ZÑÇKW*,\/]/g, '');
+  // If no colon, just clean input (allow A-Z, Ñ, Ç, *, commas and colon)
+  return value.replace(/[^A-ZÑÇKW*,\:]/g, '');
 };
 
 export const validateAndCleanPatternInput = (value: string) => {
@@ -41,7 +39,7 @@ export const validateAndCleanPatternInput = (value: string) => {
     let [patternPart, rackPart] = parts;
     
     // Check if pattern part contains a length constraint
-    const patternParts = patternPart.split('/');
+    const patternParts = patternPart.split(':');
     if (patternParts.length > 1) {
       const [pattern, lengthStr] = patternParts;
       
@@ -51,10 +49,7 @@ export const validateAndCleanPatternInput = (value: string) => {
       // Only allow numbers for length
       const cleanLength = lengthStr.replace(/[^0-9]/g, '');
       
-      // Clean rack (allow A-Z, Ñ, Ç, *)
-      const cleanRack = rackPart.replace(/[^A-ZÑÇKW*]/g, '');
-      
-      return `${cleanPattern}/${cleanLength},${cleanRack}`;
+      return `${cleanPattern}:${cleanLength},${cleanRack}`;
     }
     
     // If no length constraint in pattern
@@ -65,7 +60,7 @@ export const validateAndCleanPatternInput = (value: string) => {
   }
   
   // Handle pattern with length but no rack
-  const patternParts = value.split('/');
+  const patternParts = value.split(':');
   if (patternParts.length > 1) {
     const [pattern, lengthStr, ...rest] = patternParts;
     
@@ -75,24 +70,24 @@ export const validateAndCleanPatternInput = (value: string) => {
     // Only allow numbers for length
     const cleanLength = lengthStr.replace(/[^0-9]/g, '');
     
-    return `${cleanPattern}/${cleanLength}`;
+    return `${cleanPattern}:${cleanLength}`;
   }
   
-  // For the simple pattern case, check if the value ends with a slash
-  if (value.endsWith('/')) {
+  // For the simple pattern case, check if the value ends with a colon
+  if (value.endsWith(':')) {
     const patternPart = value.slice(0, -1);
     const cleanPattern = patternPart.replace(/[^A-ZÑÇKW?\^$\-]/g, '');
-    return `${cleanPattern}/`;
+    return `${cleanPattern}:`;
   }
   
-  // If value contains a slash followed by numbers
-  const slashWithNumbersMatch = value.match(/^([A-ZÑÇKW?\^$\-]*)\/(\d*)$/);
-  if (slashWithNumbersMatch) {
-    const [_, patternPart, lengthPart] = slashWithNumbersMatch;
+  // If value contains a colon followed by numbers
+  const colonWithNumbersMatch = value.match(/^([A-ZÑÇKW?\^$\-]*):(\d*)$/);
+  if (colonWithNumbersMatch) {
+    const [_, patternPart, lengthPart] = colonWithNumbersMatch;
     const cleanPattern = patternPart.replace(/[^A-ZÑÇKW?\^$\-]/g, '');
-    return `${cleanPattern}/${lengthPart}`;
+    return `${cleanPattern}:${lengthPart}`;
   }
   
-  // If no slash, only allow pattern characters
-  return value.replace(/[^A-ZÑÇKW?\^$\-\/]/g, '');
+  // If no colon, only allow pattern characters
+  return value.replace(/[^A-ZÑÇKW?\^$\-\:]/g, '');
 };
