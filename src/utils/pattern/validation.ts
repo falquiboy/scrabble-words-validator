@@ -1,3 +1,4 @@
+
 import { processDigraphs } from '@/utils/digraphs';
 import { convertPatternToRegex } from './conversion';
 
@@ -30,7 +31,7 @@ export const validateWordPattern = (
   }
 
   // If no rack letters provided, pattern match is sufficient
-  if (!rackLetters) {
+  if (!rackLetters || rackLetters.trim() === '') {
     return true;
   }
 
@@ -48,21 +49,31 @@ export const validateWordPattern = (
     }
   }
 
-  // Add fixed pattern letters to available counts
-  const fixedLetters = pattern.replace(/[\^$?\-]/g, '');
-  for (const letter of processDigraphs(fixedLetters)) {
-    letterCounts.set(letter, (letterCounts.get(letter) || 0) + 1);
-  }
+  // For wildcard matches (?) in the pattern, we need to check if
+  // we have enough letters in the rack to fill them
+  const wildcardCount = (pattern.match(/\?/g) || []).length;
+  const requiredLetters = [...processedWord]; // Letters in the word
 
-  // Check if we have enough letters
-  for (const letter of processedWord) {
+  // Check if we have enough letters to fill the wildcards
+  for (const letter of requiredLetters) {
     const count = letterCounts.get(letter) || 0;
+    
+    // If we have this letter in our rack, use it
     if (count > 0) {
       letterCounts.set(letter, count - 1);
-    } else if (wildcards > 0) {
+    } 
+    // If we don't have this letter in our rack but have a wildcard, use that
+    else if (wildcards > 0) {
       wildcards--;
-    } else {
-      return false;
+    } 
+    // If we don't have this letter or a wildcard, check if it's part of the fixed pattern
+    else {
+      // If the letter doesn't match a fixed character in the pattern
+      // and we don't have it in our rack or a wildcard, the match fails
+      const patternWithoutWildcards = pattern.replace(/\?/g, '');
+      if (!processDigraphs(patternWithoutWildcards).includes(letter)) {
+        return false;
+      }
     }
   }
 

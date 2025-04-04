@@ -1,4 +1,3 @@
-
 import { processDigraphs } from "./digraphs";
 
 export const MAX_RACK_LETTERS = 15;
@@ -90,5 +89,5 @@ export const validateAndCleanPatternInput = (value: string) => {
   }
   
   // If no colon, only allow pattern characters
-  return value.replace(/[^A-ZÑÇKW?\^$\-\:]/g, '');
+  return value.replace(/[^A-ZÑÇKW?\^$\-\:,]/g, '');
 };

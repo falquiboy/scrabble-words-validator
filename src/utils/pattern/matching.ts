@@ -29,6 +29,8 @@ export const findPatternMatches = async (
   const [patternPart, rackPart] = processedPattern.includes(',') ? 
     processedPattern.split(',') : [processedPattern, ''];
   
+  console.log('Processing pattern search:', { patternPart, rackPart, showLongerWords, specifiedLength });
+  
   // First translate any hyphen-based patterns like -CON to proper pattern format
   const translatedPattern = translateHyphenPattern(patternPart);
   
@@ -41,8 +43,8 @@ export const findPatternMatches = async (
   const regexPattern = convertPatternToRegex(finalPattern);
   
   try {
-    // Get all words from trie that match the pattern
-    const allMatches = await searchTrie(trie.getRoot(), regexPattern, rackPart);
+    // Get all words from trie that match the pattern, passing rack letters if provided
+    const allMatches = await searchTrie(trie.getRoot(), regexPattern, rackPart.trim());
     
     // If target length is specified, filter by exact length
     if (specifiedLength !== null) {

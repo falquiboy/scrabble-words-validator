@@ -1,5 +1,7 @@
+
 import { TrieNode } from "./types";
 import { processDigraphs } from "../digraphs";
+import { validateWordPattern } from "../pattern/validation";
 
 export const search = (node: TrieNode, word: string): boolean => {
   // Process digraphs before searching
@@ -22,25 +24,19 @@ export const search = (node: TrieNode, word: string): boolean => {
 
 export const searchTrie = async (trie: TrieNode, pattern: RegExp, rackLetters: string = ''): Promise<string[]> => {
   const matches: string[] = [];
+  const hasRackLetters = rackLetters && rackLetters.trim().length > 0;
+  const patternStr = pattern.toString().slice(1, -1).replace(/^\^|\$$/g, '');
+  
+  console.log('Searching trie with:', { pattern: patternStr, rackLetters, hasRackLetters });
   
   const searchNode = (node: TrieNode, currentWord: string) => {
     if (node.isEndOfWord && pattern.test(currentWord)) {
-      // If we have rack letters, validate them
-      if (rackLetters) {
-        const availableLetters = [...rackLetters.toUpperCase()];
-        const wordLetters = [...currentWord];
-        let isValid = true;
-        
-        for (const letter of wordLetters) {
-          const index = availableLetters.indexOf(letter);
-          if (index === -1) {
-            isValid = false;
-            break;
-          }
-          availableLetters.splice(index, 1);
-        }
-        
-        if (isValid) {
+      // If we have rack letters, validate them against the pattern and word
+      if (hasRackLetters) {
+        // For patterns with question marks, validate that we can build the word
+        // using the available rack letters
+        const isValidWithRack = validateWordPattern(currentWord, patternStr, rackLetters);
+        if (isValidWithRack) {
           matches.push(node.word);
         }
       } else {
