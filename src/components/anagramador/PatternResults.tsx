@@ -24,6 +24,19 @@ export const PatternResults = ({
   const [patternPart, rackPart] = hasRackLetters ? 
     searchTerm.split(',') : [searchTerm, ''];
   
+  // For special patterns like -NAS, we need custom highlighting
+  const isEndPattern = patternPart.startsWith('-');
+  const isStartPattern = patternPart.endsWith('-');
+  
+  // Extract the actual pattern without hyphens for highlighting
+  let cleanPattern = patternPart;
+  if (isEndPattern) {
+    cleanPattern = patternPart.slice(1);
+  }
+  if (isStartPattern) {
+    cleanPattern = cleanPattern.slice(0, -1);
+  }
+  
   return (
     <BaseResults
       matches={uniqueMatches}

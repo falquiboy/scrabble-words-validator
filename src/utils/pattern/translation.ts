@@ -20,10 +20,7 @@ export const translateHyphenPattern = (pattern: string): string => {
     const innerPattern = cleanPattern.slice(1, -1);
     if (!innerPattern) return pattern;
     
-    // Fix: Using lookahead and lookbehind logic to ensure the pattern is properly contained
-    // This matches words where:
-    // 1. The pattern is preceded by at least one character
-    // 2. The pattern is followed by at least one character
+    // Fix: Using a simpler pattern for "word contains pattern in the middle"
     return `^.+${innerPattern}.+$`;
   } else if (cleanPattern.startsWith('-')) {
     // -CON → .*CON$

@@ -5,6 +5,7 @@ import { convertPatternToRegex } from "./conversion";
 import { translateHyphenPattern } from "./translation";
 import { processDigraphs } from "../digraphs";
 import { generatePatternCombinations } from "./combinations";
+import { SPANISH_LETTERS } from '@/hooks/anagramSearch/constants';
 
 export const findPatternMatches = async (
   pattern: string, 
@@ -82,12 +83,30 @@ const findPatternMatchesWithRack = async (
 ): Promise<string[]> => {
   console.log('Generating combinations for pattern', pattern, 'with rack letters', rackLetters);
   
-  // First, process the pattern and rack letters for digraphs
-  const processedPattern = processDigraphs(pattern.toUpperCase());
+  // Preprocessing the pattern for special cases
+  // For patterns like "-NAS", translateHyphenPattern converts it to ".*NAS$"
+  // We need to handle the regex special characters by removing them for word generation
+  let processedPattern = pattern;
+  const endsWithPattern = pattern.endsWith('$');
+  const startsWithPattern = pattern.startsWith('^');
+  
+  // Handle patterns with regex special characters for word generation
+  if (endsWithPattern) {
+    processedPattern = processedPattern.slice(0, -1);
+  }
+  if (startsWithPattern) {
+    processedPattern = processedPattern.slice(1);
+  }
+  
+  // Remove .* patterns (these come from translateHyphenPattern for patterns like -NAS)
+  processedPattern = processedPattern.replace(/\.\*/g, '');
+  
+  // Process the pattern and rack letters for digraphs
+  const formattedPattern = processDigraphs(processedPattern.toUpperCase());
   const processedRack = processDigraphs(rackLetters.toUpperCase());
   
   // Generate all possible words that could be formed with the pattern and rack letters
-  const possibleWords = generatePatternCombinations(processedPattern, processedRack);
+  const possibleWords = generatePatternCombinations(formattedPattern, processedRack, startsWithPattern, endsWithPattern);
   console.log(`Generated ${possibleWords.length} possible combinations to check`);
   
   // Check each possible word in the trie
