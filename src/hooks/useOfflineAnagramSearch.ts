@@ -24,18 +24,20 @@ export const useOfflineAnagramSearch = async (
   }
 
   // Check if it's a pattern search
-  const isPatternSearch = searchTerm.includes('?') || searchTerm.includes('-');
+  const isPatternSearch = searchTerm.includes('?') || 
+                         searchTerm.includes('-') || 
+                         searchTerm.includes(':');
   
   if (isPatternSearch) {
     console.log('Executing pattern search for:', searchTerm, 'target length:', targetLength);
-    // Extract target length from the pattern if it contains a slash
+    // Extract target length from the pattern if it contains a colon
     let patternLength = targetLength;
     
-    if (searchTerm.includes('/')) {
-      const [patternPart, lengthStr] = searchTerm.split('/');
+    if (searchTerm.includes(':')) {
+      const [patternPart, lengthStr] = searchTerm.split(':');
       if (lengthStr && /^\d+$/.test(lengthStr)) {
         patternLength = parseInt(lengthStr, 10);
-        console.log('Length extracted from pattern:', patternLength);
+        console.log('Length extracted from pattern with colon:', patternLength);
       }
     }
     

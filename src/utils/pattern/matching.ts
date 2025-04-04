@@ -11,8 +11,8 @@ export const findPatternMatches = async (
   maxDefaultLength: number = 8,
   targetLength: number | null = null
 ): Promise<string[]> => {
-  // Process pattern to extract length if specified (pattern/length format)
-  const patternParts = pattern.split('/');
+  // Process pattern to extract length if specified (pattern:length format)
+  const patternParts = pattern.split(':');
   let processedPattern = pattern;
   let specifiedLength = targetLength;
   
@@ -21,6 +21,7 @@ export const findPatternMatches = async (
     const lengthStr = patternParts[1];
     if (lengthStr && /^\d+$/.test(lengthStr)) {
       specifiedLength = parseInt(lengthStr, 10);
+      console.log('Length extracted from pattern with colon:', specifiedLength);
     }
   }
   

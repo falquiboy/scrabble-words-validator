@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import SearchInput from "./SearchInput";
 import { useToast } from "@/hooks/use-toast";
@@ -28,11 +27,13 @@ const SearchContainer = ({
     let targetLength = null;
     let cleanedValue = value;
     
-    // Extract target length if present
+    // Extract target length if present using colon format
     const lengthMatch = value.match(/\:(\d+)$/);
     if (lengthMatch) {
       targetLength = parseInt(lengthMatch[1], 10);
-      cleanedValue = value.replace(/\:\d+$/, '');
+      console.log('Target length extracted from colon format:', targetLength);
+      // We don't remove the colon and number from the input value
+      // as they are part of the pattern syntax now
     }
 
     // Set the cleaned value in state
