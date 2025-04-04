@@ -66,8 +66,8 @@ export const searchTrie = async (trie: TrieNode, pattern: RegExp, rackLetters: s
 export const generateRackCombinations = (
   pattern: string, 
   rackLetters: string
-): { pattern: string, usedRackLetters: Map<string, number> }[] => {
-  const combinations: { pattern: string, usedRackLetters: Map<string, number> }[] = [];
+): { pattern: string, usedRackLetters: Map<string, string> }[] => {
+  const combinations: { pattern: string, usedRackLetters: Map<string, string> }[] = [];
   const processedRack = processDigraphs(rackLetters.toUpperCase());
   
   // Count available letters and wildcards
@@ -94,7 +94,7 @@ export const generateRackCombinations = (
     currentPattern: string,
     remainingWildcards: number,
     remainingLetters: Map<string, number>,
-    usedRackLetters: Map<string, number>,
+    usedRackLetters: Map<string, string>,
     position: number = 0
   ) => {
     // Base case: all question marks have been replaced
@@ -127,7 +127,7 @@ export const generateRackCombinations = (
         
         // Track which rack letter was used
         const newUsedRackLetters = new Map(usedRackLetters);
-        newUsedRackLetters.set(position, letter);
+        newUsedRackLetters.set(position.toString(), letter);
         
         // Replace the question mark with this letter
         const newPattern = 
@@ -152,7 +152,7 @@ export const generateRackCombinations = (
       for (const letter of alphabet) {
         // Track which position used a wildcard
         const newUsedRackLetters = new Map(usedRackLetters);
-        newUsedRackLetters.set(position, '*' + letter); // Mark as wildcard + the letter used
+        newUsedRackLetters.set(position.toString(), '*' + letter); // Mark as wildcard + the letter used
         
         // Replace the question mark with this letter
         const newPattern = 
