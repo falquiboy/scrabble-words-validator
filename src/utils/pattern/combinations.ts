@@ -55,8 +55,10 @@ export const generatePatternCombinations = (
     return generateSuffixCombinations(prefix, availableLetters, wildcardCount);
   }
   
-  // For middle patterns (-CON-), or plain patterns (CON, ?ON, C?N, etc)
-  // Use the normal combination generation logic
+  // For middle patterns (-CON-), generate combinations before and after the fixed pattern
+  if (isStartPattern && isEndPattern) {
+    return generateMiddlePatternCombinations(pattern, availableLetters, wildcardCount);
+  }
   
   // For patterns with question marks, we need to fill them with rack letters
   if (questionMarkCount > 0) {
@@ -237,6 +239,133 @@ const generateSuffixOfLength = (
 };
 
 /**
+ * Generate combinations for middle patterns (-CON-)
+ */
+const generateMiddlePatternCombinations = (
+  pattern: string,
+  availableLetters: Map<string, number>,
+  wildcardCount: number,
+  maxLength: number = 8
+): string[] => {
+  console.log(`Generating middle pattern combinations for pattern: "${pattern}"`);
+  const combinations: string[] = [];
+  
+  // We'll need to distribute the available letters before and after the pattern
+  // Try different combinations of prefix/suffix lengths
+  for (let prefixLen = 1; prefixLen <= maxLength; prefixLen++) {
+    for (let suffixLen = 1; suffixLen <= maxLength; suffixLen++) {
+      generateMiddlePatternOfLength(
+        "",
+        pattern,
+        "",
+        prefixLen,
+        suffixLen,
+        new Map(availableLetters),
+        wildcardCount,
+        combinations
+      );
+    }
+  }
+  
+  return combinations;
+};
+
+/**
+ * Helper function to generate combinations for middle patterns
+ */
+const generateMiddlePatternOfLength = (
+  currentPrefix: string,
+  pattern: string,
+  currentSuffix: string,
+  prefixLength: number,
+  suffixLength: number,
+  remainingLetters: Map<string, number>,
+  remainingWildcards: number,
+  result: string[]
+): void => {
+  // If we've reached the target prefix length, start generating suffixes
+  if (currentPrefix.length === prefixLength) {
+    if (currentSuffix.length === suffixLength) {
+      // We have a complete word
+      result.push(currentPrefix + pattern + currentSuffix);
+      return;
+    }
+    
+    // Generate suffix
+    for (const [letter, count] of remainingLetters.entries()) {
+      if (count > 0) {
+        const newLetters = new Map(remainingLetters);
+        newLetters.set(letter, count - 1);
+        
+        generateMiddlePatternOfLength(
+          currentPrefix,
+          pattern,
+          currentSuffix + letter,
+          prefixLength,
+          suffixLength,
+          newLetters,
+          remainingWildcards,
+          result
+        );
+      }
+    }
+    
+    // Try using a wildcard for suffix
+    if (remainingWildcards > 0) {
+      for (const letter of SPANISH_LETTERS) {
+        generateMiddlePatternOfLength(
+          currentPrefix,
+          pattern,
+          currentSuffix + letter,
+          prefixLength,
+          suffixLength,
+          new Map(remainingLetters),
+          remainingWildcards - 1,
+          result
+        );
+      }
+    }
+    
+    return;
+  }
+  
+  // Generate prefix
+  for (const [letter, count] of remainingLetters.entries()) {
+    if (count > 0) {
+      const newLetters = new Map(remainingLetters);
+      newLetters.set(letter, count - 1);
+      
+      generateMiddlePatternOfLength(
+        currentPrefix + letter,
+        pattern,
+        currentSuffix,
+        prefixLength,
+        suffixLength,
+        newLetters,
+        remainingWildcards,
+        result
+      );
+    }
+  }
+  
+  // Try using a wildcard for prefix
+  if (remainingWildcards > 0) {
+    for (const letter of SPANISH_LETTERS) {
+      generateMiddlePatternOfLength(
+        currentPrefix + letter,
+        pattern,
+        currentSuffix,
+        prefixLength,
+        suffixLength,
+        new Map(remainingLetters),
+        remainingWildcards - 1,
+        result
+      );
+    }
+  }
+};
+
+/**
  * Generate combinations for patterns with question marks
  */
 const generateQuestionMarkCombinations = (
@@ -299,7 +428,7 @@ const generateQuestionMarkCombinations = (
           newPattern,
           position + 1,
           new Map(remainingLetters),
-          remainingWildcards - 1
+          remainingWildcards - 1,
         );
       }
     }

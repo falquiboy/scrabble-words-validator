@@ -118,16 +118,30 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
   const translatedPattern = translateHyphenPattern(pattern);
 
   // Determine pattern type (starts with, ends with, contains)
-  const isStartPattern = translatedPattern.startsWith('^');
-  const isEndPattern = translatedPattern.endsWith('$');
-  const isContainsPattern = translatedPattern.includes('.*') && !isStartPattern && !isEndPattern;
+  const isStartPattern = translatedPattern.startsWith('^') || pattern.endsWith('-');
+  const isEndPattern = translatedPattern.endsWith('$') || pattern.startsWith('-');
+  const isContainsPattern = pattern.startsWith('-') && pattern.endsWith('-');
   
   // Extract the fixed part of the pattern
   let fixedPattern = translatedPattern
     .replace(/^\^|\$$/g, '')  // Remove start/end anchors
     .replace(/\.\*/g, '')     // Remove .* wildcards
+    .replace(/\.\+/g, '')     // Remove .+ wildcards
     .replace(/\./g, '');      // Remove . wildcards
 
+  // Handle question marks in pattern
+  let questionMarkPositions: number[] = [];
+  if (pattern.includes('?')) {
+    // Find positions of question marks in the original pattern
+    for (let i = 0; i < pattern.length; i++) {
+      if (pattern[i] === '?') {
+        questionMarkPositions.push(i);
+      }
+    }
+    // Remove question marks from fixed pattern
+    fixedPattern = fixedPattern.replace(/\?/g, '');
+  }
+  
   // Process rack letters
   const processedRack = processDigraphs(rackLetters.toUpperCase());
   const hasWildcard = processedRack.includes('*');
@@ -137,13 +151,14 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
   let fixedStart = -1;
   let fixedEnd = -1;
   
-  if (isStartPattern) {
+  if (isStartPattern && !isContainsPattern) {
     fixedStart = 0;
     fixedEnd = fixedPattern.length - 1;
-  } else if (isEndPattern) {
+  } else if (isEndPattern && !isContainsPattern) {
     fixedStart = processedWord.length - fixedPattern.length;
     fixedEnd = processedWord.length - 1;
-  } else if (isContainsPattern) {
+  } else if (isContainsPattern || (!isStartPattern && !isEndPattern && fixedPattern)) {
+    // For contains patterns or regular substring patterns
     fixedStart = processedWord.indexOf(fixedPattern);
     fixedEnd = fixedStart + fixedPattern.length - 1;
   }
@@ -166,9 +181,23 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
         // Check if this character is part of the fixed pattern
         const isFixedPattern = fixedPositions.has(processedIndex);
         
-        // If it's part of the fixed pattern, display normally
-        if (isFixedPattern) {
+        // Handle question mark positions if any
+        const isQuestionMarkPosition = questionMarkPositions.some(pos => 
+          processedIndex === pos || (fixedStart > 0 && processedIndex === fixedStart + pos)
+        );
+        
+        // If it's part of the fixed pattern and not a question mark, display normally
+        if (isFixedPattern && !isQuestionMarkPosition) {
           return <span key={index}>{char}</span>;
+        }
+        
+        // Handle question mark positions specially
+        if (isQuestionMarkPosition) {
+          return (
+            <span key={index} className="text-purple-600 font-semibold">
+              {char}
+            </span>
+          );
         }
         
         // If it's not part of the fixed pattern, it's a rack letter (possibly with wildcard)

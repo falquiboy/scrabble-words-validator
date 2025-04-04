@@ -27,14 +27,18 @@ export const PatternResults = ({
   // For special patterns like -NAS, we need custom highlighting
   const isEndPattern = patternPart.startsWith('-');
   const isStartPattern = patternPart.endsWith('-');
+  const isContainsPattern = patternPart.startsWith('-') && patternPart.endsWith('-');
   
   // Extract the actual pattern without hyphens for highlighting
   let cleanPattern = patternPart;
   if (isEndPattern) {
     cleanPattern = patternPart.slice(1);
   }
-  if (isStartPattern) {
+  if (isStartPattern && !isContainsPattern) {
     cleanPattern = cleanPattern.slice(0, -1);
+  }
+  if (isContainsPattern) {
+    cleanPattern = cleanPattern.slice(1, -1);
   }
   
   return (

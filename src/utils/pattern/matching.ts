@@ -89,6 +89,7 @@ const findPatternMatchesWithRack = async (
   let processedPattern = pattern;
   const endsWithPattern = pattern.endsWith('$');
   const startsWithPattern = pattern.startsWith('^');
+  const containsMiddlePattern = pattern.includes('.+') && !startsWithPattern && !endsWithPattern;
   
   // Handle patterns with regex special characters for word generation
   if (endsWithPattern) {
@@ -98,15 +99,25 @@ const findPatternMatchesWithRack = async (
     processedPattern = processedPattern.slice(1);
   }
   
-  // Remove .* patterns (these come from translateHyphenPattern for patterns like -NAS)
-  processedPattern = processedPattern.replace(/\.\*/g, '');
+  // Remove .* and .+ patterns (these come from translateHyphenPattern for patterns like -NAS)
+  processedPattern = processedPattern.replace(/\.\*/g, '').replace(/\.\+/g, '');
   
   // Process the pattern and rack letters for digraphs
   const formattedPattern = processDigraphs(processedPattern.toUpperCase());
   const processedRack = processDigraphs(rackLetters.toUpperCase());
   
+  // Determine pattern type (start, end, contains)
+  const isStartPattern = startsWithPattern || pattern.includes('^');
+  const isEndPattern = endsWithPattern || pattern.endsWith('$');
+  
   // Generate all possible words that could be formed with the pattern and rack letters
-  const possibleWords = generatePatternCombinations(formattedPattern, processedRack, startsWithPattern, endsWithPattern);
+  const possibleWords = generatePatternCombinations(
+    formattedPattern, 
+    processedRack, 
+    isStartPattern, 
+    isEndPattern
+  );
+  
   console.log(`Generated ${possibleWords.length} possible combinations to check`);
   
   // Check each possible word in the trie
