@@ -59,7 +59,7 @@ export const validateAndCleanPatternInput = (value: string) => {
     }
     
     // If no length constraint in pattern
-    const cleanPattern = patternPart.replace(/[^A-ZÑÇKW?\^$\-\/]/g, '');
+    const cleanPattern = patternPart.replace(/[^A-ZÑÇKW?\^$\-]/g, '');
     const cleanRack = rackPart.replace(/[^A-ZÑÇKW*]/g, '');
     
     return `${cleanPattern},${cleanRack}`;
@@ -79,7 +79,26 @@ export const validateAndCleanPatternInput = (value: string) => {
     return `${cleanPattern}/${cleanLength}`;
   }
   
-  // Simple pattern with no length or rack constraints
-  // Very important: Allow forward slash in the pattern input to prepare for length specification
-  return value.replace(/[^A-ZÑÇKW?\^$\-\/0-9]/g, '');
+  // For the simple pattern case, we need to preserve numbers ONLY if they come after a slash
+  // First, check if there's a slash in the input
+  if (value.includes('/')) {
+    // Split the value at the slash
+    const [patternPart, lengthPart = ''] = value.split('/');
+    
+    // Clean pattern (allow A-Z, Ñ, Ç, ?, ^, $, -)
+    const cleanPattern = patternPart.replace(/[^A-ZÑÇKW?\^$\-]/g, '');
+    
+    // For the length part, only allow digits
+    const cleanLength = lengthPart.replace(/[^0-9]/g, '');
+    
+    // Return the cleaned pattern with the slash and length
+    if (cleanLength) {
+      return `${cleanPattern}/${cleanLength}`;
+    }
+    // If length part is empty, just return the pattern with slash
+    return `${cleanPattern}/`;
+  }
+  
+  // If no slash, only allow pattern characters (no numbers)
+  return value.replace(/[^A-ZÑÇKW?\^$\-\/]/g, '');
 };
