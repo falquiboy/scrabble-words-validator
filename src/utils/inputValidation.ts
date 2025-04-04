@@ -1,3 +1,4 @@
+
 import { processDigraphs } from "./digraphs";
 
 export const MAX_RACK_LETTERS = 15;
@@ -37,6 +38,7 @@ export const validateAndCleanPatternInput = (value: string) => {
   if (parts.length > 1) {
     // Split into pattern/length and rack parts
     let [patternPart, rackPart] = parts;
+    const cleanRack = rackPart.replace(/[^A-ZÑÇKW*]/g, '');
     
     // Check if pattern part contains a length constraint
     const patternParts = patternPart.split(':');
@@ -54,7 +56,6 @@ export const validateAndCleanPatternInput = (value: string) => {
     
     // If no length constraint in pattern
     const cleanPattern = patternPart.replace(/[^A-ZÑÇKW?\^$\-]/g, '');
-    const cleanRack = rackPart.replace(/[^A-ZÑÇKW*]/g, '');
     
     return `${cleanPattern},${cleanRack}`;
   }
