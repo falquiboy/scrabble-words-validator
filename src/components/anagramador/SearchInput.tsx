@@ -76,17 +76,33 @@ const SearchInput = ({
     cursorPositionRef.current = e.target.selectionStart;
     let value = e.target.value.toUpperCase();
     
+    // Preserve cursor position for slash + number cases
+    const hasSlash = value.includes('/');
+    const cursorPosition = e.target.selectionStart || 0;
+    const isAfterSlash = hasSlash && cursorPosition > value.indexOf('/');
+    
     // Automatically determine which validation to use based on input
     const hasPatternChars = value.includes('?') || 
                            value.includes('^') || 
                            value.includes('$') || 
                            value.includes('-');
     
-    value = hasPatternChars ? 
+    // Apply the appropriate validation
+    const cleanedValue = hasPatternChars ? 
       validateAndCleanPatternInput(value) : 
       validateAndCleanAnagramInput(value);
     
-    onInputChange(value);
+    // Adjust cursor position if we're after a slash and typing numbers
+    if (isAfterSlash && cleanedValue !== value) {
+      // Calculate new cursor position
+      const slashPosInCleaned = cleanedValue.indexOf('/');
+      if (slashPosInCleaned >= 0) {
+        const charsAfterSlash = cursorPosition - value.indexOf('/') - 1;
+        cursorPositionRef.current = slashPosInCleaned + Math.min(charsAfterSlash + 1, cleanedValue.length - slashPosInCleaned);
+      }
+    }
+    
+    onInputChange(cleanedValue);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
