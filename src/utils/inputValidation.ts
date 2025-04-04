@@ -1,3 +1,4 @@
+
 import { toast } from "@/components/ui/use-toast";
 import { processDigraphs } from "./digraphs";
 
@@ -35,7 +36,7 @@ export const validateAndCleanPatternInput = (value: string) => {
   // Split into pattern and rack parts if comma exists
   const parts = value.split(',');
   
-  // Handle length constraints with slash
+  // Handle pattern with rack and possibly length
   if (parts.length > 1) {
     // Split into pattern/length and rack parts
     let [patternPart, rackPart] = parts;
@@ -69,13 +70,16 @@ export const validateAndCleanPatternInput = (value: string) => {
   if (patternParts.length > 1) {
     const [pattern, lengthStr, ...rest] = patternParts;
     
-    // Only keep first slash if multiple
+    // Clean pattern (allow A-Z, Ñ, Ç, ?, ^, $, -)
     const cleanPattern = pattern.replace(/[^A-ZÑÇKW?\^$\-]/g, '');
+    
+    // Only allow numbers for length
     const cleanLength = lengthStr.replace(/[^0-9]/g, '');
     
     return `${cleanPattern}/${cleanLength}`;
   }
   
   // Simple pattern with no length or rack constraints
-  return value.replace(/[^A-ZÑÇKW?\^$\-\/]/g, '');
+  // Very important: Allow forward slash in the pattern input to prepare for length specification
+  return value.replace(/[^A-ZÑÇKW?\^$\-\/0-9]/g, '');
 };
