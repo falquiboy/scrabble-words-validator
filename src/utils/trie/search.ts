@@ -22,6 +22,9 @@ export const search = (node: TrieNode, word: string): boolean => {
   return found;
 };
 
+/**
+ * Searches the trie for words matching a pattern and optional rack letters
+ */
 export const searchTrie = async (trie: TrieNode, pattern: RegExp, rackLetters: string = ''): Promise<string[]> => {
   const matches: string[] = [];
   const hasRackLetters = rackLetters && rackLetters.trim().length > 0;
@@ -29,11 +32,14 @@ export const searchTrie = async (trie: TrieNode, pattern: RegExp, rackLetters: s
   
   console.log('Searching trie with:', { pattern: patternStr, rackLetters, hasRackLetters });
   
+  // If we have rack letters with wildcards, we'll generate all possible combinations
+  const hasWildcard = rackLetters.includes('*');
+  
   const searchNode = (node: TrieNode, currentWord: string) => {
     if (node.isEndOfWord && pattern.test(currentWord)) {
       // If we have rack letters, validate them against the pattern and word
       if (hasRackLetters) {
-        // For patterns with question marks, validate that we can build the word
+        // For patterns with rack letters, validate that we can build the word
         // using the available rack letters
         const isValidWithRack = validateWordPattern(currentWord, patternStr, rackLetters);
         if (isValidWithRack) {
@@ -51,4 +57,120 @@ export const searchTrie = async (trie: TrieNode, pattern: RegExp, rackLetters: s
   
   searchNode(trie, '');
   return matches;
+};
+
+/**
+ * Generates all possible letter combinations from rack letters
+ * Used to highlight wildcard/blank tiles in the results
+ */
+export const generateRackCombinations = (
+  pattern: string, 
+  rackLetters: string
+): { pattern: string, usedRackLetters: Map<string, number> }[] => {
+  const combinations: { pattern: string, usedRackLetters: Map<string, number> }[] = [];
+  const processedRack = processDigraphs(rackLetters.toUpperCase());
+  
+  // Count available letters and wildcards
+  const availableLetters = new Map<string, number>();
+  let wildcards = 0;
+  
+  for (const char of processedRack) {
+    if (char === '*') {
+      wildcards++;
+    } else {
+      availableLetters.set(char, (availableLetters.get(char) || 0) + 1);
+    }
+  }
+  
+  // Find all '?' characters in the pattern that need to be filled
+  const questionMarkCount = (pattern.match(/\?/g) || []).length;
+  if (questionMarkCount === 0) {
+    // If no question marks, return the original pattern
+    return [{ pattern, usedRackLetters: new Map() }];
+  }
+  
+  // Generate all possible combinations to fill the question marks
+  const fillQuestionMarks = (
+    currentPattern: string,
+    remainingWildcards: number,
+    remainingLetters: Map<string, number>,
+    usedRackLetters: Map<string, number>,
+    position: number = 0
+  ) => {
+    // Base case: all question marks have been replaced
+    if (position >= currentPattern.length) {
+      combinations.push({ 
+        pattern: currentPattern,
+        usedRackLetters: new Map(usedRackLetters) 
+      });
+      return;
+    }
+    
+    // If current character is not a question mark, move to next position
+    if (currentPattern[position] !== '?') {
+      fillQuestionMarks(
+        currentPattern, 
+        remainingWildcards, 
+        remainingLetters,
+        usedRackLetters,
+        position + 1
+      );
+      return;
+    }
+    
+    // Try each available letter
+    remainingLetters.forEach((count, letter) => {
+      if (count > 0) {
+        // Use this letter
+        const newLetters = new Map(remainingLetters);
+        newLetters.set(letter, count - 1);
+        
+        // Track which rack letter was used
+        const newUsedRackLetters = new Map(usedRackLetters);
+        newUsedRackLetters.set(position, letter);
+        
+        // Replace the question mark with this letter
+        const newPattern = 
+          currentPattern.substring(0, position) + 
+          letter + 
+          currentPattern.substring(position + 1);
+        
+        fillQuestionMarks(
+          newPattern, 
+          remainingWildcards, 
+          newLetters, 
+          newUsedRackLetters,
+          position + 1
+        );
+      }
+    });
+    
+    // Try using a wildcard if available
+    if (remainingWildcards > 0) {
+      // For wildcards, we need to try each possible letter in the alphabet
+      const alphabet = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ";
+      for (const letter of alphabet) {
+        // Track which position used a wildcard
+        const newUsedRackLetters = new Map(usedRackLetters);
+        newUsedRackLetters.set(position, '*' + letter); // Mark as wildcard + the letter used
+        
+        // Replace the question mark with this letter
+        const newPattern = 
+          currentPattern.substring(0, position) + 
+          letter + 
+          currentPattern.substring(position + 1);
+        
+        fillQuestionMarks(
+          newPattern, 
+          remainingWildcards - 1, 
+          new Map(remainingLetters), 
+          newUsedRackLetters,
+          position + 1
+        );
+      }
+    }
+  };
+  
+  fillQuestionMarks(pattern, wildcards, availableLetters, new Map());
+  return combinations;
 };

@@ -1,5 +1,7 @@
+
 import React from 'react';
 import { processDigraphs } from './digraphs';
+import { translateHyphenPattern } from './pattern/translation';
 
 const findDigraphPositions = (word: string): { start: number, end: number }[] => {
   const positions: { start: number, end: number }[] = [];
@@ -99,6 +101,94 @@ export const highlightWildcardLetter = (word: string, searchTerm: string): React
           <span key={index} className="text-red-600 font-semibold">{char}</span>
         ) : (
           <span key={index}>{char}</span>
+        );
+      })}
+    </span>
+  );
+};
+
+/**
+ * Highlight pattern matches with rack letters
+ * For patterns like "-NAS,AOL*", highlight the rack letters used to complete the pattern
+ */
+export const highlightPatternMatch = (word: string, pattern: string, rackLetters: string): React.ReactNode => {
+  if (!word || !pattern) return word;
+  
+  // Process the pattern to handle hyphen notation
+  const translatedPattern = translateHyphenPattern(pattern);
+
+  // Determine pattern type (starts with, ends with, contains)
+  const isStartPattern = translatedPattern.startsWith('^');
+  const isEndPattern = translatedPattern.endsWith('$');
+  const isContainsPattern = translatedPattern.includes('.*') && !isStartPattern && !isEndPattern;
+  
+  // Extract the fixed part of the pattern
+  let fixedPattern = translatedPattern
+    .replace(/^\^|\$$/g, '')  // Remove start/end anchors
+    .replace(/\.\*/g, '')     // Remove .* wildcards
+    .replace(/\./g, '');      // Remove . wildcards
+
+  // Process rack letters
+  const processedRack = processDigraphs(rackLetters.toUpperCase());
+  const hasWildcard = processedRack.includes('*');
+  
+  // Find positions of fixed pattern in the word
+  const processedWord = processDigraphs(word);
+  let fixedStart = -1;
+  let fixedEnd = -1;
+  
+  if (isStartPattern) {
+    fixedStart = 0;
+    fixedEnd = fixedPattern.length - 1;
+  } else if (isEndPattern) {
+    fixedStart = processedWord.length - fixedPattern.length;
+    fixedEnd = processedWord.length - 1;
+  } else if (isContainsPattern) {
+    fixedStart = processedWord.indexOf(fixedPattern);
+    fixedEnd = fixedStart + fixedPattern.length - 1;
+  }
+  
+  // Create a map of positions that are part of the fixed pattern
+  const fixedPositions = new Set<number>();
+  if (fixedStart >= 0 && fixedEnd >= 0) {
+    for (let i = fixedStart; i <= fixedEnd; i++) {
+      fixedPositions.add(i);
+    }
+  }
+  
+  // Return the word with highlighted characters
+  return (
+    <span className="inline-flex">
+      {word.split('').map((char, index) => {
+        // Find corresponding position in processed word
+        const processedIndex = processDigraphs(word.substring(0, index + 1)).length - 1;
+        
+        // Check if this character is part of the fixed pattern
+        const isFixedPattern = fixedPositions.has(processedIndex);
+        
+        // If it's part of the fixed pattern, display normally
+        if (isFixedPattern) {
+          return <span key={index}>{char}</span>;
+        }
+        
+        // If it's not part of the fixed pattern, it's a rack letter (possibly with wildcard)
+        // Highlight rack letters used with wildcard in lowercase (blank tile convention)
+        const isLikelyWildcard = hasWildcard && 
+                                !processedRack.replace(/\*/g, '').includes(processedWord[processedIndex]);
+        
+        if (isLikelyWildcard) {
+          return (
+            <span key={index} className="text-red-600 font-semibold lowercase">
+              {char}
+            </span>
+          );
+        }
+        
+        // Regular rack letter (non-wildcard)
+        return (
+          <span key={index} className="text-blue-600">
+            {char}
+          </span>
         );
       })}
     </span>
