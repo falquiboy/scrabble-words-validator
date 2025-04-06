@@ -1,3 +1,4 @@
+
 import { useState, useRef } from "react";
 import SearchInput from "./SearchInput";
 import { useToast } from "@/hooks/use-toast";
@@ -32,9 +33,10 @@ const SearchContainer = ({
     if (lengthMatch) {
       targetLength = parseInt(lengthMatch[1], 10);
       console.log('Target length extracted from colon format:', targetLength);
-      // We don't remove the colon and number from the input value
-      // as they are part of the pattern syntax now
     }
+
+    // Reset showShorter to false when input changes
+    onShowShorterChange(false);
 
     // Set the cleaned value in state
     setLetters(cleanedValue);
@@ -56,6 +58,10 @@ const SearchContainer = ({
   const handleClear = () => {
     setLetters("");
     setHistoryIndex(-1);
+    
+    // Reset showShorter to false when clearing
+    onShowShorterChange(false);
+    
     onClear();
     inputRef.current?.focus();
   };
