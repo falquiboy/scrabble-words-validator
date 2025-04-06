@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import SearchContainer from "./anagramador/search/SearchContainer";
 import ResultsList from "./anagramador/ResultsList";
@@ -24,6 +23,10 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
     patternMatches: []
   });
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    setShowShorter(false);
+  }, []);
 
   useEffect(() => {
     const trimmedSearchTerm = searchTerm.trim();
@@ -72,12 +75,17 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
   }, [searchTerm, showShorter, targetLength, trie]);
 
   const handleSearch = (letters: string, newTargetLength: number | null) => {
+    if (letters !== searchTerm) {
+      setShowShorter(false);
+    }
+    
     setSearchTerm(letters);
     setTargetLength(newTargetLength);
   };
 
   const handleClear = () => {
     setSearchTerm("");
+    setShowShorter(false);
     setSearchResults({
       exactMatches: [],
       wildcardMatches: [],

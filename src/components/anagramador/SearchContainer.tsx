@@ -36,7 +36,9 @@ const SearchContainer = ({
     }
 
     // Reset showShorter to false when input changes
-    onShowShorterChange(false);
+    if (value !== letters) {
+      onShowShorterChange(false);
+    }
 
     // Set the cleaned value in state
     setLetters(cleanedValue);
@@ -46,6 +48,10 @@ const SearchContainer = ({
   const handleSearch = () => {
     if (letters.trim()) {
       const targetLength = handleInputChange(letters);
+      
+      // Ensure we reset showShorter before starting a new search
+      onShowShorterChange(false);
+      
       onSearch(letters, targetLength);
       
       if (!searchHistory.includes(letters)) {

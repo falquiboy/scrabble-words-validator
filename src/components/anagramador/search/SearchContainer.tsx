@@ -33,8 +33,11 @@ const SearchContainer = ({
     if (lengthMatch) {
       targetLength = parseInt(lengthMatch[1], 10);
       console.log('Target length extracted from colon format:', targetLength);
-      // We don't remove the colon and number from the input value
-      // as they are part of the pattern syntax now
+    }
+
+    // Reset showShorter to false when input changes
+    if (value !== letters) {
+      onShowShorterChange(false);
     }
 
     // Set the cleaned value in state
@@ -45,6 +48,10 @@ const SearchContainer = ({
   const handleSearch = () => {
     if (letters.trim()) {
       const targetLength = handleInputChange(letters);
+      
+      // Ensure we reset showShorter before starting a new search
+      onShowShorterChange(false);
+      
       onSearch(letters, targetLength);
       
       if (!searchHistory.includes(letters)) {
@@ -57,6 +64,10 @@ const SearchContainer = ({
   const handleClear = () => {
     setLetters("");
     setHistoryIndex(-1);
+    
+    // Reset showShorter to false when clearing
+    onShowShorterChange(false);
+    
     onClear();
     inputRef.current?.focus();
   };
