@@ -62,7 +62,6 @@ export const highlightPatternMatch = (
   );
 };
 
-// Add this new export
 export const highlightWildcardLetter = (word: string, originalWord: string): React.ReactNode => {
   const wildcardCount = (originalWord.match(/\*/g) || []).length;
   
@@ -91,4 +90,3 @@ export const highlightWildcardLetter = (word: string, originalWord: string): Rea
 
   return <>{highlightedWord}</>;
 };
-
