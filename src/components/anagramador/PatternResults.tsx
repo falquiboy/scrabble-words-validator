@@ -29,29 +29,18 @@ export const PatternResults = ({
   const isStartPattern = patternPart.endsWith('-') && !patternPart.startsWith('-');
   const isContainsPattern = patternPart.startsWith('-') && patternPart.endsWith('-');
   
-  console.log('Pattern type for highlighting:', { isEndPattern, isStartPattern, isContainsPattern });
+  console.log('Pattern type for highlighting:', { isEndPattern, isStartPattern, isContainsPattern, patternPart });
   
-  // Extract the actual pattern without hyphens for highlighting
-  let cleanPattern = patternPart;
-  if (isEndPattern) {
-    cleanPattern = patternPart.slice(1);
-  }
-  if (isStartPattern) {
-    cleanPattern = cleanPattern.slice(0, -1);
-  }
-  if (isContainsPattern) {
-    cleanPattern = cleanPattern.slice(1, -1);
-  }
-  
-  console.log('Clean pattern for highlighting:', cleanPattern);
+  const getHighlightFunction = (word: string) => {
+    return highlightPatternMatch(word, patternPart, rackPart);
+  };
   
   return (
     <BaseResults
       matches={uniqueMatches}
       title={`${uniqueMatches.length} ${uniqueMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que coinciden con el patrón:`}
-      highlightWildcardLetter={hasRackLetters ? 
-        (word) => highlightPatternMatch(word, patternPart, rackPart) : 
-        undefined}
+      highlightWildcardLetter={hasRackLetters || isEndPattern || isStartPattern || isContainsPattern ? 
+        getHighlightFunction : undefined}
       searchTerm={searchTerm}
       sortAscending={showLongerWords}
     />
