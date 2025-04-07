@@ -48,7 +48,12 @@ export const findPatternMatches = async (
   // Important: We need to process digraphs in the pattern BEFORE translation
   // This is critical for CH -> Ç, LL -> K, RR -> W
   console.log('Pattern before digraph processing:', patternPart);
+  
+  // Important: Make sure to properly process digraphs
+  // Preserve the original pattern before processing for highlighting later
+  const originalPattern = patternPart;
   const processedPatternPart = processDigraphs(patternPart.toUpperCase());
+  
   console.log('Pattern after digraph processing:', processedPatternPart);
   
   const translatedPattern = translateHyphenPattern(processedPatternPart);
@@ -121,7 +126,7 @@ const findPatternMatchesWithRack = async (
   processedPattern = processedPattern.replace(/\.\*/g, '').replace(/\.\+/g, '');
   
   // Process the pattern and rack letters for digraphs
-  const formattedPattern = processDigraphs(processedPattern.toUpperCase());
+  const formattedPattern = processedPattern;  // Keep the already processed pattern
   const processedRack = processDigraphs(rackLetters.toUpperCase());
   
   // Determine pattern type (start, end, contains)
