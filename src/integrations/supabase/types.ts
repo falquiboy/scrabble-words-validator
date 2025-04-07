@@ -367,42 +367,56 @@ export type Database = {
     }
     Functions: {
       count_letters: {
-        Args: { input_text: string }
+        Args: {
+          input_text: string
+        }
         Returns: {
           letter: string
           count: number
         }[]
       }
       custom_sort_chars: {
-        Args: { input_str: string }
+        Args: {
+          input_str: string
+        }
         Returns: string
       }
       execute_natural_search: {
-        Args: { query_text: string }
+        Args: {
+          query_text: string
+        }
         Returns: {
           word: string
         }[]
       }
       find_exact_anagrams: {
-        Args: { query_text: string }
+        Args: {
+          query_text: string
+        }
         Returns: {
           word: string
         }[]
       }
       find_plus_one_letter: {
-        Args: { query_text: string }
+        Args: {
+          query_text: string
+        }
         Returns: {
           word: string
         }[]
       }
       find_shorter_words: {
-        Args: { query_text: string }
+        Args: {
+          query_text: string
+        }
         Returns: {
           word: string
         }[]
       }
       find_word_variations: {
-        Args: { input_text: string }
+        Args: {
+          input_text: string
+        }
         Returns: {
           word: string
           variation_type: string
@@ -417,33 +431,48 @@ export type Database = {
         }[]
       }
       get_words_batch: {
-        Args: { batch_size: number; last_word?: string }
+        Args: {
+          batch_size: number
+          last_word?: string
+        }
         Returns: {
           word: string
         }[]
       }
       gtrgm_compress: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: unknown
       }
       gtrgm_decompress: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: unknown
       }
       gtrgm_in: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: unknown
       }
       gtrgm_options: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: undefined
       }
       gtrgm_out: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: unknown
       }
       set_limit: {
-        Args: { "": number }
+        Args: {
+          "": number
+        }
         Returns: number
       }
       show_limit: {
@@ -451,7 +480,9 @@ export type Database = {
         Returns: number
       }
       show_trgm: {
-        Args: { "": string }
+        Args: {
+          "": string
+        }
         Returns: string[]
       }
       update_practice_progress: {
@@ -490,29 +521,27 @@ export type Database = {
   }
 }
 
-type DefaultSchema = Database[Extract<keyof Database, "public">]
+type PublicSchema = Database[Extract<keyof Database, "public">]
 
 export type Tables<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+  PublicTableNameOrOptions extends
+    | keyof (PublicSchema["Tables"] & PublicSchema["Views"])
     | { schema: keyof Database },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
-  }
-    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
+        Database[PublicTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
+      Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+  : PublicTableNameOrOptions extends keyof (PublicSchema["Tables"] &
+        PublicSchema["Views"])
+    ? (PublicSchema["Tables"] &
+        PublicSchema["Views"])[PublicTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
@@ -520,22 +549,20 @@ export type Tables<
     : never
 
 export type TablesInsert<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
+  PublicTableNameOrOptions extends
+    | keyof PublicSchema["Tables"]
     | { schema: keyof Database },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
-  }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
+    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
         Insert: infer I
       }
       ? I
@@ -543,22 +570,20 @@ export type TablesInsert<
     : never
 
 export type TablesUpdate<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
+  PublicTableNameOrOptions extends
+    | keyof PublicSchema["Tables"]
     | { schema: keyof Database },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
-  }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
+    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
         Update: infer U
       }
       ? U
@@ -566,23 +591,21 @@ export type TablesUpdate<
     : never
 
 export type Enums<
-  DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
+  PublicEnumNameOrOptions extends
+    | keyof PublicSchema["Enums"]
     | { schema: keyof Database },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof Database
-  }
-    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+  EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+> = PublicEnumNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
+    ? PublicSchema["Enums"][PublicEnumNameOrOptions]
     : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
+    | keyof PublicSchema["CompositeTypes"]
     | { schema: keyof Database },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof Database
@@ -591,35 +614,6 @@ export type CompositeTypes<
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
   ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
+    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
-
-export const Constants = {
-  public: {
-    Enums: {
-      feedback_type: [
-        "too_many_results",
-        "too_few_results",
-        "not_what_expected",
-        "exactly_what_needed",
-        "needs_clarification",
-      ],
-      se_property: ["admite la terminación -se"],
-      sym_property: [
-        "sin tratamiento especial",
-        "admite género opuesto",
-        "admite participio femenino",
-        "admite participio masculino plural",
-        "no admite terminación -ad, -ed, -id, respectivamente",
-      ],
-      user_role: ["user", "super_user"],
-      verb_kind: [
-        "Infinitivo de un verbo transitivo",
-        "Infinitivo de un verbo intransitivo",
-        "Infinitivo de un verbo pronominal",
-        "Entrada directa (palabra no verbal)",
-      ],
-    },
-  },
-} as const

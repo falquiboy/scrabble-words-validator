@@ -1,5 +1,6 @@
+
 import { TrieNode } from "./types";
-import { processDigraphs, toDisplayFormat } from "../digraphs";
+import { processDigraphs } from "../digraphs";
 import { validateWordPattern } from "../pattern/validation";
 
 export const search = (node: TrieNode, word: string): boolean => {

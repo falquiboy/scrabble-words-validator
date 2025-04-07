@@ -1,307 +1,441 @@
 
-import { SPANISH_LETTERS } from "@/hooks/anagramSearch/constants";
+import { SPANISH_LETTERS } from '@/hooks/anagramSearch/constants';
 
 /**
- * Generates all possible word combinations that match a pattern using available rack letters
- * Pattern can include fixed letters, ? wildcards, and hyphen notations:
- * - '?' matches exactly one character (from rack or dictionary)
- * - '-' at the start means "ends with the pattern"
- * - '-' at the end means "starts with the pattern" 
- * - '-' at both ends means "contains the pattern"
+ * Generates all possible word combinations that match a pattern
+ * using available rack letters
  */
 export const generatePatternCombinations = (
   pattern: string,
   rackLetters: string,
   isStartPattern: boolean = false,
-  isEndPattern: boolean = false,
-  isContainsPattern: boolean = false
+  isEndPattern: boolean = false
 ): string[] => {
-  console.log('Generating combinations for:', {
-    pattern, 
-    rackLetters, 
-    isStartPattern, 
-    isEndPattern, 
-    isContainsPattern
-  });
-
-  // Extract question mark positions and fixed parts
-  const questionMarkPositions: number[] = [];
+  console.log(`Generating pattern combinations with pattern: "${pattern}", isStartPattern: ${isStartPattern}, isEndPattern: ${isEndPattern}`);
+  
+  // For patterns with special characters (.*), we need to determine
+  // what kind of pattern it is and handle it properly
+  
+  // Extract fixed positions from the pattern (anything that's not a question mark)
+  const fixedPositions = new Map<number, string>();
+  let questionMarkCount = 0;
+  
+  // Track the fixed positions and count question marks
   for (let i = 0; i < pattern.length; i++) {
-    if (pattern[i] === '?' || pattern[i] === '.') {
-      questionMarkPositions.push(i);
+    if (pattern[i] === '?') {
+      questionMarkCount++;
+    } else if (pattern[i] !== '^' && pattern[i] !== '$' && pattern[i] !== '.') {
+      fixedPositions.set(i, pattern[i]);
     }
   }
   
-  // Get fixed pattern (without ? or .)
-  const fixedPatternChars = pattern
-    .replace(/[\?\.]/g, '')
-    .split('');
-  
-  // Parse rack letters and count wildcards
-  const rackChars: string[] = [];
+  // Count the available rack letters
+  const availableLetters = new Map<string, number>();
   let wildcardCount = 0;
   
   for (const char of rackLetters) {
     if (char === '*') {
       wildcardCount++;
     } else {
-      rackChars.push(char);
+      availableLetters.set(char, (availableLetters.get(char) || 0) + 1);
     }
   }
   
-  // Generate combinations based on pattern type
+  // For end patterns (-NAS), generate all possible prefixes using rack letters
+  if (isEndPattern && !isStartPattern) {
+    const suffix = pattern;
+    // Generate all combinations of the rack letters to place before the suffix
+    return generatePrefixCombinations(suffix, availableLetters, wildcardCount);
+  }
+  
+  // For start patterns (CON-), generate all possible suffixes using rack letters
+  if (isStartPattern && !isEndPattern) {
+    const prefix = pattern;
+    // Generate all combinations of the rack letters to place after the prefix
+    return generateSuffixCombinations(prefix, availableLetters, wildcardCount);
+  }
+  
+  // For middle patterns (-CON-), generate combinations before and after the fixed pattern
+  if (isStartPattern && isEndPattern) {
+    return generateMiddlePatternCombinations(pattern, availableLetters, wildcardCount);
+  }
+  
+  // For patterns with question marks, we need to fill them with rack letters
+  if (questionMarkCount > 0) {
+    // Check if we have enough letters to fill the pattern
+    const neededLetters = questionMarkCount;
+    const availableTotal = Array.from(availableLetters.values()).reduce((a, b) => a + b, 0) + wildcardCount;
+    
+    if (neededLetters > availableTotal) {
+      console.log('Not enough rack letters to fill question marks');
+      return [];
+    }
+    
+    // Generate combinations to fill question marks
+    return generateQuestionMarkCombinations(pattern, availableLetters, wildcardCount, fixedPositions);
+  }
+  
+  // For exact patterns without question marks, check if it can be formed with the rack letters
+  console.log('Checking exact pattern with fixed positions:', Array.from(fixedPositions.entries()));
+  
+  // If no special handling is needed, just return the pattern as is
+  return [pattern];
+};
+
+/**
+ * Generate all possible prefixes for an end pattern (-NAS)
+ * using the available rack letters
+ */
+const generatePrefixCombinations = (
+  suffix: string,
+  availableLetters: Map<string, number>,
+  wildcardCount: number,
+  maxLength: number = 12
+): string[] => {
+  console.log(`Generating prefix combinations for suffix: "${suffix}"`);
   const combinations: string[] = [];
   
-  // For contains patterns, we need to generate all possible positions
-  if (isContainsPattern) {
-    // Generate all possible positions where the pattern could be within the word
-    generateContainsPatternWords(
-      pattern, 
-      rackChars, 
-      wildcardCount, 
-      combinations
-    );
-  } else if (isStartPattern) {
-    // For start patterns, fixed pattern goes at the beginning
-    generateStartPatternWords(
-      pattern,
-      rackChars,
-      wildcardCount,
-      combinations
-    );
-  } else if (isEndPattern) {
-    // For end patterns, fixed pattern goes at the end
-    generateEndPatternWords(
-      pattern,
-      rackChars,
-      wildcardCount,
-      combinations
-    );
-  } else {
-    // For exact patterns
-    generateExactPatternWords(
-      pattern,
-      rackChars,
+  // Generate combinations of lengths 1 to maxLength
+  for (let len = 1; len <= maxLength; len++) {
+    // For each length, generate all possible combinations of rack letters
+    generatePrefixOfLength(
+      "",
+      len,
+      suffix,
+      new Map(availableLetters),
       wildcardCount,
       combinations
     );
   }
   
-  console.log(`Generated ${combinations.length} combinations`);
   return combinations;
 };
 
 /**
- * Generate words for patterns that should be contained within the word
- * e.g., -ABC- should match any word containing "ABC"
+ * Helper function to generate prefixes of a specific length
  */
-function generateContainsPatternWords(
-  pattern: string,
-  rackChars: string[],
-  wildcardCount: number,
-  combinations: string[]
-): void {
-  // First, replace any question marks with wildcards or rack letters
-  const patternCombinations = generatePatternVariations(pattern, [...rackChars], wildcardCount);
+const generatePrefixOfLength = (
+  currentPrefix: string,
+  targetLength: number,
+  suffix: string,
+  remainingLetters: Map<string, number>,
+  remainingWildcards: number,
+  result: string[]
+): void => {
+  // If we've reached the target length, add the prefix + suffix to the result
+  if (currentPrefix.length === targetLength) {
+    result.push(currentPrefix + suffix);
+    return;
+  }
   
-  // For each pattern variation, create words that contain it in different positions
-  for (const patternVariation of patternCombinations) {
-    // Remove the letters used in the pattern from available rack
-    const remainingRack = [...rackChars];
-    let remainingWildcards = wildcardCount;
-    
-    for (const char of patternVariation) {
-      const rackIndex = remainingRack.indexOf(char);
-      if (rackIndex >= 0) {
-        remainingRack.splice(rackIndex, 1);
-      } else if (remainingWildcards > 0) {
-        // Used a wildcard
-        remainingWildcards--;
-      }
-    }
-    
-    // Now add remaining rack letters in all possible positions around the pattern
-    const maxRemainingPositions = remainingRack.length + remainingWildcards;
-    
-    // Too expensive to try all permutations, so we'll try some common patterns
-    // 1. No letters before, all after
-    if (maxRemainingPositions > 0) {
-      combinations.push(patternVariation + remainingRack.join(''));
-    } else {
-      combinations.push(patternVariation);
-    }
-    
-    // 2. All letters before, none after
-    if (maxRemainingPositions > 0) {
-      combinations.push(remainingRack.join('') + patternVariation);
-    }
-    
-    // 3. Split evenly (if we have enough letters)
-    if (maxRemainingPositions >= 2) {
-      const half = Math.floor(remainingRack.length / 2);
-      const firstHalf = remainingRack.slice(0, half).join('');
-      const secondHalf = remainingRack.slice(half).join('');
-      combinations.push(firstHalf + patternVariation + secondHalf);
-    }
-    
-    // 4. Try with just one letter before/after
-    if (remainingRack.length >= 2) {
-      combinations.push(remainingRack[0] + patternVariation + remainingRack.slice(1).join(''));
-      combinations.push(remainingRack.slice(0, -1).join('') + patternVariation + remainingRack[remainingRack.length - 1]);
-    } else if (remainingRack.length === 1) {
-      combinations.push(remainingRack[0] + patternVariation);
-      combinations.push(patternVariation + remainingRack[0]);
+  // Try using each available letter
+  for (const [letter, count] of remainingLetters.entries()) {
+    if (count > 0) {
+      const newLetters = new Map(remainingLetters);
+      newLetters.set(letter, count - 1);
+      
+      generatePrefixOfLength(
+        currentPrefix + letter,
+        targetLength,
+        suffix,
+        newLetters,
+        remainingWildcards,
+        result
+      );
     }
   }
-}
-
-/**
- * Generate words for patterns that should be at the start of the word
- * e.g., ABC- should match any word starting with "ABC"
- */
-function generateStartPatternWords(
-  pattern: string,
-  rackChars: string[],
-  wildcardCount: number,
-  combinations: string[]
-): void {
-  // First, replace any question marks with wildcards or rack letters
-  const patternCombinations = generatePatternVariations(pattern, [...rackChars], wildcardCount);
   
-  // For each pattern variation, create words that start with it
-  for (const patternVariation of patternCombinations) {
-    // Remove the letters used in the pattern from available rack
-    const remainingRack = [...rackChars];
-    let remainingWildcards = wildcardCount;
-    
-    for (const char of patternVariation) {
-      const rackIndex = remainingRack.indexOf(char);
-      if (rackIndex >= 0) {
-        remainingRack.splice(rackIndex, 1);
-      } else if (remainingWildcards > 0) {
-        // Used a wildcard
-        remainingWildcards--;
-      }
-    }
-    
-    // Now add remaining rack letters after the pattern
-    if (remainingRack.length > 0 || remainingWildcards > 0) {
-      combinations.push(patternVariation + remainingRack.join(''));
-    } else {
-      combinations.push(patternVariation);
+  // Try using a wildcard
+  if (remainingWildcards > 0) {
+    for (const letter of SPANISH_LETTERS) {
+      generatePrefixOfLength(
+        currentPrefix + letter,
+        targetLength,
+        suffix,
+        new Map(remainingLetters),
+        remainingWildcards - 1,
+        result
+      );
     }
   }
-}
+};
 
 /**
- * Generate words for patterns that should be at the end of the word
- * e.g., -ABC should match any word ending with "ABC"
+ * Generate all possible suffixes for a start pattern (CON-)
+ * using the available rack letters
  */
-function generateEndPatternWords(
-  pattern: string,
-  rackChars: string[],
+const generateSuffixCombinations = (
+  prefix: string,
+  availableLetters: Map<string, number>,
   wildcardCount: number,
-  combinations: string[]
-): void {
-  // First, replace any question marks with wildcards or rack letters
-  const patternCombinations = generatePatternVariations(pattern, [...rackChars], wildcardCount);
+  maxLength: number = 12
+): string[] => {
+  console.log(`Generating suffix combinations for prefix: "${prefix}"`);
+  const combinations: string[] = [];
   
-  // For each pattern variation, create words that end with it
-  for (const patternVariation of patternCombinations) {
-    // Remove the letters used in the pattern from available rack
-    const remainingRack = [...rackChars];
-    let remainingWildcards = wildcardCount;
-    
-    for (const char of patternVariation) {
-      const rackIndex = remainingRack.indexOf(char);
-      if (rackIndex >= 0) {
-        remainingRack.splice(rackIndex, 1);
-      } else if (remainingWildcards > 0) {
-        // Used a wildcard
-        remainingWildcards--;
-      }
-    }
-    
-    // Now add remaining rack letters before the pattern
-    if (remainingRack.length > 0 || remainingWildcards > 0) {
-      combinations.push(remainingRack.join('') + patternVariation);
-    } else {
-      combinations.push(patternVariation);
+  // Generate combinations of lengths 1 to maxLength
+  for (let len = 1; len <= maxLength; len++) {
+    // For each length, generate all possible combinations of rack letters
+    generateSuffixOfLength(
+      prefix,
+      "",
+      len,
+      new Map(availableLetters),
+      wildcardCount,
+      combinations
+    );
+  }
+  
+  return combinations;
+};
+
+/**
+ * Helper function to generate suffixes of a specific length
+ */
+const generateSuffixOfLength = (
+  prefix: string,
+  currentSuffix: string,
+  targetLength: number,
+  remainingLetters: Map<string, number>,
+  remainingWildcards: number,
+  result: string[]
+): void => {
+  // If we've reached the target length, add the prefix + suffix to the result
+  if (currentSuffix.length === targetLength) {
+    result.push(prefix + currentSuffix);
+    return;
+  }
+  
+  // Try using each available letter
+  for (const [letter, count] of remainingLetters.entries()) {
+    if (count > 0) {
+      const newLetters = new Map(remainingLetters);
+      newLetters.set(letter, count - 1);
+      
+      generateSuffixOfLength(
+        prefix,
+        currentSuffix + letter,
+        targetLength,
+        newLetters,
+        remainingWildcards,
+        result
+      );
     }
   }
-}
-
-/**
- * Generate words for exact patterns (no hyphens)
- * e.g., ABC should match only "ABC"
- */
-function generateExactPatternWords(
-  pattern: string,
-  rackChars: string[],
-  wildcardCount: number,
-  combinations: string[]
-): void {
-  // For exact patterns, we just need to replace any question marks
-  const patternCombinations = generatePatternVariations(pattern, rackChars, wildcardCount);
-  combinations.push(...patternCombinations);
-}
-
-/**
- * Generate all possible variations of a pattern by filling in question marks
- * with available rack letters or wildcards
- */
-function generatePatternVariations(
-  pattern: string,
-  rackChars: string[],
-  wildcardCount: number
-): string[] {
-  const results: string[] = [];
   
-  // Function to recursively fill question marks
-  const fillQuestionMarks = (
-    currentPattern: string,
-    currentRack: string[],
-    currentWildcards: number,
-    position: number = 0
-  ) => {
-    // If we've processed the entire pattern, add it to results
-    if (position >= currentPattern.length) {
-      results.push(currentPattern);
+  // Try using a wildcard
+  if (remainingWildcards > 0) {
+    for (const letter of SPANISH_LETTERS) {
+      generateSuffixOfLength(
+        prefix,
+        currentSuffix + letter,
+        targetLength,
+        new Map(remainingLetters),
+        remainingWildcards - 1,
+        result
+      );
+    }
+  }
+};
+
+/**
+ * Generate combinations for middle patterns (-CON-)
+ */
+const generateMiddlePatternCombinations = (
+  pattern: string,
+  availableLetters: Map<string, number>,
+  wildcardCount: number,
+  maxLength: number = 8
+): string[] => {
+  console.log(`Generating middle pattern combinations for pattern: "${pattern}"`);
+  const combinations: string[] = [];
+  
+  // We'll need to distribute the available letters before and after the pattern
+  // Try different combinations of prefix/suffix lengths
+  for (let prefixLen = 1; prefixLen <= maxLength; prefixLen++) {
+    for (let suffixLen = 1; suffixLen <= maxLength; suffixLen++) {
+      generateMiddlePatternOfLength(
+        "",
+        pattern,
+        "",
+        prefixLen,
+        suffixLen,
+        new Map(availableLetters),
+        wildcardCount,
+        combinations
+      );
+    }
+  }
+  
+  return combinations;
+};
+
+/**
+ * Helper function to generate combinations for middle patterns
+ */
+const generateMiddlePatternOfLength = (
+  currentPrefix: string,
+  pattern: string,
+  currentSuffix: string,
+  prefixLength: number,
+  suffixLength: number,
+  remainingLetters: Map<string, number>,
+  remainingWildcards: number,
+  result: string[]
+): void => {
+  // If we've reached the target prefix length, start generating suffixes
+  if (currentPrefix.length === prefixLength) {
+    if (currentSuffix.length === suffixLength) {
+      // We have a complete word
+      result.push(currentPrefix + pattern + currentSuffix);
       return;
     }
     
-    // If current character isn't a question mark, move to next position
-    if (currentPattern[position] !== '?' && currentPattern[position] !== '.') {
-      fillQuestionMarks(currentPattern, currentRack, currentWildcards, position + 1);
-      return;
-    }
-    
-    // Try using each available rack letter
-    for (let i = 0; i < currentRack.length; i++) {
-      const newRack = [...currentRack];
-      const letter = newRack.splice(i, 1)[0];
-      
-      const newPattern = 
-        currentPattern.substring(0, position) + 
-        letter + 
-        currentPattern.substring(position + 1);
-      
-      fillQuestionMarks(newPattern, newRack, currentWildcards, position + 1);
-    }
-    
-    // Try using a wildcard if available
-    if (currentWildcards > 0) {
-      for (const letter of SPANISH_LETTERS) {
-        const newPattern = 
-          currentPattern.substring(0, position) + 
-          letter + 
-          currentPattern.substring(position + 1);
+    // Generate suffix
+    for (const [letter, count] of remainingLetters.entries()) {
+      if (count > 0) {
+        const newLetters = new Map(remainingLetters);
+        newLetters.set(letter, count - 1);
         
-        fillQuestionMarks(newPattern, [...currentRack], currentWildcards - 1, position + 1);
+        generateMiddlePatternOfLength(
+          currentPrefix,
+          pattern,
+          currentSuffix + letter,
+          prefixLength,
+          suffixLength,
+          newLetters,
+          remainingWildcards,
+          result
+        );
+      }
+    }
+    
+    // Try using a wildcard for suffix
+    if (remainingWildcards > 0) {
+      for (const letter of SPANISH_LETTERS) {
+        generateMiddlePatternOfLength(
+          currentPrefix,
+          pattern,
+          currentSuffix + letter,
+          prefixLength,
+          suffixLength,
+          new Map(remainingLetters),
+          remainingWildcards - 1,
+          result
+        );
+      }
+    }
+    
+    return;
+  }
+  
+  // Generate prefix
+  for (const [letter, count] of remainingLetters.entries()) {
+    if (count > 0) {
+      const newLetters = new Map(remainingLetters);
+      newLetters.set(letter, count - 1);
+      
+      generateMiddlePatternOfLength(
+        currentPrefix + letter,
+        pattern,
+        currentSuffix,
+        prefixLength,
+        suffixLength,
+        newLetters,
+        remainingWildcards,
+        result
+      );
+    }
+  }
+  
+  // Try using a wildcard for prefix
+  if (remainingWildcards > 0) {
+    for (const letter of SPANISH_LETTERS) {
+      generateMiddlePatternOfLength(
+        currentPrefix + letter,
+        pattern,
+        currentSuffix,
+        prefixLength,
+        suffixLength,
+        new Map(remainingLetters),
+        remainingWildcards - 1,
+        result
+      );
+    }
+  }
+};
+
+/**
+ * Generate combinations for patterns with question marks
+ */
+const generateQuestionMarkCombinations = (
+  pattern: string,
+  availableLetters: Map<string, number>,
+  wildcardCount: number,
+  fixedPositions: Map<number, string>
+): string[] => {
+  const combinations: string[] = [];
+  const patternChars = pattern.split('');
+  
+  const generateCombinations = (
+    currentPattern: string[],
+    position: number,
+    remainingLetters: Map<string, number>,
+    remainingWildcards: number
+  ) => {
+    // If we've processed the entire pattern, add it to the combinations
+    if (position >= currentPattern.length) {
+      combinations.push(currentPattern.join(''));
+      return;
+    }
+    
+    // If this position is a fixed character or not a question mark, move to the next position
+    if (fixedPositions.has(position) || currentPattern[position] !== '?') {
+      generateCombinations(
+        currentPattern,
+        position + 1,
+        remainingLetters,
+        remainingWildcards
+      );
+      return;
+    }
+    
+    // This position is a question mark, try filling it with each available letter
+    for (const [letter, count] of remainingLetters.entries()) {
+      if (count > 0) {
+        const newPattern = [...currentPattern];
+        newPattern[position] = letter;
+        
+        const newLetters = new Map(remainingLetters);
+        newLetters.set(letter, count - 1);
+        
+        generateCombinations(
+          newPattern,
+          position + 1,
+          newLetters,
+          remainingWildcards
+        );
+      }
+    }
+    
+    // Try using a wildcard
+    if (remainingWildcards > 0) {
+      for (const letter of SPANISH_LETTERS) {
+        const newPattern = [...currentPattern];
+        newPattern[position] = letter;
+        
+        generateCombinations(
+          newPattern,
+          position + 1,
+          new Map(remainingLetters),
+          remainingWildcards - 1,
+        );
       }
     }
   };
   
-  fillQuestionMarks(pattern, rackChars, wildcardCount);
-  return results;
-}
+  // Start the combination generation
+  generateCombinations(patternChars, 0, availableLetters, wildcardCount);
+  
+  return combinations;
+};

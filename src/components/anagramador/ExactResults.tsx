@@ -14,7 +14,7 @@ export const ExactResults = ({ matches, wildcardCount, highlightWildcardLetter, 
     <BaseResults
       matches={matches}
       title={`${matches.length} ${matches.length === 1 ? "palabra encontrada" : "palabras encontradas"} usando todas las fichas:`}
-      highlightWildcardLetter={wildcardCount > 0 ? highlightWildcardLetter : undefined}
+      highlightWildcardLetter={highlightWildcardLetter}
       searchTerm={searchTerm}
       isShortMode={isShortMode}
     />

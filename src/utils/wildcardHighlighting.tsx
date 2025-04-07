@@ -1,227 +1,225 @@
 
 import React from 'react';
-import { processDigraphs, toDisplayFormat } from './digraphs';
+import { processDigraphs } from './digraphs';
+import { translateHyphenPattern } from './pattern/translation';
 
-// Helper function to create spans with proper classes for highlighting
-const createHighlightedSpans = (
-  characters: string[], 
-  highlightedIndices: Set<number>, 
-  highlightClass: string
-) => {
-  return characters.map((char, index) => {
-    const isHighlighted = highlightedIndices.has(index);
-    
-    return (
-      <span 
-        key={index} 
-        className={isHighlighted ? highlightClass : ''}
-      >
-        {char}
-      </span>
-    );
-  });
+const findDigraphPositions = (word: string): { start: number, end: number }[] => {
+  const positions: { start: number, end: number }[] = [];
+  const chars = word.split('');
+  
+  for (let i = 0; i < chars.length - 1; i++) {
+    if (
+      (chars[i] === 'C' && chars[i + 1] === 'H') ||
+      (chars[i] === 'L' && chars[i + 1] === 'L') ||
+      (chars[i] === 'R' && chars[i + 1] === 'R')
+    ) {
+      positions.push({ start: i, end: i + 1 });
+      i++; // Skip next character as it's part of the digraph
+    }
+  }
+  
+  return positions;
 };
 
-/**
- * Highlights letters that match wildcards.
- * Takes the original word and the original rack, and highlights
- * the letters in the word that match wildcards.
- */
-export const highlightWildcardLetter = (word: string, originalRack: string) => {
-  if (!word || !originalRack) {
-    return word;
+export const highlightWildcardLetter = (word: string, searchTerm: string): React.ReactNode => {
+  if (!word || !searchTerm) return word;
+
+  // Remove length filter if present
+  const cleanSearchTerm = searchTerm.replace(/\/\d+$/, '');
+  
+  // Process both the word and search term to handle digraphs
+  const processedWord = processDigraphs(word);
+  const processedSearch = processDigraphs(cleanSearchTerm.replace(/\*/g, ''));
+  
+  // Find digraph positions in the original word
+  const digraphPositions = findDigraphPositions(word);
+  
+  // Create a map to track letter usage from the search term
+  const letterUsage = new Map<string, number>();
+  for (const char of processedSearch) {
+    letterUsage.set(char, (letterUsage.get(char) || 0) + 1);
   }
   
-  // If no wildcards, return plain word
-  if (!originalRack.includes('*')) {
-    return word;
-  }
+  // Track which characters have been matched
+  const matchedIndices = new Set<number>();
   
-  // Get regular letters (non-wildcards) from the rack
-  const regularLetters = originalRack.replace(/\*/g, '').split('');
-  
-  // Convert word to array of characters
-  const wordChars = word.split('');
-  
-  // Create a copy of regularLetters that we'll modify
-  const availableLetters = [...regularLetters];
-  
-  // Track which indices to highlight
-  const highlightIndices = new Set<number>();
-  
-  // First pass: mark letters from the rack as used (not highlighted)
-  wordChars.forEach((char, index) => {
-    const letterIndex = availableLetters.findIndex(l => l.toUpperCase() === char.toUpperCase());
-    if (letterIndex >= 0) {
-      // This letter is from the rack, not a wildcard
-      availableLetters.splice(letterIndex, 1);
+  // First pass: mark exact matches
+  for (let i = 0; i < word.length; i++) {
+    // Skip if this index is part of an already matched digraph
+    if (matchedIndices.has(i)) continue;
+    
+    // Check if this position is part of a digraph
+    const digraph = digraphPositions.find(pos => pos.start === i || pos.end === i);
+    
+    if (digraph) {
+      const digraphStr = word.slice(digraph.start, digraph.end + 1);
+      const processedDigraph = processDigraphs(digraphStr);
+      
+      if (letterUsage.has(processedDigraph) && letterUsage.get(processedDigraph)! > 0) {
+        matchedIndices.add(digraph.start);
+        matchedIndices.add(digraph.end);
+        letterUsage.set(processedDigraph, letterUsage.get(processedDigraph)! - 1);
+      }
     } else {
-      // This letter might be from a wildcard
-      highlightIndices.add(index);
+      const char = word[i];
+      if (letterUsage.has(char) && letterUsage.get(char)! > 0) {
+        matchedIndices.add(i);
+        letterUsage.set(char, letterUsage.get(char)! - 1);
+      }
     }
-  });
+  }
   
-  // Render highlighted spans
-  return createHighlightedSpans(
-    wordChars, 
-    highlightIndices, 
-    'text-blue-600 font-bold'
+  // Return the word with highlighted characters
+  return (
+    <span className="inline-flex">
+      {word.split('').map((char, index) => {
+        // Find if this position is part of a digraph
+        const digraph = digraphPositions.find(pos => pos?.start === index || pos?.end === index);
+        
+        // Check if this character or digraph is unmatched
+        const isUnmatched = !matchedIndices.has(index);
+        
+        // Handle digraphs
+        if (digraph) {
+          if (index === digraph.start) {
+            // Only render the digraph at its start position
+            return isUnmatched ? (
+              <span key={index} className="text-red-600 font-semibold">
+                {char}{word[index + 1]}
+              </span>
+            ) : (
+              <span key={index}>{char}{word[index + 1]}</span>
+            );
+          } else if (index === digraph.end) {
+            // Skip the second character of the digraph
+            return null;
+          }
+        }
+        
+        // Handle regular characters
+        return isUnmatched ? (
+          <span key={index} className="text-red-600 font-semibold">{char}</span>
+        ) : (
+          <span key={index}>{char}</span>
+        );
+      })}
+    </span>
   );
 };
 
 /**
- * Highlights letters in a word that match a pattern
- * Used for pattern searches (e.g. A??A matches ALBA)
+ * Highlight pattern matches with rack letters
+ * For patterns like "-NAS,AOL*", highlight the rack letters used to complete the pattern
  */
-export const highlightPatternMatch = (word: string, pattern: string, rackLetters: string = '') => {
-  if (!word || !pattern) {
-    return word;
+export const highlightPatternMatch = (word: string, pattern: string, rackLetters: string): React.ReactNode => {
+  if (!word || !pattern) return word;
+  
+  // Process the pattern to handle hyphen notation
+  const translatedPattern = translateHyphenPattern(pattern);
+
+  // Determine pattern type (starts with, ends with, contains)
+  const isStartPattern = translatedPattern.startsWith('^') || pattern.endsWith('-');
+  const isEndPattern = translatedPattern.endsWith('$') || pattern.startsWith('-');
+  const isContainsPattern = pattern.startsWith('-') && pattern.endsWith('-');
+  
+  // Extract the fixed part of the pattern
+  let fixedPattern = translatedPattern
+    .replace(/^\^|\$$/g, '')  // Remove start/end anchors
+    .replace(/\.\*/g, '')     // Remove .* wildcards
+    .replace(/\.\+/g, '')     // Remove .+ wildcards
+    .replace(/\./g, '');      // Remove . wildcards
+
+  // Handle question marks in pattern
+  let questionMarkPositions: number[] = [];
+  if (pattern.includes('?')) {
+    // Find positions of question marks in the original pattern
+    for (let i = 0; i < pattern.length; i++) {
+      if (pattern[i] === '?') {
+        questionMarkPositions.push(i);
+      }
+    }
+    // Remove question marks from fixed pattern
+    fixedPattern = fixedPattern.replace(/\?/g, '');
   }
   
-  // Handle special patterns
-  let effectivePattern = pattern;
-  let isStartPattern = false;
-  let isEndPattern = false;
-  let isContainsPattern = false;
+  // Process rack letters
+  const processedRack = processDigraphs(rackLetters.toUpperCase());
+  const hasWildcard = processedRack.includes('*');
   
-  // Detect pattern type
-  if (pattern.startsWith('-') && !pattern.endsWith('-')) {
-    // End pattern: -TOR matches words ending with TOR
-    isEndPattern = true;
-    effectivePattern = pattern.slice(1);
-  } else if (pattern.endsWith('-') && !pattern.startsWith('-')) {
-    // Start pattern: TOR- matches words starting with TOR
-    isStartPattern = true;
-    effectivePattern = pattern.slice(0, -1);
-  } else if (pattern.startsWith('-') && pattern.endsWith('-')) {
-    // Contains pattern: -TOR- matches words containing TOR
-    isContainsPattern = true;
-    effectivePattern = pattern.slice(1, -1);
+  // Find positions of fixed pattern in the word
+  const processedWord = processDigraphs(word);
+  let fixedStart = -1;
+  let fixedEnd = -1;
+  
+  if (isStartPattern && !isContainsPattern) {
+    fixedStart = 0;
+    fixedEnd = fixedPattern.length - 1;
+  } else if (isEndPattern && !isContainsPattern) {
+    fixedStart = processedWord.length - fixedPattern.length;
+    fixedEnd = processedWord.length - 1;
+  } else if (isContainsPattern || (!isStartPattern && !isEndPattern && fixedPattern)) {
+    // For contains patterns or regular substring patterns
+    fixedStart = processedWord.indexOf(fixedPattern);
+    fixedEnd = fixedStart + fixedPattern.length - 1;
   }
   
-  // Convert both word and pattern to arrays of characters for matching
-  const wordChars = word.split('');
-  const patternChars = effectivePattern.split('');
-  
-  // Set to track which indices should be highlighted
-  const highlightIndices = new Set<number>();
-  
-  // Handle different pattern types
-  if (isStartPattern) {
-    // Highlight characters that match the start pattern
-    for (let i = 0; i < patternChars.length && i < wordChars.length; i++) {
-      if (patternChars[i] !== '?' && 
-          patternChars[i].toUpperCase() === wordChars[i].toUpperCase()) {
-        highlightIndices.add(i);
-      }
-    }
-  } else if (isEndPattern) {
-    // Highlight characters that match the end pattern
-    const offset = wordChars.length - patternChars.length;
-    if (offset >= 0) {
-      for (let i = 0; i < patternChars.length; i++) {
-        if (patternChars[i] !== '?' && 
-            patternChars[i].toUpperCase() === wordChars[i + offset].toUpperCase()) {
-          highlightIndices.add(i + offset);
-        }
-      }
-    }
-  } else if (isContainsPattern) {
-    // For contains pattern, find the substring in the word
-    const patternText = effectivePattern.replace(/\?/g, '.');
-    const regex = new RegExp(patternText, 'i');
-    const match = word.match(regex);
-    
-    if (match && match.index !== undefined) {
-      const startIndex = match.index;
-      const matchedText = match[0];
-      
-      // Highlight only the non-wildcard characters from the pattern
-      for (let i = 0; i < matchedText.length; i++) {
-        const patternCharIndex = i;
-        if (patternCharIndex < patternChars.length && 
-            patternChars[patternCharIndex] !== '?' && 
-            patternChars[patternCharIndex].toUpperCase() === matchedText[i].toUpperCase()) {
-          highlightIndices.add(startIndex + i);
-        }
-      }
-    }
-  } else {
-    // Regular pattern match - handle digraphs properly
-    // We need to check for special patterns like ??CH??
-    
-    // First convert any digraphs in the pattern for comparisons
-    // Important: For patterns with digraphs like CH, we need special handling
-    const digraphMap: {[key: string]: string[]} = {
-      'CH': ['C', 'H'],
-      'LL': ['L', 'L'],
-      'RR': ['R', 'R']
-    };
-    
-    // Iterate over the pattern and find matches
-    let patternIndex = 0;
-    let wordIndex = 0;
-    
-    while (patternIndex < patternChars.length && wordIndex < wordChars.length) {
-      // Check for digraphs in the pattern
-      let isDigraph = false;
-      
-      // Look for digraphs (CH, LL, RR)
-      for (const [digraph, chars] of Object.entries(digraphMap)) {
-        if (patternIndex < patternChars.length - 1 && 
-            patternChars[patternIndex] === chars[0] && 
-            patternChars[patternIndex + 1] === chars[1]) {
-            
-          // We found a digraph in the pattern
-          isDigraph = true;
-          
-          // Check if the word has the same digraph at this position
-          if (wordIndex < wordChars.length - 1 && 
-              wordChars[wordIndex] === chars[0] && 
-              wordChars[wordIndex + 1] === chars[1]) {
-            
-            // Highlight both characters of the digraph
-            highlightIndices.add(wordIndex);
-            highlightIndices.add(wordIndex + 1);
-            
-            // Advance both indices
-            patternIndex += 2;
-            wordIndex += 2;
-            break;
-          }
-        }
-      }
-      
-      if (!isDigraph) {
-        // Handle normal character or wildcard
-        if (patternChars[patternIndex] === '?') {
-          // Wildcard - don't highlight but advance indices
-          patternIndex++;
-          wordIndex++;
-        } else if (patternChars[patternIndex].toUpperCase() === wordChars[wordIndex].toUpperCase()) {
-          // Regular character match
-          highlightIndices.add(wordIndex);
-          patternIndex++;
-          wordIndex++;
-        } else {
-          // No match, just advance word index
-          wordIndex++;
-        }
-      }
+  // Create a map of positions that are part of the fixed pattern
+  const fixedPositions = new Set<number>();
+  if (fixedStart >= 0 && fixedEnd >= 0) {
+    for (let i = fixedStart; i <= fixedEnd; i++) {
+      fixedPositions.add(i);
     }
   }
   
-  // If we have rack letters, we need to highlight those separately
-  if (rackLetters) {
-    // Apply rack letter highlights
-    // This is for combined pattern+rack searches
-    // For now just use the pattern highlighting
-  }
-  
-  // Render with the highlighted indices
-  return createHighlightedSpans(
-    wordChars, 
-    highlightIndices, 
-    'text-green-600 font-bold'
+  // Return the word with highlighted characters
+  return (
+    <span className="inline-flex">
+      {word.split('').map((char, index) => {
+        // Find corresponding position in processed word
+        const processedIndex = processDigraphs(word.substring(0, index + 1)).length - 1;
+        
+        // Check if this character is part of the fixed pattern
+        const isFixedPattern = fixedPositions.has(processedIndex);
+        
+        // Handle question mark positions if any
+        const isQuestionMarkPosition = questionMarkPositions.some(pos => 
+          processedIndex === pos || (fixedStart > 0 && processedIndex === fixedStart + pos)
+        );
+        
+        // If it's part of the fixed pattern and not a question mark, display normally
+        if (isFixedPattern && !isQuestionMarkPosition) {
+          return <span key={index}>{char}</span>;
+        }
+        
+        // Handle question mark positions specially
+        if (isQuestionMarkPosition) {
+          return (
+            <span key={index} className="text-purple-600 font-semibold">
+              {char}
+            </span>
+          );
+        }
+        
+        // If it's not part of the fixed pattern, it's a rack letter (possibly with wildcard)
+        // Highlight rack letters used with wildcard in lowercase (blank tile convention)
+        const isLikelyWildcard = hasWildcard && 
+                                !processedRack.replace(/\*/g, '').includes(processedWord[processedIndex]);
+        
+        if (isLikelyWildcard) {
+          return (
+            <span key={index} className="text-red-600 font-semibold lowercase">
+              {char}
+            </span>
+          );
+        }
+        
+        // Regular rack letter (non-wildcard)
+        return (
+          <span key={index} className="text-blue-600">
+            {char}
+          </span>
+        );
+      })}
+    </span>
   );
 };

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import SearchContainer from "./anagramador/search/SearchContainer";
 import ResultsList from "./anagramador/ResultsList";
@@ -49,7 +48,6 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
       setIsLoading(true);
       setIsSearchAborted(false);
       try {
-        console.log('Starting search with term:', trimmedSearchTerm);
         const results = await useOfflineAnagramSearch(
           trimmedSearchTerm,
           trie,

@@ -2,7 +2,6 @@
 import { BaseResults } from "./results/BaseResults";
 import { useState, useEffect } from "react";
 import { highlightPatternMatch } from "@/utils/wildcardHighlighting";
-import { toDisplayFormat, processDigraphs } from "@/utils/digraphs";
 
 interface PatternResultsProps {
   matches: string[];
@@ -26,32 +25,29 @@ export const PatternResults = ({
     searchTerm.split(',') : [searchTerm, ''];
   
   // For special patterns like -NAS, we need custom highlighting
-  const isEndPattern = patternPart.startsWith('-') && !patternPart.endsWith('-');
-  const isStartPattern = patternPart.endsWith('-') && !patternPart.startsWith('-');
+  const isEndPattern = patternPart.startsWith('-');
+  const isStartPattern = patternPart.endsWith('-');
   const isContainsPattern = patternPart.startsWith('-') && patternPart.endsWith('-');
   
-  // We need to use the original pattern for highlighting since processDigraphs 
-  // would convert digraphs like CH to Ç which we don't want to show to the user
-  const displayPatternPart = patternPart;
-  
-  console.log('Pattern type for highlighting:', { 
-    isEndPattern, 
-    isStartPattern, 
-    isContainsPattern, 
-    patternPart,
-    displayPatternPart
-  });
-  
-  const getHighlightFunction = (word: string) => {
-    return highlightPatternMatch(word, displayPatternPart, rackPart);
-  };
+  // Extract the actual pattern without hyphens for highlighting
+  let cleanPattern = patternPart;
+  if (isEndPattern) {
+    cleanPattern = patternPart.slice(1);
+  }
+  if (isStartPattern && !isContainsPattern) {
+    cleanPattern = cleanPattern.slice(0, -1);
+  }
+  if (isContainsPattern) {
+    cleanPattern = cleanPattern.slice(1, -1);
+  }
   
   return (
     <BaseResults
       matches={uniqueMatches}
       title={`${uniqueMatches.length} ${uniqueMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que coinciden con el patrón:`}
-      highlightWildcardLetter={hasRackLetters || isEndPattern || isStartPattern || isContainsPattern ? 
-        getHighlightFunction : undefined}
+      highlightWildcardLetter={hasRackLetters ? 
+        (word) => highlightPatternMatch(word, patternPart, rackPart) : 
+        undefined}
       searchTerm={searchTerm}
       sortAscending={showLongerWords}
     />
