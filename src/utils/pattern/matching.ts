@@ -46,7 +46,11 @@ export const findPatternMatches = async (
   
   // First translate any hyphen-based patterns like -CON to proper pattern format
   // Important: We need to process digraphs in the pattern BEFORE translation
-  const processedPatternPart = processDigraphs(patternPart);
+  // This is critical for CH -> Ç, LL -> K, RR -> W
+  console.log('Pattern before digraph processing:', patternPart);
+  const processedPatternPart = processDigraphs(patternPart.toUpperCase());
+  console.log('Pattern after digraph processing:', processedPatternPart);
+  
   const translatedPattern = translateHyphenPattern(processedPatternPart);
   console.log('Translated pattern:', translatedPattern);
   

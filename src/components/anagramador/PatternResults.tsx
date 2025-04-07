@@ -1,4 +1,3 @@
-
 import { BaseResults } from "./results/BaseResults";
 import { useState, useEffect } from "react";
 import { highlightPatternMatch } from "@/utils/wildcardHighlighting";
@@ -30,13 +29,20 @@ export const PatternResults = ({
   const isStartPattern = patternPart.endsWith('-') && !patternPart.startsWith('-');
   const isContainsPattern = patternPart.startsWith('-') && patternPart.endsWith('-');
   
-  // Process the pattern part for highlighting (we need to preserve digraphs in the UI)
-  const processedPatternPart = patternPart;
+  // We need to keep the original pattern for highlighting since processDigraphs 
+  // would convert digraphs like CH to Ç which we don't want to show to the user
+  const displayPatternPart = patternPart;
   
-  console.log('Pattern type for highlighting:', { isEndPattern, isStartPattern, isContainsPattern, patternPart });
+  console.log('Pattern type for highlighting:', { 
+    isEndPattern, 
+    isStartPattern, 
+    isContainsPattern, 
+    patternPart,
+    displayPatternPart
+  });
   
   const getHighlightFunction = (word: string) => {
-    return highlightPatternMatch(word, processedPatternPart, rackPart);
+    return highlightPatternMatch(word, displayPatternPart, rackPart);
   };
   
   return (
