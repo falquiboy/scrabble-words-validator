@@ -6,6 +6,7 @@ import { translateHyphenPattern } from "./translation";
 import { processDigraphs } from "../digraphs";
 import { generatePatternCombinations } from "./combinations";
 import { SPANISH_LETTERS } from '@/hooks/anagramSearch/constants';
+import { MAX_RACK_LETTERS, MAX_WILDCARDS } from '@/utils/inputValidation';
 
 export const findPatternMatches = async (
   pattern: string, 
@@ -34,19 +35,30 @@ export const findPatternMatches = async (
   
   console.log('Processing pattern search:', { patternPart, rackPart, showLongerWords, specifiedLength });
   
+  // Validate rack letters don't exceed maximum
+  const processedRack = rackPart ? rackPart.slice(0, MAX_RACK_LETTERS) : '';
+  
+  // Count wildcards and ensure they don't exceed maximum
+  const wildcardCount = (processedRack.match(/\*/g) || []).length;
+  if (wildcardCount > MAX_WILDCARDS) {
+    console.warn(`Too many wildcards: ${wildcardCount}. Maximum allowed is ${MAX_WILDCARDS}`);
+  }
+  
   // First translate any hyphen-based patterns like -CON to proper pattern format
   const translatedPattern = translateHyphenPattern(patternPart);
+  console.log('Translated pattern:', translatedPattern);
   
   try {
     let matches: string[] = [];
     
     // If we have rack letters, use the combination generation approach
-    if (rackPart && rackPart.trim().length > 0) {
-      console.log('Using rack letters for pattern:', rackPart.trim());
-      matches = await findPatternMatchesWithRack(translatedPattern, rackPart.trim(), trie);
+    if (processedRack && processedRack.trim().length > 0) {
+      console.log('Using rack letters for pattern:', processedRack.trim());
+      matches = await findPatternMatchesWithRack(translatedPattern, processedRack.trim(), trie);
     } else {
       // For simple pattern searches without rack letters, use the regex approach
       const finalPattern = translatedPattern.replace(/\?/g, '.'); // Convert question marks to single character wildcards
+      console.log('Using regex pattern:', finalPattern);
       const regexPattern = convertPatternToRegex(finalPattern);
       matches = await searchTrie(trie.getRoot(), regexPattern);
     }
@@ -89,7 +101,7 @@ const findPatternMatchesWithRack = async (
   let processedPattern = pattern;
   const endsWithPattern = pattern.endsWith('$');
   const startsWithPattern = pattern.startsWith('^');
-  const containsMiddlePattern = pattern.includes('.+') && !startsWithPattern && !endsWithPattern;
+  const containsMiddlePattern = pattern.includes('.*') && !startsWithPattern && !endsWithPattern;
   
   // Handle patterns with regex special characters for word generation
   if (endsWithPattern) {
@@ -109,13 +121,15 @@ const findPatternMatchesWithRack = async (
   // Determine pattern type (start, end, contains)
   const isStartPattern = startsWithPattern || pattern.includes('^');
   const isEndPattern = endsWithPattern || pattern.endsWith('$');
+  const isContainsPattern = pattern.includes('.*') && !isStartPattern && !isEndPattern;
   
   // Generate all possible words that could be formed with the pattern and rack letters
   const possibleWords = generatePatternCombinations(
     formattedPattern, 
     processedRack, 
     isStartPattern, 
-    isEndPattern
+    isEndPattern,
+    isContainsPattern
   );
   
   console.log(`Generated ${possibleWords.length} possible combinations to check`);

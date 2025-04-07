@@ -91,7 +91,7 @@ const SearchContainer = ({
       }
     }
   };
-
+  
   return (
     <SearchInput
       letters={letters}
