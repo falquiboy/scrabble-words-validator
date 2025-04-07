@@ -123,6 +123,8 @@ const findPatternMatchesWithRack = async (
   const isEndPattern = endsWithPattern || pattern.endsWith('$');
   const isContainsPattern = pattern.includes('.*') && !isStartPattern && !isEndPattern;
   
+  console.log('Pattern type:', { isStartPattern, isEndPattern, isContainsPattern });
+  
   // Generate all possible words that could be formed with the pattern and rack letters
   const possibleWords = generatePatternCombinations(
     formattedPattern, 

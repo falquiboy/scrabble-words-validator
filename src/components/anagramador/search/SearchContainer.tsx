@@ -49,8 +49,17 @@ const SearchContainer = ({
     if (letters.trim()) {
       const targetLength = handleInputChange(letters);
       
+      // Check if this is a pattern search
+      const isPatternSearch = letters.includes('?') || 
+                             letters.includes('-') ||
+                             letters.includes('^') ||
+                             letters.includes('$');
+      
       // Ensure we reset showShorter before starting a new search
-      onShowShorterChange(false);
+      // For pattern searches, showShorter actually means "show longer words"
+      if (!isPatternSearch) {
+        onShowShorterChange(false);
+      }
       
       onSearch(letters, targetLength);
       
