@@ -10,12 +10,13 @@ interface ShorterResultsProps {
 
 export const ShorterResults = ({ matches, highlightWildcardLetter, searchTerm, title }: ShorterResultsProps) => {
   const isAdditionalLetterMode = title.includes("adicional");
+  const wildcardCount = (searchTerm.match(/\*/g) || []).length;
   
   return (
     <BaseResults
       matches={matches}
       title={title}
-      highlightWildcardLetter={highlightWildcardLetter}
+      highlightWildcardLetter={wildcardCount > 0 ? highlightWildcardLetter : undefined}
       searchTerm={searchTerm}
       isShortMode={!isAdditionalLetterMode}
     />
