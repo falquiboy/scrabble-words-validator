@@ -61,3 +61,34 @@ export const highlightPatternMatch = (
     </>
   );
 };
+
+// Add this new export
+export const highlightWildcardLetter = (word: string, originalWord: string): React.ReactNode => {
+  const wildcardCount = (originalWord.match(/\*/g) || []).length;
+  
+  if (wildcardCount === 0) {
+    return word;
+  }
+
+  // Split the original word into fixed letters and wildcard positions
+  const fixedLetters = originalWord.replace(/\*/g, '');
+  const wildcardPositions = originalWord.split('').reduce((acc, char, index) => {
+    if (char === '*') acc.push(index);
+    return acc;
+  }, [] as number[]);
+
+  // Create a version of the word with highlighted wildcard replacements
+  const highlightedWord = word.split('').map((char, index) => {
+    const isWildcardReplacement = wildcardPositions.some(pos => 
+      fixedLetters[pos] !== char && 
+      word.slice(index, index + fixedLetters.length) === fixedLetters
+    );
+
+    return isWildcardReplacement ? (
+      <span key={index} className="text-blue-600 font-bold">{char}</span>
+    ) : char;
+  });
+
+  return <>{highlightedWord}</>;
+};
+
