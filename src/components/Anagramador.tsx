@@ -49,6 +49,7 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
       setIsLoading(true);
       setIsSearchAborted(false);
       try {
+        console.log('Starting search with term:', trimmedSearchTerm);
         const results = await useOfflineAnagramSearch(
           trimmedSearchTerm,
           trie,

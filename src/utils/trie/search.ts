@@ -52,8 +52,6 @@ export const searchTrie = async (trie: TrieNode, pattern: RegExp, rackLetters: s
   };
   
   searchNode(trie, '');
-  
-  // Convert any internal representations back to display format if needed
   return matches;
 };
 

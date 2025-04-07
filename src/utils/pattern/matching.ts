@@ -1,4 +1,3 @@
-
 import { Trie } from "../trie/types";
 import { searchTrie } from "../trie/search";
 import { convertPatternToRegex } from "./conversion";
@@ -44,20 +43,20 @@ export const findPatternMatches = async (
     console.warn(`Too many wildcards: ${wildcardCount}. Maximum allowed is ${MAX_WILDCARDS}`);
   }
   
+  // We need to keep the original pattern before processing for highlighting later
+  const originalPattern = patternPart;
+  
   // First translate any hyphen-based patterns like -CON to proper pattern format
-  // Important: We need to process digraphs in the pattern BEFORE translation
-  // This is critical for CH -> Ç, LL -> K, RR -> W
   console.log('Pattern before digraph processing:', patternPart);
   
-  // Important: Make sure to properly process digraphs
-  // Preserve the original pattern before processing for highlighting later
-  const originalPattern = patternPart;
-  const processedPatternPart = processDigraphs(patternPart.toUpperCase());
+  // Process digraphs in the pattern AFTER translating hyphens
+  // This is critical for properly handling patterns with digraphs
+  const translatedPattern = translateHyphenPattern(patternPart);
+  console.log('Translated pattern (before digraph processing):', translatedPattern);
   
+  // Now process any digraphs in the translated pattern (CH -> Ç, LL -> K, RR -> W)
+  const processedPatternPart = processDigraphs(translatedPattern.toUpperCase());
   console.log('Pattern after digraph processing:', processedPatternPart);
-  
-  const translatedPattern = translateHyphenPattern(processedPatternPart);
-  console.log('Translated pattern:', translatedPattern);
   
   try {
     let matches: string[] = [];
@@ -65,10 +64,10 @@ export const findPatternMatches = async (
     // If we have rack letters, use the combination generation approach
     if (processedRack && processedRack.trim().length > 0) {
       console.log('Using rack letters for pattern:', processedRack.trim());
-      matches = await findPatternMatchesWithRack(translatedPattern, processedRack.trim(), trie);
+      matches = await findPatternMatchesWithRack(processedPatternPart, processedRack.trim(), trie);
     } else {
       // For simple pattern searches without rack letters, use the regex approach
-      const finalPattern = translatedPattern.replace(/\?/g, '.'); // Convert question marks to single character wildcards
+      const finalPattern = processedPatternPart.replace(/\?/g, '.'); // Convert question marks to single character wildcards
       console.log('Using regex pattern:', finalPattern);
       const regexPattern = convertPatternToRegex(finalPattern);
       matches = await searchTrie(trie.getRoot(), regexPattern);
