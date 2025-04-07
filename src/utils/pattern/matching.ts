@@ -3,7 +3,7 @@ import { Trie } from "../trie/types";
 import { searchTrie } from "../trie/search";
 import { convertPatternToRegex } from "./conversion";
 import { translateHyphenPattern } from "./translation";
-import { processDigraphs } from "../digraphs";
+import { processDigraphs, toDisplayFormat } from "../digraphs";
 import { generatePatternCombinations } from "./combinations";
 import { SPANISH_LETTERS } from '@/hooks/anagramSearch/constants';
 import { MAX_RACK_LETTERS, MAX_WILDCARDS } from '@/utils/inputValidation';
@@ -45,7 +45,9 @@ export const findPatternMatches = async (
   }
   
   // First translate any hyphen-based patterns like -CON to proper pattern format
-  const translatedPattern = translateHyphenPattern(patternPart);
+  // Important: We need to process digraphs in the pattern BEFORE translation
+  const processedPatternPart = processDigraphs(patternPart);
+  const translatedPattern = translateHyphenPattern(processedPatternPart);
   console.log('Translated pattern:', translatedPattern);
   
   try {

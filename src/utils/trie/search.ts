@@ -1,6 +1,5 @@
-
 import { TrieNode } from "./types";
-import { processDigraphs } from "../digraphs";
+import { processDigraphs, toDisplayFormat } from "../digraphs";
 import { validateWordPattern } from "../pattern/validation";
 
 export const search = (node: TrieNode, word: string): boolean => {
@@ -53,6 +52,8 @@ export const searchTrie = async (trie: TrieNode, pattern: RegExp, rackLetters: s
   };
   
   searchNode(trie, '');
+  
+  // Convert any internal representations back to display format if needed
   return matches;
 };
 

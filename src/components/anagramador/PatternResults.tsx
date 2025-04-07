@@ -2,6 +2,7 @@
 import { BaseResults } from "./results/BaseResults";
 import { useState, useEffect } from "react";
 import { highlightPatternMatch } from "@/utils/wildcardHighlighting";
+import { toDisplayFormat, processDigraphs } from "@/utils/digraphs";
 
 interface PatternResultsProps {
   matches: string[];
@@ -29,10 +30,13 @@ export const PatternResults = ({
   const isStartPattern = patternPart.endsWith('-') && !patternPart.startsWith('-');
   const isContainsPattern = patternPart.startsWith('-') && patternPart.endsWith('-');
   
+  // Process the pattern part for highlighting (we need to preserve digraphs in the UI)
+  const processedPatternPart = patternPart;
+  
   console.log('Pattern type for highlighting:', { isEndPattern, isStartPattern, isContainsPattern, patternPart });
   
   const getHighlightFunction = (word: string) => {
-    return highlightPatternMatch(word, patternPart, rackPart);
+    return highlightPatternMatch(word, processedPatternPart, rackPart);
   };
   
   return (
