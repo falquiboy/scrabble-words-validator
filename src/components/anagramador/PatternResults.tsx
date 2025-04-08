@@ -2,6 +2,8 @@
 import { BaseResults } from "./results/BaseResults";
 import { useState, useEffect } from "react";
 import { highlightPatternMatch } from "@/utils/wildcardHighlighting";
+import { translateHyphenPattern } from "@/utils/pattern/translation";
+import { processDigraphs } from "@/utils/digraphs";
 
 interface PatternResultsProps {
   matches: string[];
@@ -25,13 +27,14 @@ export const PatternResults = ({
     searchTerm.split(',') : [searchTerm, ''];
   
   // For special patterns like -NAS, we need custom highlighting
-  const isEndPattern = patternPart.startsWith('-');
-  const isStartPattern = patternPart.endsWith('-');
+  const translatedPattern = translateHyphenPattern(patternPart);
+  const isEndPattern = translatedPattern.endsWith('$') || patternPart.startsWith('-');
+  const isStartPattern = translatedPattern.startsWith('^') || patternPart.endsWith('-');
   const isContainsPattern = patternPart.startsWith('-') && patternPart.endsWith('-');
   
-  // Extract the actual pattern without hyphens for highlighting
+  // Extract the actual pattern without hyphens and process digraphs for highlighting
   let cleanPattern = patternPart;
-  if (isEndPattern) {
+  if (isEndPattern && !isContainsPattern) {
     cleanPattern = patternPart.slice(1);
   }
   if (isStartPattern && !isContainsPattern) {
@@ -40,6 +43,9 @@ export const PatternResults = ({
   if (isContainsPattern) {
     cleanPattern = cleanPattern.slice(1, -1);
   }
+  
+  // Process the clean pattern for digraphs
+  const processedCleanPattern = processDigraphs(cleanPattern);
   
   return (
     <BaseResults

@@ -32,21 +32,29 @@ export const searchTrie = async (trie: TrieNode, pattern: RegExp, rackLetters: s
   
   console.log('Searching trie with:', { pattern: patternStr, rackLetters, hasRackLetters });
   
+  // This function recursively searches the trie and collects matching words
   const searchNode = (node: TrieNode, currentWord: string) => {
-    if (node.isEndOfWord && pattern.test(currentWord)) {
-      // If we have rack letters, validate them against the pattern and word
-      if (hasRackLetters) {
-        // For patterns with rack letters, validate that we can build the word
-        // using the available rack letters
-        const isValidWithRack = validateWordPattern(currentWord, patternStr, rackLetters);
-        if (isValidWithRack) {
+    // If this node is the end of a word, check if it matches the pattern
+    if (node.isEndOfWord) {
+      // The match must be tested against the processed word
+      // Note: Since the pattern is already processed for digraphs,
+      // we're correctly comparing processed to processed
+      if (pattern.test(currentWord)) {
+        // If we have rack letters, validate them against the pattern and word
+        if (hasRackLetters) {
+          // For patterns with rack letters, validate that we can build the word
+          // using the available rack letters
+          const isValidWithRack = validateWordPattern(currentWord, patternStr, rackLetters);
+          if (isValidWithRack) {
+            matches.push(node.word);
+          }
+        } else {
           matches.push(node.word);
         }
-      } else {
-        matches.push(node.word);
       }
     }
     
+    // Continue searching through all children of this node
     node.children.forEach((childNode, char) => {
       searchNode(childNode, currentWord + char);
     });

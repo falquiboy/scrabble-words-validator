@@ -40,14 +40,21 @@ export const findPatternMatches = async (
   try {
     let matches: string[] = [];
     
+    // Process digraphs in the pattern before searching
+    // This is the key fix - convert digraphs to internal representation
+    const processedPatternWithDigraphs = processDigraphs(translatedPattern);
+    
     // If we have rack letters, use the combination generation approach
     if (rackPart && rackPart.trim().length > 0) {
       console.log('Using rack letters for pattern:', rackPart.trim());
-      matches = await findPatternMatchesWithRack(translatedPattern, rackPart.trim(), trie);
+      // Use the processed pattern with digraphs
+      matches = await findPatternMatchesWithRack(processedPatternWithDigraphs, rackPart.trim(), trie);
     } else {
       // For simple pattern searches without rack letters, use the regex approach
-      const finalPattern = translatedPattern.replace(/\?/g, '.'); // Convert question marks to single character wildcards
+      // Convert question marks to single character wildcards after processing digraphs
+      const finalPattern = processedPatternWithDigraphs.replace(/\?/g, '.');
       const regexPattern = convertPatternToRegex(finalPattern);
+      console.log('Searching trie with:', { pattern: regexPattern.toString(), rackLetters: '', hasRackLetters: '' });
       matches = await searchTrie(trie.getRoot(), regexPattern);
     }
     
@@ -102,8 +109,8 @@ const findPatternMatchesWithRack = async (
   // Remove .* and .+ patterns (these come from translateHyphenPattern for patterns like -NAS)
   processedPattern = processedPattern.replace(/\.\*/g, '').replace(/\.\+/g, '');
   
-  // Process the pattern and rack letters for digraphs
-  const formattedPattern = processDigraphs(processedPattern.toUpperCase());
+  // Process the rack letters for digraphs (pattern was already processed)
+  const formattedPattern = processedPattern;
   const processedRack = processDigraphs(rackLetters.toUpperCase());
   
   // Determine pattern type (start, end, contains)

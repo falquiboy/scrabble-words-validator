@@ -36,3 +36,4 @@ export const translateHyphenPattern = (pattern: string): string => {
 
   return pattern;
 };
+

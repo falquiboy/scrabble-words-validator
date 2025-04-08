@@ -117,13 +117,17 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
   // Process the pattern to handle hyphen notation
   const translatedPattern = translateHyphenPattern(pattern);
 
+  // Process the pattern to handle digraphs
+  // This is the key fix for highlighting pattern matches with digraphs
+  const processedPattern = processDigraphs(translatedPattern);
+
   // Determine pattern type (starts with, ends with, contains)
-  const isStartPattern = translatedPattern.startsWith('^') || pattern.endsWith('-');
-  const isEndPattern = translatedPattern.endsWith('$') || pattern.startsWith('-');
+  const isStartPattern = processedPattern.startsWith('^') || pattern.endsWith('-');
+  const isEndPattern = processedPattern.endsWith('$') || pattern.startsWith('-');
   const isContainsPattern = pattern.startsWith('-') && pattern.endsWith('-');
   
   // Extract the fixed part of the pattern
-  let fixedPattern = translatedPattern
+  let fixedPattern = processedPattern
     .replace(/^\^|\$$/g, '')  // Remove start/end anchors
     .replace(/\.\*/g, '')     // Remove .* wildcards
     .replace(/\.\+/g, '')     // Remove .+ wildcards
@@ -146,8 +150,10 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
   const processedRack = processDigraphs(rackLetters.toUpperCase());
   const hasWildcard = processedRack.includes('*');
   
-  // Find positions of fixed pattern in the word
+  // Process the word for digraphs to correctly identify pattern matches
   const processedWord = processDigraphs(word);
+  
+  // Find positions of fixed pattern in the processed word
   let fixedStart = -1;
   let fixedEnd = -1;
   
@@ -171,11 +177,27 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
     }
   }
   
+  // Find digraph positions in the original word
+  const digraphPositions = findDigraphPositions(word);
+  
   // Return the word with highlighted characters
   return (
     <span className="inline-flex">
       {word.split('').map((char, index) => {
-        // Find corresponding position in processed word
+        // Skip if this index is part of an already processed digraph
+        if (digraphPositions.some(pos => pos.end === index)) {
+          return null;
+        }
+
+        // Check if this position is the start of a digraph
+        const isDiGraphStart = digraphPositions.some(pos => pos.start === index);
+        
+        // Get the actual character or digraph to display
+        const displayText = isDiGraphStart ? 
+          `${char}${word[index + 1]}` : char;
+        
+        // Calculate corresponding position in the processed word
+        // This is crucial for matching pattern positions correctly
         const processedIndex = processDigraphs(word.substring(0, index + 1)).length - 1;
         
         // Check if this character is part of the fixed pattern
@@ -188,14 +210,14 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
         
         // If it's part of the fixed pattern and not a question mark, display normally
         if (isFixedPattern && !isQuestionMarkPosition) {
-          return <span key={index}>{char}</span>;
+          return <span key={index}>{displayText}</span>;
         }
         
         // Handle question mark positions specially
         if (isQuestionMarkPosition) {
           return (
             <span key={index} className="text-purple-600 font-semibold">
-              {char}
+              {displayText}
             </span>
           );
         }
@@ -208,7 +230,7 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
         if (isLikelyWildcard) {
           return (
             <span key={index} className="text-red-600 font-semibold lowercase">
-              {char}
+              {displayText}
             </span>
           );
         }
@@ -216,7 +238,7 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
         // Regular rack letter (non-wildcard)
         return (
           <span key={index} className="text-blue-600">
-            {char}
+            {displayText}
           </span>
         );
       })}
