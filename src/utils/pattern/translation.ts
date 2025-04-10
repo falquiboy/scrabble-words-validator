@@ -3,7 +3,7 @@
  * Translates hyphen-based patterns into regex-compatible patterns
  * -CON → .*CON$ (ends with CON)
  * CON- → ^CON.* (starts with CON)
- * -CON- → (?!^CON).*CON(?!.*$).* (contains CON, but not at start or end)
+ * -CON- → .*CON.* (contains CON anywhere)
  */
 export const translateHyphenPattern = (pattern: string): string => {
   // Clean the pattern first
@@ -16,12 +16,12 @@ export const translateHyphenPattern = (pattern: string): string => {
 
   // Handle the three main cases
   if (cleanPattern.startsWith('-') && cleanPattern.endsWith('-')) {
-    // -CON- → Match words containing the pattern, but not at start or end
+    // -CON- → Match words containing the pattern anywhere (not just in the middle)
     const innerPattern = cleanPattern.slice(1, -1);
     if (!innerPattern) return pattern;
     
-    // Fix: Using a simpler pattern for "word contains pattern in the middle"
-    return `^.+${innerPattern}.+$`;
+    // Updated pattern to match 'contains' anywhere, not just in the middle
+    return `.*${innerPattern}.*`;
   } else if (cleanPattern.startsWith('-')) {
     // -CON → .*CON$
     // Words ending with the specified letters
@@ -36,4 +36,3 @@ export const translateHyphenPattern = (pattern: string): string => {
 
   return pattern;
 };
-
