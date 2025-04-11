@@ -8,6 +8,8 @@
   "background_color": "#9F9EA1",
   "theme_color": "#9F9EA1",
   "orientation": "portrait",
+  "lang": "es",
+  "dir": "ltr",
   "icons": [
     {
       "src": "/lovable-uploads/8314fb31-6b68-4d8c-af1b-7139fa2313c0.png",
