@@ -109,6 +109,12 @@ const findPatternMatchesWithRack = async (
   // Remove .* and .+ patterns (these come from translateHyphenPattern for patterns like -NAS)
   processedPattern = processedPattern.replace(/\.\*/g, '').replace(/\.\+/g, '');
   
+  // Replace ? with actual letters for combination generation, not for searching
+  if (processedPattern.includes('?')) {
+    // Generar todas las combinaciones posibles reemplazando ? con letras reales
+    return findWildcardPatternMatches(processedPattern, rackLetters, trie);
+  }
+  
   // Process the rack letters for digraphs (pattern was already processed)
   const formattedPattern = processedPattern;
   const processedRack = processDigraphs(rackLetters.toUpperCase());
@@ -141,3 +147,187 @@ const findPatternMatchesWithRack = async (
   // Return unique matches
   return Array.from(new Set(matches));
 };
+
+/**
+ * Encuentra coincidencias para patrones con comodín ? reemplazándolo por todas las letras posibles
+ */
+const findWildcardPatternMatches = async (
+  pattern: string,
+  rackLetters: string,
+  trie: Trie
+): Promise<string[]> => {
+  console.log(`Buscando coincidencias para patrón con comodín: ${pattern}`);
+  
+  // Posiciones de los comodines
+  const wildcardPositions: number[] = [];
+  for (let i = 0; i < pattern.length; i++) {
+    if (pattern[i] === '?') {
+      wildcardPositions.push(i);
+    }
+  }
+  
+  // Si no hay comodines, regresamos la búsqueda normal
+  if (wildcardPositions.length === 0) {
+    return findPatternMatchesWithRack(pattern, rackLetters, trie);
+  }
+  
+  const patternChars = pattern.split('');
+  const allMatches: string[] = [];
+  
+  // Procesamos el rack de letras disponibles
+  const processedRack = processDigraphs(rackLetters.toUpperCase());
+  
+  // Contamos las letras disponibles en el rack
+  const availableLetters = new Map<string, number>();
+  let wildcards = 0;
+  
+  for (const char of processedRack) {
+    if (char === '*') {
+      wildcards++;
+    } else {
+      availableLetters.set(char, (availableLetters.get(char) || 0) + 1);
+    }
+  }
+  
+  // Generamos todas las variaciones posibles del patrón
+  await generateAllPatternVariations(
+    patternChars, 
+    wildcardPositions, 
+    0, 
+    new Map(availableLetters), 
+    wildcards, 
+    trie, 
+    allMatches
+  );
+  
+  return Array.from(new Set(allMatches));
+};
+
+/**
+ * Genera todas las variaciones posibles de un patrón con comodines
+ */
+const generateAllPatternVariations = async (
+  patternChars: string[],
+  wildcardPositions: number[],
+  currentPosition: number,
+  remainingLetters: Map<string, number>,
+  remainingWildcards: number,
+  trie: Trie,
+  results: string[]
+): Promise<void> => {
+  // Si hemos procesado todos los comodines, verificamos el patrón resultante
+  if (currentPosition >= wildcardPositions.length) {
+    const finalPattern = patternChars.join('');
+    
+    // Determinamos si el patrón tiene características de inicio o fin específicas
+    const isStartPattern = finalPattern.startsWith('^');
+    const isEndPattern = finalPattern.endsWith('$');
+    
+    // Limpiamos el patrón para la generación de palabras
+    let cleanPattern = finalPattern;
+    if (isStartPattern) cleanPattern = cleanPattern.slice(1);
+    if (isEndPattern) cleanPattern = cleanPattern.slice(0, -1);
+    cleanPattern = cleanPattern.replace(/\.\*/g, '').replace(/\.\+/g, '');
+    
+    // Generamos las combinaciones y buscamos en el trie
+    try {
+      const possibleWords = generatePatternCombinations(
+        cleanPattern,
+        '',  // Ya usamos las letras del rack para reemplazar los comodines
+        isStartPattern,
+        isEndPattern
+      );
+      
+      for (const word of possibleWords) {
+        if (trie.search(word)) {
+          const foundWords = trie.getWordsStartingWith(word).filter(w => w.length === word.length);
+          results.push(...foundWords);
+        }
+      }
+    } catch (error) {
+      console.error('Error generando variaciones de patrón:', error);
+    }
+    
+    return;
+  }
+  
+  // Posición actual del comodín a reemplazar
+  const wildcardPos = wildcardPositions[currentPosition];
+  
+  // Probar con letras disponibles del rack
+  for (const [letter, count] of remainingLetters.entries()) {
+    if (count > 0) {
+      patternChars[wildcardPos] = letter;
+      
+      // Actualizamos las letras disponibles
+      const newRemainingLetters = new Map(remainingLetters);
+      newRemainingLetters.set(letter, count - 1);
+      
+      // Procesamos el siguiente comodín
+      await generateAllPatternVariations(
+        patternChars,
+        wildcardPositions,
+        currentPosition + 1,
+        newRemainingLetters,
+        remainingWildcards,
+        trie,
+        results
+      );
+    }
+  }
+  
+  // Probar con comodines del rack (si hay disponibles)
+  if (remainingWildcards > 0) {
+    for (const letter of SPANISH_LETTERS) {
+      patternChars[wildcardPos] = letter;
+      
+      // Procesamos el siguiente comodín
+      await generateAllPatternVariations(
+        patternChars,
+        wildcardPositions,
+        currentPosition + 1,
+        new Map(remainingLetters),
+        remainingWildcards - 1,
+        trie,
+        results
+      );
+    }
+  }
+  
+  // Si no quedan letras ni comodines suficientes, probar directamente con letras del alfabeto
+  // (solo para búsquedas sin rack o cuando queremos todas las posibilidades)
+  if (rackLetters === '' || (remainingWildcards === 0 && !hasEnoughLetters(remainingLetters, wildcardPositions.length - currentPosition))) {
+    for (const letter of SPANISH_LETTERS) {
+      patternChars[wildcardPos] = letter;
+      
+      // Procesamos el siguiente comodín
+      await generateAllPatternVariations(
+        patternChars,
+        wildcardPositions,
+        currentPosition + 1,
+        new Map(remainingLetters),
+        remainingWildcards,
+        trie,
+        results
+      );
+    }
+  }
+  
+  // Restauramos el comodín para la próxima iteración
+  patternChars[wildcardPos] = '?';
+};
+
+/**
+ * Verifica si hay suficientes letras disponibles para cubrir los comodines restantes
+ */
+const hasEnoughLetters = (
+  availableLetters: Map<string, number>,
+  remainingWildcards: number
+): boolean => {
+  let totalAvailable = 0;
+  for (const count of availableLetters.values()) {
+    totalAvailable += count;
+  }
+  return totalAvailable >= remainingWildcards;
+};
+
