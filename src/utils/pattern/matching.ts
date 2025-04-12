@@ -1,3 +1,4 @@
+
 import { Trie } from "../trie/types";
 import { searchTrie } from "../trie/search";
 import { convertPatternToRegex } from "./conversion";
@@ -42,6 +43,7 @@ export const findPatternMatches = async (
       console.log('Using rack letters for pattern:', rackPart.trim());
       matches = await findPatternMatchesWithRack(processedPatternWithDigraphs, rackPart.trim(), trie);
     } else {
+      // For patterns without rack letters, we need to handle ? as a wildcard for any letter
       const finalPattern = processedPatternWithDigraphs.replace(/\?/g, '.');
       const regexPattern = convertPatternToRegex(finalPattern);
       console.log('Searching trie with:', { pattern: regexPattern.toString(), rackLetters: '', hasRackLetters: '' });
@@ -208,44 +210,48 @@ const generateAllPatternVariations = async (
   
   const wildcardPos = wildcardPositions[currentPosition];
   
-  for (const [letter, count] of remainingLetters.entries()) {
-    if (count > 0) {
-      patternChars[wildcardPos] = letter;
-      
-      const newRemainingLetters = new Map(remainingLetters);
-      newRemainingLetters.set(letter, count - 1);
-      
-      await generateAllPatternVariations(
-        patternChars,
-        wildcardPositions,
-        currentPosition + 1,
-        newRemainingLetters,
-        remainingWildcards,
-        trie,
-        results,
-        rackLetters
-      );
+  // For each wildcard position, try all letters from the rack
+  if (rackLetters && rackLetters.trim().length > 0) {
+    // Try all letters from the rack first (prioritize using rack letters)
+    for (const [letter, count] of remainingLetters.entries()) {
+      if (count > 0) {
+        patternChars[wildcardPos] = letter;
+        
+        const newRemainingLetters = new Map(remainingLetters);
+        newRemainingLetters.set(letter, count - 1);
+        
+        await generateAllPatternVariations(
+          patternChars,
+          wildcardPositions,
+          currentPosition + 1,
+          newRemainingLetters,
+          remainingWildcards,
+          trie,
+          results,
+          rackLetters
+        );
+      }
     }
-  }
-  
-  if (remainingWildcards > 0) {
-    for (const letter of SPANISH_LETTERS) {
-      patternChars[wildcardPos] = letter;
-      
-      await generateAllPatternVariations(
-        patternChars,
-        wildcardPositions,
-        currentPosition + 1,
-        new Map(remainingLetters),
-        remainingWildcards - 1,
-        trie,
-        results,
-        rackLetters
-      );
+    
+    // Try using wildcards from the rack if available
+    if (remainingWildcards > 0) {
+      for (const letter of SPANISH_LETTERS) {
+        patternChars[wildcardPos] = letter;
+        
+        await generateAllPatternVariations(
+          patternChars,
+          wildcardPositions,
+          currentPosition + 1,
+          new Map(remainingLetters),
+          remainingWildcards - 1,
+          trie,
+          results,
+          rackLetters
+        );
+      }
     }
-  }
-  
-  if (rackLetters === '' || (remainingWildcards === 0 && !hasEnoughLetters(remainingLetters, wildcardPositions.length - currentPosition))) {
+  } else {
+    // If no rack letters provided, try all possible letters
     for (const letter of SPANISH_LETTERS) {
       patternChars[wildcardPos] = letter;
       
