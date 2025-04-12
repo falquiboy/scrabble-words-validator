@@ -1,4 +1,3 @@
-
 import { Trie } from "../trie/types";
 import { searchTrie } from "../trie/search";
 import { convertPatternToRegex } from "./conversion";
@@ -7,6 +6,9 @@ import { processDigraphs } from "../digraphs";
 import { generatePatternCombinations } from "./combinations";
 import { SPANISH_LETTERS } from '@/hooks/anagramSearch/constants';
 
+// Variable para almacenar los patrones base generados
+const basePatches: string[] = [];
+
 export const findPatternMatches = async (
   pattern: string, 
   trie: Trie, 
@@ -14,6 +16,9 @@ export const findPatternMatches = async (
   maxDefaultLength: number = 8,
   targetLength: number | null = null
 ): Promise<string[]> => {
+  // Limpiar los patrones base de búsquedas anteriores
+  basePatches.length = 0;
+
   const patternParts = pattern.split(':');
   let processedPattern = pattern;
   let specifiedLength = targetLength;
@@ -41,7 +46,14 @@ export const findPatternMatches = async (
     
     if (rackPart && rackPart.trim().length > 0) {
       console.log('Using rack letters for pattern:', rackPart.trim());
-      matches = await findPatternMatchesWithRack(processedPatternWithDigraphs, rackPart.trim(), trie);
+      // Modificado para manejar los patrones con cero o más caracteres al final
+      const patternEndsWithHyphen = patternPart.endsWith('-');
+      matches = await findPatternMatchesWithRack(
+        processedPatternWithDigraphs, 
+        rackPart.trim(), 
+        trie, 
+        patternEndsWithHyphen
+      );
     } else {
       // For patterns without rack letters, we need to handle ? as a wildcard for any letter
       const finalPattern = processedPatternWithDigraphs.replace(/\?/g, '.');
@@ -70,9 +82,10 @@ export const findPatternMatches = async (
 const findPatternMatchesWithRack = async (
   pattern: string, 
   rackLetters: string,
-  trie: Trie
+  trie: Trie,
+  extendPattern: boolean = false
 ): Promise<string[]> => {
-  console.log('Generating combinations for pattern', pattern, 'with rack letters', rackLetters);
+  console.log('Generating combinations for pattern', pattern, 'with rack letters', rackLetters, 'extend:', extendPattern);
   
   let processedPattern = pattern;
   const endsWithPattern = pattern.endsWith('$');
@@ -88,8 +101,9 @@ const findPatternMatchesWithRack = async (
   
   processedPattern = processedPattern.replace(/\.\*/g, '').replace(/\.\+/g, '');
   
-  if (processedPattern.includes('?')) {
-    return findWildcardPatternMatches(processedPattern, rackLetters, trie);
+  // Si el patrón contiene comodines o se debe extender
+  if (processedPattern.includes('?') || extendPattern) {
+    return findWildcardPatternMatches(processedPattern, rackLetters, trie, extendPattern);
   }
   
   const formattedPattern = processedPattern;
@@ -121,10 +135,18 @@ const findPatternMatchesWithRack = async (
 const findWildcardPatternMatches = async (
   pattern: string,
   rackLetters: string,
-  trie: Trie
+  trie: Trie,
+  extendPattern: boolean = false
 ): Promise<string[]> => {
-  console.log(`Buscando coincidencias para patrón con comodín: ${pattern}`);
+  console.log(`Buscando coincidencias para patrón con comodín: ${pattern}, extender: ${extendPattern}`);
   
+  // Primero, buscar coincidencias exactas con el patrón base
+  let allMatches: string[] = [];
+  
+  // Limpiamos la lista de patrones base antes de empezar
+  basePatches.length = 0;
+  
+  // Para patrones con comodines, primero reemplazamos los ?
   const wildcardPositions: number[] = [];
   for (let i = 0; i < pattern.length; i++) {
     if (pattern[i] === '?') {
@@ -132,13 +154,7 @@ const findWildcardPatternMatches = async (
     }
   }
   
-  if (wildcardPositions.length === 0) {
-    return findPatternMatchesWithRack(pattern, rackLetters, trie);
-  }
-  
   const patternChars = pattern.split('');
-  const allMatches: string[] = [];
-  
   const processedRack = processDigraphs(rackLetters.toUpperCase());
   
   const availableLetters = new Map<string, number>();
@@ -152,6 +168,7 @@ const findWildcardPatternMatches = async (
     }
   }
   
+  // Generar variaciones del patrón básico (reemplazando comodines)
   await generateAllPatternVariations(
     patternChars, 
     wildcardPositions, 
@@ -163,7 +180,98 @@ const findWildcardPatternMatches = async (
     rackLetters
   );
   
+  // Si necesitamos extender el patrón, buscar palabras que empiecen con las variaciones
+  // y usar las letras restantes del rack para formar palabras más largas
+  if (extendPattern && basePatches.length > 0) {
+    console.log('Extendiendo el patrón para buscar palabras más largas con patrones base:', basePatches);
+    const extendedMatches: string[] = [];
+    
+    // Por cada variación del patrón base, buscar extensiones
+    for (const basePattern of basePatches) {
+      const baseLetterUsed = countLettersUsed(basePattern, new Map());
+      
+      // Calcular letras disponibles después de usar el patrón base
+      const remainingLetters = new Map<string, number>();
+      let remainingWildcards = wildcards;
+      
+      for (const [letter, count] of availableLetters.entries()) {
+        const used = baseLetterUsed.get(letter) || 0;
+        if (count > used) {
+          remainingLetters.set(letter, count - used);
+        }
+      }
+      
+      // Buscar palabras que comiencen con el patrón base
+      const possibleExtensions = trie.getWordsStartingWith(basePattern);
+      
+      // Comprobar qué extensiones se pueden formar con las letras restantes
+      for (const word of possibleExtensions) {
+        if (word.length > basePattern.length) {
+          const extension = word.slice(basePattern.length);
+          if (canFormWithRack(extension, new Map(remainingLetters), remainingWildcards)) {
+            extendedMatches.push(word);
+          }
+        }
+      }
+    }
+    
+    // Combinar las coincidencias exactas y extendidas
+    allMatches = [...allMatches, ...extendedMatches];
+  }
+  
   return Array.from(new Set(allMatches));
+};
+
+const canFormWithRack = (
+  word: string,
+  availableLetters: Map<string, number>,
+  wildcards: number
+): boolean => {
+  const wordLetters = new Map<string, number>();
+  
+  // Contar letras en la palabra
+  for (const char of word) {
+    wordLetters.set(char, (wordLetters.get(char) || 0) + 1);
+  }
+  
+  // Verificar si tenemos suficientes letras
+  for (const [letter, count] of wordLetters) {
+    const available = availableLetters.get(letter) || 0;
+    
+    if (available < count) {
+      // No tenemos suficientes de esta letra, 
+      // veamos si podemos usar comodines
+      const needed = count - available;
+      if (wildcards >= needed) {
+        wildcards -= needed;
+      } else {
+        return false;
+      }
+    } else {
+      // Tenemos suficientes, descontamos
+      availableLetters.set(letter, available - count);
+    }
+  }
+  
+  return true;
+};
+
+const countLettersUsed = (
+  pattern: string,
+  nonWildcardPositions: Map<number, string>
+): Map<string, number> => {
+  const usedLetters = new Map<string, number>();
+  
+  for (let i = 0; i < pattern.length; i++) {
+    // Si esta posición tenía un comodín, no contamos 
+    // (porque ya se descontó de las letras disponibles)
+    if (!nonWildcardPositions.has(i)) {
+      const char = pattern[i];
+      usedLetters.set(char, (usedLetters.get(char) || 0) + 1);
+    }
+  }
+  
+  return usedLetters;
 };
 
 const generateAllPatternVariations = async (
@@ -178,6 +286,7 @@ const generateAllPatternVariations = async (
 ): Promise<void> => {
   if (currentPosition >= wildcardPositions.length) {
     const finalPattern = patternChars.join('');
+    basePatches.push(finalPattern);
     
     const isStartPattern = finalPattern.startsWith('^');
     const isEndPattern = finalPattern.endsWith('$');
