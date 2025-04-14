@@ -128,7 +128,7 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
 
   // Determine pattern type (starts with, ends with, contains)
   const isStartPattern = processedPattern.startsWith('^') || pattern.endsWith('-');
-  const isEndPattern = processedPattern.endsWith('$') || pattern.startsWith('-');
+  const isEndPattern = processedPattern.endsWith('$') || pattern.startsWith('-') && !pattern.endsWith('-');
   const isContainsPattern = pattern.startsWith('-') && pattern.endsWith('-');
   
   // Extract the fixed part of the pattern
@@ -138,6 +138,9 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
     .replace(/\.\+/g, '')     // Remove .+ wildcards
     .replace(/\./g, '');      // Remove . wildcards
 
+  // Remove length filter if present (e.g., -ZAS:6)
+  const cleanPattern = pattern.replace(/:\d+$/, '');
+  
   // Handle question marks in pattern
   let questionMarkPositions: number[] = [];
   if (pattern.includes('?')) {
@@ -227,9 +230,19 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
           return <span key={index} className="font-semibold uppercase">{displayText}</span>;
         }
         
-        // For -ZAS pattern, we need to highlight the characters before ZAS in blue
-        // as they're completed using the rack letters
-        if (isEndPattern && !isContainsPattern) {
+        // For end patterns like -ZAS, we need to highlight the prefix characters in blue
+        // These are characters before the fixed pattern (e.g., ABU in ABUZAS)
+        if (isEndPattern && !isContainsPattern && processedIndex < fixedStart) {
+          return (
+            <span key={index} className="text-blue-600 font-semibold">
+              {displayText}
+            </span>
+          );
+        }
+        
+        // For start patterns like CO-, we need to highlight the suffix characters in blue
+        // These are characters after the fixed pattern (e.g., RAZAS in CORAZAS)
+        if (isStartPattern && !isContainsPattern && processedIndex > fixedEnd) {
           return (
             <span key={index} className="text-blue-600 font-semibold">
               {displayText}

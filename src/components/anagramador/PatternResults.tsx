@@ -26,16 +26,19 @@ export const PatternResults = ({
   const [patternPart, rackPart] = hasRackLetters ? 
     searchTerm.split(',') : [searchTerm, ''];
   
-  // For special patterns like -NAS, we need custom highlighting
-  const translatedPattern = translateHyphenPattern(patternPart);
-  const isEndPattern = translatedPattern.endsWith('$') || patternPart.startsWith('-') && !patternPart.endsWith('-');
-  const isStartPattern = translatedPattern.startsWith('^') || patternPart.endsWith('-') && !patternPart.startsWith('-');
-  const isContainsPattern = patternPart.startsWith('-') && patternPart.endsWith('-');
+  // Remove length filter if present in the pattern
+  const cleanPatternPart = patternPart.replace(/:\d+$/, '');
   
-  // Extract the actual pattern without hyphens and process digraphs for highlighting
-  let cleanPattern = patternPart;
+  // For special patterns like -NAS, we need custom highlighting
+  const translatedPattern = translateHyphenPattern(cleanPatternPart);
+  const isEndPattern = translatedPattern.endsWith('$') || cleanPatternPart.startsWith('-') && !cleanPatternPart.endsWith('-');
+  const isStartPattern = translatedPattern.startsWith('^') || cleanPatternPart.endsWith('-') && !cleanPatternPart.startsWith('-');
+  const isContainsPattern = cleanPatternPart.startsWith('-') && cleanPatternPart.endsWith('-');
+  
+  // Extract the actual pattern without hyphens for display purposes
+  let cleanPattern = cleanPatternPart;
   if (isEndPattern && !isContainsPattern) {
-    cleanPattern = patternPart.slice(1);
+    cleanPattern = cleanPatternPart.slice(1);
   }
   if (isStartPattern && !isContainsPattern) {
     cleanPattern = cleanPattern.slice(0, -1);
@@ -65,7 +68,7 @@ export const PatternResults = ({
       title={titleText}
       highlightWildcardLetter={hasRackLetters ? 
         (word) => highlightPatternMatch(word, patternPart, rackPart) : 
-        undefined}
+        (word) => highlightPatternMatch(word, patternPart, "")}
       searchTerm={searchTerm}
       sortAscending={showLongerWords}
     />
