@@ -123,8 +123,8 @@ const SearchInput = ({
   };
 
   return (
-    <SearchTooltip isPatternMode={isPatternMode}>
-      <div className="space-y-2">
+    <div className="space-y-2">
+      <SearchTooltip isPatternMode={isPatternMode}>
         <div className="relative flex-1">
           <Input
             ref={inputRef}
@@ -152,15 +152,14 @@ const SearchInput = ({
             />
           </div>
         </div>
-        
-        <ShorterWordsToggle
-          checked={showShorter}
-          onCheckedChange={onShowShorterChange}
-          isPatternMode={isPatternMode}
-          isLengthSpecified={hasLengthSpecified}
-        />
-      </div>
-    </SearchTooltip>
+      </SearchTooltip>
+      <ShorterWordsToggle
+        checked={showShorter}
+        onCheckedChange={onShowShorterChange}
+        isPatternMode={isPatternMode}
+        isLengthSpecified={hasLengthSpecified}
+      />
+    </div>
   );
 };
 

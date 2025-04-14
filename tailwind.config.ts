@@ -79,9 +79,6 @@ export default {
         "accordion-up": "accordion-up 0.2s ease-out",
         "tile-bounce": "tile-bounce 0.3s ease-in-out",
       },
-      fontFamily: {
-        'mono': ['IBM Plex Mono', 'monospace'],
-      },
     },
   },
   plugins: [require("tailwindcss-animate")],

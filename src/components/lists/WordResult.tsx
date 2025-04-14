@@ -13,14 +13,10 @@ const WordResult = ({ word }: WordResultProps) => {
       href={raeUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="bg-gray-50 hover:bg-gray-100 p-2 rounded text-center transition-colors tracking-wide"
+      className="bg-gray-50 hover:bg-gray-100 p-2 rounded text-center transition-colors font-semibold"
       aria-label={`Buscar "${word}" en el diccionario RAE`}
     >
-      {word.split('').map((char, i) => 
-        char === 'I' 
-          ? <span key={i} className="font-mono">{char}</span>
-          : char
-      )}
+      {word}
     </a>
   );
 };

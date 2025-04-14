@@ -1,4 +1,4 @@
-import { SerializedTrie } from '@/utils/trie/types';
+import { SerializedTrie, TrieNode } from '@/utils/trie/types';
 
 export class WordDatabase {
   private db: IDBDatabase | null = null;
