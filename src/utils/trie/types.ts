@@ -4,13 +4,30 @@ export interface Trie {
   search: (word: string) => boolean;
   getWordsStartingWith: (prefix: string) => string[];
   getAllWords: () => string[];
+  findAnagrams: (alphagram: string) => string[];
 }
 
 export interface TrieNode {
   isEndOfWord: boolean;
   children: Map<string, TrieNode>;
   word: string;
-  getAllWords?: () => string[];
+}
+
+// Add the missing interfaces that were referenced in errors
+export interface LengthIndexedTrie {
+  [length: number]: {
+    [alphagram: string]: string[];
+  };
+}
+
+export interface SerializedTrieNode {
+  children: [string, SerializedTrieNode][];
+  isEndOfWord: boolean;
+  word: string;
+}
+
+export interface SerializedTrie {
+  root: SerializedTrieNode;
 }
 
 export class TrieImplementation implements Trie {
@@ -40,6 +57,22 @@ export class TrieImplementation implements Trie {
     }
     
     return current.isEndOfWord;
+  }
+
+  findAnagrams(alphagram: string): string[] {
+    // Find words that are anagrams of the given alphagram
+    const results: string[] = [];
+    // This is a simplified implementation - in a real implementation,
+    // we would use length and alphagram indexing for efficiency
+    this.collectWords(this.root, results);
+    return results.filter(word => {
+      // This would be replaced with actual alphagram comparison logic
+      return this.generateAlphagram(word) === alphagram;
+    });
+  }
+
+  private generateAlphagram(word: string): string {
+    return [...word].sort().join('');
   }
 
   getWordsStartingWith(prefix: string): string[] {
@@ -75,3 +108,21 @@ export class TrieImplementation implements Trie {
     return results;
   }
 }
+
+// Add the getAllWords function for TrieNode to fix the prototype error
+export const getAllWordsFromNode = (node: TrieNode): string[] => {
+  const words: string[] = [];
+  
+  const collectWords = (currentNode: TrieNode) => {
+    if (currentNode.isEndOfWord) {
+      words.push(currentNode.word);
+    }
+    
+    currentNode.children.forEach((childNode) => {
+      collectWords(childNode);
+    });
+  };
+  
+  collectWords(node);
+  return words;
+};

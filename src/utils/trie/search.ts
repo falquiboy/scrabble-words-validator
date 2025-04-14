@@ -1,5 +1,5 @@
 
-import { TrieNode } from "./types";
+import { TrieNode, getAllWordsFromNode } from "./types";
 import { processDigraphs } from "../digraphs";
 import { validateWordPattern } from "../pattern/validation";
 
@@ -72,19 +72,6 @@ export const searchTrie = async (trie: TrieNode, pattern: RegExp, rackLetters: s
  * Helper function to get all words from a trie node
  * Used for pattern searches that need to check all words
  */
-TrieNode.prototype.getAllWords = function(): string[] {
-  const words: string[] = [];
-  
-  const collectWords = (node: TrieNode) => {
-    if (node.isEndOfWord) {
-      words.push(node.word);
-    }
-    
-    node.children.forEach((childNode) => {
-      collectWords(childNode);
-    });
-  };
-  
-  collectWords(this);
-  return words;
+export const getAllWords = (node: TrieNode): string[] => {
+  return getAllWordsFromNode(node);
 };

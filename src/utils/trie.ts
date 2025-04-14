@@ -57,9 +57,8 @@ export class Trie {
     return search(this.root, word);
   }
 
-  findAnagrams(letters: string): string[] {
-    const length = letters.length;
-    const alphagram = this.sortLetters(letters);
+  findAnagrams(alphagram: string): string[] {
+    const length = alphagram.length;
     return findWordsByAlphagram(this.lengthIndex, length, alphagram);
   }
 
@@ -122,7 +121,6 @@ export class Trie {
 
     this.root = deserializeNode(data.root);
     
-    // Rebuild length index
     this.lengthIndex = {};
     const words = this.getAllWords();
     words.forEach(word => {

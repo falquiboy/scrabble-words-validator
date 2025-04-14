@@ -19,7 +19,13 @@ export const generateWildcardCombinations = (base: string, remainingWildcards: n
 const findExactMatches = (processedInput: string, trie: Trie): Set<string> => {
   const alphagram = generateAlphagram(processedInput);
   const matches = new Set<string>();
-  const words = trie.findAnagrams(alphagram);
+  
+  // Use getAllWords and filter by alphagram instead of findAnagrams
+  const words = trie.getAllWords().filter(word => {
+    const wordAlphagram = generateAlphagram(processDigraphs(word));
+    return wordAlphagram === alphagram;
+  });
+  
   words.forEach(word => matches.add(word));
   return matches;
 };
@@ -30,7 +36,13 @@ const findWildcardMatches = (processedInput: string, wildcardCount: number, trie
   
   for (const combo of combinations) {
     const alphagram = generateAlphagram(combo);
-    const comboMatches = trie.findAnagrams(alphagram);
+    
+    // Use getAllWords and filter by alphagram
+    const comboMatches = trie.getAllWords().filter(word => {
+      const wordAlphagram = generateAlphagram(processDigraphs(word));
+      return wordAlphagram === alphagram;
+    });
+    
     comboMatches.forEach(match => matches.add(match));
   }
   
@@ -48,7 +60,13 @@ const findShorterMatches = (processedInput: string, trie: Trie): Set<string> => 
     for (const combo of combinations) {
       const processedCombo = combo.join('');
       const alphagram = generateAlphagram(processedCombo);
-      const comboMatches = trie.findAnagrams(alphagram);
+      
+      // Use getAllWords and filter by alphagram
+      const comboMatches = trie.getAllWords().filter(word => {
+        const wordAlphagram = generateAlphagram(processDigraphs(word));
+        return wordAlphagram === alphagram;
+      });
+      
       comboMatches.forEach(match => matches.add(match));
     }
   }
@@ -89,7 +107,12 @@ const findAdditionalMatches = (processedInput: string, wildcardCount: number, tr
     const alphagram = generateAlphagram(newCombo);
     console.log('Generated alphagram:', alphagram);
     
-    const baseMatches = trie.findAnagrams(alphagram);
+    // Use getAllWords and filter by alphagram
+    const baseMatches = trie.getAllWords().filter(word => {
+      const wordAlphagram = generateAlphagram(processDigraphs(word));
+      return wordAlphagram === alphagram;
+    });
+    
     baseMatches.forEach(match => matches.add(match));
   }
   
@@ -100,7 +123,13 @@ const findAdditionalMatches = (processedInput: string, wildcardCount: number, tr
       for (const letter of SPANISH_LETTERS) {
         const newCombo = combo + letter;
         const alphagram = generateAlphagram(newCombo);
-        const comboMatches = trie.findAnagrams(alphagram);
+        
+        // Use getAllWords and filter by alphagram
+        const comboMatches = trie.getAllWords().filter(word => {
+          const wordAlphagram = generateAlphagram(processDigraphs(word));
+          return wordAlphagram === alphagram;
+        });
+        
         comboMatches.forEach(match => matches.add(match));
       }
     }
