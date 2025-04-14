@@ -37,10 +37,9 @@ export const validateWordPattern = (
   }
 
   // For pattern search with rack letters, we need to verify that:
-  // 1. Fixed characters in the pattern are preserved
-  // 2. Variable parts (?) can be filled with rack letters
-  // 3. The entire word can be formed using only the available rack letters
-
+  // 1. The entire word can be formed using the available rack letters
+  // 2. Fixed characters in the pattern are considered "free" (don't count against rack)
+  
   // Count the letters in the word
   const wordLetterCount = new Map<string, number>();
   for (const char of processedWord) {
