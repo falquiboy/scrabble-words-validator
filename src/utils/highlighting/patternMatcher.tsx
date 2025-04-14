@@ -32,7 +32,26 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
   fixedPattern = fixedPattern.replace(/:\d+$/, '');
   
   // Find positions of the fixed pattern in the word
-  const fixedPatternPos = word.indexOf(fixedPattern);
+  let fixedPatternPos = -1;
+  
+  // Handle special case for patterns with question marks like ?L-
+  if (fixedPattern.includes('?') && fixedPattern.length > 1) {
+    const questionIndex = fixedPattern.indexOf('?');
+    // If there's a character after the question mark, try to find that in the word
+    if (questionIndex < fixedPattern.length - 1) {
+      const fixedChar = fixedPattern.charAt(questionIndex + 1);
+      // Find position of the fixed character in the word
+      for (let i = 0; i < word.length; i++) {
+        if (word[i].toUpperCase() === fixedChar.toUpperCase()) {
+          fixedPatternPos = i - questionIndex;
+          break;
+        }
+      }
+    }
+  } else {
+    // Regular case - find the exact pattern position
+    fixedPatternPos = word.toUpperCase().indexOf(fixedPattern.toUpperCase());
+  }
   
   // Find digraph positions in the original word
   const digraphPositions = findDigraphPositions(word);
