@@ -3,7 +3,12 @@ import { TrieNode } from './types';
 export const createNode = (): TrieNode => ({
   children: new Map(),
   isEndOfWord: false,
-  word: ''
+  word: '',
+  getAllWords() {
+    const words: string[] = [];
+    collectWords(this, words);
+    return words;
+  }
 });
 
 export const findNode = (root: TrieNode, word: string): TrieNode | null => {
