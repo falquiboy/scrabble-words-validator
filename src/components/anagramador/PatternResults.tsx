@@ -47,9 +47,6 @@ export const PatternResults = ({
     cleanPattern = cleanPattern.slice(1, -1);
   }
   
-  // Process the clean pattern for digraphs
-  const processedCleanPattern = processDigraphs(cleanPattern);
-  
   // Determine title based on the pattern type
   let titleText = "";
   if (isContainsPattern) {

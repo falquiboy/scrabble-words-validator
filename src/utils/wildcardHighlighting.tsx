@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { processDigraphs } from './digraphs';
 import { translateHyphenPattern } from './pattern/translation';
@@ -123,76 +122,33 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
   // Process the pattern to handle hyphen notation
   const translatedPattern = translateHyphenPattern(pattern);
 
-  // Process the pattern to handle digraphs
-  const processedPattern = processDigraphs(translatedPattern);
-
   // Determine pattern type (starts with, ends with, contains)
-  const isStartPattern = processedPattern.startsWith('^') || pattern.endsWith('-');
-  const isEndPattern = processedPattern.endsWith('$') || pattern.startsWith('-') && !pattern.endsWith('-');
+  const isStartPattern = translatedPattern.startsWith('^') || pattern.endsWith('-');
+  const isEndPattern = translatedPattern.endsWith('$') || pattern.startsWith('-') && !pattern.endsWith('-');
   const isContainsPattern = pattern.startsWith('-') && pattern.endsWith('-');
   
-  // Extract the fixed part of the pattern
-  let fixedPattern = processedPattern
-    .replace(/^\^|\$$/g, '')  // Remove start/end anchors
-    .replace(/\.\*/g, '')     // Remove .* wildcards
-    .replace(/\.\+/g, '')     // Remove .+ wildcards
-    .replace(/\./g, '');      // Remove . wildcards
-
-  // Remove length filter if present (e.g., -ZAS:6)
-  const cleanPattern = pattern.replace(/:\d+$/, '');
-  
-  // Handle question marks in pattern
-  let questionMarkPositions: number[] = [];
-  if (pattern.includes('?')) {
-    // Find positions of question marks in the original pattern
-    for (let i = 0; i < pattern.length; i++) {
-      if (pattern[i] === '?') {
-        questionMarkPositions.push(i);
-      }
-    }
-    // Remove question marks from fixed pattern
-    fixedPattern = fixedPattern.replace(/\?/g, '');
+  // Extract the fixed part of the pattern (without notation symbols)
+  let fixedPattern = pattern;
+  if (isEndPattern) {
+    fixedPattern = pattern.replace(/^-/, '');
+  } else if (isStartPattern) {
+    fixedPattern = pattern.replace(/-$/, '');
+  } else if (isContainsPattern) {
+    fixedPattern = pattern.replace(/^-|-$/g, '');
   }
   
-  // Process rack letters
-  const processedRack = processDigraphs(rackLetters.toUpperCase());
-  const hasWildcard = processedRack.includes('*');
+  // Remove any length filter (e.g., :6)
+  fixedPattern = fixedPattern.replace(/:\d+$/, '');
   
-  // Process the word for digraphs to correctly identify pattern matches
-  const processedWord = processDigraphs(word);
-  
-  // Find positions of fixed pattern in the processed word
-  let fixedStart = -1;
-  let fixedEnd = -1;
-  
-  if (isStartPattern && !isContainsPattern) {
-    fixedStart = 0;
-    fixedEnd = fixedPattern.length - 1;
-  } else if (isEndPattern && !isContainsPattern) {
-    fixedStart = processedWord.length - fixedPattern.length;
-    fixedEnd = processedWord.length - 1;
-  } else if (isContainsPattern || (!isStartPattern && !isEndPattern && fixedPattern)) {
-    // For contains patterns or regular substring patterns
-    fixedStart = processedWord.indexOf(fixedPattern);
-    fixedEnd = fixedStart + fixedPattern.length - 1;
-  }
-  
-  // Create a map of positions that are part of the fixed pattern
-  const fixedPositions = new Set<number>();
-  if (fixedStart >= 0 && fixedEnd >= 0) {
-    for (let i = fixedStart; i <= fixedEnd; i++) {
-      fixedPositions.add(i);
-    }
-  }
+  // Find positions of the fixed pattern in the word
+  const fixedPatternPos = word.indexOf(fixedPattern);
   
   // Find digraph positions in the original word
   const digraphPositions = findDigraphPositions(word);
   
-  // Build a map of indices to CSS classes for highlighting
-  const highlightClasses: Map<number, string> = new Map();
-  const processedIndices: Set<number> = new Set(); // Track indices we've already processed
-
-  // Return the word with highlighted characters
+  // Used to track positions we've processed to avoid duplicates with digraphs
+  const processedIndices = new Set<number>();
+  
   return (
     <span className="inline-flex">
       {word.split('').map((char, index) => {
@@ -211,55 +167,58 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
         if (isDiGraphStart && digraph) {
           processedIndices.add(digraph.end);
         }
-
-        // Calculate corresponding position in the processed word
-        // This is crucial for matching pattern positions correctly
-        const processedIndex = processDigraphs(word.substring(0, index + 1)).length - 1;
-
-        // Check if this character is part of the fixed pattern
-        const isFixedPattern = fixedPositions.has(processedIndex);
-
-        // Handle question mark positions if any
-        const isQuestionMarkPosition = questionMarkPositions.some(pos => 
-          processedIndex === pos || (fixedStart > 0 && processedIndex === fixedStart + pos)
-        );
-
-        // If it's a question mark position, highlight in blue
-        if (isQuestionMarkPosition) {
+        
+        // For end patterns like -ZAS, ALL characters before the pattern should be blue
+        if (isEndPattern && fixedPatternPos > 0 && index < fixedPatternPos) {
           return (
             <span key={index} className="text-blue-600 font-semibold">
               {displayText}
             </span>
           );
         }
-
-        // If it's part of the fixed pattern, display as normal (not highlighted)
-        if (isFixedPattern) {
-          return <span key={index} className="font-semibold">{displayText}</span>;
-        }
-
-        // For end patterns like -ZAS, ALL characters before the pattern should be blue
-        // These are the letters that "fill" the pattern
-        if (isEndPattern && !isContainsPattern && processedIndex < fixedStart) {
+        
+        // For end patterns, the fixed pattern itself should be normal (not highlighted)
+        if (isEndPattern && fixedPatternPos >= 0 && 
+            index >= fixedPatternPos && index < fixedPatternPos + fixedPattern.length) {
           return (
-            <span key={index} className="text-blue-600 font-semibold">
+            <span key={index} className="font-semibold">
               {displayText}
             </span>
           );
         }
 
         // For start patterns like CO-, ALL characters after the pattern should be blue
-        // These are the letters that "fill" the pattern
-        if (isStartPattern && !isContainsPattern && processedIndex > fixedEnd) {
+        if (isStartPattern && fixedPatternPos >= 0 && 
+            index >= fixedPatternPos + fixedPattern.length) {
           return (
             <span key={index} className="text-blue-600 font-semibold">
+              {displayText}
+            </span>
+          );
+        }
+        
+        // For start patterns, the fixed pattern itself should be normal (not highlighted)
+        if (isStartPattern && fixedPatternPos >= 0 && 
+            index >= fixedPatternPos && index < fixedPatternPos + fixedPattern.length) {
+          return (
+            <span key={index} className="font-semibold">
               {displayText}
             </span>
           );
         }
 
         // For contains patterns, highlight everything except the pattern
-        if (isContainsPattern && !isFixedPattern) {
+        if (isContainsPattern && fixedPatternPos >= 0) {
+          // If within the fixed pattern, display as normal
+          if (index >= fixedPatternPos && index < fixedPatternPos + fixedPattern.length) {
+            return (
+              <span key={index} className="font-semibold">
+                {displayText}
+              </span>
+            );
+          }
+          
+          // If outside the fixed pattern, highlight in blue
           return (
             <span key={index} className="text-blue-600 font-semibold">
               {displayText}
@@ -267,10 +226,11 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
           );
         }
 
-        // For other characters that aren't part of the fixed pattern, 
+        // For cases not covered by the specific patterns above, 
         // check if they might be from wildcards
-        const isLikelyWildcard = hasWildcard && 
-                               !processedRack.replace(/\*/g, '').includes(char.toUpperCase());
+        const isLikelyWildcard = rackLetters && 
+                               rackLetters.includes('*') && 
+                               !rackLetters.replace(/\*/g, '').toUpperCase().includes(char.toUpperCase());
                                
         // If it's a likely wildcard, highlight in red and lowercase
         if (isLikelyWildcard) {
