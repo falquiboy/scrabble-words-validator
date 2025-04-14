@@ -1,4 +1,3 @@
-
 import { Trie } from "../trie/types";
 import { searchTrie } from "../trie/search";
 import { convertPatternToRegex } from "./conversion";
@@ -19,6 +18,7 @@ export const findPatternMatches = async (
 ): Promise<string[]> => {
   // Limpiar los patrones base de búsquedas anteriores
   basePatches.length = 0;
+  console.log('Starting pattern search with:', { pattern, showLongerWords, targetLength });
 
   const patternParts = pattern.split(':');
   let processedPattern = pattern;
@@ -297,7 +297,71 @@ const findWildcardPatternMatches = async (
     allMatches = [...allMatches, ...extendedMatches];
   }
   
-  return Array.from(new Set(allMatches));
+  // Filtrar las coincidencias para asegurarnos de que solo usamos las letras disponibles en el rack
+  const validMatches = allMatches.filter(word => {
+    // Verificar si la palabra solo usa letras disponibles en el rack
+    return canFormWordWithRackExact(word, rackLetters);
+  });
+  
+  return Array.from(new Set(validMatches));
+};
+
+// Nueva función: Verifica si podemos formar una palabra usando EXACTAMENTE las letras del rack
+// (sin letras adicionales)
+const canFormWordWithRackExact = (
+  word: string,
+  rackLetters: string
+): boolean => {
+  console.log(`Checking if '${word}' can be formed with rack '${rackLetters}'`);
+  const wordLetters = new Map<string, number>();
+  const availableLetters = new Map<string, number>();
+  let wildcards = 0;
+  
+  const processedWord = processDigraphs(word.toUpperCase());
+  const processedRack = processDigraphs(rackLetters.toUpperCase());
+  
+  // Contar letras en la palabra
+  for (const char of processedWord) {
+    wordLetters.set(char, (wordLetters.get(char) || 0) + 1);
+  }
+  
+  // Contar letras disponibles en el rack
+  for (const char of processedRack) {
+    if (char === '*') {
+      wildcards++;
+    } else {
+      availableLetters.set(char, (availableLetters.get(char) || 0) + 1);
+    }
+  }
+  
+  console.log('Word letters:', Object.fromEntries(wordLetters));
+  console.log('Available rack letters:', Object.fromEntries(availableLetters), `Wildcards: ${wildcards}`);
+  
+  // Verificar si tenemos suficientes letras para formar la palabra
+  for (const [letter, count] of wordLetters.entries()) {
+    const available = availableLetters.get(letter) || 0;
+    
+    if (available < count) {
+      // No tenemos suficientes de esta letra, 
+      // veamos si podemos usar comodines
+      const needed = count - available;
+      if (wildcards >= needed) {
+        wildcards -= needed;
+        if (available > 0) {
+          availableLetters.set(letter, 0);
+        }
+      } else {
+        console.log(`Cannot form word: not enough of letter ${letter}, need ${count}, have ${available}, wildcards: ${wildcards}`);
+        return false;
+      }
+    } else {
+      // Tenemos suficientes, descontamos
+      availableLetters.set(letter, available - count);
+    }
+  }
+  
+  console.log('Can form word with rack');
+  return true;
 };
 
 // Verifica si podemos formar una palabra completa con las letras del rack
@@ -307,63 +371,8 @@ const canFormWordWithRack = (
   rackLetters: string,
   basePattern: string
 ): boolean => {
-  // Primero, identificar índices donde aparece el patrón base
-  const patternIndex = word.indexOf(basePattern);
-  if (patternIndex === -1) return false;
-  
-  // Contar letras disponibles en el rack
-  const availableLetters = new Map<string, number>();
-  let wildcards = 0;
-  
-  const processedRack = processDigraphs(rackLetters.toUpperCase());
-  for (const char of processedRack) {
-    if (char === '*') {
-      wildcards++;
-    } else {
-      availableLetters.set(char, (availableLetters.get(char) || 0) + 1);
-    }
-  }
-  
-  // Ahora, comprobar si podemos formar el resto de la palabra
-  const wordLetters = new Map<string, number>();
-  
-  // Contar todas las letras en la palabra
-  for (const char of word) {
-    wordLetters.set(char, (wordLetters.get(char) || 0) + 1);
-  }
-  
-  // Descontar letras del patrón base (no las necesitamos formar)
-  for (const char of basePattern) {
-    const currentCount = wordLetters.get(char) || 0;
-    if (currentCount > 0) {
-      wordLetters.set(char, currentCount - 1);
-      if (wordLetters.get(char) === 0) {
-        wordLetters.delete(char);
-      }
-    }
-  }
-  
-  // Verificar si tenemos suficientes letras para formar el resto
-  for (const [letter, count] of wordLetters.entries()) {
-    const available = availableLetters.get(letter) || 0;
-    if (available >= count) {
-      availableLetters.set(letter, available - count);
-    } else {
-      // Necesitamos usar comodines
-      const neededWildcards = count - available;
-      if (wildcards >= neededWildcards) {
-        wildcards -= neededWildcards;
-        if (available > 0) {
-          availableLetters.set(letter, 0);
-        }
-      } else {
-        // No tenemos suficientes comodines
-        return false;
-      }
-    }
-  }
-  
-  return true;
+  // Verificar si podemos formar la palabra completa con las letras disponibles
+  return canFormWordWithRackExact(word, rackLetters);
 };
 
 const canFormWithRack = (
@@ -438,6 +447,9 @@ const generateAllPatternVariations = async (
     const finalPattern = patternChars.join('');
     basePatches.push(finalPattern);
     
+    // Improve debugging
+    console.log(`Generated pattern variation: ${finalPattern}`);
+    
     // Si estamos en modo "contiene", no necesitamos buscar coincidencias exactas aquí
     // Las buscaremos después con la función específica para patrones "contiene"
     if (!isContainsPattern && !extendPattern && !prefixPattern) {
@@ -460,7 +472,17 @@ const generateAllPatternVariations = async (
         for (const word of possibleWords) {
           if (trie.search(word)) {
             const foundWords = trie.getWordsStartingWith(word).filter(w => w.length === word.length);
-            results.push(...foundWords);
+            // Verificar que podemos formar cada palabra con las letras del rack
+            const validWords = foundWords.filter(w => {
+              const canForm = canFormWordWithRackExact(w, rackLetters);
+              return canForm;
+            });
+            
+            if (validWords.length > 0) {
+              console.log(`Found ${validWords.length} valid words for pattern ${cleanPattern}`);
+            }
+            
+            results.push(...validWords);
           }
         }
       } catch (error) {
