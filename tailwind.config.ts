@@ -79,6 +79,9 @@ export default {
         "accordion-up": "accordion-up 0.2s ease-out",
         "tile-bounce": "tile-bounce 0.3s ease-in-out",
       },
+      fontFamily: {
+        'roboto-mono': ['Roboto Mono', 'monospace'],
+      },
     },
   },
   plugins: [require("tailwindcss-animate")],
