@@ -1,8 +1,7 @@
+
 import { TrieNode } from "./types";
 import { processDigraphs } from "../digraphs";
 import { validateWordPattern } from "../pattern/validation";
-import { generateAlphagram } from "../digraphs";
-import { SPANISH_LETTERS } from "@/hooks/anagramSearch/constants";
 
 export const search = (node: TrieNode, word: string): boolean => {
   // Process digraphs before searching
@@ -33,130 +32,35 @@ export const searchTrie = async (trie: TrieNode, pattern: RegExp, rackLetters: s
   
   console.log('Searching trie with:', { pattern: patternStr, rackLetters, hasRackLetters });
   
-  if (hasRackLetters) {
-    // Extraer letras fijas del patrón
-    const fixedLetters = new Map<number, string>();
-    const processedPattern = processDigraphs(patternStr.toUpperCase());
-    
-    // Identificar posiciones fijas en el patrón
-    for (let i = 0; i < processedPattern.length; i++) {
-      if (processedPattern[i] !== '.' && processedPattern[i] !== '*') {
-        fixedLetters.set(i, processedPattern[i]);
-      }
-    }
-    
-    // Procesar las letras del rack
-    const processedRack = processDigraphs(rackLetters.toUpperCase());
-    let availableLetters = '';
-    let wildcards = 0;
-    
-    // Contar wildcards y letras disponibles
-    for (const char of processedRack) {
-      if (char === '*') {
-        wildcards++;
-      } else {
-        availableLetters += char;
-      }
-    }
-    
-    // Añadir letras fijas del patrón a las letras disponibles
-    fixedLetters.forEach((letter) => {
-      availableLetters += letter;
-    });
-    
-    // Generar alfagrama de todas las letras disponibles
-    const totalAlphagram = generateAlphagram(availableLetters);
-    console.log('Total alphagram:', totalAlphagram);
-    
-    // Longitud máxima posible
-    const maxLength = availableLetters.length + wildcards;
-    
-    // Obtener todas las palabras del trie y filtrar
-    const words = trie.getAllWords();
-    for (const word of words) {
-      const processedWord = processDigraphs(word.toUpperCase());
-      
-      // Verificar longitud
-      if (processedWord.length > maxLength) continue;
-      
-      // Verificar patrón
-      if (!pattern.test(processedWord)) continue;
-      
-      // Verificar letras fijas
-      let isValidFixed = true;
-      for (const [pos, letter] of fixedLetters.entries()) {
-        if (pos >= processedWord.length || processedWord[pos] !== letter) {
-          isValidFixed = false;
-          break;
-        }
-      }
-      if (!isValidFixed) continue;
-      
-      // Verificar alfagrama
-      const wordAlphagram = generateAlphagram(processedWord);
-      let remainingWildcards = wildcards;
-      let canForm = true;
-      
-      // Verificar si podemos formar la palabra con las letras disponibles
-      const letterCount = new Map<string, number>();
-      for (const char of totalAlphagram) {
-        letterCount.set(char, (letterCount.get(char) || 0) + 1);
-      }
-      
-      for (const char of wordAlphagram) {
-        if (!letterCount.has(char) || letterCount.get(char) === 0) {
-          if (remainingWildcards > 0) {
-            remainingWildcards--;
-          } else {
-            canForm = false;
-            break;
-          }
-        } else {
-          letterCount.set(char, letterCount.get(char)! - 1);
-        }
-      }
-      
-      if (canForm) {
-        matches.push(word);
-        console.log(`Found valid match: ${word}`);
-      }
-    }
-  } else {
-    // Para búsquedas sin rack letters, mantener la lógica original
-    const searchNode = (node: TrieNode, currentWord: string) => {
-      // If this node is the end of a word, check if it matches the pattern
-      if (node.isEndOfWord) {
-        // The match must be tested against the processed word
-        // Note: Since the pattern is already processed for digraphs,
-        // we're correctly comparing processed to processed
-        if (pattern.test(currentWord)) {
-          // If we have rack letters, validate them against the pattern and word
-          if (hasRackLetters) {
-            // For patterns with rack letters, validate that we can build the word
-            // using only the available rack letters
-            const isValidWithRack = validateWordPattern(currentWord, patternStr, rackLetters);
-            if (isValidWithRack) {
-              matches.push(node.word);
-              console.log(`Found valid match with rack: ${node.word}`);
-            } else {
-              console.log(`Word ${node.word} matches pattern but can't be formed with rack ${rackLetters}`);
-            }
-          } else {
+  // This function recursively searches the trie and collects matching words
+  const searchNode = (node: TrieNode, currentWord: string) => {
+    // If this node is the end of a word, check if it matches the pattern
+    if (node.isEndOfWord) {
+      // The match must be tested against the processed word
+      // Note: Since the pattern is already processed for digraphs,
+      // we're correctly comparing processed to processed
+      if (pattern.test(currentWord)) {
+        // If we have rack letters, validate them against the pattern and word
+        if (hasRackLetters) {
+          // For patterns with rack letters, validate that we can build the word
+          // using the available rack letters
+          const isValidWithRack = validateWordPattern(currentWord, patternStr, rackLetters);
+          if (isValidWithRack) {
             matches.push(node.word);
           }
+        } else {
+          matches.push(node.word);
         }
       }
-      
-      // Continue searching through all children of this node
-      node.children.forEach((childNode, char) => {
-        searchNode(childNode, currentWord + char);
-      });
-    };
+    }
     
-    searchNode(trie, '');
-  }
+    // Continue searching through all children of this node
+    node.children.forEach((childNode, char) => {
+      searchNode(childNode, currentWord + char);
+    });
+  };
   
-  console.log(`Found ${matches.length} matches`);
+  searchNode(trie, '');
   return matches;
 };
 

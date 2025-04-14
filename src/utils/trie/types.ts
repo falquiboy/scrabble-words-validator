@@ -2,7 +2,6 @@ export interface TrieNode {
   children: Map<string, TrieNode>;
   isEndOfWord: boolean;
   word: string;
-  getAllWords(): string[];
 }
 
 export interface SerializedTrieNode {
