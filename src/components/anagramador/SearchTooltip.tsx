@@ -1,12 +1,13 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger
 } from "@/components/ui/tooltip";
-import { X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { HelpCircle } from "lucide-react";
 
 interface SearchTooltipProps {
   isPatternMode: boolean;
@@ -16,46 +17,33 @@ interface SearchTooltipProps {
 export const SearchTooltip = ({ isPatternMode, children }: SearchTooltipProps) => {
   const [showTooltip, setShowTooltip] = useState(false);
 
-  useEffect(() => {
-    // Only show tooltip if it hasn't been shown in this session
-    const hasSeenTooltip = sessionStorage.getItem('pattern-search-tooltip');
-    if (isPatternMode && !hasSeenTooltip) {
-      setShowTooltip(true);
-      sessionStorage.setItem('pattern-search-tooltip', 'true');
-    }
-  }, [isPatternMode]);
-
   if (!isPatternMode) {
     return <>{children}</>;
   }
 
   return (
-    <div className="relative flex-1">
+    <div className="space-y-2">
+      {children}
       <TooltipProvider>
         <Tooltip open={showTooltip} onOpenChange={setShowTooltip}>
           <TooltipTrigger asChild>
-            {children}
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className="h-8 px-2 text-gray-500 hover:text-gray-700"
+            >
+              <HelpCircle className="h-4 w-4 mr-1" />
+              <span className="text-sm">Ayuda con patrones</span>
+            </Button>
           </TooltipTrigger>
           <TooltipContent 
-            side="top" 
-            className="w-80 p-2 text-sm relative"
+            side="bottom" 
+            align="start"
+            className="w-80 p-3 text-sm bg-white"
           >
-            <button 
-              className="absolute top-1 right-1 hover:bg-accent rounded-full p-1"
-              onClick={() => setShowTooltip(false)}
-            >
-              <X className="h-4 w-4" />
-            </button>
-            <p className="mb-1 font-medium">Patrones de búsqueda:</p>
-            <ul className="space-y-1 text-xs">
-              <li><code>-AR</code>: palabras que <b>terminan</b> con "AR"</li>
-              <li><code>CO-</code>: palabras que <b>empiezan</b> con "CO"</li>
-              <li><code>-CI-</code>: palabras que <b>contienen</b> "CI" (en el medio, no al inicio ni al final)</li>
-              <li><code>?</code>: una letra cualquiera</li>
-              <li><code>-AR:6</code>: palabras de <b>exactamente 6 letras</b> que terminan con "AR"</li>
-              <li><code>C??A,LETRA</code>: <b>patrones + fichas</b> - usar las letras "LETRA" para completar el patrón "C??A"</li>
-            </ul>
-            <p className="mt-1 text-xs text-gray-500">Por defecto muestra palabras de hasta 8 letras. Usa el interruptor para ver palabras más largas, o agrega <code>:N</code> para filtrar por longitud exacta.</p>
+            <p>* es cualquier letra en cualquier posicion</p>
+            <p>? es cualquier letra en posición definida</p>
+            <p>- es cero o más letras al comienzo o al término del patrón</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
