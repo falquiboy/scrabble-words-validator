@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { findDigraphPositions } from './digraphUtils';
 import { PatternTypeInfo } from './patternTypes';
@@ -98,8 +99,10 @@ export const highlightBasedOnPatternType = (
         const fixedChar = fixedPattern.charAt(questionIndex + 1);
         
         // If current character matches the fixed character after '?'
+        // ONLY this exact position should be normal, not highlighted
         if (fixedPatternPos >= 0 && 
-            index === fixedPatternPos + questionIndex + 1) {
+            index === fixedPatternPos + questionIndex + 1 &&
+            char.toUpperCase() === fixedChar.toUpperCase()) {
           return (
             <span key={index}>
               {char === 'I' ? <span className="font-mono">{char}</span> : displayText}
@@ -107,19 +110,13 @@ export const highlightBasedOnPatternType = (
           );
         }
         
-        // If this is within the pattern area but not the fixed char, still treat as part of pattern
-        // This keeps the pattern char normal and all other chars blue
-        if (fixedPatternPos >= 0 && 
-            index >= fixedPatternPos && 
-            index < fixedPatternPos + fixedPattern.length && 
-            char.toUpperCase() !== fixedChar.toUpperCase()) {
-          // Highlight in blue - it's part of the matched pattern but not the fixed letter
-          return (
-            <span key={index} className="text-blue-600">
-              {char === 'I' ? <span className="font-mono text-blue-600">{char}</span> : displayText}
-            </span>
-          );
-        }
+        // All other characters in the matched word should be highlighted in blue
+        // regardless of whether they're part of the pattern or not
+        return (
+          <span key={index} className="text-blue-600">
+            {char === 'I' ? <span className="font-mono text-blue-600">{char}</span> : displayText}
+          </span>
+        );
       }
     }
 
