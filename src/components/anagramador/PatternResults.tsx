@@ -1,9 +1,10 @@
 
 import { BaseResults } from "./results/BaseResults";
 import { useState, useEffect } from "react";
-import { highlightPatternMatch } from "@/utils/wildcardHighlighting";
+import { highlightPatternMatch } from "@/utils/highlighting";
 import { translateHyphenPattern } from "@/utils/pattern/translation";
 import { processDigraphs } from "@/utils/digraphs";
+import { detectPatternType } from "@/utils/highlighting";
 
 interface PatternResultsProps {
   matches: string[];
@@ -30,31 +31,16 @@ export const PatternResults = ({
   const cleanPatternPart = patternPart.replace(/:\d+$/, '');
   
   // For special patterns like -NAS, we need custom highlighting
-  const translatedPattern = translateHyphenPattern(cleanPatternPart);
-  const isEndPattern = translatedPattern.endsWith('$') || cleanPatternPart.startsWith('-') && !cleanPatternPart.endsWith('-');
-  const isStartPattern = translatedPattern.startsWith('^') || cleanPatternPart.endsWith('-') && !cleanPatternPart.startsWith('-');
-  const isContainsPattern = cleanPatternPart.startsWith('-') && cleanPatternPart.endsWith('-');
-  
-  // Extract the actual pattern without hyphens for display purposes
-  let cleanPattern = cleanPatternPart;
-  if (isEndPattern && !isContainsPattern) {
-    cleanPattern = cleanPatternPart.slice(1);
-  }
-  if (isStartPattern && !isContainsPattern) {
-    cleanPattern = cleanPattern.slice(0, -1);
-  }
-  if (isContainsPattern) {
-    cleanPattern = cleanPattern.slice(1, -1);
-  }
+  const patternTypeInfo = detectPatternType(cleanPatternPart);
   
   // Determine title based on the pattern type
   let titleText = "";
-  if (isContainsPattern) {
-    titleText = `${uniqueMatches.length} ${uniqueMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que contienen "${cleanPattern}"`;
-  } else if (isStartPattern) {
-    titleText = `${uniqueMatches.length} ${uniqueMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que empiezan con "${cleanPattern}"`;
-  } else if (isEndPattern) {
-    titleText = `${uniqueMatches.length} ${uniqueMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que terminan con "${cleanPattern}"`;
+  if (patternTypeInfo.isContainsPattern) {
+    titleText = `${uniqueMatches.length} ${uniqueMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que contienen "${patternTypeInfo.cleanPattern}"`;
+  } else if (patternTypeInfo.isStartPattern) {
+    titleText = `${uniqueMatches.length} ${uniqueMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que empiezan con "${patternTypeInfo.cleanPattern}"`;
+  } else if (patternTypeInfo.isEndPattern) {
+    titleText = `${uniqueMatches.length} ${uniqueMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que terminan con "${patternTypeInfo.cleanPattern}"`;
   } else {
     titleText = `${uniqueMatches.length} ${uniqueMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que coinciden con el patrón`;
   }

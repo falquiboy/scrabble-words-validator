@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from "react";
 import SearchContainer from "./anagramador/search/SearchContainer";
 import ResultsList from "./anagramador/ResultsList";
 import { useOfflineAnagramSearch } from "@/hooks/useOfflineAnagramSearch";
-import { highlightWildcardLetter } from "@/utils/wildcardHighlighting";
+import { highlightWildcardLetter } from "@/utils/highlighting";
 import { Trie } from "@/utils/trie/types";
 import { SearchResults } from "@/hooks/anagramSearch/types";
 
