@@ -192,21 +192,24 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
   return (
     <span className="inline-flex">
       {word.split('').map((char, index) => {
+        // Find original position in the word considering digraphs
+        const originalIndex = index;
+        
         // Skip if this index is part of an already processed digraph
-        if (digraphPositions.some(pos => pos.end === index)) {
+        if (digraphPositions.some(pos => pos.end === originalIndex)) {
           return null;
         }
 
         // Check if this position is the start of a digraph
-        const isDiGraphStart = digraphPositions.some(pos => pos.start === index);
+        const isDiGraphStart = digraphPositions.some(pos => pos.start === originalIndex);
         
         // Get the actual character or digraph to display
         const displayText = isDiGraphStart ? 
-          `${char}${word[index + 1]}` : char;
+          `${char}${word[originalIndex + 1]}` : char;
         
         // Calculate corresponding position in the processed word
         // This is crucial for matching pattern positions correctly
-        const processedIndex = processDigraphs(word.substring(0, index + 1)).length - 1;
+        const processedIndex = processDigraphs(word.substring(0, originalIndex + 1)).length - 1;
         
         // Check if this character is part of the fixed pattern
         const isFixedPattern = fixedPositions.has(processedIndex);
@@ -219,7 +222,7 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
         // If it's a question mark position, highlight in blue
         if (isQuestionMarkPosition) {
           return (
-            <span key={index} className="text-blue-600 font-semibold">
+            <span key={originalIndex} className="text-blue-600 font-semibold">
               {displayText}
             </span>
           );
@@ -227,37 +230,35 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
         
         // If it's part of the fixed pattern, display as uppercase
         if (isFixedPattern) {
-          return <span key={index} className="font-semibold uppercase">{displayText}</span>;
+          return <span key={originalIndex} className="font-semibold uppercase">{displayText}</span>;
         }
         
-        // For end patterns like -ZAS, we need to highlight ALL prefix characters in blue
-        // These are characters before the fixed pattern (e.g., ABU in ABUZAS)
+        // For end patterns like -ZAS, ALL characters before the pattern should be blue
         if (isEndPattern && !isContainsPattern && processedIndex < fixedStart) {
           return (
-            <span key={index} className="text-blue-600 font-semibold">
+            <span key={originalIndex} className="text-blue-600 font-semibold">
               {displayText}
             </span>
           );
         }
         
-        // For start patterns like CO-, we need to highlight ALL suffix characters in blue
-        // These are characters after the fixed pattern (e.g., RAZAS in CORAZAS)
+        // For start patterns like CO-, ALL characters after the pattern should be blue
         if (isStartPattern && !isContainsPattern && processedIndex > fixedEnd) {
           return (
-            <span key={index} className="text-blue-600 font-semibold">
+            <span key={originalIndex} className="text-blue-600 font-semibold">
               {displayText}
             </span>
           );
         }
         
-        // Check if it's likely a wildcard
+        // For other characters, check if they might be from wildcards
         const isLikelyWildcard = hasWildcard && 
                                !processedRack.replace(/\*/g, '').includes(char.toUpperCase());
                                
         // If it's a likely wildcard, highlight in red and lowercase
         if (isLikelyWildcard) {
           return (
-            <span key={index} className="text-red-600 font-semibold lowercase">
+            <span key={originalIndex} className="text-red-600 font-semibold lowercase">
               {displayText}
             </span>
           );
@@ -265,7 +266,7 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
         
         // Regular rack letter (non-wildcard)
         return (
-          <span key={index} className="text-blue-600 font-semibold">
+          <span key={originalIndex} className="text-blue-600 font-semibold">
             {displayText}
           </span>
         );
