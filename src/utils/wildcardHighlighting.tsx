@@ -230,7 +230,7 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
           return <span key={index} className="font-semibold uppercase">{displayText}</span>;
         }
         
-        // For end patterns like -ZAS, we need to highlight the prefix characters in blue
+        // For end patterns like -ZAS, we need to highlight ALL prefix characters in blue
         // These are characters before the fixed pattern (e.g., ABU in ABUZAS)
         if (isEndPattern && !isContainsPattern && processedIndex < fixedStart) {
           return (
@@ -240,7 +240,7 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
           );
         }
         
-        // For start patterns like CO-, we need to highlight the suffix characters in blue
+        // For start patterns like CO-, we need to highlight ALL suffix characters in blue
         // These are characters after the fixed pattern (e.g., RAZAS in CORAZAS)
         if (isStartPattern && !isContainsPattern && processedIndex > fixedEnd) {
           return (
