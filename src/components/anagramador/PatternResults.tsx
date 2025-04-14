@@ -31,7 +31,6 @@ export const PatternResults = ({
   const isEndPattern = translatedPattern.endsWith('$') || patternPart.startsWith('-') && !patternPart.endsWith('-');
   const isStartPattern = translatedPattern.startsWith('^') || patternPart.endsWith('-') && !patternPart.startsWith('-');
   const isContainsPattern = patternPart.startsWith('-') && patternPart.endsWith('-');
-  const shouldExtendPattern = patternPart.endsWith('-');
   
   // Extract the actual pattern without hyphens and process digraphs for highlighting
   let cleanPattern = patternPart;

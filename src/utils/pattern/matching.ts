@@ -60,6 +60,7 @@ export const findPatternMatches = async (
         rackPart.trim(), 
         trie, 
         patternEndsWithHyphen,
+        patternStartsWithHyphen && !patternEndsWithHyphen,
         isContainsPattern
       );
     } else {
@@ -92,6 +93,7 @@ const findPatternMatchesWithRack = async (
   rackLetters: string,
   trie: Trie,
   extendPattern: boolean = false,
+  prefixPattern: boolean = false,
   isContainsPattern: boolean = false
 ): Promise<string[]> => {
   console.log('Generating combinations for pattern', pattern, 'with rack letters', rackLetters, 'extend:', extendPattern, 'contains:', isContainsPattern);
@@ -111,8 +113,8 @@ const findPatternMatchesWithRack = async (
   processedPattern = processedPattern.replace(/\.\*/g, '').replace(/\.\+/g, '');
   
   // Si el patrón contiene comodines o se debe extender
-  if (processedPattern.includes('?') || extendPattern || isContainsPattern) {
-    return findWildcardPatternMatches(processedPattern, rackLetters, trie, extendPattern, isContainsPattern);
+  if (processedPattern.includes('?') || extendPattern || prefixPattern || isContainsPattern) {
+    return findWildcardPatternMatches(processedPattern, rackLetters, trie, extendPattern, prefixPattern, isContainsPattern);
   }
   
   const formattedPattern = processedPattern;
@@ -147,9 +149,10 @@ const findWildcardPatternMatches = async (
   rackLetters: string,
   trie: Trie,
   extendPattern: boolean = false,
+  prefixPattern: boolean = false,
   isContainsPattern: boolean = false
 ): Promise<string[]> => {
-  console.log(`Buscando coincidencias para patrón con comodín: ${pattern}, extender: ${extendPattern}, contiene: ${isContainsPattern}`);
+  console.log(`Buscando coincidencias para patrón con comodín: ${pattern}, extender: ${extendPattern}, prefijo: ${prefixPattern}, contiene: ${isContainsPattern}`);
   
   // Primero, buscar coincidencias exactas con el patrón base
   let allMatches: string[] = [];
@@ -179,6 +182,8 @@ const findWildcardPatternMatches = async (
     }
   }
   
+  console.log(`Rack letters available:`, Object.fromEntries(availableLetters.entries()), `Wildcards: ${wildcards}`);
+  
   // Generar variaciones del patrón básico (reemplazando comodines)
   await generateAllPatternVariations(
     patternChars, 
@@ -189,16 +194,18 @@ const findWildcardPatternMatches = async (
     trie, 
     allMatches,
     rackLetters,
-    isContainsPattern
+    isContainsPattern,
+    extendPattern,
+    prefixPattern
   );
   
   // Si necesitamos extender el patrón o buscar en cualquier posición (contains),
   // buscar palabras que incluyan las variaciones básicas
-  if ((extendPattern || isContainsPattern) && basePatches.length > 0) {
+  if ((extendPattern || prefixPattern || isContainsPattern) && basePatches.length > 0) {
     console.log('Extendiendo o buscando en cualquier posición con patrones base:', basePatches);
     const extendedMatches: string[] = [];
     
-    // Palabras cortas para optimizar la búsqueda
+    // Palabras para optimizar la búsqueda
     const baseWords = trie.getAllWords();
     
     // Por cada variación del patrón base, buscar extensiones o inclusiones
@@ -242,6 +249,35 @@ const findWildcardPatternMatches = async (
           } else if (word.length === basePattern.length) {
             // Incluir las coincidencias exactas también
             extendedMatches.push(word);
+          }
+        }
+      } else if (prefixPattern) {
+        // Buscar palabras que terminen con el patrón base y tengan prefijos
+        const baseLetterUsed = countLettersUsed(basePattern, new Map());
+        
+        // Calcular letras disponibles después de usar el patrón base
+        const remainingLetters = new Map<string, number>();
+        let remainingWildcards = wildcards;
+        
+        for (const [letter, count] of availableLetters.entries()) {
+          const used = baseLetterUsed.get(letter) || 0;
+          if (count > used) {
+            remainingLetters.set(letter, count - used);
+          }
+        }
+        
+        // Buscar palabras que terminen con el patrón base
+        for (const word of baseWords) {
+          if (word.endsWith(basePattern)) {
+            if (word.length > basePattern.length) {
+              const prefix = word.slice(0, word.length - basePattern.length);
+              if (canFormWithRack(prefix, new Map(remainingLetters), remainingWildcards)) {
+                extendedMatches.push(word);
+              }
+            } else if (word.length === basePattern.length) {
+              // Incluir las coincidencias exactas también
+              extendedMatches.push(word);
+            }
           }
         }
       }
@@ -388,7 +424,9 @@ const generateAllPatternVariations = async (
   trie: Trie,
   results: string[],
   rackLetters: string,
-  isContainsPattern: boolean = false
+  isContainsPattern: boolean = false,
+  extendPattern: boolean = false,
+  prefixPattern: boolean = false
 ): Promise<void> => {
   if (currentPosition >= wildcardPositions.length) {
     const finalPattern = patternChars.join('');
@@ -396,7 +434,7 @@ const generateAllPatternVariations = async (
     
     // Si estamos en modo "contiene", no necesitamos buscar coincidencias exactas aquí
     // Las buscaremos después con la función específica para patrones "contiene"
-    if (!isContainsPattern) {
+    if (!isContainsPattern && !extendPattern && !prefixPattern) {
       const isStartPattern = finalPattern.startsWith('^');
       const isEndPattern = finalPattern.endsWith('$');
       
@@ -431,10 +469,14 @@ const generateAllPatternVariations = async (
   
   // For each wildcard position, try all letters from the rack
   if (rackLetters && rackLetters.trim().length > 0) {
+    // Track if we've used any letters from the rack to fill the wildcard
+    let usedRackLetter = false;
+    
     // Try all letters from the rack first (prioritize using rack letters)
     for (const [letter, count] of remainingLetters.entries()) {
       if (count > 0) {
         patternChars[wildcardPos] = letter;
+        usedRackLetter = true;
         
         const newRemainingLetters = new Map(remainingLetters);
         newRemainingLetters.set(letter, count - 1);
@@ -448,7 +490,9 @@ const generateAllPatternVariations = async (
           trie,
           results,
           rackLetters,
-          isContainsPattern
+          isContainsPattern,
+          extendPattern,
+          prefixPattern
         );
       }
     }
@@ -457,6 +501,7 @@ const generateAllPatternVariations = async (
     if (remainingWildcards > 0) {
       for (const letter of SPANISH_LETTERS) {
         patternChars[wildcardPos] = letter;
+        usedRackLetter = true;
         
         await generateAllPatternVariations(
           patternChars,
@@ -467,9 +512,18 @@ const generateAllPatternVariations = async (
           trie,
           results,
           rackLetters,
-          isContainsPattern
+          isContainsPattern,
+          extendPattern,
+          prefixPattern
         );
       }
+    }
+    
+    // If we haven't used any rack letter (neither regular nor wildcard),
+    // we need to handle that edge case to prevent recursion from stopping
+    if (!usedRackLetter) {
+      // If we can't fill the wildcard, we shouldn't continue with this branch
+      patternChars[wildcardPos] = '?'; // Restore the original wildcard
     }
   } else {
     // If no rack letters provided, try all possible letters
@@ -485,11 +539,12 @@ const generateAllPatternVariations = async (
         trie,
         results,
         rackLetters,
-        isContainsPattern
+        isContainsPattern,
+        extendPattern,
+        prefixPattern
       );
     }
   }
   
   patternChars[wildcardPos] = '?';
 };
-
