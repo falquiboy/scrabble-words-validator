@@ -14,40 +14,38 @@ export const SearchTooltip = ({
   children
 }: SearchTooltipProps) => {
   const [showTooltip, setShowTooltip] = useState(false);
-  
-  if (!isPatternMode) {
-    return <>{children}</>;
-  }
 
   return (
-    <div className="space-y-2">
+    <>
       {children}
-      <TooltipProvider>
-        <Tooltip open={showTooltip} onOpenChange={setShowTooltip}>
-          <TooltipTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-8 px-2 text-gray-500 hover:text-gray-700 w-full"
-            >
-              <HelpCircle className="h-4 w-4 mr-2" />
-              <span className="text-sm">Ayuda de Patrones</span>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" align="start" className="w-80 p-3 text-sm bg-white">
-            <div className="space-y-2">
-              <p>* es cualquier letra en cualquier posicion</p>
-              <p>? es cualquier letra en posición definida</p>
-              <p>- es cero o más letras al comienzo o al término del patrón</p>
-              <div className="border-t border-gray-200 mt-2 pt-2">
-                <p className="font-bold">PATRON,LETRAS</p>
-                <p>Rellena el patrón solo con las letras disponibles.</p>
-                <p>Ej. -S?R-,AEOCN = CASERON, entre otros.</p>
+      {isPatternMode && (
+        <TooltipProvider>
+          <Tooltip open={showTooltip} onOpenChange={setShowTooltip}>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-10 w-full mt-2"
+                onClick={() => setShowTooltip(!showTooltip)}
+              >
+                <HelpCircle className="h-5 w-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" align="start" className="w-80 p-3 text-sm bg-white">
+              <div className="space-y-2">
+                <p>* es cualquier letra en cualquier posicion</p>
+                <p>? es cualquier letra en posición definida</p>
+                <p>- es cero o más letras al comienzo o al término del patrón</p>
+                <div className="border-t border-gray-200 mt-2 pt-2">
+                  <p className="font-bold">PATRON,LETRAS</p>
+                  <p>Rellena el patrón solo con las letras disponibles.</p>
+                  <p>Ej. -S?R-,AEOCN = CASERON, entre otros.</p>
+                </div>
               </div>
-            </div>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
+    </>
   );
 };
