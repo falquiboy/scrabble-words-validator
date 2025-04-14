@@ -2,6 +2,7 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import SearchResults from "./search/SearchResults";
+import { toDisplayFormat } from "@/utils/digraphs";
 
 interface ResultsListProps {
   isLoading: boolean;
@@ -65,10 +66,13 @@ const ResultsList = ({
       }
     }
 
-    navigator.clipboard.writeText(allWords.join('\n')).then(() => {
+    // Convertir cada palabra a su formato de visualización antes de copiar
+    const formattedWords = allWords.map(word => toDisplayFormat(word));
+
+    navigator.clipboard.writeText(formattedWords.join('\n')).then(() => {
       toast({
         title: "¡Copiado!",
-        description: `${allWords.length} ${allWords.length === 1 ? 'palabra copiada' : 'palabras copiadas'}`,
+        description: `${formattedWords.length} ${formattedWords.length === 1 ? 'palabra copiada' : 'palabras copiadas'}`,
       });
     }).catch(() => {
       toast({

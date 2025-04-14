@@ -15,6 +15,8 @@ const ResultsList = ({ results }: ResultsListProps) => {
 
   const handleCopyAll = async () => {
     try {
+      // Las palabras ya están en formato de visualización en este componente
+      // porque fueron convertidas en el componente Lists.tsx
       await navigator.clipboard.writeText(results.join('\n'));
       toast.success(`${results.length} palabras copiadas al portapapeles`);
     } catch (error) {
