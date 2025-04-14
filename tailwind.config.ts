@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -80,7 +81,7 @@ export default {
         "tile-bounce": "tile-bounce 0.3s ease-in-out",
       },
       fontFamily: {
-        'roboto-mono': ['Roboto Mono', 'monospace'],
+        'jetbrains': ['JetBrains Mono', 'monospace'],
       },
     },
   },

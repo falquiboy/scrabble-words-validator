@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { findDigraphPositions } from './digraphUtils';
 import { PatternTypeInfo } from './patternTypes';
@@ -32,10 +31,10 @@ export const highlightBasedOnPatternType = (
       processedIndices.add(digraph.end);
     }
     
-    // For end patterns like -ZAS, ALL characters before the pattern should be blue
+    // For end patterns like -ZAS, ALL characters before the pattern should be highlighted
     if (patternType.isEndPattern && fixedPatternPos > 0 && index < fixedPatternPos) {
       return (
-        <span key={index} className="text-blue-600 font-semibold">
+        <span key={index} className="text-blue-600">
           {displayText}
         </span>
       );
@@ -51,11 +50,11 @@ export const highlightBasedOnPatternType = (
       );
     }
 
-    // For start patterns like CO-, ALL characters after the pattern should be blue
+    // For start patterns like CO-, ALL characters after the pattern should be highlighted
     if (patternType.isStartPattern && fixedPatternPos >= 0 && 
         index >= fixedPatternPos + fixedPattern.length) {
       return (
-        <span key={index} className="text-blue-600 font-semibold">
+        <span key={index} className="text-blue-600">
           {displayText}
         </span>
       );
@@ -84,25 +83,25 @@ export const highlightBasedOnPatternType = (
       
       // If outside the fixed pattern, highlight in blue
       return (
-        <span key={index} className="text-blue-600 font-semibold">
+        <span key={index} className="text-blue-600">
           {displayText}
         </span>
       );
     }
 
     // For cases not covered by the specific patterns above
-    // If it's a likely wildcard, highlight in red and lowercase
+    // If it's a likely wildcard, use red color and lowercase, but no bold
     if (isLikelyWildcard(char)) {
       return (
-        <span key={index} className="text-red-600 font-semibold lowercase">
+        <span key={index} className="text-red-600 lowercase">
           {displayText}
         </span>
       );
     }
 
-    // Regular rack letter (non-wildcard) - highlight in blue
+    // Regular rack letter (non-wildcard) - highlight in blue without bold
     return (
-      <span key={index} className="text-blue-600 font-semibold">
+      <span key={index} className="text-blue-600">
         {displayText}
       </span>
     );

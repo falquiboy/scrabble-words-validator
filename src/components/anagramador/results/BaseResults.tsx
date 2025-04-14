@@ -58,7 +58,7 @@ export const BaseResults = ({
                   href={`https://dle.rae.es/?w=${displayWord}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:bg-gray-100 p-1.5 rounded transition-colors text-lg font-roboto-mono tracking-wider"
+                  className="hover:bg-gray-100 p-1.5 rounded transition-colors text-lg font-jetbrains"
                 >
                   <span className="flex items-center gap-2">
                     {highlightWildcardLetter && searchTerm 
