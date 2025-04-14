@@ -233,6 +233,11 @@ const findWildcardPatternMatches = async (
           const used = baseLetterUsed.get(letter) || 0;
           if (count > used) {
             remainingLetters.set(letter, count - used);
+          } else {
+            const deficit = used - count;
+            if (remainingWildcards >= deficit) {
+              remainingWildcards -= deficit;
+            }
           }
         }
         
@@ -263,6 +268,11 @@ const findWildcardPatternMatches = async (
           const used = baseLetterUsed.get(letter) || 0;
           if (count > used) {
             remainingLetters.set(letter, count - used);
+          } else {
+            const deficit = used - count;
+            if (remainingWildcards >= deficit) {
+              remainingWildcards -= deficit;
+            }
           }
         }
         
@@ -297,11 +307,16 @@ const canFormWordWithRack = (
   rackLetters: string,
   basePattern: string
 ): boolean => {
-  // Contar las letras disponibles en el rack
+  // Primero, identificar índices donde aparece el patrón base
+  const patternIndex = word.indexOf(basePattern);
+  if (patternIndex === -1) return false;
+  
+  // Contar letras disponibles en el rack
   const availableLetters = new Map<string, number>();
   let wildcards = 0;
   
-  for (const char of processDigraphs(rackLetters.toUpperCase())) {
+  const processedRack = processDigraphs(rackLetters.toUpperCase());
+  for (const char of processedRack) {
     if (char === '*') {
       wildcards++;
     } else {
@@ -309,53 +324,41 @@ const canFormWordWithRack = (
     }
   }
   
-  // Primero, descontar las letras del patrón base
+  // Ahora, comprobar si podemos formar el resto de la palabra
+  const wordLetters = new Map<string, number>();
+  
+  // Contar todas las letras en la palabra
+  for (const char of word) {
+    wordLetters.set(char, (wordLetters.get(char) || 0) + 1);
+  }
+  
+  // Descontar letras del patrón base (no las necesitamos formar)
   for (const char of basePattern) {
-    const count = availableLetters.get(char) || 0;
-    if (count > 0) {
-      availableLetters.set(char, count - 1);
-    } else if (wildcards > 0) {
-      wildcards--;
+    const currentCount = wordLetters.get(char) || 0;
+    if (currentCount > 0) {
+      wordLetters.set(char, currentCount - 1);
+      if (wordLetters.get(char) === 0) {
+        wordLetters.delete(char);
+      }
     }
   }
   
-  // Ahora verificar si podemos formar el resto de la palabra
-  for (const char of word) {
-    // Si esta letra ya es parte del patrón base en esta posición, no necesitamos contarla de nuevo
-    if (basePattern.includes(char)) {
-      // Seguimos verificando si hay suficientes de esta letra
-      const patternCountOfChar = [...basePattern].filter(c => c === char).length;
-      const wordCountOfChar = [...word].filter(c => c === char).length;
-      
-      // Si necesitamos más de esta letra de las que ya contamos en el patrón
-      if (wordCountOfChar > patternCountOfChar) {
-        const additionalNeeded = wordCountOfChar - patternCountOfChar;
-        
-        const available = availableLetters.get(char) || 0;
-        if (available >= additionalNeeded) {
-          availableLetters.set(char, available - additionalNeeded);
-        } else {
-          // Necesitamos usar comodines para las letras restantes
-          const needWildcards = additionalNeeded - available;
-          if (wildcards >= needWildcards) {
-            wildcards -= needWildcards;
-            if (available > 0) {
-              availableLetters.set(char, 0);
-            }
-          } else {
-            return false; // No tenemos suficientes comodines
-          }
-        }
-      }
+  // Verificar si tenemos suficientes letras para formar el resto
+  for (const [letter, count] of wordLetters.entries()) {
+    const available = availableLetters.get(letter) || 0;
+    if (available >= count) {
+      availableLetters.set(letter, available - count);
     } else {
-      // Esta letra no es parte del patrón, necesitamos formarla con el rack
-      const available = availableLetters.get(char) || 0;
-      if (available > 0) {
-        availableLetters.set(char, available - 1);
-      } else if (wildcards > 0) {
-        wildcards--;
+      // Necesitamos usar comodines
+      const neededWildcards = count - available;
+      if (wildcards >= neededWildcards) {
+        wildcards -= neededWildcards;
+        if (available > 0) {
+          availableLetters.set(letter, 0);
+        }
       } else {
-        return false; // No podemos formar esta letra
+        // No tenemos suficientes comodines
+        return false;
       }
     }
   }
@@ -385,6 +388,9 @@ const canFormWithRack = (
       const needed = count - available;
       if (wildcards >= needed) {
         wildcards -= needed;
+        if (available > 0) {
+          availableLetters.set(letter, 0);
+        }
       } else {
         return false;
       }

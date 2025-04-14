@@ -47,10 +47,22 @@ export const PatternResults = ({
   // Process the clean pattern for digraphs
   const processedCleanPattern = processDigraphs(cleanPattern);
   
+  // Determine title based on the pattern type
+  let titleText = "";
+  if (isContainsPattern) {
+    titleText = `${uniqueMatches.length} ${uniqueMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que contienen "${cleanPattern}"`;
+  } else if (isStartPattern) {
+    titleText = `${uniqueMatches.length} ${uniqueMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que empiezan con "${cleanPattern}"`;
+  } else if (isEndPattern) {
+    titleText = `${uniqueMatches.length} ${uniqueMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que terminan con "${cleanPattern}"`;
+  } else {
+    titleText = `${uniqueMatches.length} ${uniqueMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que coinciden con el patrón`;
+  }
+  
   return (
     <BaseResults
       matches={uniqueMatches}
-      title={`${uniqueMatches.length} ${uniqueMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que coinciden con el patrón:`}
+      title={titleText}
       highlightWildcardLetter={hasRackLetters ? 
         (word) => highlightPatternMatch(word, patternPart, rackPart) : 
         undefined}

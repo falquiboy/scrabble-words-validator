@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { processDigraphs } from './digraphs';
 import { translateHyphenPattern } from './pattern/translation';
@@ -118,7 +117,6 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
   const translatedPattern = translateHyphenPattern(pattern);
 
   // Process the pattern to handle digraphs
-  // This is the key fix for highlighting pattern matches with digraphs
   const processedPattern = processDigraphs(translatedPattern);
 
   // Determine pattern type (starts with, ends with, contains)
@@ -225,7 +223,7 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
         // If it's not part of the fixed pattern, it's a rack letter (possibly with wildcard)
         // Highlight rack letters used with wildcard in lowercase (blank tile convention)
         const isLikelyWildcard = hasWildcard && 
-                                !processedRack.replace(/\*/g, '').includes(processedWord[processedIndex]);
+                                !processedRack.replace(/\*/g, '').includes(char.toUpperCase());
         
         if (isLikelyWildcard) {
           return (
