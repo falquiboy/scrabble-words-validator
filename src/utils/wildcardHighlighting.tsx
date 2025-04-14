@@ -188,80 +188,85 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
   // Find digraph positions in the original word
   const digraphPositions = findDigraphPositions(word);
   
+  // Build a map of indices to CSS classes for highlighting
+  const highlightClasses: Map<number, string> = new Map();
+  const processedIndices: Set<number> = new Set(); // Track indices we've already processed
+
   // Return the word with highlighted characters
   return (
     <span className="inline-flex">
       {word.split('').map((char, index) => {
-        // Find original position in the word considering digraphs
-        const originalIndex = index;
-        
         // Skip if this index is part of an already processed digraph
-        if (digraphPositions.some(pos => pos.end === originalIndex)) {
-          return null;
-        }
+        if (processedIndices.has(index)) return null;
 
-        // Check if this position is the start of a digraph
-        const isDiGraphStart = digraphPositions.some(pos => pos.start === originalIndex);
-        
+        // Find if this position is part of a digraph
+        const isDiGraphStart = digraphPositions.some(pos => pos.start === index);
+        const digraph = digraphPositions.find(pos => pos.start === index);
+
         // Get the actual character or digraph to display
         const displayText = isDiGraphStart ? 
-          `${char}${word[originalIndex + 1]}` : char;
-        
+          `${char}${word[index + 1]}` : char;
+
+        // If this is a digraph, mark both positions as processed
+        if (isDiGraphStart && digraph) {
+          processedIndices.add(digraph.end);
+        }
+
         // Calculate corresponding position in the processed word
         // This is crucial for matching pattern positions correctly
-        const processedIndex = processDigraphs(word.substring(0, originalIndex + 1)).length - 1;
-        
+        const processedIndex = processDigraphs(word.substring(0, index + 1)).length - 1;
+
         // Check if this character is part of the fixed pattern
         const isFixedPattern = fixedPositions.has(processedIndex);
-        
+
         // Handle question mark positions if any
         const isQuestionMarkPosition = questionMarkPositions.some(pos => 
           processedIndex === pos || (fixedStart > 0 && processedIndex === fixedStart + pos)
         );
-        
+
         // If it's a question mark position, highlight in blue
         if (isQuestionMarkPosition) {
           return (
-            <span key={originalIndex} className="text-blue-600 font-semibold">
+            <span key={index} className="text-blue-600 font-semibold">
               {displayText}
             </span>
           );
         }
-        
+
         // If it's part of the fixed pattern, display as normal (not highlighted)
         if (isFixedPattern) {
-          return <span key={originalIndex} className="font-semibold">{displayText}</span>;
+          return <span key={index} className="font-semibold">{displayText}</span>;
         }
-        
+
         // For end patterns like -ZAS, ALL characters before the pattern should be blue
         // These are the letters that "fill" the pattern
         if (isEndPattern && !isContainsPattern && processedIndex < fixedStart) {
           return (
-            <span key={originalIndex} className="text-blue-600 font-semibold">
+            <span key={index} className="text-blue-600 font-semibold">
               {displayText}
             </span>
           );
         }
-        
+
         // For start patterns like CO-, ALL characters after the pattern should be blue
         // These are the letters that "fill" the pattern
         if (isStartPattern && !isContainsPattern && processedIndex > fixedEnd) {
           return (
-            <span key={originalIndex} className="text-blue-600 font-semibold">
+            <span key={index} className="text-blue-600 font-semibold">
               {displayText}
             </span>
           );
         }
-        
+
         // For contains patterns, highlight everything except the pattern
         if (isContainsPattern && !isFixedPattern) {
           return (
-            <span key={originalIndex} className="text-blue-600 font-semibold">
+            <span key={index} className="text-blue-600 font-semibold">
               {displayText}
             </span>
           );
         }
-        
+
         // For other characters that aren't part of the fixed pattern, 
         // check if they might be from wildcards
         const isLikelyWildcard = hasWildcard && 
@@ -270,15 +275,15 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
         // If it's a likely wildcard, highlight in red and lowercase
         if (isLikelyWildcard) {
           return (
-            <span key={originalIndex} className="text-red-600 font-semibold lowercase">
+            <span key={index} className="text-red-600 font-semibold lowercase">
               {displayText}
             </span>
           );
         }
-        
+
         // Regular rack letter (non-wildcard) - highlight in blue
         return (
-          <span key={originalIndex} className="text-blue-600 font-semibold">
+          <span key={index} className="text-blue-600 font-semibold">
             {displayText}
           </span>
         );
