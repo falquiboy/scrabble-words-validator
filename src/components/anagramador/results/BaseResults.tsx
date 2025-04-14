@@ -1,4 +1,3 @@
-
 import { processDigraphs, getInternalLength, toDisplayFormat } from "@/utils/digraphs";
 import { calculateWordScore } from "@/utils/scrabbleScore";
 
