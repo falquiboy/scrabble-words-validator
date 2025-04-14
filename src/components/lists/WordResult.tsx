@@ -13,7 +13,7 @@ const WordResult = ({ word }: WordResultProps) => {
       href={raeUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="bg-gray-50 hover:bg-[#D6BCFA] p-2 rounded text-center transition-colors"
+      className="bg-gray-50 hover:bg-gray-100 p-2 rounded text-center transition-colors font-semibold"
       aria-label={`Buscar "${word}" en el diccionario RAE`}
     >
       {word}

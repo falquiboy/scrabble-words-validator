@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { processDigraphs } from './digraphs';
 import { translateHyphenPattern } from './pattern/translation';
@@ -83,11 +84,13 @@ export const highlightWildcardLetter = (word: string, searchTerm: string): React
           if (index === digraph.start) {
             // Only render the digraph at its start position
             return isUnmatched ? (
-              <span key={index} className="text-red-600 font-semibold">
+              <span key={index} className="text-red-600 font-semibold lowercase">
                 {char}{word[index + 1]}
               </span>
             ) : (
-              <span key={index}>{char}{word[index + 1]}</span>
+              <span key={index} className="font-semibold">
+                {char}{word[index + 1]}
+              </span>
             );
           } else if (index === digraph.end) {
             // Skip the second character of the digraph
@@ -97,9 +100,13 @@ export const highlightWildcardLetter = (word: string, searchTerm: string): React
         
         // Handle regular characters
         return isUnmatched ? (
-          <span key={index} className="text-red-600 font-semibold">{char}</span>
+          <span key={index} className="text-red-600 font-semibold lowercase">
+            {char}
+          </span>
         ) : (
-          <span key={index}>{char}</span>
+          <span key={index} className="font-semibold">
+            {char}
+          </span>
         );
       })}
     </span>
@@ -206,25 +213,25 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
           processedIndex === pos || (fixedStart > 0 && processedIndex === fixedStart + pos)
         );
         
-        // If it's part of the fixed pattern and not a question mark, display normally
-        if (isFixedPattern && !isQuestionMarkPosition) {
-          return <span key={index}>{displayText}</span>;
-        }
-        
-        // Handle question mark positions specially
+        // If it's a question mark position, highlight in blue
         if (isQuestionMarkPosition) {
           return (
-            <span key={index} className="text-purple-600 font-semibold">
+            <span key={index} className="text-blue-600 font-semibold">
               {displayText}
             </span>
           );
         }
         
-        // If it's not part of the fixed pattern, it's a rack letter (possibly with wildcard)
-        // Highlight rack letters used with wildcard in lowercase (blank tile convention)
-        const isLikelyWildcard = hasWildcard && 
-                                !processedRack.replace(/\*/g, '').includes(char.toUpperCase());
+        // If it's part of the fixed pattern, display as uppercase
+        if (isFixedPattern) {
+          return <span key={index} className="font-semibold uppercase">{displayText}</span>;
+        }
         
+        // Check if it's likely a wildcard
+        const isLikelyWildcard = hasWildcard && 
+                               !processedRack.replace(/\*/g, '').includes(char.toUpperCase());
+                               
+        // If it's a likely wildcard, highlight in red and lowercase
         if (isLikelyWildcard) {
           return (
             <span key={index} className="text-red-600 font-semibold lowercase">
@@ -235,7 +242,7 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
         
         // Regular rack letter (non-wildcard)
         return (
-          <span key={index} className="text-blue-600">
+          <span key={index} className="text-blue-600 font-semibold">
             {displayText}
           </span>
         );
