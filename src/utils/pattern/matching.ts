@@ -1,4 +1,3 @@
-
 import { Trie } from "../trie/types";
 import { searchTrie } from "../trie/search";
 import { convertPatternToRegex } from "./conversion";
@@ -19,6 +18,7 @@ export const findPatternMatches = async (
 ): Promise<string[]> => {
   // Limpiar los patrones base de búsquedas anteriores
   basePatches.length = 0;
+  console.log('Starting pattern search with:', { pattern, showLongerWords, targetLength });
 
   const patternParts = pattern.split(':');
   let processedPattern = pattern;
@@ -312,11 +312,12 @@ const canFormWordWithRackExact = (
   word: string,
   rackLetters: string
 ): boolean => {
+  console.log(`Checking if '${word}' can be formed with rack '${rackLetters}'`);
   const wordLetters = new Map<string, number>();
   const availableLetters = new Map<string, number>();
   let wildcards = 0;
   
-  const processedWord = processDigraphs(word);
+  const processedWord = processDigraphs(word.toUpperCase());
   const processedRack = processDigraphs(rackLetters.toUpperCase());
   
   // Contar letras en la palabra
@@ -333,6 +334,9 @@ const canFormWordWithRackExact = (
     }
   }
   
+  console.log('Word letters:', Object.fromEntries(wordLetters));
+  console.log('Available rack letters:', Object.fromEntries(availableLetters), `Wildcards: ${wildcards}`);
+  
   // Verificar si tenemos suficientes letras para formar la palabra
   for (const [letter, count] of wordLetters.entries()) {
     const available = availableLetters.get(letter) || 0;
@@ -347,6 +351,7 @@ const canFormWordWithRackExact = (
           availableLetters.set(letter, 0);
         }
       } else {
+        console.log(`Cannot form word: not enough of letter ${letter}, need ${count}, have ${available}, wildcards: ${wildcards}`);
         return false;
       }
     } else {
@@ -355,6 +360,7 @@ const canFormWordWithRackExact = (
     }
   }
   
+  console.log('Can form word with rack');
   return true;
 };
 
@@ -365,10 +371,6 @@ const canFormWordWithRack = (
   rackLetters: string,
   basePattern: string
 ): boolean => {
-  // Primero, identificar índices donde aparece el patrón base
-  const patternIndex = word.indexOf(basePattern);
-  if (patternIndex === -1) return false;
-  
   // Verificar si podemos formar la palabra completa con las letras disponibles
   return canFormWordWithRackExact(word, rackLetters);
 };
@@ -445,6 +447,9 @@ const generateAllPatternVariations = async (
     const finalPattern = patternChars.join('');
     basePatches.push(finalPattern);
     
+    // Improve debugging
+    console.log(`Generated pattern variation: ${finalPattern}`);
+    
     // Si estamos en modo "contiene", no necesitamos buscar coincidencias exactas aquí
     // Las buscaremos después con la función específica para patrones "contiene"
     if (!isContainsPattern && !extendPattern && !prefixPattern) {
@@ -468,7 +473,15 @@ const generateAllPatternVariations = async (
           if (trie.search(word)) {
             const foundWords = trie.getWordsStartingWith(word).filter(w => w.length === word.length);
             // Verificar que podemos formar cada palabra con las letras del rack
-            const validWords = foundWords.filter(w => canFormWordWithRackExact(w, rackLetters));
+            const validWords = foundWords.filter(w => {
+              const canForm = canFormWordWithRackExact(w, rackLetters);
+              return canForm;
+            });
+            
+            if (validWords.length > 0) {
+              console.log(`Found ${validWords.length} valid words for pattern ${cleanPattern}`);
+            }
+            
             results.push(...validWords);
           }
         }

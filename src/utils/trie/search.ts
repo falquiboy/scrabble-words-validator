@@ -1,4 +1,3 @@
-
 import { TrieNode } from "./types";
 import { processDigraphs } from "../digraphs";
 import { validateWordPattern } from "../pattern/validation";
@@ -47,6 +46,9 @@ export const searchTrie = async (trie: TrieNode, pattern: RegExp, rackLetters: s
           const isValidWithRack = validateWordPattern(currentWord, patternStr, rackLetters);
           if (isValidWithRack) {
             matches.push(node.word);
+            console.log(`Found valid match with rack: ${node.word}`);
+          } else {
+            console.log(`Word ${node.word} matches pattern but can't be formed with rack ${rackLetters}`);
           }
         } else {
           matches.push(node.word);
@@ -61,6 +63,7 @@ export const searchTrie = async (trie: TrieNode, pattern: RegExp, rackLetters: s
   };
   
   searchNode(trie, '');
+  console.log(`Found ${matches.length} matches for pattern ${patternStr} with rack ${rackLetters}`);
   return matches;
 };
 
