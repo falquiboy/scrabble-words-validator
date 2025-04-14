@@ -228,12 +228,13 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
           );
         }
         
-        // If it's part of the fixed pattern, display as uppercase
+        // If it's part of the fixed pattern, display as normal (not highlighted)
         if (isFixedPattern) {
-          return <span key={originalIndex} className="font-semibold uppercase">{displayText}</span>;
+          return <span key={originalIndex} className="font-semibold">{displayText}</span>;
         }
         
         // For end patterns like -ZAS, ALL characters before the pattern should be blue
+        // These are the letters that "fill" the pattern
         if (isEndPattern && !isContainsPattern && processedIndex < fixedStart) {
           return (
             <span key={originalIndex} className="text-blue-600 font-semibold">
@@ -243,6 +244,7 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
         }
         
         // For start patterns like CO-, ALL characters after the pattern should be blue
+        // These are the letters that "fill" the pattern
         if (isStartPattern && !isContainsPattern && processedIndex > fixedEnd) {
           return (
             <span key={originalIndex} className="text-blue-600 font-semibold">
@@ -251,7 +253,17 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
           );
         }
         
-        // For other characters, check if they might be from wildcards
+        // For contains patterns, highlight everything except the pattern
+        if (isContainsPattern && !isFixedPattern) {
+          return (
+            <span key={originalIndex} className="text-blue-600 font-semibold">
+              {displayText}
+            </span>
+          );
+        }
+        
+        // For other characters that aren't part of the fixed pattern, 
+        // check if they might be from wildcards
         const isLikelyWildcard = hasWildcard && 
                                !processedRack.replace(/\*/g, '').includes(char.toUpperCase());
                                
@@ -264,7 +276,7 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
           );
         }
         
-        // Regular rack letter (non-wildcard)
+        // Regular rack letter (non-wildcard) - highlight in blue
         return (
           <span key={originalIndex} className="text-blue-600 font-semibold">
             {displayText}
