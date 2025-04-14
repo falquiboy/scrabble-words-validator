@@ -63,7 +63,11 @@ export const BaseResults = ({
                   <span className="flex items-center gap-2">
                     {highlightWildcardLetter && searchTerm 
                       ? highlightWildcardLetter(displayWord, searchTerm)
-                      : displayWord}
+                      : displayWord.split('').map((char, i) => 
+                          char === 'I' 
+                            ? <span key={i} className="font-mono">{char}</span>
+                            : char
+                        )}
                     <span className="text-sm text-gray-500">({score})</span>
                   </span>
                 </a>

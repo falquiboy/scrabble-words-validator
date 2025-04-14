@@ -16,7 +16,11 @@ const WordResult = ({ word }: WordResultProps) => {
       className="bg-gray-50 hover:bg-gray-100 p-2 rounded text-center transition-colors tracking-wide"
       aria-label={`Buscar "${word}" en el diccionario RAE`}
     >
-      {word}
+      {word.split('').map((char, i) => 
+        char === 'I' 
+          ? <span key={i} className="font-mono">{char}</span>
+          : char
+      )}
     </a>
   );
 };
