@@ -227,6 +227,16 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
           return <span key={index} className="font-semibold uppercase">{displayText}</span>;
         }
         
+        // For -ZAS pattern, we need to highlight the characters before ZAS in blue
+        // as they're completed using the rack letters
+        if (isEndPattern && !isContainsPattern) {
+          return (
+            <span key={index} className="text-blue-600 font-semibold">
+              {displayText}
+            </span>
+          );
+        }
+        
         // Check if it's likely a wildcard
         const isLikelyWildcard = hasWildcard && 
                                !processedRack.replace(/\*/g, '').includes(char.toUpperCase());
