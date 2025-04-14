@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { findDigraphPositions } from './digraphUtils';
 import { PatternTypeInfo } from './patternTypes';
@@ -90,16 +89,34 @@ export const highlightBasedOnPatternType = (
       );
     }
 
-    // For cases like pattern matching with ?L- where L is the fixed pattern
-    // Check if the character at this position matches any character in the fixed pattern
-    if (fixedPattern && !patternType.isEndPattern && !patternType.isStartPattern && !patternType.isContainsPattern) {
-      // If the pattern contains a question mark, we should treat the character after it as fixed
-      if (fixedPattern.includes('?') && fixedPattern.length > 1) {
-        const actualFixedChar = fixedPattern.charAt(fixedPattern.indexOf('?') + 1);
-        if (char.toUpperCase() === actualFixedChar.toUpperCase()) {
+    // Special handling for patterns with question marks like ?L-
+    if (fixedPattern.includes('?') && fixedPattern.length > 1) {
+      const questionIndex = fixedPattern.indexOf('?');
+      
+      // If there's a character after the question mark (like 'L' in '?L')
+      if (questionIndex < fixedPattern.length - 1) {
+        const fixedChar = fixedPattern.charAt(questionIndex + 1);
+        
+        // If current character matches the fixed character after '?'
+        if (fixedPatternPos >= 0 && 
+            index === fixedPatternPos + questionIndex + 1) {
           return (
             <span key={index}>
               {char === 'I' ? <span className="font-mono">{char}</span> : displayText}
+            </span>
+          );
+        }
+        
+        // If this is within the pattern area but not the fixed char, still treat as part of pattern
+        // This keeps the pattern char normal and all other chars blue
+        if (fixedPatternPos >= 0 && 
+            index >= fixedPatternPos && 
+            index < fixedPatternPos + fixedPattern.length && 
+            char.toUpperCase() !== fixedChar.toUpperCase()) {
+          // Highlight in blue - it's part of the matched pattern but not the fixed letter
+          return (
+            <span key={index} className="text-blue-600">
+              {char === 'I' ? <span className="font-mono text-blue-600">{char}</span> : displayText}
             </span>
           );
         }
@@ -119,7 +136,7 @@ export const highlightBasedOnPatternType = (
     // Regular rack letter (non-wildcard) - highlight in blue without bold
     return (
       <span key={index} className="text-blue-600">
-        {char === 'I' ? <span className="font-mono">{char}</span> : displayText}
+        {char === 'I' ? <span className="font-mono text-blue-600">{char}</span> : displayText}
       </span>
     );
   });
