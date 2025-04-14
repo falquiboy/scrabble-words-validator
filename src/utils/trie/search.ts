@@ -43,7 +43,7 @@ export const searchTrie = async (trie: TrieNode, pattern: RegExp, rackLetters: s
         // If we have rack letters, validate them against the pattern and word
         if (hasRackLetters) {
           // For patterns with rack letters, validate that we can build the word
-          // using the available rack letters
+          // using only the available rack letters
           const isValidWithRack = validateWordPattern(currentWord, patternStr, rackLetters);
           if (isValidWithRack) {
             matches.push(node.word);

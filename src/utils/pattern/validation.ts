@@ -39,19 +39,13 @@ export const validateWordPattern = (
   // For pattern search with rack letters, we need to verify that:
   // 1. Fixed characters in the pattern are preserved
   // 2. Variable parts (?) can be filled with rack letters
+  // 3. The entire word can be formed using only the available rack letters
 
-  // Extract the fixed parts of the pattern
-  let patternFixed = processedPattern.replace(/\?/g, '');
-  
-  // For start/end patterns, we need to extract the actual fixed text
-  if (patternFixed.startsWith('^')) patternFixed = patternFixed.slice(1);
-  if (patternFixed.endsWith('$')) patternFixed = patternFixed.slice(0, -1);
-  if (patternFixed.includes('.*')) patternFixed = patternFixed.replace(/\.\*/g, '');
-  
-  const fixedChars = patternFixed.split('');
-  
-  // Create a "remaining word" by removing fixed pattern characters
-  let remainingWord = [...processedWord];
+  // Count the letters in the word
+  const wordLetterCount = new Map<string, number>();
+  for (const char of processedWord) {
+    wordLetterCount.set(char, (wordLetterCount.get(char) || 0) + 1);
+  }
   
   // Count letters in rack
   const rackLetterCount = new Map<string, number>();
@@ -67,34 +61,25 @@ export const validateWordPattern = (
     }
   }
   
-  // First, let's handle fixed pattern characters
-  // Verify all fixed pattern characters exist in the word
-  for (const fixedChar of fixedChars) {
-    const fixedCharIndex = remainingWord.findIndex(c => c === fixedChar);
-    if (fixedCharIndex === -1) {
-      return false; // Fixed character not found in word
-    }
+  // Check if we have enough letters to form the word
+  for (const [letter, count] of wordLetterCount.entries()) {
+    const availableCount = rackLetterCount.get(letter) || 0;
     
-    // Remove the fixed character from remainingWord
-    remainingWord.splice(fixedCharIndex, 1);
-  }
-  
-  // Now, remainingWord contains only the characters that need to be formed from rack
-  // Check if we can form these characters using our rack
-  for (const char of remainingWord) {
-    const availableCount = rackLetterCount.get(char) || 0;
-    
-    if (availableCount > 0) {
-      // Use the letter from rack
-      rackLetterCount.set(char, availableCount - 1);
-    } else if (wildcardCount > 0) {
-      // Use a wildcard for this letter
-      wildcardCount--;
+    if (availableCount < count) {
+      // We don't have enough of this letter, check if we can use wildcards
+      const deficit = count - availableCount;
+      if (wildcardCount >= deficit) {
+        wildcardCount -= deficit;
+      } else {
+        // Not enough wildcards to make up for the deficit
+        return false;
+      }
     } else {
-      // Can't form this letter
-      return false;
+      // We have enough of this letter
+      rackLetterCount.set(letter, availableCount - count);
     }
   }
   
+  // If we got here, we have enough letters to form the word
   return true;
 };
