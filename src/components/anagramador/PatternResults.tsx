@@ -28,8 +28,8 @@ export const PatternResults = ({
   
   // For special patterns like -NAS, we need custom highlighting
   const translatedPattern = translateHyphenPattern(patternPart);
-  const isEndPattern = translatedPattern.endsWith('$') || patternPart.startsWith('-');
-  const isStartPattern = translatedPattern.startsWith('^') || patternPart.endsWith('-');
+  const isEndPattern = translatedPattern.endsWith('$') || patternPart.startsWith('-') && !patternPart.endsWith('-');
+  const isStartPattern = translatedPattern.startsWith('^') || patternPart.endsWith('-') && !patternPart.startsWith('-');
   const isContainsPattern = patternPart.startsWith('-') && patternPart.endsWith('-');
   const shouldExtendPattern = patternPart.endsWith('-');
   

@@ -16,11 +16,11 @@ export const translateHyphenPattern = (pattern: string): string => {
 
   // Handle the three main cases
   if (cleanPattern.startsWith('-') && cleanPattern.endsWith('-')) {
-    // -CON- → Match words containing the pattern anywhere (not just in the middle)
+    // -CON- → Match words containing the pattern anywhere
     const innerPattern = cleanPattern.slice(1, -1);
     if (!innerPattern) return pattern;
     
-    // Updated pattern to match 'contains' anywhere, not just in the middle
+    // Updated pattern to match 'contains' anywhere, including at start or end
     return `.*${innerPattern}.*`;
   } else if (cleanPattern.startsWith('-')) {
     // -CON → .*CON$
