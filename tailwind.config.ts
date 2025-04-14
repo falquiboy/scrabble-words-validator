@@ -81,7 +81,7 @@ export default {
         "tile-bounce": "tile-bounce 0.3s ease-in-out",
       },
       fontFamily: {
-        'jetbrains': ['JetBrains Mono', 'monospace'],
+        'mono': ['IBM Plex Mono', 'monospace'],
       },
     },
   },
