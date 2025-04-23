@@ -1,5 +1,6 @@
 
 import { Switch } from "@/components/ui/switch";
+import TooltipHelp from "./TooltipHelp";
 
 interface ShorterWordsToggleProps {
   checked: boolean;
@@ -27,19 +28,22 @@ const ShorterWordsToggle = ({
   }
   
   return (
-    <div className="flex items-center space-x-2">
-      <Switch 
-        id="toggle-words" 
-        checked={checked} 
-        onCheckedChange={onCheckedChange} 
-        disabled={isLengthSpecified}
-      />
-      <label 
-        htmlFor="toggle-words" 
-        className={`text-sm text-gray-600 cursor-pointer ${isLengthSpecified ? 'opacity-70' : ''}`}
-      >
-        {label}
-      </label>
+    <div className="space-y-0">
+      <div className="flex items-center space-x-2">
+        <Switch 
+          id="toggle-words" 
+          checked={checked} 
+          onCheckedChange={onCheckedChange} 
+          disabled={isLengthSpecified}
+        />
+        <label 
+          htmlFor="toggle-words" 
+          className={`text-sm text-gray-600 cursor-pointer ${isLengthSpecified ? 'opacity-70' : ''}`}
+        >
+          {label}
+        </label>
+      </div>
+      <TooltipHelp isPatternMode={isPatternMode} />
     </div>
   );
 };
