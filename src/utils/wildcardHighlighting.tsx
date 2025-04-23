@@ -83,12 +83,12 @@ export const highlightWildcardLetter = (word: string, searchTerm: string): React
           if (index === digraph.start) {
             // Only render the digraph at its start position
             return isUnmatched ? (
-              <span key={index} className="text-red-600 font-semibold lowercase">
-                {char}{word[index + 1]}
+              <span key={index} className="text-red-600 font-semibold">
+                {char.toUpperCase()}{word[index + 1].toUpperCase()}
               </span>
             ) : (
               <span key={index} className="font-semibold">
-                {char}{word[index + 1]}
+                {char.toUpperCase()}{word[index + 1].toUpperCase()}
               </span>
             );
           } else if (index === digraph.end) {
@@ -99,12 +99,12 @@ export const highlightWildcardLetter = (word: string, searchTerm: string): React
         
         // Handle regular characters
         return isUnmatched ? (
-          <span key={index} className="text-red-600 font-semibold lowercase">
-            {char}
+          <span key={index} className="text-red-600 font-semibold">
+            {char.toUpperCase()}
           </span>
         ) : (
           <span key={index} className="font-semibold">
-            {char}
+            {char.toUpperCase()}
           </span>
         );
       })}
@@ -172,7 +172,7 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
         if (isEndPattern && fixedPatternPos > 0 && index < fixedPatternPos) {
           return (
             <span key={index} className="text-blue-600 font-semibold">
-              {displayText}
+              {displayText.toUpperCase()}
             </span>
           );
         }
@@ -182,7 +182,7 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
             index >= fixedPatternPos && index < fixedPatternPos + fixedPattern.length) {
           return (
             <span key={index} className="font-semibold">
-              {displayText}
+              {displayText.toUpperCase()}
             </span>
           );
         }
@@ -192,7 +192,7 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
             index >= fixedPatternPos + fixedPattern.length) {
           return (
             <span key={index} className="text-blue-600 font-semibold">
-              {displayText}
+              {displayText.toUpperCase()}
             </span>
           );
         }
@@ -202,7 +202,7 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
             index >= fixedPatternPos && index < fixedPatternPos + fixedPattern.length) {
           return (
             <span key={index} className="font-semibold">
-              {displayText}
+              {displayText.toUpperCase()}
             </span>
           );
         }
@@ -213,7 +213,7 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
           if (index >= fixedPatternPos && index < fixedPatternPos + fixedPattern.length) {
             return (
               <span key={index} className="font-semibold">
-                {displayText}
+                {displayText.toUpperCase()}
               </span>
             );
           }
@@ -221,7 +221,7 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
           // If outside the fixed pattern, highlight in blue
           return (
             <span key={index} className="text-blue-600 font-semibold">
-              {displayText}
+              {displayText.toUpperCase()}
             </span>
           );
         }
@@ -235,8 +235,8 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
         // If it's a likely wildcard, highlight in red and lowercase
         if (isLikelyWildcard) {
           return (
-            <span key={index} className="text-red-600 font-semibold lowercase">
-              {displayText}
+            <span key={index} className="text-red-600 font-semibold">
+              {displayText.toUpperCase()}
             </span>
           );
         }
@@ -244,7 +244,7 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
         // Regular rack letter (non-wildcard) - highlight in blue
         return (
           <span key={index} className="text-blue-600 font-semibold">
-            {displayText}
+            {displayText.toUpperCase()}
           </span>
         );
       })}
