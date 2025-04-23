@@ -15,12 +15,10 @@ const ShorterWordsToggle = ({
   isPatternMode = false,
   isLengthSpecified = false
 }: ShorterWordsToggleProps) => {
-  // Determine label based on context
   let label = isPatternMode 
     ? "Mostrar palabras más largas (>8 letras)" 
     : "Mostrar palabras más cortas";
     
-  // If length is specified, adjust the label
   if (isLengthSpecified) {
     label = isPatternMode 
       ? "Filtro de longitud exacta activado" 
@@ -28,7 +26,7 @@ const ShorterWordsToggle = ({
   }
   
   return (
-    <div className="space-y-0">
+    <div className="space-y-2">
       <div className="flex items-center space-x-2">
         <Switch 
           id="toggle-words" 
@@ -43,7 +41,9 @@ const ShorterWordsToggle = ({
           {label}
         </label>
       </div>
-      <TooltipHelp isPatternMode={isPatternMode} />
+      <div className="flex justify-start">
+        <TooltipHelp isPatternMode={isPatternMode} />
+      </div>
     </div>
   );
 };
