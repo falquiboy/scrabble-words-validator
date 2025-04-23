@@ -1,22 +1,16 @@
-
 import { Info } from "lucide-react";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
-
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 interface TooltipHelpProps {
   isPatternMode: boolean;
 }
-
-const TooltipHelp = ({ isPatternMode }: TooltipHelpProps) => {
-  return (
-    <HoverCard>
+const TooltipHelp = ({
+  isPatternMode
+}: TooltipHelpProps) => {
+  return <HoverCard>
       <HoverCardTrigger asChild>
         <button className="flex items-center gap-1 text-gray-500 hover:text-gray-700 mt-1">
-          <Info className="h-4 w-4" />
-          <span className="text-xs">Ayuda</span>
+          <Info className="h-4 w-4 rounded mx-px" />
+          
         </button>
       </HoverCardTrigger>
       <HoverCardContent className="w-80 p-2 text-sm">
@@ -31,8 +25,6 @@ const TooltipHelp = ({ isPatternMode }: TooltipHelpProps) => {
         </ul>
         <p className="mt-1 text-xs text-gray-500">Por defecto muestra palabras de hasta 8 letras. Usa el interruptor para ver palabras más largas, o agrega <code>:N</code> para filtrar por longitud exacta.</p>
       </HoverCardContent>
-    </HoverCard>
-  );
+    </HoverCard>;
 };
-
 export default TooltipHelp;
