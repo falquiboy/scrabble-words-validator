@@ -31,30 +31,50 @@ export const PatternResults = ({
   
   // For special patterns like -NAS, we need custom highlighting
   const translatedPattern = translateHyphenPattern(cleanPatternPart);
-  const isEndPattern = translatedPattern.endsWith('$') || cleanPatternPart.startsWith('-') && !cleanPatternPart.endsWith('-');
-  const isStartPattern = translatedPattern.startsWith('^') || cleanPatternPart.endsWith('-') && !cleanPatternPart.startsWith('-');
-  const isContainsPattern = cleanPatternPart.startsWith('-') && cleanPatternPart.endsWith('-');
   
-  // Extract the actual pattern without hyphens for display purposes
-  let cleanPattern = cleanPatternPart;
-  if (isEndPattern && !isContainsPattern) {
-    cleanPattern = cleanPatternPart.slice(1);
-  }
-  if (isStartPattern && !isContainsPattern) {
-    cleanPattern = cleanPattern.slice(0, -1);
-  }
-  if (isContainsPattern) {
-    cleanPattern = cleanPattern.slice(1, -1);
+  // Determine pattern types
+  const isEndPattern = translatedPattern.endsWith('$');
+  const isStartPattern = translatedPattern.startsWith('^');
+  const isContainsPattern = translatedPattern.includes('.*') && !isStartPattern && !isEndPattern;
+  
+  // Check if this is a compound pattern like "-PUCH-R"
+  const isCompoundEndPattern = cleanPatternPart.startsWith('-') && 
+                              cleanPatternPart.indexOf('-', 1) > 0 && 
+                              !cleanPatternPart.endsWith('-');
+  
+  // Extract the pattern parts for display purposes
+  let mainPattern = "";
+  let endPattern = "";
+  
+  if (isCompoundEndPattern) {
+    const parts = cleanPatternPart.split('-').filter(Boolean);
+    mainPattern = parts.slice(0, -1).join('');
+    endPattern = parts[parts.length - 1];
+  } else {
+    // Extract the actual pattern without hyphens for standard patterns
+    let cleanPattern = cleanPatternPart;
+    if (isEndPattern && !cleanPatternPart.endsWith('-')) {
+      cleanPattern = cleanPatternPart.slice(1);
+    }
+    if (isStartPattern && !cleanPatternPart.startsWith('-')) {
+      cleanPattern = cleanPattern.slice(0, -1);
+    }
+    if (cleanPatternPart.startsWith('-') && cleanPatternPart.endsWith('-')) {
+      cleanPattern = cleanPattern.slice(1, -1);
+    }
+    mainPattern = cleanPattern;
   }
   
   // Determine title based on the pattern type
   let titleText = "";
-  if (isContainsPattern) {
-    titleText = `${uniqueMatches.length} ${uniqueMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que contienen "${cleanPattern}"`;
-  } else if (isStartPattern) {
-    titleText = `${uniqueMatches.length} ${uniqueMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que empiezan con "${cleanPattern}"`;
-  } else if (isEndPattern) {
-    titleText = `${uniqueMatches.length} ${uniqueMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que terminan con "${cleanPattern}"`;
+  if (isCompoundEndPattern) {
+    titleText = `${uniqueMatches.length} ${uniqueMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que contienen "${mainPattern}" y terminan con "${endPattern}"`;
+  } else if (cleanPatternPart.startsWith('-') && cleanPatternPart.endsWith('-')) {
+    titleText = `${uniqueMatches.length} ${uniqueMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que contienen "${mainPattern}"`;
+  } else if (isStartPattern || cleanPatternPart.endsWith('-')) {
+    titleText = `${uniqueMatches.length} ${uniqueMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que empiezan con "${mainPattern}"`;
+  } else if (isEndPattern || cleanPatternPart.startsWith('-')) {
+    titleText = `${uniqueMatches.length} ${uniqueMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que terminan con "${mainPattern}"`;
   } else {
     titleText = `${uniqueMatches.length} ${uniqueMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que coinciden con el patrón`;
   }

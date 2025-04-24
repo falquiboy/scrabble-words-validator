@@ -17,25 +17,20 @@ export const translateHyphenPattern = (pattern: string): string => {
 
   // Handle special cases with multiple hyphens
   const parts = cleanPattern.split('-').filter(Boolean);
-  if (parts.length > 2) {
-    // If we have more than 2 parts, we're dealing with a compound pattern
-    // Last part is treated as suffix if the pattern ends with -
-    if (cleanPattern.endsWith('-')) {
-      const suffix = parts[parts.length - 1];
-      const mainPattern = parts.slice(0, -1).join('');
-      return `.*${mainPattern}.*${suffix}$`;
+  
+  // Handle compound patterns like "-PUCH-R" (contains PUCH and ends with R)
+  if (cleanPattern.startsWith('-') && parts.length >= 2) {
+    const lastPart = parts[parts.length - 1];
+    
+    // Check if this is a pattern like "-PUCH-R" (contains and ends with)
+    if (cleanPattern.indexOf('-', 1) > 0 && !cleanPattern.endsWith('-')) {
+      // Get the main pattern (everything between first and last hyphen)
+      const middleParts = parts.slice(0, -1).join('');
+      return `.*${middleParts}.*${lastPart}$`;
     }
-    // First part is treated as prefix if the pattern starts with -
-    if (cleanPattern.startsWith('-')) {
-      const prefix = parts[0];
-      const mainPattern = parts.slice(1).join('');
-      return `^${prefix}.*${mainPattern}.*`;
-    }
-    // If no start/end marker, treat all as contains
-    return `.*${parts.join('')}.*`;
   }
-
-  // Handle the three main cases
+  
+  // Original logic for standard patterns
   if (cleanPattern.startsWith('-') && cleanPattern.endsWith('-')) {
     // -CON- → Match words containing the pattern anywhere
     const innerPattern = cleanPattern.slice(1, -1);
