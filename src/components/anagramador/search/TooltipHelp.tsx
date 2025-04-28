@@ -21,7 +21,7 @@ const TooltipHelp = ({
         <ul className="space-y-1 text-xs">
           <li><code>-AR</code>: palabras que <b>terminan</b> con "AR"</li>
           <li><code>CO-</code>: palabras que <b>empiezan</b> con "CO"</li>
-          <li><code>-CI-</code>: palabras que <b>contienen</b> "CI" (en el medio)</li>
+          <li><code>-CI-</code>: palabras que <b>contienen</b> "CI" (en cualquier posición)</li>
           <li><code>?</code>: una letra cualquiera</li>
           <li><code>-AR:6</code>: palabras de <b>exactamente 6 letras</b> que terminan con "AR"</li>
           <li><code>C??A,LETRA</code>: <b>patrones + fichas</b> - usar las letras "LETRA" para completar el patrón "C??A"</li>
