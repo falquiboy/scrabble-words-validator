@@ -12,7 +12,7 @@ const TooltipHelp = ({
   return (
     <HoverCard>
       <HoverCardTrigger asChild>
-        <button className="flex items-center justify-center w-8 h-8 text-gray-500 hover:text-gray-700 mt-1">
+        <button className="flex items-center justify-center w-8 h-8 text-gray-500 hover:text-gray-700 mt-1" aria-label="Ayuda de patrones">
           <HelpCircle className="h-5 w-5" />
         </button>
       </HoverCardTrigger>
@@ -25,6 +25,7 @@ const TooltipHelp = ({
           <li><code>?</code>: una letra cualquiera</li>
           <li><code>-AR:6</code>: palabras de <b>exactamente 6 letras</b> que terminan con "AR"</li>
           <li><code>C??A,LETRA</code>: <b>patrones + fichas</b> - usar las letras "LETRA" para completar el patrón "C??A"</li>
+          <li><code>-PUCH-R</code>: palabras que <b>contienen</b> "PUCH" y <b>terminan</b> con "R"</li>
         </ul>
         <p className="mt-1 text-xs text-gray-500">Por defecto muestra palabras de hasta 8 letras. Usa el interruptor para ver palabras más largas, o agrega <code>:N</code> para filtrar por longitud exacta.</p>
       </HoverCardContent>

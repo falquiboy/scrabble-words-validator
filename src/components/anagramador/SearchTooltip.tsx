@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Tooltip,
   TooltipContent,
@@ -16,14 +16,8 @@ interface SearchTooltipProps {
 export const SearchTooltip = ({ isPatternMode, children }: SearchTooltipProps) => {
   const [showTooltip, setShowTooltip] = useState(false);
 
-  useEffect(() => {
-    // Only show tooltip if it hasn't been shown in this session
-    const hasSeenTooltip = sessionStorage.getItem('pattern-search-tooltip');
-    if (isPatternMode && !hasSeenTooltip) {
-      setShowTooltip(true);
-      sessionStorage.setItem('pattern-search-tooltip', 'true');
-    }
-  }, [isPatternMode]);
+  // Remove the useEffect that automatically shows the tooltip on pattern detection
+  // We'll only show tooltips when explicitly requested via the help button
 
   if (!isPatternMode) {
     return <>{children}</>;
