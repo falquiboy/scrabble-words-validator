@@ -90,7 +90,7 @@ const cleanSQLResponse = (sql: string): string => {
     sql += ' ORDER BY w.word';
   }
   if (!sql.toLowerCase().includes('limit')) {
-    sql += ' LIMIT 100';
+    sql += ' LIMIT 5000';
   }
   
   return sql;
@@ -143,7 +143,7 @@ serve(async (req) => {
     La consulta SIEMPRE debe:
     - Empezar con "SELECT DISTINCT w.word FROM words w WHERE"
     - Usar el alias "w" para la tabla words
-    - Ordenar por w.word y limitar a 100 resultados
+    - Ordenar por w.word y limitar a 5000 resultados
     - Usar ILIKE para comparaciones de texto (case-insensitive)`;
 
     // Añadir instrucciones específicas para letras separadas
