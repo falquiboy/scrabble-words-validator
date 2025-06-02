@@ -131,6 +131,21 @@ export type Database = {
         }
         Relationships: []
       }
+      leaves: {
+        Row: {
+          leave: string | null
+          value: number | null
+        }
+        Insert: {
+          leave?: string | null
+          value?: number | null
+        }
+        Update: {
+          leave?: string | null
+          value?: number | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

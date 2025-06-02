@@ -3,7 +3,8 @@
 export const processNaturalQuery = (input: string): {
   processedQuery: string,
   hasSeparateLetters: {
-    ch?: boolean
+    ch?: boolean,
+    separateL?: boolean
   }
 } => {
   if (!input) return { processedQuery: '', hasSeparateLetters: {} };
@@ -13,12 +14,26 @@ export const processNaturalQuery = (input: string): {
   // Detect if C and H are meant to be separate letters
   const hasSeparateCH = /\bC\s*(?:Y|CON|,)\s*H\b/g.test(result);
   
-  // Handle L/LL explicit references without digraph processing
-  result = result
-    .replace(/\b(ELE|ELES)\b/g, 'L')
-    .replace(/\b(ELLE|ELLES)\b/g, 'LL')
-    .replace(/\b([^A-Z]|^)L([^A-Z]|$)\b/g, '$1L$2')
-    .replace(/\b([^A-Z]|^)LL([^A-Z]|$)\b/g, '$1LL$2');
+  // Detect when user refers to separate L letters vs the LL digraph
+  // "2 eles", "dos eles", "dos letras l" should be treated as separate L's
+  // "elle", "doble ele", "LL" should be treated as the digraph
+  const hasSeparateL = /\b(?:2|DOS)\s+(?:ELES|LETRAS?\s+L)\b/g.test(result) ||
+                      /\bDOS\s+L\b/g.test(result) ||
+                      /\bL\s+Y\s+(?:OTRA\s+)?L\b/g.test(result);
+
+  // Handle L/LL explicit references carefully
+  if (!hasSeparateL) {
+    // Only convert "ele/eles" to "L" if we're NOT dealing with separate L's
+    result = result
+      .replace(/\b(ELE|ELES)\b/g, 'L')
+      .replace(/\b(ELLE|ELLES|DOBLE\s+ELE)\b/g, 'LL');
+  } else {
+    // When dealing with separate L's, don't process "eles" as single L
+    result = result
+      .replace(/\b(ELLE|ELLES|DOBLE\s+ELE)\b/g, 'LL') // Still handle LL digraph
+      .replace(/\b(?:2|DOS)\s+(?:ELES|LETRAS?\s+L)\b/g, '2 L') // Normalize to "2 L"
+      .replace(/\bDOS\s+L\b/g, '2 L');
+  }
   
   // Special handling for Ñ during accent removal
   result = result.replace(/Ñ/g, '#');
@@ -31,7 +46,8 @@ export const processNaturalQuery = (input: string): {
   return {
     processedQuery: result,
     hasSeparateLetters: {
-      ch: hasSeparateCH
+      ch: hasSeparateCH,
+      separateL: hasSeparateL
     }
   };
 };

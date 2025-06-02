@@ -14,22 +14,36 @@ const corsHeaders = {
 // Natural language query processing
 const processNaturalLanguageQuery = (input: string): { 
   processedQuery: string,
-  hasSeparateLetters: { ch?: boolean }
+  hasSeparateLetters: { ch?: boolean, separateL?: boolean }
 } => {
   if (!input) return { processedQuery: '', hasSeparateLetters: {} };
   
   let result = input.toUpperCase();
   console.log('Input original:', result);
   
-  // 1. First handle explicit "C Y H" patterns
+  // 1. Detect explicit references to separate letters vs digraphs
   const hasSeparateCH = /\bC\s*(?:Y|CON|,)\s*H\b/g.test(result);
   
-  // 2. Handle L/LL explicit references
-  result = result
-    .replace(/\b(ELE|ELES)\b/g, 'L')
-    .replace(/\b(ELLE|ELLES)\b/g, 'K')
-    .replace(/\b([^A-Z]|^)L([^A-Z]|$)\b/g, '$1L$2')
-    .replace(/\b([^A-Z]|^)LL([^A-Z]|$)\b/g, '$1K$2');
+  // Detect when user refers to separate L letters vs the LL digraph
+  // "2 eles", "dos eles", "dos letras l" should be treated as separate L's
+  // "elle", "doble ele", "LL" should be treated as the digraph
+  const hasSeparateL = /\b(?:2|DOS)\s+(?:ELES|LETRAS?\s+L)\b/g.test(result) ||
+                      /\bDOS\s+L\b/g.test(result) ||
+                      /\bL\s+Y\s+(?:OTRA\s+)?L\b/g.test(result);
+  
+  // 2. Handle L/LL references carefully
+  if (!hasSeparateL) {
+    // Only convert "ele/eles" to "L" if we're NOT dealing with separate L's
+    result = result
+      .replace(/\b(ELE|ELES)\b/g, 'L')
+      .replace(/\b(ELLE|ELLES|DOBLE\s+ELE)\b/g, 'K'); // LL digraph
+  } else {
+    // When dealing with separate L's, don't process "eles" as single L
+    result = result
+      .replace(/\b(ELLE|ELLES|DOBLE\s+ELE)\b/g, 'K') // Still handle LL digraph
+      .replace(/\b(?:2|DOS)\s+(?:ELES|LETRAS?\s+L)\b/g, '2 L') // Normalize to "2 L"
+      .replace(/\bDOS\s+L\b/g, '2 L');
+  }
   
   console.log('Después de procesar L/LL:', result);
   
@@ -47,14 +61,19 @@ const processNaturalLanguageQuery = (input: string): {
   if (!hasSeparateCH) {
     result = result.replace(/CH/g, 'Ç');
   }
+  if (!hasSeparateL) {
+    result = result.replace(/LL/g, 'K');
+  }
   result = result.replace(/RR/g, 'W');
-  result = result.replace(/LL/g, 'K');
   
   console.log('Resultado final:', result);
   
   return {
     processedQuery: result,
-    hasSeparateLetters: { ch: hasSeparateCH }
+    hasSeparateLetters: { 
+      ch: hasSeparateCH,
+      separateL: hasSeparateL
+    }
   };
 };
 
@@ -102,34 +121,43 @@ serve(async (req) => {
     - "sin" o "ni" generalmente indican exclusión (NOT ILIKE)
       Ejemplo: "palabras sin A" → w.word NOT ILIKE '%A%'
 
+    Casos especiales para contar letras:
+    - "2 L" o "dos L" significa exactamente 2 ocurrencias de la letra L
+      Usar: LENGTH(w.word) - LENGTH(REPLACE(w.word, 'L', '')) = 2
+    - "3 A" significa exactamente 3 ocurrencias de la letra A
+      Usar: LENGTH(w.word) - LENGTH(REPLACE(w.word, 'A', '')) = 3
+
     Ejemplos de interpretación:
     - "palabras con q sin e ni i" → 
       w.word ILIKE '%Q%' AND w.word NOT ILIKE '%E%' AND w.word NOT ILIKE '%I%'
-    - "palabras que no tengan vocales" →
-      w.word NOT ILIKE '%A%' AND w.word NOT ILIKE '%E%' AND w.word NOT ILIKE '%I%' AND w.word NOT ILIKE '%O%' AND w.word NOT ILIKE '%U%'
-    - "palabras con ch pero sin ll" →
-      w.word ILIKE '%Ç%' AND w.word NOT ILIKE '%K%'
+    - "palabras con 2 L" →
+      w.word ILIKE '%L%' AND LENGTH(w.word) - LENGTH(REPLACE(w.word, 'L', '')) = 2
+    - "palabras con elle pero sin ll" →
+      w.word ILIKE '%K%' AND w.word NOT ILIKE '%K%' (esto es contradictorio, maneja con cuidado)
 
-    Casos especiales:
-    - Cuando hay combinaciones ("con X sin Y"), prioriza la interpretación natural de la frase
-    - Considera el contexto completo de la consulta
+    IMPORTANTE: Los dígrafos están almacenados internamente así:
+    - CH se almacena como Ç (CHICO → ÇICO)
+    - LL (elle/doble ele) se almacena como K (LLUVIA → KUVIA)
+    - RR se almacena como W (PERRO → PEWO)
 
     La consulta SIEMPRE debe:
     - Empezar con "SELECT DISTINCT w.word FROM words w WHERE"
     - Usar el alias "w" para la tabla words
     - Ordenar por w.word y limitar a 100 resultados
-    - Usar ILIKE para comparaciones de texto (case-insensitive)
+    - Usar ILIKE para comparaciones de texto (case-insensitive)`;
 
-    IMPORTANTE: Los dígrafos están almacenados internamente así:
-    - CH se almacena como Ç (CHICO → ÇICO)
-    - LL se almacena como K (LLUVIA → KUVIA)
-    - RR se almacena como W (PERRO → PEWO)`;
-
-    // Añadir instrucciones específicas para C y H separadas
+    // Añadir instrucciones específicas para letras separadas
     if (hasSeparateLetters.ch) {
       systemPrompt += `\n\nIMPORTANTE: En esta consulta, C y H deben buscarse como letras separadas:
       - Usar: w.word ILIKE '%C%' AND w.word ILIKE '%H%'
       - NO usar: w.word ILIKE '%Ç%'`;
+    }
+
+    if (hasSeparateLetters.separateL) {
+      systemPrompt += `\n\nIMPORTANTE: En esta consulta, se refiere a letras L separadas (no al dígrafo LL):
+      - Para "2 L" usar: LENGTH(w.word) - LENGTH(REPLACE(w.word, 'L', '')) = 2
+      - Para "L y otra L" usar: w.word ILIKE '%L%' AND LENGTH(w.word) - LENGTH(REPLACE(w.word, 'L', '')) >= 2
+      - NO confundir con el dígrafo LL (que se almacena como K)`;
     }
 
     const completion = await openai.chat.completions.create({
