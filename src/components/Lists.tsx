@@ -19,6 +19,7 @@ const Lists = () => {
     }
 
     console.log('Iniciando búsqueda con query:', query);
+    console.log('🚀 AHORA USANDO ANTHROPIC CLAUDE en lugar de OpenAI');
     setIsLoading(true);
     
     try {

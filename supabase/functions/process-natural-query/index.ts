@@ -1,10 +1,8 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import OpenAI from "https://esm.sh/openai@4.28.0"
 
-const openai = new OpenAI({
-  apiKey: Deno.env.get('OPENAI_API_KEY')
-})
+// Cambiado de OpenAI a Anthropic Claude
+const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY')
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -160,22 +158,32 @@ serve(async (req) => {
       - NO confundir con el dígrafo LL (que se almacena como K)`;
     }
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: systemPrompt
-        },
-        {
-          role: "user",
-          content: processedQuery
-        }
-      ],
-      temperature: 0.3,
-    })
+    // Llamada a Anthropic Claude en lugar de OpenAI
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 1000,
+        messages: [
+          {
+            role: 'user',
+            content: `${systemPrompt}\n\nConsulta: ${processedQuery}`
+          }
+        ]
+      })
+    });
 
-    const rawSql = completion.choices[0].message.content;
+    if (!response.ok) {
+      throw new Error(`Anthropic API error: ${response.status}`);
+    }
+
+    const completion = await response.json();
+    const rawSql = completion.content[0].text;
     console.log('SQL raw:', rawSql);
     
     const sql = cleanSQLResponse(rawSql);
