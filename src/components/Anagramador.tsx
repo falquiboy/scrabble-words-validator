@@ -15,6 +15,7 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
   const [showShorter, setShowShorter] = useState(false);
   const [targetLength, setTargetLength] = useState<number | null>(null);
   const [isSearchAborted, setIsSearchAborted] = useState(false);
+  const [showExtendedView, setShowExtendedView] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResults>({
     exactMatches: [],
     wildcardMatches: [],
@@ -100,6 +101,10 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
     setShowShorter(show);
   };
 
+  const handleExtendedViewChange = (show: boolean) => {
+    setShowExtendedView(show);
+  };
+
   return (
     <div className="w-full max-w-2xl mx-auto p-4 flex flex-col items-center">
       <div className="w-full max-w-md space-y-4">
@@ -118,6 +123,8 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
           highlightWildcardLetter={highlightWildcardLetter}
           isSearchAborted={isSearchAborted}
           showShorter={showShorter}
+          showExtendedView={showExtendedView}
+          onExtendedViewChange={handleExtendedViewChange}
         />
       </div>
     </div>
