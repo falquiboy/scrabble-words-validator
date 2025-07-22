@@ -71,7 +71,7 @@ const SearchInput = ({
       <div className="relative">
         <textarea
           ref={textAreaRef}
-          placeholder="Ejemplo: palabras con q sin e ni i"
+          placeholder="Palabra (casa) • Anagramas (acsa) • Patrones (c_sa) • Lenguaje natural (palabras con q sin u)"
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
           onKeyDown={handleKeyPress}

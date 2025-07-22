@@ -3,12 +3,14 @@ import { useState, useEffect } from "react";
 import WordValidator from "@/components/WordValidator";
 import Anagramador from "@/components/Anagramador";
 import Lists from "@/components/Lists";
+import { TrainingSystemDemo } from "@/components/TrainingSystemDemo";
 import NewModuleSelector from "@/components/NewModuleSelector";
 import { useWordDatabase } from "@/hooks/useWordDatabase";
 import { useWordTrie } from "@/hooks/useWordTrie";
 
 const Index = () => {
-  const [activeModule, setActiveModule] = useState<'judge' | 'anagram' | 'lists'>('judge');
+  const [activeModule, setActiveModule] = useState<'judge' | 'anagram' | 'lists' | 'training'>('judge');
+  const [showTraining, setShowTraining] = useState(false);
   
   // Initialize dictionary at the top level so it's shared between modules
   const { isLoading: isDBLoading, progress: dbProgress, loadStartTime, isFirstLoad, wordCount } = useWordDatabase();
@@ -48,9 +50,16 @@ const Index = () => {
     return 'complete';
   };
 
-  // Manejar navegación con Control + AvPág/RePág
+  // Manejar navegación con Control + AvPág/RePág y acceso al sistema de entrenamiento
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Acceso especial al sistema de entrenamiento: Ctrl + Shift + E (⌘ + Shift + E en Mac)
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'E') {
+        e.preventDefault();
+        setShowTraining(!showTraining);
+        return;
+      }
+      
       // Verificar Ctrl + AvPág (Page Down)
       if (e.ctrlKey && e.key === 'PageDown') {
         e.preventDefault();
@@ -80,26 +89,50 @@ const Index = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [showTraining]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <NewModuleSelector activeModule={activeModule} onModuleChange={setActiveModule} />
       <div className="mt-20 flex-1 w-full">
-        {activeModule === 'judge' ? (
-          <WordValidator 
-            isDictionaryLoading={isDictionaryLoading} 
-            progress={getCombinedProgress()}
-            trie={trie}
-            stage={getCurrentStage()}
-            loadStartTime={loadStartTime}
-            isFirstLoad={isFirstLoad}
-            wordCount={wordCount}
-          />
-        ) : activeModule === 'anagram' ? (
-          <Anagramador trie={trie} />
+        {showTraining ? (
+          <div className="container mx-auto px-4 py-6">
+            <div className="mb-4 p-3 bg-blue-100 border border-blue-300 rounded-lg">
+              <div className="flex justify-between items-center">
+                <h2 className="text-lg font-semibold text-blue-800">
+                  🧪 Sistema de Entrenamiento - Modo Desarrollo
+                </h2>
+                <button
+                  onClick={() => setShowTraining(false)}
+                  className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  ✕ Cerrar (⌘+Shift+E)
+                </button>
+              </div>
+              <p className="text-sm text-blue-700 mt-2">
+                Sistema dual de entrenamiento para agentes de IA. Usa ⌘+Shift+E para mostrar/ocultar.
+              </p>
+            </div>
+            <TrainingSystemDemo />
+          </div>
         ) : (
-          <Lists />
+          <>
+            {activeModule === 'judge' ? (
+              <WordValidator 
+                isDictionaryLoading={isDictionaryLoading} 
+                progress={getCombinedProgress()}
+                trie={trie}
+                stage={getCurrentStage()}
+                loadStartTime={loadStartTime}
+                isFirstLoad={isFirstLoad}
+                wordCount={wordCount}
+              />
+            ) : activeModule === 'anagram' ? (
+              <Anagramador trie={trie} />
+            ) : (
+              <Lists trie={trie} />
+            )}
+          </>
         )}
       </div>
     </div>
