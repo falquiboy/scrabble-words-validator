@@ -6,6 +6,7 @@ import ExtendedWordView from "./ExtendedWordView";
 import ExtendedResultsView from "./ExtendedResultsView";
 import { toDisplayFormat } from "@/utils/digraphs";
 import { fetchAnagramWordsData, AnagramWordInfo } from "@/utils/anagramWordData";
+import { debugAnagramData } from "@/utils/debugAnagramData";
 import { useState, useEffect } from "react";
 import { Info } from "lucide-react";
 
@@ -136,21 +137,31 @@ const ResultsList = ({
       <div className="space-y-4 pb-4">
         {/* Extended View Toggle */}
         {hasResults && onExtendedViewChange && (
-          <div className="flex items-center justify-end space-x-2 bg-gray-50 px-3 py-2 rounded-lg">
-            <Info size={16} className="text-gray-500" />
-            <span className="text-sm text-gray-600">Vista extendida:</span>
+          <div className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-lg">
+            {/* Debug button (temporary) */}
             <button
-              onClick={() => onExtendedViewChange(!showExtendedView)}
-              className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors ${
-                showExtendedView ? 'bg-blue-600' : 'bg-gray-300'
-              }`}
+              onClick={() => debugAnagramData()}
+              className="text-xs text-red-600 hover:text-red-800"
             >
-              <span
-                className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${
-                  showExtendedView ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
+              🐛 Debug
             </button>
+            
+            <div className="flex items-center space-x-2">
+              <Info size={16} className="text-gray-500" />
+              <span className="text-sm text-gray-600">Vista extendida:</span>
+              <button
+                onClick={() => onExtendedViewChange(!showExtendedView)}
+                className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors ${
+                  showExtendedView ? 'bg-blue-600' : 'bg-gray-300'
+                }`}
+              >
+                <span
+                  className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${
+                    showExtendedView ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
           </div>
         )}
 

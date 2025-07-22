@@ -14,12 +14,36 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
   
   if (words.length === 0) return results;
 
+  console.log('🔍 fetchAnagramWordsData called with:', words);
+
   try {
-    // Batch query to get word information from scrabble_words table
-    const { data: scrabbleData } = await supabase
+    // First, try the words table which we know exists
+    console.log('📊 Trying words table first...');
+    const upperWords = words.map(w => w.toUpperCase());
+    
+    const { data: wordsData, error: wordsError } = await supabase
+      .from('words')
+      .select('word')
+      .in('word', upperWords);
+
+    if (wordsError) {
+      console.error('❌ Words table error:', wordsError);
+    } else {
+      console.log('✅ Words table response:', wordsData);
+    }
+
+    // Try scrabble_words table if it exists
+    console.log('📊 Trying scrabble_words table...');
+    const { data: scrabbleData, error: scrabbleError } = await supabase
       .from('scrabble_words')
       .select('word, key_lemma, key_feminine, key_plural, key_conj, key_variant')
-      .in('word', words.map(w => w.toUpperCase()));
+      .in('word', upperWords);
+
+    if (scrabbleError) {
+      console.error('❌ Scrabble words table error:', scrabbleError);
+    } else {
+      console.log('✅ Scrabble words table response:', scrabbleData);
+    }
 
     // Get unique keys to fetch dictionary entries
     const allKeys = new Set<number>();
@@ -63,66 +87,31 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
       keyToEntry.set(entry.key, entry);
     });
 
+    // For now, let's create basic word info from words table
+    const validWords = new Set(wordsData?.map(w => w.word) || []);
+    
     // Process each word
     words.forEach(word => {
       const upperWord = word.toUpperCase();
-      const scrabbleInfo = wordToKeys.get(upperWord);
+      const isValid = validWords.has(upperWord);
       
       const wordInfo: AnagramWordInfo = {
         word,
-        isScrabbleValid: !!scrabbleInfo
+        isScrabbleValid: isValid,
+        // Temporary: Add some sample data to see if UI works
+        ...(isValid ? {
+          lemma: word.toLowerCase(),
+          partOfSpeech: 'sustantivo',
+          wordType: 'base' as const,
+          shortDefinition: `Definición temporal de ${word.toLowerCase()}`
+        } : {})
       };
 
-      if (scrabbleInfo) {
-        // Determine word type and get corresponding entry
-        let primaryKey: number | null = null;
-        let wordType: AnagramWordInfo['wordType'] = 'base';
-
-        if (scrabbleInfo.key_lemma) {
-          primaryKey = scrabbleInfo.key_lemma;
-          wordType = 'base';
-        } else if (scrabbleInfo.key_feminine) {
-          primaryKey = scrabbleInfo.key_feminine;
-          wordType = 'femenino';
-        } else if (scrabbleInfo.key_plural) {
-          primaryKey = scrabbleInfo.key_plural;
-          wordType = 'plural';
-        } else if (scrabbleInfo.key_conj) {
-          primaryKey = scrabbleInfo.key_conj;
-          wordType = 'conjugación';
-        } else if (scrabbleInfo.key_variant) {
-          primaryKey = scrabbleInfo.key_variant;
-          wordType = 'variante';
-        }
-
-        if (primaryKey && keyToEntry.has(primaryKey)) {
-          const entry = keyToEntry.get(primaryKey);
-          wordInfo.lemma = entry.lemma;
-          wordInfo.wordType = wordType;
-          
-          // Get first definition and part of speech
-          if (entry.dictionary_senses && entry.dictionary_senses.length > 0) {
-            const firstSense = entry.dictionary_senses[0];
-            wordInfo.partOfSpeech = firstSense.part_of_speech_1 || undefined;
-            
-            if (firstSense.definition) {
-              // Process definition to 50 characters
-              let definition = firstSense.definition.trim();
-              // Remove common abbreviations at the start
-              definition = definition.replace(/^[VvUu]\.\s*[tc]\.\s*[cs]\.\s*/, '');
-              definition = definition.replace(/^[VvUu]\.\s*/, '');
-              
-              if (definition.length > 50) {
-                definition = definition.substring(0, 47) + '...';
-              }
-              wordInfo.shortDefinition = definition;
-            }
-          }
-        }
-      }
-
+      console.log(`✅ Processed word: ${word}`, wordInfo);
       results.set(word, wordInfo);
     });
+
+    console.log('🎯 Final results map:', results);
 
   } catch (error) {
     console.error('Error fetching anagram words data:', error);
