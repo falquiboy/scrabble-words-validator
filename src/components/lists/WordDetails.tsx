@@ -11,9 +11,10 @@ interface WordInfo {
 
 interface WordDetailsProps {
   wordInfo: WordInfo;
+  onWordClick?: (word: string) => void;
 }
 
-const WordDetails: React.FC<WordDetailsProps> = ({ wordInfo }) => {
+const WordDetails: React.FC<WordDetailsProps> = ({ wordInfo, onWordClick }) => {
   const { word, isValid, anagrams, subanagrams } = wordInfo;
 
   return (
@@ -46,7 +47,7 @@ const WordDetails: React.FC<WordDetailsProps> = ({ wordInfo }) => {
               <span
                 key={index}
                 className="px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-md hover:bg-blue-200 cursor-pointer"
-                onClick={() => window.open(`https://dle.rae.es/${anagram.toLowerCase()}`, '_blank')}
+                onClick={() => onWordClick?.(anagram)}
               >
                 {anagram}
               </span>
@@ -66,7 +67,7 @@ const WordDetails: React.FC<WordDetailsProps> = ({ wordInfo }) => {
               <span
                 key={index}
                 className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-md hover:bg-purple-200 cursor-pointer"
-                onClick={() => window.open(`https://dle.rae.es/${subanagram.toLowerCase()}`, '_blank')}
+                onClick={() => onWordClick?.(subanagram)}
               >
                 {subanagram}
               </span>

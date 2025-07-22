@@ -3,21 +3,25 @@ import React from 'react';
 
 interface WordResultProps {
   word: string;
+  onClick?: (word: string) => void;
 }
 
-const WordResult = ({ word }: WordResultProps) => {
-  const raeUrl = `https://dle.rae.es/${encodeURIComponent(word)}`;
+const WordResult = ({ word, onClick }: WordResultProps) => {
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (onClick) {
+      onClick(word);
+    }
+  };
   
   return (
-    <a
-      href={raeUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="bg-gray-50 hover:bg-gray-100 p-2 rounded text-center transition-colors font-semibold"
-      aria-label={`Buscar "${word}" en el diccionario RAE`}
+    <button
+      onClick={handleClick}
+      className="bg-gray-50 hover:bg-gray-100 p-2 rounded text-center transition-colors font-semibold w-full"
+      aria-label={`Ver información de "${word}"`}
     >
       {word}
-    </a>
+    </button>
   );
 };
 

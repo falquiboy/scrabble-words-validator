@@ -1,0 +1,14 @@
+{
+  "lastProcessedSenseId": 0,
+  "totalSqliteSenses": 169092,
+  "processedBatches": 0,
+  "lastUpdate": 1752621375241,
+  "stats": {
+    "total": 169092,
+    "processed": 0,
+    "migrated": 0,
+    "skipped": 0,
+    "errors": 0,
+    "startTime": 1752621375175
+  }
+}

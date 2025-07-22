@@ -4,3 +4,6 @@ project_id = "duxzmtvrcaphljakflod"
 [functions.build-trie]
 verify_jwt = false
 
+[functions.process-natural-query]
+verify_jwt = false
+

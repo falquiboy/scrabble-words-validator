@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import SearchInput from './lists/SearchInput';
 import ResultsList from './lists/ResultsList';
 import WordDetails from './lists/WordDetails';
+import WordPopup from './lists/WordPopup';
+import { fetchWordData, WordData } from '@/utils/wordDatabase';
 import { toDisplayFormat } from "@/utils/digraphs";
 import { findAnagrams } from "@/hooks/anagramSearch/utils";
 import { findPatternMatches } from "@/utils/pattern/matching";
@@ -31,6 +33,9 @@ const Lists = ({ trie }: ListsProps) => {
   const [isRecording, setIsRecording] = useState(false);
   const [wordInfo, setWordInfo] = useState<WordInfo | null>(null);
   const [queryType, setQueryType] = useState<QueryType | null>(null);
+  const [popupWordData, setPopupWordData] = useState<WordData | null>(null);
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [isLoadingPopup, setIsLoadingPopup] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 
   // Automatic query type detection
@@ -77,6 +82,30 @@ const Lists = ({ trie }: ListsProps) => {
       anagrams,
       subanagrams
     };
+  };
+
+  // Handle word click to show popup with database info
+  const handleWordClick = async (word: string) => {
+    if (isLoadingPopup) return; // Prevent multiple simultaneous requests
+    
+    setIsLoadingPopup(true);
+    setIsPopupOpen(true);
+    setPopupWordData(null); // Clear previous data
+    
+    try {
+      const wordData = await fetchWordData(word);
+      setPopupWordData(wordData);
+    } catch (error) {
+      console.error('Error fetching word data:', error);
+      toast.error('Error al cargar información de la palabra');
+    } finally {
+      setIsLoadingPopup(false);
+    }
+  };
+
+  const handleClosePopup = () => {
+    setIsPopupOpen(false);
+    setPopupWordData(null);
   };
 
   const handleSearch = async () => {
@@ -276,10 +305,10 @@ const Lists = ({ trie }: ListsProps) => {
     <div className="w-full max-w-2xl mx-auto flex flex-col h-full">
       <div className="flex-1 space-y-4 p-4">
         {/* Show word details for single word analysis */}
-        {wordInfo && <WordDetails wordInfo={wordInfo} />}
+        {wordInfo && <WordDetails wordInfo={wordInfo} onWordClick={handleWordClick} />}
         
         {/* Show results list for other query types */}
-        {results.length > 0 && <ResultsList results={results} />}
+        {results.length > 0 && <ResultsList results={results} onWordClick={handleWordClick} />}
         
         {/* Show query type indicator */}
         {queryType && (
@@ -303,6 +332,13 @@ const Lists = ({ trie }: ListsProps) => {
           isLoading={isLoading}
         />
       </div>
+
+      {/* Word popup */}
+      <WordPopup
+        wordData={popupWordData}
+        isOpen={isPopupOpen}
+        onClose={handleClosePopup}
+      />
     </div>
   );
 };

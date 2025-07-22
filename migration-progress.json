@@ -1,0 +1,11 @@
+{
+  "entriesOffset": 91600,
+  "relationsOffset": 42500,
+  "entriesMigrated": 91587,
+  "sensesMigrated": 142203,
+  "relationsMigrated": 44586,
+  "errors": 14629,
+  "phase": "relations",
+  "lastUpdate": 1752566188703,
+  "startTime": 1752527657660
+}

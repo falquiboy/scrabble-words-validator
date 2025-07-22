@@ -8,9 +8,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ResultsListProps {
   results: string[];
+  onWordClick?: (word: string) => void;
 }
 
-const ResultsList = ({ results }: ResultsListProps) => {
+const ResultsList = ({ results, onWordClick }: ResultsListProps) => {
   if (results.length === 0) return null;
 
   const handleCopyAll = async () => {
@@ -41,7 +42,7 @@ const ResultsList = ({ results }: ResultsListProps) => {
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {results.map((word, index) => (
-            <WordResult key={index} word={word} />
+            <WordResult key={index} word={word} onClick={onWordClick} />
           ))}
         </div>
       </div>

@@ -1,166 +1,116 @@
-import { processDigraphs, toDisplayFormat } from '@/utils/digraphs';
+import { supabase } from "@/integrations/supabase/client";
 
-const DB_NAME = 'scrabbleDB';
-const DB_VERSION = 3; // Increment this when we need to rebuild the database
-const STORE_NAME = 'words';
-const META_STORE = 'metadata';
+export interface WordData {
+  word: string;
+  isValid: boolean;
+  etymology?: string;
+  etymologyLanguage?: string;
+  definitions?: Array<{
+    definition: string;
+    partOfSpeech?: string;
+    domain?: string;
+    usage?: string;
+  }>;
+  scrabblePoints?: number;
+}
 
-export class WordDatabase {
-  private db: IDBDatabase | null = null;
-  private initPromise: Promise<void> | null = null;
+export async function fetchWordData(word: string): Promise<WordData> {
+  const normalizedWord = word.toLowerCase().trim();
+  
+  try {
+    // Check if word is valid for Scrabble
+    const { data: scrabbleData } = await supabase
+      .from('words')
+      .select('word')
+      .eq('word', word.toUpperCase())
+      .single();
+    
+    const isValid = !!scrabbleData;
+    
+    // Try to get dictionary entry
+    const { data: entryData } = await supabase
+      .from('dictionary_entries')
+      .select(`
+        key,
+        lemma,
+        etymology_info,
+        etymology_language,
+        dictionary_senses (
+          definition,
+          part_of_speech_1,
+          domain,
+          usage
+        )
+      `)
+      .ilike('lemma', normalizedWord)
+      .limit(1)
+      .single();
 
-  async init(): Promise<void> {
-    if (this.initPromise) {
-      return this.initPromise;
+    const result: WordData = {
+      word,
+      isValid,
+    };
+
+    if (entryData) {
+      result.etymology = entryData.etymology_info || undefined;
+      result.etymologyLanguage = entryData.etymology_language || undefined;
+      
+      if (entryData.dictionary_senses && entryData.dictionary_senses.length > 0) {
+        result.definitions = entryData.dictionary_senses.map((sense: any) => ({
+          definition: sense.definition,
+          partOfSpeech: sense.part_of_speech_1 || undefined,
+          domain: sense.domain || undefined,
+          usage: sense.usage || undefined,
+        }));
+      }
     }
 
-    this.initPromise = new Promise((resolve, reject) => {
-      const request = indexedDB.open(DB_NAME, DB_VERSION);
+    // Try to calculate Scrabble points (basic implementation)
+    if (isValid) {
+      result.scrabblePoints = calculateScrabblePoints(word);
+    }
 
-      request.onerror = () => {
-        this.initPromise = null;
-        reject(request.error);
-      };
+    return result;
 
-      request.onsuccess = () => {
-        this.db = request.result;
-        resolve();
-      };
-
-      request.onupgradeneeded = (event) => {
-        const db = (event.target as IDBOpenDBRequest).result;
-        
-        // If old stores exist, delete them to force a rebuild
-        if (db.objectStoreNames.contains(STORE_NAME)) {
-          db.deleteObjectStore(STORE_NAME);
-        }
-        if (db.objectStoreNames.contains(META_STORE)) {
-          db.deleteObjectStore(META_STORE);
-        }
-
-        // Create stores
-        const store = db.createObjectStore(STORE_NAME, { keyPath: 'word' });
-        store.createIndex('processedWord', 'processedWord', { unique: true });
-        
-        // Create metadata store
-        const metaStore = db.createObjectStore(META_STORE, { keyPath: 'key' });
-        metaStore.put({ key: 'version', value: DB_VERSION });
-        metaStore.put({ key: 'lastUpdate', value: new Date().toISOString() });
-      };
-    });
-
-    return this.initPromise;
-  }
-
-  async getVersion(): Promise<number> {
-    if (!this.db) throw new Error('Database not initialized');
-
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction(META_STORE, 'readonly');
-      const store = transaction.objectStore(META_STORE);
-      const request = store.get('version');
-
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve(request.result?.value || 0);
-    });
-  }
-
-  async updateMetadata(): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
-
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction(META_STORE, 'readwrite');
-      const store = transaction.objectStore(META_STORE);
-      
-      store.put({ key: 'version', value: DB_VERSION });
-      store.put({ key: 'lastUpdate', value: new Date().toISOString() });
-
-      transaction.oncomplete = () => resolve();
-      transaction.onerror = () => reject(transaction.error);
-    });
-  }
-
-  async addWords(words: string[]): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
-
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction(STORE_NAME, 'readwrite');
-      const store = transaction.objectStore(STORE_NAME);
-
-      transaction.onerror = () => reject(transaction.error);
-      transaction.oncomplete = () => resolve();
-
-      words.forEach(word => {
-        const upperWord = word.toUpperCase();
-        store.put({
-          word: upperWord,
-          processedWord: processDigraphs(upperWord)
-        });
-      });
-    });
-  }
-
-  async hasWord(word: string): Promise<boolean> {
-    if (!this.db) throw new Error('Database not initialized');
-
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction(STORE_NAME, 'readonly');
-      const store = transaction.objectStore(STORE_NAME);
-      const processedWordIndex = store.index('processedWord');
-      const request = processedWordIndex.get(processDigraphs(word.toUpperCase()));
-
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve(request.result !== undefined);
-    });
-  }
-
-  async getAllWords(): Promise<string[]> {
-    if (!this.db) throw new Error('Database not initialized');
-
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction(STORE_NAME, 'readonly');
-      const store = transaction.objectStore(STORE_NAME);
-      const request = store.getAll();
-
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => {
-        // Return the display format of the words
-        resolve(request.result.map(record => toDisplayFormat(record.word)));
-      };
-    });
-  }
-
-  async clear(): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
-
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction(STORE_NAME, 'readwrite');
-      const store = transaction.objectStore(STORE_NAME);
-      const request = store.clear();
-
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve();
-    });
-  }
-
-  async getProcessedWords(): Promise<{ original: string; processed: string }[]> {
-    await this.init(); // Ensure database is initialized
-    if (!this.db) throw new Error('Database not initialized');
-
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction(STORE_NAME, 'readonly');
-      const store = transaction.objectStore(STORE_NAME);
-      const request = store.getAll();
-
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => {
-        resolve(request.result.map(record => ({
-          original: record.word,
-          processed: record.processedWord
-        })));
-      };
-    });
+  } catch (error) {
+    console.error('Error fetching word data:', error);
+    
+    // Return basic data even if database query fails
+    return {
+      word,
+      isValid: false, // Conservative approach if we can't verify
+    };
   }
 }
 
-export const wordDB = new WordDatabase();
+function calculateScrabblePoints(word: string): number {
+  const pointValues: { [key: string]: number } = {
+    'A': 1, 'E': 1, 'I': 1, 'L': 1, 'N': 1, 'O': 1, 'R': 1, 'S': 1, 'T': 1, 'U': 1,
+    'D': 2, 'G': 2,
+    'B': 3, 'C': 3, 'M': 3, 'P': 3,
+    'F': 4, 'H': 4, 'V': 4, 'W': 4, 'Y': 4,
+    'K': 5,
+    'J': 8, 'X': 8,
+    'Q': 10, 'Z': 10,
+    'Ñ': 8, // Spanish specific
+    'LL': 8, 'RR': 8, 'CH': 5 // Spanish digraphs
+  };
+
+  let points = 0;
+  const upperWord = word.toUpperCase();
+  
+  // Handle Spanish digraphs first
+  let processedWord = upperWord;
+  processedWord = processedWord.replace(/CH/g, 'Ç'); // Temporary replacement
+  processedWord = processedWord.replace(/LL/g, 'K'); // Temporary replacement  
+  processedWord = processedWord.replace(/RR/g, 'W'); // Temporary replacement
+
+  for (const char of processedWord) {
+    if (char === 'Ç') points += 5; // CH
+    else if (char === 'K') points += 8; // LL  
+    else if (char === 'W') points += 8; // RR
+    else points += pointValues[char] || 0;
+  }
+
+  return points;
+}

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplicar Migración del Diccionario</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        button { background: #10b981; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #059669; }
+        .log { background: #f3f4f6; padding: 15px; border-radius: 5px; margin: 10px 0; font-family: monospace; white-space: pre-wrap; }
+        .success { color: #059669; }
+        .error { color: #dc2626; }
+    </style>
+</head>
+<body>
+    <h1>🚀 Migración del Diccionario a Supabase</h1>
+    <p>Esta página aplicará el esquema del diccionario español a tu base de datos de Supabase.</p>
+    
+    <button onclick="applyMigration()">Aplicar Migración del Diccionario</button>
+    
+    <div id="log" class="log">Listo para aplicar migración...</div>
+
+    <script>
+        const supabaseUrl = 'https://duxzmtvrcaphljakflod.supabase.co'
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR1eHptdHZyY2FwaGxqYWtmbG9kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzI4MzAxNTYsImV4cCI6MjA0ODQwNjE1Nn0.itzLd_tutXAMakVDJKeWkXZYajs16SkOGmiPKzs0FEk'
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey)
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log')
+            const timestamp = new Date().toLocaleTimeString()
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : ''
+            logDiv.innerHTML += `\n[${timestamp}] ${message}`
+            if (className) logDiv.classList.add(className)
+            console.log(`[${timestamp}] ${message}`)
+        }
+
+        async function applyMigration() {
+            log('🚀 Iniciando migración del diccionario...')
+            
+            try {
+                // Tabla 1: dictionary_categories
+                log('📝 Creando tabla dictionary_categories...')
+                await supabase.rpc('exec_raw_sql', {
+                    query: `
+                        CREATE TABLE IF NOT EXISTS dictionary_categories (
+                            category_id SERIAL PRIMARY KEY,
+                            category_type TEXT NOT NULL,
+                            code TEXT NOT NULL,
+                            description TEXT NOT NULL,
+                            created_at TIMESTAMPTZ DEFAULT NOW(),
+                            UNIQUE(category_type, code)
+                        );
+                    `
+                })
+
+                // Tabla 2: dictionary_entries
+                log('📝 Creando tabla dictionary_entries...')
+                await supabase.rpc('exec_raw_sql', {
+                    query: `
+                        CREATE TABLE IF NOT EXISTS dictionary_entries (
+                            entry_id SERIAL PRIMARY KEY,
+                            key_value REAL NOT NULL UNIQUE,
+                            lemma TEXT NOT NULL,
+                            etymology_info TEXT,
+                            parenthesis_info TEXT,
+                            total_senses INTEGER DEFAULT 0,
+                            created_at TIMESTAMPTZ DEFAULT NOW(),
+                            updated_at TIMESTAMPTZ DEFAULT NOW()
+                        );
+                    `
+                })
+
+                // Tabla 3: dictionary_senses
+                log('📝 Creando tabla dictionary_senses...')
+                await supabase.rpc('exec_raw_sql', {
+                    query: `
+                        CREATE TABLE IF NOT EXISTS dictionary_senses (
+                            sense_id SERIAL PRIMARY KEY,
+                            entry_id INTEGER NOT NULL REFERENCES dictionary_entries(entry_id) ON DELETE CASCADE,
+                            sense_number INTEGER NOT NULL DEFAULT 1,
+                            definition TEXT NOT NULL,
+                            gender_code TEXT,
+                            pos_code TEXT,
+                            pos_secondary_code TEXT,
+                            verb_type_code TEXT,
+                            usage_frequency_code TEXT,
+                            style_code TEXT,
+                            region_code TEXT,
+                            domain_code TEXT,
+                            is_cross_reference BOOLEAN DEFAULT FALSE,
+                            created_at TIMESTAMPTZ DEFAULT NOW(),
+                            updated_at TIMESTAMPTZ DEFAULT NOW(),
+                            UNIQUE(entry_id, sense_number)
+                        );
+                    `
+                })
+
+                // Tabla 4: word_dictionary_relations
+                log('📝 Creando tabla word_dictionary_relations...')
+                await supabase.rpc('exec_raw_sql', {
+                    query: `
+                        CREATE TABLE IF NOT EXISTS word_dictionary_relations (
+                            relation_id SERIAL PRIMARY KEY,
+                            word TEXT NOT NULL,
+                            entry_id INTEGER NOT NULL REFERENCES dictionary_entries(entry_id) ON DELETE CASCADE,
+                            relation_type TEXT NOT NULL DEFAULT 'lemma',
+                            created_at TIMESTAMPTZ DEFAULT NOW(),
+                            UNIQUE(word, entry_id, relation_type)
+                        );
+                    `
+                })
+
+                // Tabla 5: dictionary_verbs
+                log('📝 Creando tabla dictionary_verbs...')
+                await supabase.rpc('exec_raw_sql', {
+                    query: `
+                        CREATE TABLE IF NOT EXISTS dictionary_verbs (
+                            verb_id SERIAL PRIMARY KEY,
+                            entry_id INTEGER NOT NULL REFERENCES dictionary_entries(entry_id) ON DELETE CASCADE,
+                            conjugation_model TEXT,
+                            is_regular BOOLEAN DEFAULT TRUE,
+                            is_defective BOOLEAN DEFAULT FALSE,
+                            is_provincial BOOLEAN DEFAULT FALSE,
+                            has_ado BOOLEAN DEFAULT FALSE,
+                            form_ado TEXT,
+                            has_ada BOOLEAN DEFAULT FALSE,
+                            form_ada TEXT,
+                            has_ados BOOLEAN DEFAULT FALSE,
+                            form_ados TEXT,
+                            has_ad BOOLEAN DEFAULT FALSE,
+                            form_ad TEXT,
+                            created_at TIMESTAMPTZ DEFAULT NOW(),
+                            updated_at TIMESTAMPTZ DEFAULT NOW(),
+                            UNIQUE(entry_id)
+                        );
+                    `
+                })
+
+                // Índices
+                log('🔍 Creando índices...')
+                const indices = [
+                    'CREATE INDEX IF NOT EXISTS idx_dictionary_entries_lemma ON dictionary_entries(lemma)',
+                    'CREATE INDEX IF NOT EXISTS idx_dictionary_entries_key_value ON dictionary_entries(key_value)',
+                    'CREATE INDEX IF NOT EXISTS idx_dictionary_senses_entry_id ON dictionary_senses(entry_id)',
+                    'CREATE INDEX IF NOT EXISTS idx_word_dictionary_relations_word ON word_dictionary_relations(word)',
+                    'CREATE INDEX IF NOT EXISTS idx_word_dictionary_relations_entry_id ON word_dictionary_relations(entry_id)',
+                    'CREATE INDEX IF NOT EXISTS idx_dictionary_categories_type ON dictionary_categories(category_type)'
+                ]
+
+                for (const indexSQL of indices) {
+                    await supabase.rpc('exec_raw_sql', { query: indexSQL })
+                }
+
+                log('✅ ¡Migración completada exitosamente!', 'success')
+                log('📊 Tablas creadas:', 'success')
+                log('  • dictionary_categories', 'success')
+                log('  • dictionary_entries', 'success')
+                log('  • dictionary_senses', 'success')
+                log('  • word_dictionary_relations', 'success')
+                log('  • dictionary_verbs', 'success')
+                log('🔍 Índices creados para optimización', 'success')
+
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error')
+                console.error('Migration error:', error)
+            }
+        }
+    </script>
+</body>
+</html>
