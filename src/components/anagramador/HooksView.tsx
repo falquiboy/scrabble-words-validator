@@ -69,7 +69,6 @@ const HooksView: React.FC<HooksViewProps> = ({
             <span className="text-gray-500 text-lg">
               {highlighted}
             </span>
-            <span className="text-xs text-gray-400 ml-2">(sin ganchos)</span>
           </div>
           <div></div>
         </div>
@@ -83,15 +82,15 @@ const HooksView: React.FC<HooksViewProps> = ({
         {/* Left side: External hooks + Internal indicator */}
         <div className="flex items-center justify-end">
           {/* Left external hooks */}
-          <div className="flex flex-wrap items-center justify-end mr-1">
+          <div className="flex flex-wrap items-center justify-end mr-0.5">
             {hooks.leftExternal.map(letter => renderHookLetter(letter, true))}
           </div>
           
           {/* Left internal hook indicator */}
           {hooks.hasLeftInternal && (
             <span 
-              className="text-black text-sm select-none mr-0.5" 
-              style={{ lineHeight: '1.2' }}
+              className="text-black text-xs select-none mr-px" 
+              style={{ lineHeight: '1', fontSize: '0.6rem' }}
               title={`Gancho interno izquierdo: ${hooks.leftInternalLetters.join(', ')}`}
             >
               ◀
@@ -111,8 +110,8 @@ const HooksView: React.FC<HooksViewProps> = ({
           {/* Right internal hook indicator */}
           {hooks.hasRightInternal && (
             <span 
-              className="text-black text-sm select-none ml-0.5"
-              style={{ lineHeight: '1.2' }}
+              className="text-black text-xs select-none ml-px"
+              style={{ lineHeight: '1', fontSize: '0.6rem' }}
               title={`Gancho interno derecho: ${hooks.rightInternalLetters.join(', ')}`}
             >
               ▶
@@ -120,7 +119,7 @@ const HooksView: React.FC<HooksViewProps> = ({
           )}
           
           {/* Right external hooks */}
-          <div className="flex flex-wrap items-center justify-start ml-1">
+          <div className="flex flex-wrap items-center justify-start ml-0.5">
             {hooks.rightExternal.map(letter => renderHookLetter(letter, false))}
           </div>
         </div>
