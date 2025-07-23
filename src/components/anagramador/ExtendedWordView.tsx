@@ -1,6 +1,6 @@
 import React from 'react';
 import { AnagramWordInfo } from '@/utils/anagramWordData';
-import { ExternalLink } from 'lucide-react';
+import VerbWordView from './VerbWordView';
 
 interface ExtendedWordViewProps {
   word: string;
@@ -30,6 +30,70 @@ const ExtendedWordView: React.FC<ExtendedWordViewProps> = ({
     }
   };
 
+  const getWordTypeLabel = (type?: string, lemma?: string, partOfSpeech?: string) => {
+    if (!type) return null;
+    
+    // Abbreviated part of speech
+    const getPartOfSpeechAbbr = (pos?: string) => {
+      if (!pos) return '';
+      // Handle specific database abbreviations
+      if (pos === 's.') return 'sust.';
+      if (pos === 'v.') return 'verbo';
+      if (pos === 'adj.') return 'adj.';
+      if (pos === 'adv.') return 'adv.';
+      
+      // Handle full words as fallback
+      const lower = pos.toLowerCase();
+      if (lower.includes('sustantivo')) return 'sust.';
+      if (lower.includes('verbo')) return 'verbo';
+      if (lower.includes('adjetivo')) return 'adj.';
+      if (lower.includes('adverbio')) return 'adv.';
+      
+      return pos; // fallback to original if no match
+    };
+    
+    const posAbbr = getPartOfSpeechAbbr(partOfSpeech);
+    const posText = posAbbr ? `, ${posAbbr}` : '';
+    
+    switch (type) {
+      case 'femenino': 
+        return lemma && lemma !== word.toLowerCase() ? `femenino de "${lemma}"${posText}` : `femenino${posText}`;
+      case 'plural': 
+        return lemma && lemma !== word.toLowerCase() ? `plural de "${lemma}"${posText}` : `plural${posText}`;
+      case 'conjugación': 
+        return lemma && lemma !== word.toLowerCase() ? `conj. de "${lemma}"${posText}` : `conj.${posText}`;
+      case 'variante': 
+        return lemma && lemma !== word.toLowerCase() ? `variante de "${lemma}"${posText}` : `variante${posText}`;
+      case 'base': return `lema${posText}`;
+      default: return null;
+    }
+  };
+
+  const getTypeColor = (type?: string, partOfSpeech?: string) => {
+    // Color by grammatical category first, then by word type
+    if (partOfSpeech === 'sust.' || partOfSpeech?.toLowerCase().includes('sustantivo')) {
+      return 'text-blue-600';
+    }
+    if (partOfSpeech === 'verbo' || partOfSpeech?.toLowerCase().includes('verbo')) {
+      return 'text-green-600';
+    }
+    if (partOfSpeech === 'adj.' || partOfSpeech?.toLowerCase().includes('adjetivo')) {
+      return 'text-purple-600';
+    }
+    if (partOfSpeech === 'adv.' || partOfSpeech?.toLowerCase().includes('adverbio')) {
+      return 'text-orange-600';
+    }
+    
+    // Fallback to word type colors
+    switch (type) {
+      case 'conjugación': return 'text-green-600';
+      case 'plural': return 'text-blue-600';
+      case 'femenino': return 'text-pink-600';
+      case 'variante': return 'text-orange-600';
+      default: return 'text-gray-600';
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="bg-white border rounded-lg p-3 shadow-sm">
@@ -42,49 +106,37 @@ const ExtendedWordView: React.FC<ExtendedWordViewProps> = ({
     );
   }
 
+  // If this is a verb, use the specialized VerbWordView
+  if (wordInfo?.isVerb && wordInfo.verbInfo) {
+    return (
+      <VerbWordView
+        word={word}
+        wordInfo={wordInfo}
+        highlightedWord={highlightedWord}
+      />
+    );
+  }
+
   return (
     <div className="bg-white border rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow">
-      {/* Word and RAE link */}
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center space-x-2">
-          <span className="font-medium text-lg">{highlightedWord || word}</span>
-          {wordInfo?.isScrabbleValid && (
-            <span className="inline-block w-2 h-2 bg-green-500 rounded-full" title="Válida para Scrabble"></span>
-          )}
-        </div>
-        <button
+      {/* Clickable word */}
+      <div className="mb-2">
+        <span 
           onClick={handleRAEClick}
-          className="text-blue-600 hover:text-blue-800 transition-colors"
-          title="Ver en RAE"
+          className="font-medium text-lg cursor-pointer hover:text-blue-600 transition-colors"
         >
-          <ExternalLink size={16} />
-        </button>
+          {highlightedWord || word}
+          {wordInfo?.wordType && (
+            <span className={`text-sm font-normal ml-1 ${getTypeColor(wordInfo.wordType, wordInfo.partOfSpeech)}`}>
+              ({getWordTypeLabel(wordInfo.wordType, wordInfo.lemma, wordInfo.partOfSpeech)})
+            </span>
+          )}
+        </span>
       </div>
 
       {/* Word information */}
       {wordInfo ? (
         <div className="space-y-1 text-sm">
-          {/* Lemma */}
-          {wordInfo.lemma && wordInfo.lemma !== word.toUpperCase() && (
-            <div className="flex items-center space-x-2">
-              <span className="text-gray-500 text-xs">Lema:</span>
-              <span className="font-medium text-gray-700">{wordInfo.lemma.toLowerCase()}</span>
-            </div>
-          )}
-
-          {/* Part of speech and word type */}
-          <div className="flex items-center space-x-2 flex-wrap">
-            {wordInfo.partOfSpeech && (
-              <span className="inline-block px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700">
-                {wordInfo.partOfSpeech}
-              </span>
-            )}
-            {wordInfo.wordType && wordInfo.wordType !== 'base' && (
-              <span className={`inline-block px-2 py-1 text-xs rounded-full ${getWordTypeColor(wordInfo.wordType)}`}>
-                {wordInfo.wordType}
-              </span>
-            )}
-          </div>
 
           {/* Short definition */}
           {wordInfo.shortDefinition && (
