@@ -18,6 +18,7 @@ export const ShorterResults = ({ matches, highlightWildcardLetter, searchTerm, t
       highlightWildcardLetter={highlightWildcardLetter}
       searchTerm={searchTerm}
       isShortMode={!isAdditionalLetterMode}
+      sortByEquity={true} // Activar ordenamiento por equity para subanagramas
     />
   );
 };
