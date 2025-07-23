@@ -108,7 +108,7 @@ const SearchInput = ({
   };
 
   const handleButtonClick = () => {
-    if (hasActiveSearch && onClear) {
+    if (letters.trim() && onClear) {
       onClear();
     } else {
       onSearch();
@@ -140,7 +140,7 @@ const SearchInput = ({
           <div className="absolute right-2 top-1/2 -translate-y-1/2">
             <SearchButton
               onClick={handleButtonClick}
-              hasActiveSearch={hasActiveSearch}
+              hasActiveSearch={!!letters.trim()}
               isDisabled={!letters.trim()}
             />
           </div>
