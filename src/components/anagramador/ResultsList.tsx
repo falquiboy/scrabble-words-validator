@@ -9,7 +9,6 @@ import { toDisplayFormat } from "@/utils/digraphs";
 import { fetchAnagramWordsData, AnagramWordInfo } from "@/utils/anagramWordData";
 import { fetchHooksData, HookInfo } from "@/utils/hooksData";
 import { useState, useEffect } from "react";
-import { Info, Anchor } from "lucide-react";
 
 interface ResultsListProps {
   isLoading: boolean;
