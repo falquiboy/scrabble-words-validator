@@ -4,29 +4,22 @@ import { RefObject, useState, useEffect, useRef } from "react";
 import { SearchTooltip } from "./SearchTooltip";
 import { validateAndCleanAnagramInput, validateAndCleanPatternInput } from "@/utils/inputValidation";
 import SearchButton from "./search/SearchButton";
-import ShorterWordsToggle from "./search/ShorterWordsToggle";
 
 interface SearchInputProps {
   letters: string;
-  showShorter: boolean;
   onInputChange: (value: string) => void;
   onSearch: () => void;
   onKeyPress: (e: React.KeyboardEvent) => void;
-  onShowShorterChange: (checked: boolean) => void;
   inputRef: RefObject<HTMLInputElement>;
-  hasActiveSearch?: boolean;
   onClear?: () => void;
 }
 
 const SearchInput = ({ 
   letters, 
-  showShorter,
   onInputChange, 
   onSearch,
   onKeyPress, 
-  onShowShorterChange,
   inputRef,
-  hasActiveSearch = false,
   onClear
 }: SearchInputProps) => {
   const [isPatternMode, setIsPatternMode] = useState(false);
@@ -153,12 +146,6 @@ const SearchInput = ({
           </div>
         </div>
       </SearchTooltip>
-      <ShorterWordsToggle
-        checked={showShorter}
-        onCheckedChange={onShowShorterChange}
-        isPatternMode={isPatternMode}
-        isLengthSpecified={hasLengthSpecified}
-      />
     </div>
   );
 };

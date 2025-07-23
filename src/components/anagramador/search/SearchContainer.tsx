@@ -6,17 +6,11 @@ import { useToast } from "@/hooks/use-toast";
 interface SearchContainerProps {
   onSearch: (letters: string, targetLength: number | null) => void;
   onClear: () => void;
-  onShowShorterChange: (show: boolean) => void;
-  showShorter: boolean;
-  hasActiveSearch: boolean;
 }
 
 const SearchContainer = ({ 
   onSearch, 
-  onClear, 
-  onShowShorterChange,
-  showShorter,
-  hasActiveSearch 
+  onClear
 }: SearchContainerProps) => {
   const [letters, setLetters] = useState("");
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
@@ -35,10 +29,6 @@ const SearchContainer = ({
       console.log('Target length extracted from colon format:', targetLength);
     }
 
-    // Reset showShorter to false when input changes
-    if (value !== letters) {
-      onShowShorterChange(false);
-    }
 
     // Set the cleaned value in state
     setLetters(cleanedValue);
@@ -49,8 +39,6 @@ const SearchContainer = ({
     if (letters.trim()) {
       const targetLength = handleInputChange(letters);
       
-      // Ensure we reset showShorter before starting a new search
-      onShowShorterChange(false);
       
       onSearch(letters, targetLength);
       
@@ -65,8 +53,6 @@ const SearchContainer = ({
     setLetters("");
     setHistoryIndex(-1);
     
-    // Reset showShorter to false when clearing
-    onShowShorterChange(false);
     
     onClear();
     inputRef.current?.focus();
@@ -95,14 +81,11 @@ const SearchContainer = ({
   return (
     <SearchInput
       letters={letters}
-      showShorter={showShorter}
       onInputChange={handleInputChange}
       onSearch={handleSearch}
       onClear={handleClear}
       onKeyPress={handleKeyPress}
-      onShowShorterChange={onShowShorterChange}
       inputRef={inputRef}
-      hasActiveSearch={hasActiveSearch}
     />
   );
 };

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import SearchContainer from "./anagramador/search/SearchContainer";
 import ResultsList from "./anagramador/ResultsList";
+import SettingsMenu from "./anagramador/SettingsMenu";
 import { useOfflineAnagramSearch } from "@/hooks/useOfflineAnagramSearch";
 import { highlightWildcardLetter } from "@/utils/wildcardHighlighting";
 import { Trie } from "@/utils/trie/types";
@@ -117,30 +118,39 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto p-4 flex flex-col items-center">
-      <div className="w-full max-w-md space-y-4">
-        <SearchContainer
-          onSearch={handleSearch}
-          onClear={handleClear}
-          onShowShorterChange={handleShowShorterChange}
-          showShorter={showShorter}
-          hasActiveSearch={!!searchTerm}
-        />
-        
-        <ResultsList
-          isLoading={isLoading}
-          searchTerm={searchTerm}
-          results={searchResults}
-          highlightWildcardLetter={highlightWildcardLetter}
-          isSearchAborted={isSearchAborted}
-          showShorter={showShorter}
-          showExtendedView={showExtendedView}
-          onExtendedViewChange={handleExtendedViewChange}
-          showHooksView={showHooksView}
-          onHooksViewChange={handleHooksViewChange}
-        />
+    <>
+      {/* Settings Menu */}
+      <SettingsMenu
+        showShorter={showShorter}
+        onShowShorterChange={handleShowShorterChange}
+        showExtendedView={showExtendedView}
+        onExtendedViewChange={handleExtendedViewChange}
+        showHooksView={showHooksView}
+        onHooksViewChange={handleHooksViewChange}
+        hasActiveSearch={!!searchTerm}
+      />
+
+      {/* Main Interface */}
+      <div className="w-full max-w-2xl mx-auto p-4 flex flex-col items-center">
+        <div className="w-full max-w-md space-y-4">
+          <SearchContainer
+            onSearch={handleSearch}
+            onClear={handleClear}
+          />
+          
+          <ResultsList
+            isLoading={isLoading}
+            searchTerm={searchTerm}
+            results={searchResults}
+            highlightWildcardLetter={highlightWildcardLetter}
+            isSearchAborted={isSearchAborted}
+            showShorter={showShorter}
+            showExtendedView={showExtendedView}
+            showHooksView={showHooksView}
+          />
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

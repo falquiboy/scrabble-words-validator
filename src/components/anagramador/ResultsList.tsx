@@ -25,9 +25,7 @@ interface ResultsListProps {
   isSearchAborted?: boolean;
   showShorter: boolean;
   showExtendedView?: boolean;
-  onExtendedViewChange?: (show: boolean) => void;
   showHooksView?: boolean;
-  onHooksViewChange?: (show: boolean) => void;
 }
 
 const ResultsList = ({ 
@@ -38,9 +36,7 @@ const ResultsList = ({
   isSearchAborted,
   showShorter,
   showExtendedView,
-  onExtendedViewChange,
-  showHooksView,
-  onHooksViewChange
+  showHooksView
 }: ResultsListProps) => {
   const { toast } = useToast();
   const [wordsData, setWordsData] = useState<Map<string, AnagramWordInfo>>(new Map());
@@ -174,62 +170,6 @@ const ResultsList = ({
   return (
     <ScrollArea className="h-[calc(100vh-12rem)] px-1">
       <div className="space-y-4 pb-4">
-        {/* View Toggles */}
-        {hasResults && (onExtendedViewChange || onHooksViewChange) && (
-          <div className="flex items-center justify-center bg-gray-50 px-3 py-2 rounded-lg">
-            <div className="flex items-center space-x-6">
-              {/* Extended View Toggle */}
-              {onExtendedViewChange && (
-                <div className="flex items-center space-x-2">
-                  <Info size={16} className="text-gray-500" />
-                  <span className="text-sm text-gray-600">Vista extendida:</span>
-                  <button
-                    onClick={() => {
-                      onExtendedViewChange(!showExtendedView);
-                      if (onHooksViewChange && showHooksView) {
-                        onHooksViewChange(false);
-                      }
-                    }}
-                    className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors ${
-                      showExtendedView ? 'bg-blue-600' : 'bg-gray-300'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${
-                        showExtendedView ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
-                </div>
-              )}
-
-              {/* Hooks View Toggle */}
-              {onHooksViewChange && (
-                <div className="flex items-center space-x-2">
-                  <Anchor size={16} className="text-gray-500" />
-                  <span className="text-sm text-gray-600">Vista ganchos:</span>
-                  <button
-                    onClick={() => {
-                      onHooksViewChange(!showHooksView);
-                      if (onExtendedViewChange && showExtendedView) {
-                        onExtendedViewChange(false);
-                      }
-                    }}
-                    className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors ${
-                      showHooksView ? 'bg-green-600' : 'bg-gray-300'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${
-                        showHooksView ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
 
         {showHooksView ? (
           <HooksView
