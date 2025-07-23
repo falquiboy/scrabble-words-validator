@@ -6,7 +6,6 @@ import ExtendedWordView from "./ExtendedWordView";
 import ExtendedResultsView from "./ExtendedResultsView";
 import { toDisplayFormat } from "@/utils/digraphs";
 import { fetchAnagramWordsData, AnagramWordInfo } from "@/utils/anagramWordData";
-import { debugAnagramData } from "@/utils/debugAnagramData";
 import { useState, useEffect } from "react";
 import { Info } from "lucide-react";
 
@@ -44,17 +43,19 @@ const ResultsList = ({
   // Load word data when extended view is enabled and we have results
   useEffect(() => {
     if (showExtendedView && results && !isLoading) {
-      const allWords = [
+      const allWordsRaw = [
         ...results.exactMatches,
         ...results.wildcardMatches,
         ...results.additionalWildcardMatches,
         ...(showShorter ? results.shorterMatches : []),
         ...results.patternMatches
-      ].map(word => toDisplayFormat(word));
+      ];
+      
+      const allWordsForQuery = allWordsRaw.map(word => toDisplayFormat(word).toUpperCase());
 
-      if (allWords.length > 0) {
+      if (allWordsForQuery.length > 0) {
         setIsLoadingData(true);
-        fetchAnagramWordsData(allWords)
+        fetchAnagramWordsData(allWordsForQuery)
           .then(data => {
             setWordsData(data);
           })
@@ -137,15 +138,7 @@ const ResultsList = ({
       <div className="space-y-4 pb-4">
         {/* Extended View Toggle */}
         {hasResults && onExtendedViewChange && (
-          <div className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-lg">
-            {/* Debug button (temporary) */}
-            <button
-              onClick={() => debugAnagramData()}
-              className="text-xs text-red-600 hover:text-red-800"
-            >
-              🐛 Debug
-            </button>
-            
+          <div className="flex items-center justify-center bg-gray-50 px-3 py-2 rounded-lg">
             <div className="flex items-center space-x-2">
               <Info size={16} className="text-gray-500" />
               <span className="text-sm text-gray-600">Vista extendida:</span>

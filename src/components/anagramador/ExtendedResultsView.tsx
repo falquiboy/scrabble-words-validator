@@ -49,10 +49,10 @@ const ExtendedResultsView: React.FC<ExtendedResultsViewProps> = ({
         <h3 className={`font-semibold text-${color}-600 text-sm`}>
           {title} ({words.length})
         </h3>
-        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-1">
+        <div className="grid gap-3 grid-cols-1">
           {words.map((word, index) => {
             const displayWord = toDisplayFormat(word);
-            const wordInfo = wordsData.get(displayWord);
+            const wordInfo = wordsData.get(displayWord.toUpperCase());
             const highlighted = highlightWildcardLetter(word, searchTerm);
             
             return (
