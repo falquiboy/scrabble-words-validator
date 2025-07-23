@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface LeaveInfo {
   leave: string;
-  leaves: number;
+  leave_value: number; // Assuming the value column name
 }
 
 /**
@@ -44,7 +44,7 @@ export async function getLeaveValue(leaveStr: string): Promise<number | null> {
   try {
     const { data, error } = await supabase
       .from('leaves')
-      .select('leaves')
+      .select('*')  // Select all columns to see structure
       .eq('leave', leaveStr)
       .single();
     
@@ -53,7 +53,8 @@ export async function getLeaveValue(leaveStr: string): Promise<number | null> {
       return null;
     }
     
-    return data?.leaves || null;
+    // Try different possible column names for the value
+    return data?.leaves || data?.leave_value || data?.value || null;
   } catch (error) {
     console.error('Error consultando leaves:', error);
     return null;
