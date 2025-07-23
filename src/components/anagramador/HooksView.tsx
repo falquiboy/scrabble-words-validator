@@ -66,7 +66,7 @@ const HooksView: React.FC<HooksViewProps> = ({
         <div className="grid grid-cols-3 items-center py-2 px-3 bg-gray-50 rounded border">
           <div></div>
           <div className="text-center">
-            <span className="text-gray-500 text-sm font-mono">
+            <span className="text-gray-500 text-lg">
               {highlighted}
             </span>
             <span className="text-xs text-gray-400 ml-2">(sin ganchos)</span>
@@ -80,47 +80,49 @@ const HooksView: React.FC<HooksViewProps> = ({
 
     return (
       <div className="grid grid-cols-3 items-center py-2 px-3 bg-white rounded border hover:shadow-sm transition-shadow">
-        {/* Left side: Internal indicator + External hooks */}
+        {/* Left side: External hooks + Internal indicator */}
         <div className="flex items-center justify-end">
+          {/* Left external hooks */}
+          <div className="flex flex-wrap items-center justify-end mr-1">
+            {hooks.leftExternal.map(letter => renderHookLetter(letter, true))}
+          </div>
+          
           {/* Left internal hook indicator */}
           {hooks.hasLeftInternal && (
             <span 
-              className="text-green-600 font-bold mr-1" 
+              className="text-black text-sm select-none mr-0.5" 
+              style={{ lineHeight: '1.2' }}
               title={`Gancho interno izquierdo: ${hooks.leftInternalLetters.join(', ')}`}
             >
-              &lt;
+              ◀
             </span>
           )}
-          
-          {/* Left external hooks */}
-          <div className="flex flex-wrap items-center justify-end">
-            {hooks.leftExternal.map(letter => renderHookLetter(letter, true))}
-          </div>
         </div>
 
         {/* Center: The word itself */}
         <div className="text-center">
-          <span className="font-mono font-semibold text-lg">
+          <span className="font-semibold text-lg">
             {highlighted}
           </span>
         </div>
 
-        {/* Right side: External hooks + Internal indicator */}
+        {/* Right side: Internal indicator + External hooks */}
         <div className="flex items-center justify-start">
-          {/* Right external hooks */}
-          <div className="flex flex-wrap items-center justify-start">
-            {hooks.rightExternal.map(letter => renderHookLetter(letter, false))}
-          </div>
-          
           {/* Right internal hook indicator */}
           {hooks.hasRightInternal && (
             <span 
-              className="text-green-600 font-bold ml-1"
+              className="text-black text-sm select-none ml-0.5"
+              style={{ lineHeight: '1.2' }}
               title={`Gancho interno derecho: ${hooks.rightInternalLetters.join(', ')}`}
             >
-              &gt;
+              ▶
             </span>
           )}
+          
+          {/* Right external hooks */}
+          <div className="flex flex-wrap items-center justify-start ml-1">
+            {hooks.rightExternal.map(letter => renderHookLetter(letter, false))}
+          </div>
         </div>
       </div>
     );
