@@ -1,8 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export interface LeaveInfo {
-  leave: string;
-  leave_value: number; // Assuming the value column name
+  leave: string;  // The combination column (e.g., "AS", "[CH]A")
+  value: number;  // The numeric value column
 }
 
 /**
@@ -42,9 +42,10 @@ export function calculateLeave(rack: string, word: string): string {
  */
 export async function getLeaveValue(leaveStr: string): Promise<number | null> {
   try {
+    // First, let's debug by getting all columns and logging the structure
     const { data, error } = await supabase
       .from('leaves')
-      .select('*')  // Select all columns to see structure
+      .select('*')
       .eq('leave', leaveStr)
       .single();
     
@@ -53,8 +54,16 @@ export async function getLeaveValue(leaveStr: string): Promise<number | null> {
       return null;
     }
     
-    // Try different possible column names for the value
-    return data?.leaves || data?.leave_value || data?.value || null;
+    if (data) {
+      console.log(`Estructura de datos para residuo "${leaveStr}":`, data);
+      // Try to find the numeric value in the returned data
+      const possibleValues = Object.values(data).filter(val => typeof val === 'number');
+      if (possibleValues.length > 0) {
+        return possibleValues[0] as number;
+      }
+    }
+    
+    return null;
   } catch (error) {
     console.error('Error consultando leaves:', error);
     return null;
