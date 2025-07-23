@@ -16,6 +16,7 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
   const [targetLength, setTargetLength] = useState<number | null>(null);
   const [isSearchAborted, setIsSearchAborted] = useState(false);
   const [showExtendedView, setShowExtendedView] = useState(false);
+  const [showHooksView, setShowHooksView] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResults>({
     exactMatches: [],
     wildcardMatches: [],
@@ -103,6 +104,16 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
 
   const handleExtendedViewChange = (show: boolean) => {
     setShowExtendedView(show);
+    if (show) {
+      setShowHooksView(false); // Mutually exclusive
+    }
+  };
+
+  const handleHooksViewChange = (show: boolean) => {
+    setShowHooksView(show);
+    if (show) {
+      setShowExtendedView(false); // Mutually exclusive
+    }
   };
 
   return (
@@ -125,6 +136,8 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
           showShorter={showShorter}
           showExtendedView={showExtendedView}
           onExtendedViewChange={handleExtendedViewChange}
+          showHooksView={showHooksView}
+          onHooksViewChange={handleHooksViewChange}
         />
       </div>
     </div>

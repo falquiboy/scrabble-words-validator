@@ -4,10 +4,12 @@ import { useToast } from "@/hooks/use-toast";
 import SearchResults from "./search/SearchResults";
 import ExtendedWordView from "./ExtendedWordView";
 import ExtendedResultsView from "./ExtendedResultsView";
+import HooksView from "./HooksView";
 import { toDisplayFormat } from "@/utils/digraphs";
 import { fetchAnagramWordsData, AnagramWordInfo } from "@/utils/anagramWordData";
+import { fetchHooksData, HookInfo } from "@/utils/hooksData";
 import { useState, useEffect } from "react";
-import { Info } from "lucide-react";
+import { Info, Anchor } from "lucide-react";
 
 interface ResultsListProps {
   isLoading: boolean;
@@ -24,6 +26,8 @@ interface ResultsListProps {
   showShorter: boolean;
   showExtendedView?: boolean;
   onExtendedViewChange?: (show: boolean) => void;
+  showHooksView?: boolean;
+  onHooksViewChange?: (show: boolean) => void;
 }
 
 const ResultsList = ({ 
@@ -34,11 +38,15 @@ const ResultsList = ({
   isSearchAborted,
   showShorter,
   showExtendedView,
-  onExtendedViewChange
+  onExtendedViewChange,
+  showHooksView,
+  onHooksViewChange
 }: ResultsListProps) => {
   const { toast } = useToast();
   const [wordsData, setWordsData] = useState<Map<string, AnagramWordInfo>>(new Map());
   const [isLoadingData, setIsLoadingData] = useState(false);
+  const [hooksData, setHooksData] = useState<Map<string, HookInfo>>(new Map());
+  const [isLoadingHooks, setIsLoadingHooks] = useState(false);
 
   // Load word data when extended view is enabled and we have results
   useEffect(() => {
@@ -69,6 +77,36 @@ const ResultsList = ({
       }
     }
   }, [showExtendedView, results, showShorter, isLoading]);
+
+  // Load hooks data when hooks view is enabled and we have results
+  useEffect(() => {
+    if (showHooksView && results && !isLoading) {
+      const allWordsRaw = [
+        ...results.exactMatches,
+        ...results.wildcardMatches,
+        ...results.additionalWildcardMatches,
+        ...(showShorter ? results.shorterMatches : []),
+        ...results.patternMatches
+      ];
+      
+      const allWordsForQuery = allWordsRaw.map(word => toDisplayFormat(word).toUpperCase());
+
+      if (allWordsForQuery.length > 0) {
+        setIsLoadingHooks(true);
+        fetchHooksData(allWordsForQuery)
+          .then(data => {
+            setHooksData(data);
+          })
+          .catch(error => {
+            console.error('Error loading hooks data:', error);
+            toast({ title: 'Error cargando información de ganchos', variant: 'destructive' });
+          })
+          .finally(() => {
+            setIsLoadingHooks(false);
+          });
+      }
+    }
+  }, [showHooksView, results, showShorter, isLoading]);
 
   const handleCopyAll = () => {
     if (!results) return;
@@ -136,29 +174,75 @@ const ResultsList = ({
   return (
     <ScrollArea className="h-[calc(100vh-12rem)] px-1">
       <div className="space-y-4 pb-4">
-        {/* Extended View Toggle */}
-        {hasResults && onExtendedViewChange && (
+        {/* View Toggles */}
+        {hasResults && (onExtendedViewChange || onHooksViewChange) && (
           <div className="flex items-center justify-center bg-gray-50 px-3 py-2 rounded-lg">
-            <div className="flex items-center space-x-2">
-              <Info size={16} className="text-gray-500" />
-              <span className="text-sm text-gray-600">Vista extendida:</span>
-              <button
-                onClick={() => onExtendedViewChange(!showExtendedView)}
-                className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors ${
-                  showExtendedView ? 'bg-blue-600' : 'bg-gray-300'
-                }`}
-              >
-                <span
-                  className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${
-                    showExtendedView ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
+            <div className="flex items-center space-x-6">
+              {/* Extended View Toggle */}
+              {onExtendedViewChange && (
+                <div className="flex items-center space-x-2">
+                  <Info size={16} className="text-gray-500" />
+                  <span className="text-sm text-gray-600">Vista extendida:</span>
+                  <button
+                    onClick={() => {
+                      onExtendedViewChange(!showExtendedView);
+                      if (onHooksViewChange && showHooksView) {
+                        onHooksViewChange(false);
+                      }
+                    }}
+                    className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors ${
+                      showExtendedView ? 'bg-blue-600' : 'bg-gray-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${
+                        showExtendedView ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+              )}
+
+              {/* Hooks View Toggle */}
+              {onHooksViewChange && (
+                <div className="flex items-center space-x-2">
+                  <Anchor size={16} className="text-gray-500" />
+                  <span className="text-sm text-gray-600">Vista ganchos:</span>
+                  <button
+                    onClick={() => {
+                      onHooksViewChange(!showHooksView);
+                      if (onExtendedViewChange && showExtendedView) {
+                        onExtendedViewChange(false);
+                      }
+                    }}
+                    className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors ${
+                      showHooksView ? 'bg-green-600' : 'bg-gray-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${
+                        showHooksView ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
 
-        {showExtendedView ? (
+        {showHooksView ? (
+          <HooksView
+            isLoading={isLoading}
+            searchTerm={searchTerm}
+            results={results}
+            highlightWildcardLetter={highlightWildcardLetter}
+            onCopyAll={handleCopyAll}
+            showShorter={showShorter}
+            hooksData={hooksData}
+            isLoadingHooks={isLoadingHooks}
+          />
+        ) : showExtendedView ? (
           <ExtendedResultsView
             isLoading={isLoading}
             searchTerm={searchTerm}
