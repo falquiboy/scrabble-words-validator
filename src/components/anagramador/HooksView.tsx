@@ -49,7 +49,7 @@ const HooksView: React.FC<HooksViewProps> = ({
         }`}
         title={`Hook: +${letter}`}
       >
-        {letter.toUpperCase()}
+        {letter.toLowerCase()}
       </span>
     );
   };
