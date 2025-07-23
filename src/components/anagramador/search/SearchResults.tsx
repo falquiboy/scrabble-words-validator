@@ -1,7 +1,6 @@
 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader } from "lucide-react";
-import { ResultsHeader } from "../ResultsHeader";
 import { ExactResults } from "../ExactResults";
 import { ShorterResults } from "../ShorterResults";
 import { PatternResults } from "../PatternResults";
@@ -17,7 +16,6 @@ interface SearchResultsProps {
     patternMatches: string[];
   };
   highlightWildcardLetter: (word: string, originalWord: string) => React.ReactNode;
-  onCopyAll: () => void;
   showShorter: boolean;
 }
 
@@ -26,7 +24,6 @@ const SearchResults = ({
   searchTerm, 
   results,
   highlightWildcardLetter,
-  onCopyAll,
   showShorter
 }: SearchResultsProps) => {
   const wildcardCount = (searchTerm.match(/\*/g) || []).length;
@@ -67,7 +64,6 @@ const SearchResults = ({
 
   return (
     <>
-      <ResultsHeader onCopyAll={onCopyAll} />
       {isPatternSearch ? (
         <PatternResults
           matches={results.patternMatches || []}

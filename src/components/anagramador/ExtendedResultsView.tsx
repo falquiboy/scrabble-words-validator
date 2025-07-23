@@ -1,6 +1,5 @@
 import React from 'react';
-import { Loader, Copy } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Loader } from "lucide-react";
 import ExtendedWordView from './ExtendedWordView';
 import { toDisplayFormat } from "@/utils/digraphs";
 import { AnagramWordInfo } from '@/utils/anagramWordData';
@@ -16,7 +15,6 @@ interface ExtendedResultsViewProps {
     patternMatches: string[];
   };
   highlightWildcardLetter: (word: string, originalWord: string) => React.ReactNode;
-  onCopyAll: () => void;
   showShorter: boolean;
   wordsData: Map<string, AnagramWordInfo>;
   isLoadingData: boolean;
@@ -27,7 +25,6 @@ const ExtendedResultsView: React.FC<ExtendedResultsViewProps> = ({
   searchTerm,
   results,
   highlightWildcardLetter,
-  onCopyAll,
   showShorter,
   wordsData,
   isLoadingData
@@ -88,18 +85,6 @@ const ExtendedResultsView: React.FC<ExtendedResultsViewProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Copy all button */}
-      <div className="flex justify-end">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onCopyAll}
-          className="flex items-center space-x-2"
-        >
-          <Copy size={16} />
-          <span>Copiar todo</span>
-        </Button>
-      </div>
 
       {/* Pattern results (for pattern searches) */}
       {isPatternSearch && renderWordSection(

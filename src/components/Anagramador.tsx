@@ -4,6 +4,8 @@ import ResultsList from "./anagramador/ResultsList";
 import SettingsMenu from "./anagramador/SettingsMenu";
 import { useOfflineAnagramSearch } from "@/hooks/useOfflineAnagramSearch";
 import { highlightWildcardLetter } from "@/utils/wildcardHighlighting";
+import { useToast } from "@/hooks/use-toast";
+import { toDisplayFormat } from "@/utils/digraphs";
 import { Trie } from "@/utils/trie/types";
 import { SearchResults } from "@/hooks/anagramSearch/types";
 
@@ -12,6 +14,7 @@ interface AnagramadorProps {
 }
 
 const Anagramador = ({ trie }: AnagramadorProps) => {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [showShorter, setShowShorter] = useState(false);
   const [targetLength, setTargetLength] = useState<number | null>(null);
@@ -117,6 +120,60 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
     }
   };
 
+  const handleCopyAll = () => {
+    if (!searchResults) return;
+
+    const isPatternSearch = searchTerm.includes('?') || searchTerm.includes('-');
+    const wildcardCount = (searchTerm.match(/\*/g) || []).length;
+
+    let allWords: string[] = [];
+
+    if (isPatternSearch) {
+      allWords = [...(searchResults.patternMatches || [])];
+    } else {
+      // Include exact/wildcard matches
+      if (wildcardCount === 0) {
+        allWords = [...(searchResults.exactMatches || [])];
+      } else {
+        allWords = [...(searchResults.wildcardMatches || [])];
+      }
+      
+      // Include additional letter matches
+      const filteredAdditionalMatches = searchResults.additionalWildcardMatches.filter(word => {
+        if (wildcardCount === 0) {
+          return !searchResults.exactMatches.includes(word);
+        } else {
+          return !searchResults.wildcardMatches.includes(word);
+        }
+      });
+      
+      if (filteredAdditionalMatches.length > 0) {
+        allWords = [...allWords, ...filteredAdditionalMatches];
+      }
+      
+      // Include shorter matches if any
+      if (searchResults.shorterMatches?.length > 0) {
+        allWords = [...allWords, ...(searchResults.shorterMatches || [])];
+      }
+    }
+
+    // Convertir cada palabra a su formato de visualización antes de copiar
+    const formattedWords = allWords.map(word => toDisplayFormat(word));
+
+    navigator.clipboard.writeText(formattedWords.join('\n')).then(() => {
+      toast({
+        title: "¡Copiado!",
+        description: `${formattedWords.length} ${formattedWords.length === 1 ? 'palabra copiada' : 'palabras copiadas'}`,
+      });
+    }).catch(() => {
+      toast({
+        title: "Error",
+        description: "No se pudieron copiar las palabras",
+        variant: "destructive",
+      });
+    });
+  };
+
   return (
     <>
       {/* Settings Menu */}
@@ -128,6 +185,7 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
         showHooksView={showHooksView}
         onHooksViewChange={handleHooksViewChange}
         hasActiveSearch={!!searchTerm}
+        onCopyAll={handleCopyAll}
       />
 
       {/* Main Interface */}

@@ -1,6 +1,5 @@
 import React from 'react';
-import { Loader, Copy } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Loader } from "lucide-react";
 import { toDisplayFormat } from "@/utils/digraphs";
 import { HookInfo, processHooks } from '@/utils/hooksData';
 
@@ -15,7 +14,6 @@ interface HooksViewProps {
     patternMatches: string[];
   };
   highlightWildcardLetter: (word: string, originalWord: string) => React.ReactNode;
-  onCopyAll: () => void;
   showShorter: boolean;
   hooksData: Map<string, HookInfo>;
   isLoadingHooks: boolean;
@@ -26,7 +24,6 @@ const HooksView: React.FC<HooksViewProps> = ({
   searchTerm,
   results,
   highlightWildcardLetter,
-  onCopyAll,
   showShorter,
   hooksData,
   isLoadingHooks
@@ -173,19 +170,8 @@ const HooksView: React.FC<HooksViewProps> = ({
     <div className="space-y-6">
       {/* Header with copy button and legend */}
       <div className="space-y-3">
-        <div className="flex justify-between items-center">
-          <div className="text-sm text-gray-600">
-            <span className="font-medium">Vista de Ganchos</span> - Letras para extender palabras
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onCopyAll}
-            className="flex items-center space-x-2"
-          >
-            <Copy size={16} />
-            <span>Copiar todo</span>
-          </Button>
+        <div className="text-sm text-gray-600">
+          <span className="font-medium">Vista de Ganchos</span> - Letras para extender palabras
         </div>
 
         {/* Legend */}

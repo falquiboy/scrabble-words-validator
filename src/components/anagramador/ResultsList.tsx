@@ -103,59 +103,6 @@ const ResultsList = ({
     }
   }, [showHooksView, results, showShorter, isLoading]);
 
-  const handleCopyAll = () => {
-    if (!results) return;
-
-    const isPatternSearch = searchTerm.includes('?') || searchTerm.includes('-');
-    const wildcardCount = (searchTerm.match(/\*/g) || []).length;
-
-    let allWords: string[] = [];
-
-    if (isPatternSearch) {
-      allWords = [...(results.patternMatches || [])];
-    } else {
-      // Include exact/wildcard matches
-      if (wildcardCount === 0) {
-        allWords = [...(results.exactMatches || [])];
-      } else {
-        allWords = [...(results.wildcardMatches || [])];
-      }
-      
-      // Include additional letter matches
-      const filteredAdditionalMatches = results.additionalWildcardMatches.filter(word => {
-        if (wildcardCount === 0) {
-          return !results.exactMatches.includes(word);
-        } else {
-          return !results.wildcardMatches.includes(word);
-        }
-      });
-      
-      if (filteredAdditionalMatches.length > 0) {
-        allWords = [...allWords, ...filteredAdditionalMatches];
-      }
-      
-      // Include shorter matches if any
-      if (results.shorterMatches?.length > 0) {
-        allWords = [...allWords, ...(results.shorterMatches || [])];
-      }
-    }
-
-    // Convertir cada palabra a su formato de visualización antes de copiar
-    const formattedWords = allWords.map(word => toDisplayFormat(word));
-
-    navigator.clipboard.writeText(formattedWords.join('\n')).then(() => {
-      toast({
-        title: "¡Copiado!",
-        description: `${formattedWords.length} ${formattedWords.length === 1 ? 'palabra copiada' : 'palabras copiadas'}`,
-      });
-    }).catch(() => {
-      toast({
-        title: "Error",
-        description: "No se pudieron copiar las palabras",
-        variant: "destructive",
-      });
-    });
-  };
 
   // Check if we have any results to show the toggle
   const hasResults = results && (
@@ -176,7 +123,6 @@ const ResultsList = ({
             searchTerm={searchTerm}
             results={results}
             highlightWildcardLetter={highlightWildcardLetter}
-            onCopyAll={handleCopyAll}
             showShorter={showShorter}
             hooksData={hooksData}
             isLoadingHooks={isLoadingHooks}
@@ -187,7 +133,6 @@ const ResultsList = ({
             searchTerm={searchTerm}
             results={results}
             highlightWildcardLetter={highlightWildcardLetter}
-            onCopyAll={handleCopyAll}
             showShorter={showShorter}
             wordsData={wordsData}
             isLoadingData={isLoadingData}
@@ -198,7 +143,6 @@ const ResultsList = ({
             searchTerm={searchTerm}
             results={results}
             highlightWildcardLetter={highlightWildcardLetter}
-            onCopyAll={handleCopyAll}
             showShorter={showShorter}
           />
         )}

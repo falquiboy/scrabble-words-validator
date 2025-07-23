@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, Info, Anchor, ChevronDown } from 'lucide-react';
+import { Menu, X, Info, Anchor, ChevronDown, Copy } from 'lucide-react';
 
 interface SettingsMenuProps {
   showShorter: boolean;
@@ -9,6 +9,7 @@ interface SettingsMenuProps {
   showHooksView: boolean;
   onHooksViewChange: (show: boolean) => void;
   hasActiveSearch: boolean;
+  onCopyAll?: () => void;
 }
 
 const SettingsMenu: React.FC<SettingsMenuProps> = ({
@@ -18,7 +19,8 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({
   onExtendedViewChange,
   showHooksView,
   onHooksViewChange,
-  hasActiveSearch
+  hasActiveSearch,
+  onCopyAll
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -132,6 +134,25 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({
               onHooksViewChange,
               <Anchor size={16} className="text-green-500" />,
               !hasActiveSearch
+            )}
+
+            {/* Copy Button */}
+            {hasActiveSearch && onCopyAll && (
+              <>
+                <div className="border-t border-gray-100" />
+                <div className="py-3 px-4">
+                  <button
+                    onClick={() => {
+                      onCopyAll();
+                      setIsOpen(false); // Close menu after copying
+                    }}
+                    className="w-full flex items-center space-x-3 text-left hover:bg-gray-50 rounded-lg p-2 transition-colors"
+                  >
+                    <Copy size={16} className="text-purple-500" />
+                    <span className="text-sm font-medium text-gray-700">Copiar resultados</span>
+                  </button>
+                </div>
+              </>
             )}
           </div>
 
