@@ -44,7 +44,7 @@ const HooksView: React.FC<HooksViewProps> = ({
     return (
       <span
         key={letter}
-        className={`inline-block px-1 py-0.5 text-xs font-mono bg-blue-100 text-blue-700 rounded mx-0.5 ${
+        className={`inline-block px-1 py-0.5 text-xs bg-blue-100 text-blue-700 border border-blue-200 mx-0.5 ${
           isLeft ? 'mr-1' : 'ml-1'
         }`}
         title={`Hook: +${letter}`}
@@ -60,13 +60,21 @@ const HooksView: React.FC<HooksViewProps> = ({
     const hookInfo = hooksData.get(hookInfoKey);
     const highlighted = highlightWildcardLetter(word, searchTerm);
 
+    const handleRAEClick = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      window.open(`https://dle.rae.es/${displayWord.toLowerCase()}`, '_blank');
+    };
+
     if (!hookInfo || (!hookInfo.hasExternalHooks && !hookInfo.hasInternalHooks)) {
       // No hooks available
       return (
-        <div className="grid grid-cols-3 items-center py-2 px-3 bg-gray-50 rounded border">
+        <div className="grid grid-cols-3 items-center py-1.5 px-3">
           <div></div>
           <div className="text-center">
-            <span className="text-gray-500 text-lg">
+            <span 
+              className="text-gray-500 text-lg cursor-pointer hover:text-blue-600 transition-colors"
+              onClick={handleRAEClick}
+            >
               {highlighted}
             </span>
           </div>
@@ -77,56 +85,47 @@ const HooksView: React.FC<HooksViewProps> = ({
 
     const hooks = processHooks(hookInfo);
 
+    // Build the word with internal hook indicators integrated
+    const buildWordWithInternalHooks = () => {
+      let wordDisplay = highlighted;
+      
+      // Add internal hook indicators as part of the word string
+      const leftIndicator = hooks.hasLeftInternal ? 
+        <span className="text-black text-xs select-none" style={{ fontSize: '0.6rem' }}>◀</span> : null;
+      const rightIndicator = hooks.hasRightInternal ? 
+        <span className="text-black text-xs select-none" style={{ fontSize: '0.6rem' }}>▶</span> : null;
+      
+      return (
+        <>
+          {leftIndicator}
+          {wordDisplay}
+          {rightIndicator}
+        </>
+      );
+    };
+
     return (
-      <div className="grid grid-cols-3 items-center py-2 px-3 bg-white rounded border hover:shadow-sm transition-shadow">
+      <div className="grid grid-cols-3 items-center py-1.5 px-3 hover:bg-gray-50 transition-colors">
         {/* Left side: External hooks */}
         <div className="flex items-center justify-end">
-          {/* Left external hooks */}
           <div className="flex flex-wrap items-center justify-end mr-0.5">
             {hooks.leftExternal.map(letter => renderHookLetter(letter, true))}
           </div>
         </div>
 
-        {/* Center: The word itself with overlaid internal indicators */}
-        <div className="text-center relative">
-          {/* Left internal hook indicator - overlaid */}
-          {hooks.hasLeftInternal && (
-            <span 
-              className="absolute left-0 top-1/2 transform -translate-y-1/2 text-black select-none pointer-events-none" 
-              style={{ 
-                lineHeight: '1', 
-                fontSize: '0.5rem',
-                left: '-0.3rem'
-              }}
-              title={`Gancho interno izquierdo: ${hooks.leftInternalLetters.join(', ')}`}
-            >
-              ◀
-            </span>
-          )}
-          
-          <span className="font-semibold text-lg">
-            {highlighted}
+        {/* Center: The word itself with integrated internal indicators */}
+        <div className="text-center">
+          <span 
+            className="font-semibold text-lg cursor-pointer hover:text-blue-600 transition-colors inline-flex items-center"
+            onClick={handleRAEClick}
+            title={`Consultar "${displayWord}" en RAE`}
+          >
+            {buildWordWithInternalHooks()}
           </span>
-          
-          {/* Right internal hook indicator - overlaid */}
-          {hooks.hasRightInternal && (
-            <span 
-              className="absolute right-0 top-1/2 transform -translate-y-1/2 text-black select-none pointer-events-none"
-              style={{ 
-                lineHeight: '1', 
-                fontSize: '0.5rem',
-                right: '-0.3rem'
-              }}
-              title={`Gancho interno derecho: ${hooks.rightInternalLetters.join(', ')}`}
-            >
-              ▶
-            </span>
-          )}
         </div>
 
         {/* Right side: External hooks */}
         <div className="flex items-center justify-start">
-          {/* Right external hooks */}
           <div className="flex flex-wrap items-center justify-start ml-0.5">
             {hooks.rightExternal.map(letter => renderHookLetter(letter, false))}
           </div>
@@ -143,7 +142,7 @@ const HooksView: React.FC<HooksViewProps> = ({
         <h3 className={`font-semibold text-${color}-600 text-sm`}>
           {title} ({words.length})
         </h3>
-        <div className="space-y-2">
+        <div>
           {words.map((word, index) => (
             <div key={index}>
               {renderWordWithHooks(word, searchTerm)}
