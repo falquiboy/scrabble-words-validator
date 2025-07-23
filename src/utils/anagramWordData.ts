@@ -175,8 +175,25 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
         console.log(`🔍 Available keys - conj: ${scrabbleInfo.key_conj}, fem: ${scrabbleInfo.key_feminine}, plural: ${scrabbleInfo.key_plural}, variant: ${scrabbleInfo.key_variant}, lemma: ${scrabbleInfo.key_lemma}`);
         
         // Check if this is a verb by looking up in verb_entries
-        const lemmaToCheck = entry?.lemma || word.toLowerCase();
-        const verbInfo = await fetchVerbInfo(lemmaToCheck);
+        // Handle pronominal verbs by stripping the -se ending from the lemma
+        let lemmaToCheck = entry?.lemma || word.toLowerCase();
+        let verbInfo = null;
+        
+        // If the lemma ends with -se, try without it first (for pronominal verbs)
+        if (lemmaToCheck.endsWith('se')) {
+          const baseForm = lemmaToCheck.slice(0, -2); // Remove 'se'
+          console.log(`🔄 Checking pronominal verb: ${lemmaToCheck} → ${baseForm}`);
+          verbInfo = await fetchVerbInfo(baseForm);
+          if (verbInfo) {
+            console.log(`✅ Found verb info for pronominal base: ${baseForm}`, verbInfo);
+          } else {
+            // If base form not found, try the full lemma as fallback
+            console.log(`⚠️ Base form not found, trying full lemma: ${lemmaToCheck}`);
+            verbInfo = await fetchVerbInfo(lemmaToCheck);
+          }
+        } else {
+          verbInfo = await fetchVerbInfo(lemmaToCheck);
+        }
         
         let shortDefinition = '';
         let partOfSpeech = '';
