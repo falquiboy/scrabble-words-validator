@@ -23,15 +23,23 @@ export interface ProcessedHooks {
 export async function fetchHooksData(words: string[]): Promise<Map<string, HookInfo>> {
   const results = new Map<string, HookInfo>();
   
-  if (words.length === 0) return results;
+  if (words.length === 0) {
+    console.log('🎣 fetchHooksData: No words provided');
+    return results;
+  }
 
   console.log('🎣 fetchHooksData called with:', words);
+  console.log('🎣 Words count:', words.length);
 
   try {
     // Convert words to internal format for querying (CH->Ç, LL->K, RR->W)
     const internalWords = words.map(word => processDigraphs(word.toLowerCase()));
     console.log('🔄 Converted to internal format:', internalWords);
+    console.log('🔄 Internal words count:', internalWords.length);
 
+    // First, let's check if the hooks table even exists
+    console.log('🔍 Testing hooks table access...');
+    
     const { data: hooksData, error } = await supabase
       .from('hooks')
       .select(`
@@ -47,11 +55,28 @@ export async function fetchHooksData(words: string[]): Promise<Map<string, HookI
 
     if (error) {
       console.error('❌ Hooks table error:', error);
+      console.error('❌ Error details:', JSON.stringify(error, null, 2));
+      
+      // Check if it's a table not found error
+      if (error.message && error.message.includes('does not exist')) {
+        console.error('❌ HOOKS TABLE DOES NOT EXIST! Need to import hooks.csv first');
+      }
+      
       throw error;
     }
 
-    console.log('✅ Hooks response:', hooksData);
+    console.log('✅ Hooks response received');
+    console.log('✅ Hooks data:', hooksData);
     console.log('✅ Number of hooks found:', hooksData?.length || 0);
+    
+    // Log each hook found for debugging
+    if (hooksData && hooksData.length > 0) {
+      hooksData.forEach((hook, index) => {
+        console.log(`🎣 Hook ${index + 1}:`, hook);
+      });
+    } else {
+      console.warn('⚠️ No hooks data returned from database');
+    }
 
     if (hooksData && hooksData.length > 0) {
       // Create map with original word as key
@@ -75,14 +100,17 @@ export async function fetchHooksData(words: string[]): Promise<Map<string, HookI
         };
 
         console.log(`🎣 Processed hooks for: ${originalWord}`, hookInfo);
-        results.set(originalWord, hookInfo);
+        // Store with uppercase key to match HooksView lookup
+        const upperKey = toDisplayFormat(originalWord).toUpperCase();
+        results.set(upperKey, hookInfo);
       });
     }
 
     // Add empty entries for words without hooks
     words.forEach(word => {
-      if (!results.has(word)) {
-        results.set(word, {
+      const upperKey = toDisplayFormat(word).toUpperCase();
+      if (!results.has(upperKey)) {
+        results.set(upperKey, {
           word,
           hasExternalHooks: false,
           hasInternalHooks: false
@@ -95,7 +123,8 @@ export async function fetchHooksData(words: string[]): Promise<Map<string, HookI
     
     // Return empty hook info for all words on error
     words.forEach(word => {
-      results.set(word, {
+      const upperKey = toDisplayFormat(word).toUpperCase();
+      results.set(upperKey, {
         word,
         hasExternalHooks: false,
         hasInternalHooks: false

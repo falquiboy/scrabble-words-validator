@@ -56,17 +56,22 @@ const HooksView: React.FC<HooksViewProps> = ({
 
   const renderWordWithHooks = (word: string, originalWord: string) => {
     const displayWord = toDisplayFormat(word);
-    const hookInfo = hooksData.get(displayWord.toUpperCase());
+    const hookInfoKey = displayWord.toUpperCase();
+    const hookInfo = hooksData.get(hookInfoKey);
     const highlighted = highlightWildcardLetter(word, searchTerm);
 
     if (!hookInfo || (!hookInfo.hasExternalHooks && !hookInfo.hasInternalHooks)) {
       // No hooks available
       return (
-        <div className="flex items-center justify-center py-2 px-3 bg-gray-50 rounded border">
-          <span className="text-gray-500 text-sm font-mono">
-            {highlighted}
-          </span>
-          <span className="text-xs text-gray-400 ml-2">(sin ganchos)</span>
+        <div className="grid grid-cols-3 items-center py-2 px-3 bg-gray-50 rounded border">
+          <div></div>
+          <div className="text-center">
+            <span className="text-gray-500 text-sm font-mono">
+              {highlighted}
+            </span>
+            <span className="text-xs text-gray-400 ml-2">(sin ganchos)</span>
+          </div>
+          <div></div>
         </div>
       );
     }
@@ -74,8 +79,9 @@ const HooksView: React.FC<HooksViewProps> = ({
     const hooks = processHooks(hookInfo);
 
     return (
-      <div className="flex items-center justify-center py-2 px-3 bg-white rounded border hover:shadow-sm transition-shadow">
-        <div className="flex items-center">
+      <div className="grid grid-cols-3 items-center py-2 px-3 bg-white rounded border hover:shadow-sm transition-shadow">
+        {/* Left side: Internal indicator + External hooks */}
+        <div className="flex items-center justify-end">
           {/* Left internal hook indicator */}
           {hooks.hasLeftInternal && (
             <span 
@@ -85,22 +91,27 @@ const HooksView: React.FC<HooksViewProps> = ({
               &lt;
             </span>
           )}
-
+          
           {/* Left external hooks */}
-          <div className="flex flex-wrap items-center">
+          <div className="flex flex-wrap items-center justify-end">
             {hooks.leftExternal.map(letter => renderHookLetter(letter, true))}
           </div>
+        </div>
 
-          {/* The word itself */}
-          <span className="font-mono font-semibold text-lg mx-2">
+        {/* Center: The word itself */}
+        <div className="text-center">
+          <span className="font-mono font-semibold text-lg">
             {highlighted}
           </span>
+        </div>
 
+        {/* Right side: External hooks + Internal indicator */}
+        <div className="flex items-center justify-start">
           {/* Right external hooks */}
-          <div className="flex flex-wrap items-center">
+          <div className="flex flex-wrap items-center justify-start">
             {hooks.rightExternal.map(letter => renderHookLetter(letter, false))}
           </div>
-
+          
           {/* Right internal hook indicator */}
           {hooks.hasRightInternal && (
             <span 
@@ -108,20 +119,6 @@ const HooksView: React.FC<HooksViewProps> = ({
               title={`Gancho interno derecho: ${hooks.rightInternalLetters.join(', ')}`}
             >
               &gt;
-            </span>
-          )}
-        </div>
-
-        {/* Hook summary */}
-        <div className="ml-4 text-xs text-gray-500">
-          {hookInfo.hasExternalHooks && (
-            <span className="bg-blue-50 px-2 py-1 rounded mr-1">
-              {hooks.leftExternal.length + hooks.rightExternal.length} ext
-            </span>
-          )}
-          {hookInfo.hasInternalHooks && (
-            <span className="bg-green-50 px-2 py-1 rounded">
-              {(hooks.hasLeftInternal ? 1 : 0) + (hooks.hasRightInternal ? 1 : 0)} int
             </span>
           )}
         </div>
