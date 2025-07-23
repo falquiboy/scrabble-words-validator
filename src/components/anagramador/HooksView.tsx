@@ -79,45 +79,53 @@ const HooksView: React.FC<HooksViewProps> = ({
 
     return (
       <div className="grid grid-cols-3 items-center py-2 px-3 bg-white rounded border hover:shadow-sm transition-shadow">
-        {/* Left side: External hooks + Internal indicator */}
+        {/* Left side: External hooks */}
         <div className="flex items-center justify-end">
           {/* Left external hooks */}
           <div className="flex flex-wrap items-center justify-end mr-0.5">
             {hooks.leftExternal.map(letter => renderHookLetter(letter, true))}
           </div>
-          
-          {/* Left internal hook indicator */}
+        </div>
+
+        {/* Center: The word itself with overlaid internal indicators */}
+        <div className="text-center relative">
+          {/* Left internal hook indicator - overlaid */}
           {hooks.hasLeftInternal && (
             <span 
-              className="text-black text-xs select-none mr-px" 
-              style={{ lineHeight: '1', fontSize: '0.6rem' }}
+              className="absolute left-0 top-1/2 transform -translate-y-1/2 text-black select-none pointer-events-none" 
+              style={{ 
+                lineHeight: '1', 
+                fontSize: '0.5rem',
+                left: '-0.3rem'
+              }}
               title={`Gancho interno izquierdo: ${hooks.leftInternalLetters.join(', ')}`}
             >
               ◀
             </span>
           )}
-        </div>
-
-        {/* Center: The word itself */}
-        <div className="text-center">
+          
           <span className="font-semibold text-lg">
             {highlighted}
           </span>
-        </div>
-
-        {/* Right side: Internal indicator + External hooks */}
-        <div className="flex items-center justify-start">
-          {/* Right internal hook indicator */}
+          
+          {/* Right internal hook indicator - overlaid */}
           {hooks.hasRightInternal && (
             <span 
-              className="text-black text-xs select-none ml-px"
-              style={{ lineHeight: '1', fontSize: '0.6rem' }}
+              className="absolute right-0 top-1/2 transform -translate-y-1/2 text-black select-none pointer-events-none"
+              style={{ 
+                lineHeight: '1', 
+                fontSize: '0.5rem',
+                right: '-0.3rem'
+              }}
               title={`Gancho interno derecho: ${hooks.rightInternalLetters.join(', ')}`}
             >
               ▶
             </span>
           )}
-          
+        </div>
+
+        {/* Right side: External hooks */}
+        <div className="flex items-center justify-start">
           {/* Right external hooks */}
           <div className="flex flex-wrap items-center justify-start ml-0.5">
             {hooks.rightExternal.map(letter => renderHookLetter(letter, false))}
