@@ -44,7 +44,7 @@ const HooksView: React.FC<HooksViewProps> = ({
     return (
       <span
         key={letter}
-        className={`inline-flex items-center justify-center w-6 h-6 text-xs bg-blue-100 text-blue-700 border border-blue-200 rounded mx-0.5 ${
+        className={`inline-flex items-center justify-center w-5 h-5 text-xs bg-blue-100 text-blue-700 border border-blue-200 rounded mx-0.5 ${
           isLeft ? 'mr-1' : 'ml-1'
         }`}
         title={`Hook: +${letter}`}
