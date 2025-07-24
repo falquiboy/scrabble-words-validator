@@ -161,15 +161,21 @@ const findWildcardPatternMatches = async (
   // Limpiamos la lista de patrones base antes de empezar
   basePatches.length = 0;
   
-  // Para patrones con comodines, primero encontramos las posiciones de comodines de un carácter (.)
+  // Dividir el patrón en parte fija y parte expandible (*)
+  const asteriskIndex = pattern.indexOf('*');
+  
+  if (asteriskIndex !== -1) {
+    // Patrón con * - manejar expansión variable
+    return await handlePatternWithAsterisk(pattern, rackLetters, trie, asteriskIndex);
+  }
+  
+  // Para patrones solo con . (comodines de posición fija)
   const singleWildcardPositions: number[] = [];
   for (let i = 0; i < pattern.length; i++) {
     if (pattern[i] === '.') {
       singleWildcardPositions.push(i);
     }
   }
-  
-  // * se maneja diferente (cero o más caracteres) y se procesa como regex
   
   const patternChars = pattern.split('');
   const processedRack = processDigraphs(rackLetters.toUpperCase());
@@ -557,3 +563,234 @@ const generateAllPatternVariations = async (
   
   patternChars[wildcardPos] = '.';
 };
+
+// Función simplificada para manejar patrones con * (expansión variable)
+const handlePatternWithAsterisk = async (
+  pattern: string,
+  rackLetters: string,
+  trie: Trie,
+  asteriskIndex: number
+): Promise<string[]> => {
+  console.log(`Manejando patrón con *: ${pattern}, índice *: ${asteriskIndex}`);
+  
+  const matches: string[] = [];
+  
+  // Solo soportar * al final por ahora (caso más común: .R.Z*)
+  if (asteriskIndex !== pattern.length - 1) {
+    console.warn('Solo se soporta * al final del patrón por ahora');
+    return [];
+  }
+  
+  const fixedPart = pattern.substring(0, asteriskIndex); // .R.Z
+  console.log(`Parte fija: "${fixedPart}"`);
+  
+  // Usar la lógica existente para resolver la parte fija
+  const fixedPartMatches = await findFixedPartWithDots(fixedPart, rackLetters, trie);
+  
+  // Para cada coincidencia de la parte fija, probar expansiones
+  for (const fixedMatch of fixedPartMatches) {
+    // Calcular letras restantes después de usar la parte fija
+    const remainingRack = calculateRemainingRack(rackLetters, fixedMatch.usedLetters);
+    console.log(`Parte fija resuelta: ${fixedMatch.word}, rack restante: ${remainingRack}`);
+    
+    // Probar expansiones con las letras restantes
+    const expansions = generateSimpleExpansions(remainingRack, 6); // Máx 6 letras adicionales
+    
+    for (const expansion of expansions) {
+      const fullWord = fixedMatch.word + expansion;
+      if (trie.search(fullWord)) {
+        console.log(`¡Encontrada palabra: ${fullWord}!`);
+        matches.push(fullWord);
+      }
+    }
+  }
+  
+  return Array.from(new Set(matches));
+};
+
+// Resolver parte fija con puntos (.)
+const findFixedPartWithDots = async (
+  fixedPart: string,
+  rackLetters: string,
+  trie: Trie
+): Promise<{word: string, usedLetters: string}[]> => {
+  const results: {word: string, usedLetters: string}[] = [];
+  const processedRack = processDigraphs(rackLetters.toUpperCase());
+  
+  // Usar la lógica existente de generateAllPatternVariations para resolver los puntos
+  const patternChars = fixedPart.split('');
+  const dotPositions: number[] = [];
+  
+  for (let i = 0; i < patternChars.length; i++) {
+    if (patternChars[i] === '.') {
+      dotPositions.push(i);
+    }
+  }
+  
+  if (dotPositions.length === 0) {
+    // No hay puntos, devolver tal como está
+    return [{word: fixedPart, usedLetters: ''}];
+  }
+  
+  // Contar letras disponibles
+  const availableLetters = new Map<string, number>();
+  let wildcards = 0;
+  
+  for (const char of processedRack) {
+    if (char === '?') {
+      wildcards++;
+    } else {
+      availableLetters.set(char, (availableLetters.get(char) || 0) + 1);
+    }
+  }
+  
+  // Generar combinaciones para los puntos
+  const combinations: {pattern: string, usedLetters: Map<string, number>}[] = [];
+  await generateDotCombinationsSimple(
+    patternChars,
+    dotPositions,
+    0,
+    new Map(availableLetters),
+    wildcards,
+    combinations
+  );
+  
+  // Convertir a formato de resultado
+  for (const combo of combinations) {
+    const usedLettersStr = Array.from(combo.usedLetters.entries())
+      .map(([letter, count]) => letter.repeat(count))
+      .join('');
+    results.push({word: combo.pattern, usedLetters: usedLettersStr});
+  }
+  
+  return results;
+};
+
+// Versión simplificada de generación de combinaciones para puntos
+const generateDotCombinationsSimple = async (
+  patternChars: string[],
+  dotPositions: number[],
+  currentIndex: number,
+  availableLetters: Map<string, number>,
+  wildcards: number,
+  results: {pattern: string, usedLetters: Map<string, number>}[]
+): Promise<void> => {
+  if (currentIndex >= dotPositions.length) {
+    const usedLetters = new Map<string, number>();
+    const finalPattern = patternChars.join('');
+    
+    // Solo contar las letras que se usaron para reemplazar puntos
+    for (let i = 0; i < dotPositions.length; i++) {
+      const pos = dotPositions[i];
+      const letter = patternChars[pos];
+      if (letter !== '.') {
+        usedLetters.set(letter, (usedLetters.get(letter) || 0) + 1);
+      }
+    }
+    
+    results.push({pattern: finalPattern, usedLetters});
+    return;
+  }
+  
+  const dotPos = dotPositions[currentIndex];
+  
+  // Probar cada letra disponible
+  for (const [letter, count] of availableLetters.entries()) {
+    if (count > 0) {
+      patternChars[dotPos] = letter;
+      const newAvailableLetters = new Map(availableLetters);
+      newAvailableLetters.set(letter, count - 1);
+      
+      await generateDotCombinationsSimple(
+        patternChars,
+        dotPositions,
+        currentIndex + 1,
+        newAvailableLetters,
+        wildcards,
+        results
+      );
+    }
+  }
+  
+  // Probar con comodines (solo primeras 5 letras para simplificar)
+  if (wildcards > 0) {
+    const commonLetters = ['A', 'E', 'I', 'O', 'S']; // Letras más comunes
+    for (const letter of commonLetters) {
+      patternChars[dotPos] = letter;
+      
+      await generateDotCombinationsSimple(
+        patternChars,
+        dotPositions,
+        currentIndex + 1,
+        new Map(availableLetters),
+        wildcards - 1,
+        results
+      );
+    }
+  }
+  
+  // Restaurar el punto
+  patternChars[dotPos] = '.';
+};
+
+// Calcular rack restante después de usar letras
+const calculateRemainingRack = (originalRack: string, usedLetters: string): string => {
+  const rackChars = processDigraphs(originalRack.toUpperCase()).split('');
+  const usedChars = usedLetters.split('');
+  
+  // Quitar las letras usadas del rack
+  for (const usedChar of usedChars) {
+    const index = rackChars.indexOf(usedChar);
+    if (index !== -1) {
+      rackChars.splice(index, 1);
+    }
+  }
+  
+  return rackChars.join('');
+};
+
+// Generar expansiones simples con las letras restantes
+const generateSimpleExpansions = (remainingRack: string, maxLength: number): string[] => {
+  const expansions: string[] = ['']; // Incluir expansión vacía (cero caracteres)
+  const letters = remainingRack.split('');
+  
+  if (letters.length === 0) {
+    return expansions;
+  }
+  
+  // Generar permutaciones hasta la longitud máxima
+  for (let len = 1; len <= Math.min(maxLength, letters.length); len++) {
+    const permutations = generatePermutations(letters, len);
+    expansions.push(...permutations);
+  }
+  
+  return expansions;
+};
+
+// Generar permutaciones de longitud específica
+const generatePermutations = (letters: string[], targetLength: number): string[] => {
+  if (targetLength === 0) return [''];
+  if (letters.length === 0) return [];
+  
+  const permutations: string[] = [];
+  const used = new Array(letters.length).fill(false);
+  
+  const generate = (current: string) => {
+    if (current.length === targetLength) {
+      permutations.push(current);
+      return;
+    }
+    
+    for (let i = 0; i < letters.length; i++) {
+      if (!used[i]) {
+        used[i] = true;
+        generate(current + letters[i]);
+        used[i] = false;
+      }
+    }
+  };
+  
+  generate('');
+  return permutations.slice(0, 20); // Limitar para evitar explosion
+};
+
