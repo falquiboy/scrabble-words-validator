@@ -283,6 +283,7 @@ export const BaseResults = ({
                   highlightWildcardLetter={highlightWildcardLetter}
                   index={index}
                   length={length}
+                  showResidue={true} // Always show unified format in grouped view too
                 />
               );
             })}
