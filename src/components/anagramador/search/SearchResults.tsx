@@ -88,6 +88,8 @@ const SearchResults = ({
               highlightWildcardLetter={highlightWildcardLetter}
               searchTerm={searchTerm}
               title="palabras encontradas usando todas las fichas más una letra adicional"
+              sortByEquity={sortByEquity}
+              unifiedEquityView={true} // Always use unified format: equity - word - (residue)
             />
           )}
           {results.shorterMatches?.length > 0 && (
@@ -97,7 +99,7 @@ const SearchResults = ({
               searchTerm={searchTerm}
               title="palabras más cortas encontradas"
               sortByEquity={sortByEquity}
-              unifiedEquityView={sortByEquity} // Pass unified view when sorting by equity
+              unifiedEquityView={true} // Always use unified format: equity - word - (residue)
             />
           )}
         </>
