@@ -6,9 +6,11 @@ interface ShorterResultsProps {
   highlightWildcardLetter: (word: string, originalWord: string) => React.ReactNode;
   searchTerm: string;
   title: string;
+  sortByEquity?: boolean;
+  unifiedEquityView?: boolean;
 }
 
-export const ShorterResults = ({ matches, highlightWildcardLetter, searchTerm, title }: ShorterResultsProps) => {
+export const ShorterResults = ({ matches, highlightWildcardLetter, searchTerm, title, sortByEquity, unifiedEquityView }: ShorterResultsProps) => {
   const isAdditionalLetterMode = title.includes("adicional");
   
   return (
@@ -18,7 +20,8 @@ export const ShorterResults = ({ matches, highlightWildcardLetter, searchTerm, t
       highlightWildcardLetter={highlightWildcardLetter}
       searchTerm={searchTerm}
       isShortMode={!isAdditionalLetterMode}
-      sortByEquity={true} // Activar ordenamiento por equity para subanagramas
+      sortByEquity={sortByEquity} // Pasar el prop desde el toggle
+      unifiedEquityView={unifiedEquityView || sortByEquity} // Nueva prop para vista unificada con residuos
     />
   );
 };

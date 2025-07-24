@@ -25,6 +25,7 @@ interface ResultsListProps {
   showShorter: boolean;
   showExtendedView?: boolean;
   showHooksView?: boolean;
+  sortByEquity?: boolean;
 }
 
 const ResultsList = ({ 
@@ -35,7 +36,8 @@ const ResultsList = ({
   isSearchAborted,
   showShorter,
   showExtendedView,
-  showHooksView
+  showHooksView,
+  sortByEquity
 }: ResultsListProps) => {
   const { toast } = useToast();
   const [wordsData, setWordsData] = useState<Map<string, AnagramWordInfo>>(new Map());
@@ -144,6 +146,7 @@ const ResultsList = ({
             results={results}
             highlightWildcardLetter={highlightWildcardLetter}
             showShorter={showShorter}
+            sortByEquity={sortByEquity}
           />
         )}
       </div>

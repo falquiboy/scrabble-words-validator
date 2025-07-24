@@ -17,6 +17,7 @@ interface SearchResultsProps {
   };
   highlightWildcardLetter: (word: string, originalWord: string) => React.ReactNode;
   showShorter: boolean;
+  sortByEquity?: boolean;
 }
 
 const SearchResults = ({ 
@@ -24,10 +25,11 @@ const SearchResults = ({
   searchTerm, 
   results,
   highlightWildcardLetter,
-  showShorter
+  showShorter,
+  sortByEquity
 }: SearchResultsProps) => {
-  const wildcardCount = (searchTerm.match(/\*/g) || []).length;
-  const isPatternSearch = searchTerm.includes('?') || searchTerm.includes('-');
+  const wildcardCount = (searchTerm.match(/\?/g) || []).length;
+  const isPatternSearch = searchTerm.includes('*') || searchTerm.includes('.') || searchTerm.includes('-');
 
   const filteredAdditionalMatches = results.additionalWildcardMatches.filter(word => {
     if (wildcardCount === 0) {
@@ -94,6 +96,8 @@ const SearchResults = ({
               highlightWildcardLetter={highlightWildcardLetter}
               searchTerm={searchTerm}
               title="palabras más cortas encontradas"
+              sortByEquity={sortByEquity}
+              unifiedEquityView={sortByEquity} // Pass unified view when sorting by equity
             />
           )}
         </>

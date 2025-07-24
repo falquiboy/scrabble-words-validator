@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, Info, Anchor, ChevronDown, Copy } from 'lucide-react';
+import { Menu, X, Info, Anchor, ChevronDown, Copy, TrendingUp } from 'lucide-react';
 
 interface SettingsMenuProps {
   showShorter: boolean;
@@ -10,6 +10,8 @@ interface SettingsMenuProps {
   onHooksViewChange: (show: boolean) => void;
   hasActiveSearch: boolean;
   onCopyAll?: () => void;
+  sortByEquity: boolean;
+  onSortByEquityChange: (sort: boolean) => void;
 }
 
 const SettingsMenu: React.FC<SettingsMenuProps> = ({
@@ -20,7 +22,9 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({
   showHooksView,
   onHooksViewChange,
   hasActiveSearch,
-  onCopyAll
+  onCopyAll,
+  sortByEquity,
+  onSortByEquityChange
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -112,6 +116,20 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({
               onShowShorterChange,
               <ChevronDown size={16} className="text-orange-500" />,
               !hasActiveSearch
+            )}
+
+            {/* Equity Sort Toggle - Only show when shorter words are enabled */}
+            {showShorter && hasActiveSearch && (
+              <>
+                <div className="border-t border-gray-100" />
+                {renderToggle(
+                  'Ordenar por equity',
+                  sortByEquity,
+                  onSortByEquityChange,
+                  <TrendingUp size={16} className="text-purple-500" />,
+                  false // Always enabled when shorter words are shown
+                )}
+              </>
             )}
 
             <div className="border-t border-gray-100" />

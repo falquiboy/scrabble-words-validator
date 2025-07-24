@@ -111,8 +111,8 @@ const findAdditionalMatches = (processedInput: string, wildcardCount: number, tr
 
 export const findAnagrams = (searchTerm: string, trie: Trie, showShorter: boolean = false) => {
   // Count wildcards and process input
-  const wildcardCount = (searchTerm.match(/\*/g) || []).length;
-  const lettersOnly = searchTerm.replace(/\*/g, '');
+  const wildcardCount = (searchTerm.match(/\?/g) || []).length;
+  const lettersOnly = searchTerm.replace(/\?/g, '');
   
   // Process digraphs ONCE at the beginning
   const processedInput = processDigraphs(lettersOnly);

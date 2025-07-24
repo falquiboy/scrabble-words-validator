@@ -81,7 +81,7 @@ const ExtendedResultsView: React.FC<ExtendedResultsViewProps> = ({
     );
   }
 
-  const isPatternSearch = searchTerm.includes('?') || searchTerm.includes('-');
+  const isPatternSearch = searchTerm.includes('*') || searchTerm.includes('.') || searchTerm.includes('-');
 
   return (
     <div className="space-y-6">

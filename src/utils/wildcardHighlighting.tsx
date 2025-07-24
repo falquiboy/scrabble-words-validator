@@ -229,8 +229,8 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
         // For cases not covered by the specific patterns above, 
         // check if they might be from wildcards
         const isLikelyWildcard = rackLetters && 
-                               rackLetters.includes('*') && 
-                               !rackLetters.replace(/\*/g, '').toUpperCase().includes(char.toUpperCase());
+                               rackLetters.includes('?') && 
+                               !rackLetters.replace(/\?/g, '').toUpperCase().includes(char.toUpperCase());
                                
         // If it's a likely wildcard, highlight in red and lowercase
         if (isLikelyWildcard) {

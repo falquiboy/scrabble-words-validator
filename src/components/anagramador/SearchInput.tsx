@@ -28,7 +28,8 @@ const SearchInput = ({
   
   // Auto-detect pattern mode and length specification based on input
   useEffect(() => {
-    const hasPatternChars = letters.includes('?') || 
+    const hasPatternChars = letters.includes('*') || 
+                           letters.includes('.') || 
                            letters.includes('^') || 
                            letters.includes('$') || 
                            letters.includes('-');
@@ -75,7 +76,8 @@ const SearchInput = ({
     const isAfterColon = hasColon && cursorPosition > value.indexOf(':');
     
     // Automatically determine which validation to use based on input
-    const hasPatternChars = value.includes('?') || 
+    const hasPatternChars = value.includes('*') || 
+                           value.includes('.') || 
                            value.includes('^') || 
                            value.includes('$') || 
                            value.includes('-');
@@ -124,8 +126,8 @@ const SearchInput = ({
             type="text"
             placeholder={
               isPatternMode 
-                ? "Ej: -AR (termina con AR), CO- (empieza con CO), -AR:6 (exactamente 6 letras)" 
-                : "Asterisco es comodín"
+                ? "Ej: -AR (termina con AR), CO* (empieza con CO), .R.. (. = una letra, * = cero o más)" 
+                : "Signo de interrogación es comodín"
             }
             value={letters}
             onChange={handleInputChange}

@@ -26,6 +26,80 @@ export interface VerbForms {
   imperativeForm?: { form: string; isValid: boolean };
 }
 
+/**
+ * Fetch multiple verb infos in a single batch query (NEW - Performance optimization)
+ * Mismo patrón que funcionó para leaves y hooks
+ */
+export async function fetchBatchVerbInfo(lemmas: string[]): Promise<Map<string, VerbInfo | null>> {
+  const results = new Map<string, VerbInfo | null>();
+  
+  if (lemmas.length === 0) return results;
+  
+  try {
+    console.log(`🚀 fetchBatchVerbInfo: querying ${lemmas.length} lemmas in single batch`);
+    
+    // Batch query para todos los lemmas
+    const { data, error } = await supabase
+      .from('verb_entries')
+      .select(`
+        entry_key,
+        norm_lemma,
+        prime_sense,
+        prime_type,
+        regularity,
+        participle_masculine,
+        has_participle_masculine,
+        participle_masculine_plural,
+        has_participle_masculine_plural,
+        participle_feminine,
+        has_participle_feminine,
+        prnl_end,
+        voseo_imperative_plural,
+        has_voseo_imperative,
+        is_prnl_end
+      `)
+      .in('norm_lemma', lemmas.map(l => l.toLowerCase()));
+
+    if (error) {
+      console.error('❌ Error in batch verb query:', error);
+      // Mark all as null on error
+      lemmas.forEach(lemma => results.set(lemma, null));
+      return results;
+    }
+
+    // Process results
+    const foundLemmas = new Set<string>();
+    
+    if (data && data.length > 0) {
+      data.forEach(verbInfo => {
+        results.set(verbInfo.norm_lemma, verbInfo);
+        foundLemmas.add(verbInfo.norm_lemma);
+        
+        // Also add uppercase version for lookup flexibility
+        results.set(verbInfo.norm_lemma.toUpperCase(), verbInfo);
+      });
+    }
+
+    // Mark not found lemmas as null
+    lemmas.forEach(lemma => {
+      const lowerLemma = lemma.toLowerCase();
+      if (!foundLemmas.has(lowerLemma)) {
+        results.set(lemma, null);
+        results.set(lowerLemma, null);
+      }
+    });
+
+    console.log(`✅ Batch verb query: ${data?.length || 0} verbs found out of ${lemmas.length} lemmas`);
+    
+    return results;
+  } catch (error) {
+    console.error('❌ Exception in batch verb query:', error);
+    // Fallback: mark all as null
+    lemmas.forEach(lemma => results.set(lemma, null));
+    return results;
+  }
+}
+
 export async function fetchVerbInfo(lemma: string): Promise<VerbInfo | null> {
   try {
     console.log('🔍 Fetching verb info for:', lemma);

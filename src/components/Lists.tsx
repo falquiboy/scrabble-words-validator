@@ -42,8 +42,8 @@ const Lists = ({ trie }: ListsProps) => {
   const detectQueryType = (input: string): QueryType => {
     const trimmed = input.trim().toLowerCase();
     
-    // Pattern detection (contains ? or _ or -)
-    if (trimmed.includes('?') || trimmed.includes('_') || trimmed.includes('-') || trimmed.includes(':')) {
+    // Pattern detection (contains *, . or _ or -)
+    if (trimmed.includes('*') || trimmed.includes('.') || trimmed.includes('_') || trimmed.includes('-') || trimmed.includes(':')) {
       return 'pattern';
     }
     

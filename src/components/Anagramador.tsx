@@ -21,6 +21,7 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
   const [isSearchAborted, setIsSearchAborted] = useState(false);
   const [showExtendedView, setShowExtendedView] = useState(false);
   const [showHooksView, setShowHooksView] = useState(false);
+  const [sortByEquity, setSortByEquity] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResults>({
     exactMatches: [],
     wildcardMatches: [],
@@ -120,11 +121,15 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
     }
   };
 
+  const handleSortByEquityChange = (sort: boolean) => {
+    setSortByEquity(sort);
+  };
+
   const handleCopyAll = () => {
     if (!searchResults) return;
 
-    const isPatternSearch = searchTerm.includes('?') || searchTerm.includes('-');
-    const wildcardCount = (searchTerm.match(/\*/g) || []).length;
+    const isPatternSearch = searchTerm.includes('*') || searchTerm.includes('.') || searchTerm.includes('-');
+    const wildcardCount = (searchTerm.match(/\?/g) || []).length;
 
     let allWords: string[] = [];
 
@@ -186,6 +191,8 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
         onHooksViewChange={handleHooksViewChange}
         hasActiveSearch={!!searchTerm}
         onCopyAll={handleCopyAll}
+        sortByEquity={sortByEquity}
+        onSortByEquityChange={handleSortByEquityChange}
       />
 
       {/* Main Interface */}
@@ -205,6 +212,7 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
             showShorter={showShorter}
             showExtendedView={showExtendedView}
             showHooksView={showHooksView}
+            sortByEquity={sortByEquity}
           />
         </div>
       </div>

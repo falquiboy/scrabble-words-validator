@@ -38,10 +38,11 @@ export const validateWordPattern = (
 
   // For pattern search with rack letters, we need to verify that:
   // 1. Fixed characters in the pattern are preserved
-  // 2. Variable parts (?) can be filled with rack letters
+  // 2. Variable parts (.) can be filled with rack letters
+  // 3. Multi-character parts (*) expand to zero or more letters
 
-  // Extract the fixed parts of the pattern
-  let patternFixed = processedPattern.replace(/\?/g, '');
+  // Extract the fixed parts of the pattern (remove single-char wildcards)
+  let patternFixed = processedPattern.replace(/\./g, '');
   
   // For start/end patterns, we need to extract the actual fixed text
   if (patternFixed.startsWith('^')) patternFixed = patternFixed.slice(1);

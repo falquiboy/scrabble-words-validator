@@ -1,5 +1,9 @@
 import { supabase } from "@/integrations/supabase/client";
-import { fetchVerbInfo, VerbInfo } from "./verbData";
+import { fetchVerbInfo, fetchBatchVerbInfo, VerbInfo } from "./verbData";
+
+// Cache local para evitar queries repetidas de anagramWordData
+const anagramWordCache = new Map<string, AnagramWordInfo>();
+const ANAGRAM_CACHE_STATS = { hits: 0, misses: 0 };
 
 export interface AnagramWordInfo {
   word: string;
@@ -18,8 +22,29 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
   
   if (words.length === 0) return results;
 
-  console.log('🔍 fetchAnagramWordsData called with:', words);
-  console.log('🔍 Words already formatted and ready to query:', words);
+  console.log(`🔍 fetchAnagramWordsData called with ${words.length} words - checking cache first`);
+
+  // Separar palabras cacheadas vs no cacheadas (mismo patrón que leaves/hooks)
+  const uncachedWords: string[] = [];
+  
+  for (const word of words) {
+    if (anagramWordCache.has(word)) {
+      ANAGRAM_CACHE_STATS.hits++;
+      results.set(word, anagramWordCache.get(word)!);
+      console.log(`🎯 AnagramWord Cache HIT for: ${word}`);
+    } else {
+      uncachedWords.push(word);
+    }
+  }
+
+  // Si todas estaban en cache, devolver resultados
+  if (uncachedWords.length === 0) {
+    console.log(`🚀 All ${words.length} anagram words found in cache - no database queries needed!`);
+    return results;
+  }
+
+  console.log(`🔍 Cache MISS for ${uncachedWords.length} words, querying database...`);
+  ANAGRAM_CACHE_STATS.misses += uncachedWords.length;
 
   try {
     // Words are already in uppercase from ResultsList
@@ -27,9 +52,9 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
     // Step 1: Query scrabble_words table first to determine word types through key assignments
     console.log('📊 Step 1: Querying scrabble_words table...');
     
-    // Convert words to lowercase for the query since scrabble_words are in natural case
-    const lowerWords = words.map(word => word.toLowerCase());
-    console.log('📊 Converted to lowercase for query:', lowerWords);
+    // Convert solo las uncached words to lowercase for the query 
+    const lowerWords = uncachedWords.map(word => word.toLowerCase());
+    console.log('📊 Converted uncached words to lowercase for query:', lowerWords);
     
     const { data: scrabbleData, error: scrabbleError } = await supabase
       .from('scrabble_words')
@@ -146,9 +171,45 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
       }
     }
 
-    // Step 4: Process each word and build final results
-    console.log('🔄 Step 4: Processing words...');
-    for (const word of words) {
+    // Step 4: Collect all potential verb lemmas for batch query
+    console.log('🔄 Step 4a: Collecting potential verb lemmas for batch query...');
+    const potentialVerbLemmas = new Set<string>();
+    
+    for (const word of uncachedWords) {
+      const scrabbleInfo = wordToKeys.get(word);
+      if (scrabbleInfo) {
+        const parseKeys = (keyString: string) => {
+          if (!keyString) return null;
+          const keys = keyString.split(',').map(k => parseFloat(k.trim())).filter(k => !isNaN(k));
+          return keys.length > 0 ? Math.min(...keys) : null;
+        };
+
+        const primaryKey = parseKeys(scrabbleInfo.key_conj) ||
+                        parseKeys(scrabbleInfo.key_feminine) || 
+                        parseKeys(scrabbleInfo.key_plural) || 
+                        parseKeys(scrabbleInfo.key_variant) ||
+                        parseKeys(scrabbleInfo.key_lemma);
+        
+        const entry = keyToEntry.get(primaryKey);
+        let lemmaToCheck = entry?.lemma || word.toLowerCase();
+        
+        // Add both the original lemma and base form (without -se) for pronominal verbs
+        potentialVerbLemmas.add(lemmaToCheck);
+        if (lemmaToCheck.endsWith('se')) {
+          potentialVerbLemmas.add(lemmaToCheck.slice(0, -2)); // Remove 'se'
+        }
+      }
+    }
+
+    // Batch query para todos los verbos potenciales
+    console.log(`🚀 Step 4b: Batch querying ${potentialVerbLemmas.size} potential verb lemmas...`);
+    const verbInfoMap = potentialVerbLemmas.size > 0 
+      ? await fetchBatchVerbInfo(Array.from(potentialVerbLemmas))
+      : new Map<string, VerbInfo | null>();
+
+    // Step 4c: Process each uncached word and build final results
+    console.log('🔄 Step 4c: Processing uncached words...');
+    for (const word of uncachedWords) {
       const scrabbleInfo = wordToKeys.get(word);
       const wordType = wordTypes.get(word);
       
@@ -174,25 +235,27 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
         console.log(`🔑 Word: ${word}, Type: ${wordType}, Primary Key: ${primaryKey} (smallest), Entry:`, entry);
         console.log(`🔍 Available keys - conj: ${scrabbleInfo.key_conj}, fem: ${scrabbleInfo.key_feminine}, plural: ${scrabbleInfo.key_plural}, variant: ${scrabbleInfo.key_variant}, lemma: ${scrabbleInfo.key_lemma}`);
         
-        // Check if this is a verb by looking up in verb_entries
-        // Handle pronominal verbs by stripping the -se ending from the lemma
+        // Get verb info from batch result (NO individual queries!)
         let lemmaToCheck = entry?.lemma || word.toLowerCase();
         let verbInfo = null;
         
-        // If the lemma ends with -se, try without it first (for pronominal verbs)
+        // Check batch results for verb info
         if (lemmaToCheck.endsWith('se')) {
           const baseForm = lemmaToCheck.slice(0, -2); // Remove 'se'
-          console.log(`🔄 Checking pronominal verb: ${lemmaToCheck} → ${baseForm}`);
-          verbInfo = await fetchVerbInfo(baseForm);
+          console.log(`🔄 Checking pronominal verb in batch results: ${lemmaToCheck} → ${baseForm}`);
+          verbInfo = verbInfoMap.get(baseForm);
+          if (!verbInfo) {
+            // Fallback to full lemma from batch results
+            verbInfo = verbInfoMap.get(lemmaToCheck);
+          }
           if (verbInfo) {
-            console.log(`✅ Found verb info for pronominal base: ${baseForm}`, verbInfo);
-          } else {
-            // If base form not found, try the full lemma as fallback
-            console.log(`⚠️ Base form not found, trying full lemma: ${lemmaToCheck}`);
-            verbInfo = await fetchVerbInfo(lemmaToCheck);
+            console.log(`✅ Found verb info in batch for: ${verbInfo.norm_lemma}`, verbInfo);
           }
         } else {
-          verbInfo = await fetchVerbInfo(lemmaToCheck);
+          verbInfo = verbInfoMap.get(lemmaToCheck);
+          if (verbInfo) {
+            console.log(`✅ Found verb info in batch for: ${lemmaToCheck}`, verbInfo);
+          }
         }
         
         let shortDefinition = '';
@@ -230,6 +293,9 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
         };
         
         console.log(`✅ Processed valid word: ${word}`, wordInfo);
+        
+        // Guardar en cache Y en results
+        anagramWordCache.set(word, wordInfo);
         results.set(word, wordInfo);
       } else {
         // Word not found in scrabble_words
@@ -239,18 +305,32 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
         };
         
         console.log(`❌ Word not valid for Scrabble: ${word}`);
+        
+        // Guardar en cache Y en results (incluso invalid words para evitar re-queries)
+        anagramWordCache.set(word, wordInfo);
         results.set(word, wordInfo);
       }
     }
 
-    console.log('🎯 Final results map:', Object.fromEntries(results));
+    // Log performance improvement
+    console.log(`🚀 AnagramWord optimization: ${uncachedWords.length} words processed with ${potentialVerbLemmas.size} verb batch queries (vs ${uncachedWords.length} individual verb calls)`);
+    
+    // Log cache stats periodically
+    if ((ANAGRAM_CACHE_STATS.hits + ANAGRAM_CACHE_STATS.misses) % 20 === 0) {
+      const total = ANAGRAM_CACHE_STATS.hits + ANAGRAM_CACHE_STATS.misses;
+      const hitRate = ((ANAGRAM_CACHE_STATS.hits / total) * 100).toFixed(1);
+      console.log(`📊 AnagramWord Cache Stats: ${ANAGRAM_CACHE_STATS.hits}/${total} hits (${hitRate}% hit rate)`);
+    }
 
   } catch (error) {
     console.error('❌ Error fetching anagram words data:', error);
     
-    // Return basic info for all words on error
-    words.forEach(word => {
-      results.set(word, { word, isScrabbleValid: false });
+    // Return basic info for uncached words on error (cached already in results)
+    uncachedWords.forEach(word => {
+      const errorWordInfo: AnagramWordInfo = { word, isScrabbleValid: false };
+      // Cache error results to avoid repeated failed queries
+      anagramWordCache.set(word, errorWordInfo);
+      results.set(word, errorWordInfo);
     });
   }
 

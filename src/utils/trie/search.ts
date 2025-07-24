@@ -87,10 +87,10 @@ export const generateRackCombinations = (
     }
   }
   
-  // Find all '?' characters in the pattern that need to be filled
-  const questionMarkCount = (pattern.match(/\?/g) || []).length;
+  // Find all '.' characters in the pattern that need to be filled
+  const questionMarkCount = (pattern.match(/\./g) || []).length;
   if (questionMarkCount === 0) {
-    // If no question marks, return the original pattern
+    // If no single-char wildcards, return the original pattern
     return [{ pattern, usedRackLetters: new Map() }];
   }
   
@@ -111,8 +111,8 @@ export const generateRackCombinations = (
       return;
     }
     
-    // If current character is not a question mark, move to next position
-    if (currentPattern[position] !== '?') {
+    // If current character is not a single-char wildcard, move to next position
+    if (currentPattern[position] !== '.') {
       fillQuestionMarks(
         currentPattern, 
         remainingWildcards, 
@@ -134,7 +134,7 @@ export const generateRackCombinations = (
         const newUsedRackLetters = new Map(usedRackLetters);
         newUsedRackLetters.set(position.toString(), letter);
         
-        // Replace the question mark with this letter
+        // Replace the dot with this letter
         const newPattern = 
           currentPattern.substring(0, position) + 
           letter + 
@@ -159,7 +159,7 @@ export const generateRackCombinations = (
         const newUsedRackLetters = new Map(usedRackLetters);
         newUsedRackLetters.set(position.toString(), '*' + letter); // Mark as wildcard + the letter used
         
-        // Replace the question mark with this letter
+        // Replace the dot with this letter
         const newPattern = 
           currentPattern.substring(0, position) + 
           letter + 

@@ -1,6 +1,10 @@
 import { supabase } from "@/integrations/supabase/client";
 import { processDigraphs, toDisplayFormat } from "./digraphs";
 
+// Cache local para evitar queries repetidas de hooks
+const hooksCache = new Map<string, HookInfo>();
+const HOOKS_CACHE_STATS = { hits: 0, misses: 0 };
+
 export interface HookInfo {
   word: string;
   leftExternal?: string;
@@ -20,6 +24,10 @@ export interface ProcessedHooks {
   rightInternalLetters: string[];
 }
 
+/**
+ * Versión optimizada de fetchHooksData con cache local
+ * Misma estrategia que funcionó para leaves: cache + batch queries
+ */
 export async function fetchHooksData(words: string[]): Promise<Map<string, HookInfo>> {
   const results = new Map<string, HookInfo>();
   
@@ -28,18 +36,41 @@ export async function fetchHooksData(words: string[]): Promise<Map<string, HookI
     return results;
   }
 
-  console.log('🎣 fetchHooksData called with:', words);
-  console.log('🎣 Words count:', words.length);
+  console.log(`🎣 fetchHooksData called with ${words.length} words - checking cache first`);
+
+  // Separar palabras cacheadas vs no cacheadas
+  const uncachedWords: string[] = [];
+  const wordToInternalMap = new Map<string, string>();
+  
+  for (const word of words) {
+    const upperKey = toDisplayFormat(word).toUpperCase();
+    const internalWord = processDigraphs(word.toLowerCase());
+    
+    wordToInternalMap.set(word, internalWord);
+    
+    if (hooksCache.has(upperKey)) {
+      HOOKS_CACHE_STATS.hits++;
+      results.set(upperKey, hooksCache.get(upperKey)!);
+      console.log(`🎯 Cache HIT for: ${word}`);
+    } else {
+      uncachedWords.push(word);
+    }
+  }
+
+  // Si todas estaban en cache, devolver resultados
+  if (uncachedWords.length === 0) {
+    console.log(`🚀 All ${words.length} hooks found in cache - no database query needed!`);
+    return results;
+  }
+
+  console.log(`🔍 Cache MISS for ${uncachedWords.length} words, querying database...`);
+  HOOKS_CACHE_STATS.misses += uncachedWords.length;
 
   try {
-    // Convert words to internal format for querying (CH->Ç, LL->K, RR->W)
-    const internalWords = words.map(word => processDigraphs(word.toLowerCase()));
-    console.log('🔄 Converted to internal format:', internalWords);
-    console.log('🔄 Internal words count:', internalWords.length);
-
-    // First, let's check if the hooks table even exists
-    console.log('🔍 Testing hooks table access...');
+    // Convert solo las no-cacheadas a internal format
+    const internalWords = uncachedWords.map(word => wordToInternalMap.get(word)!);
     
+    // Batch query optimizada para solo las palabras no cacheadas
     const { data: hooksData, error } = await supabase
       .from('hooks')
       .select(`
@@ -79,10 +110,10 @@ export async function fetchHooksData(words: string[]): Promise<Map<string, HookI
     }
 
     if (hooksData && hooksData.length > 0) {
-      // Create map with original word as key
+      // Create map with original word as key (solo para uncached words)
       const internalToOriginal = new Map<string, string>();
-      words.forEach(word => {
-        const internal = processDigraphs(word.toLowerCase());
+      uncachedWords.forEach(word => {
+        const internal = wordToInternalMap.get(word)!;
         internalToOriginal.set(internal, word);
       });
 
@@ -100,35 +131,55 @@ export async function fetchHooksData(words: string[]): Promise<Map<string, HookI
         };
 
         console.log(`🎣 Processed hooks for: ${originalWord}`, hookInfo);
-        // Store with uppercase key to match HooksView lookup
         const upperKey = toDisplayFormat(originalWord).toUpperCase();
+        
+        // Guardar en cache Y en results
+        hooksCache.set(upperKey, hookInfo);
         results.set(upperKey, hookInfo);
       });
     }
 
-    // Add empty entries for words without hooks
-    words.forEach(word => {
+    // Add empty entries for uncached words without hooks
+    uncachedWords.forEach(word => {
       const upperKey = toDisplayFormat(word).toUpperCase();
       if (!results.has(upperKey)) {
-        results.set(upperKey, {
+        const emptyHookInfo: HookInfo = {
           word,
           hasExternalHooks: false,
           hasInternalHooks: false
-        });
+        };
+        
+        // Guardar en cache Y en results (incluso empty entries para evitar re-queries)
+        hooksCache.set(upperKey, emptyHookInfo);
+        results.set(upperKey, emptyHookInfo);
       }
     });
+
+    // Log performance improvement
+    console.log(`🚀 Hooks optimization: ${uncachedWords.length} words queried (vs ${words.length} individual calls)`);
+    
+    // Log cache stats periodically
+    if ((HOOKS_CACHE_STATS.hits + HOOKS_CACHE_STATS.misses) % 25 === 0) {
+      const total = HOOKS_CACHE_STATS.hits + HOOKS_CACHE_STATS.misses;
+      const hitRate = ((HOOKS_CACHE_STATS.hits / total) * 100).toFixed(1);
+      console.log(`📊 Hooks Cache Stats: ${HOOKS_CACHE_STATS.hits}/${total} hits (${hitRate}% hit rate)`);
+    }
 
   } catch (error) {
     console.error('❌ Error fetching hooks data:', error);
     
-    // Return empty hook info for all words on error
-    words.forEach(word => {
+    // Return empty hook info for uncached words on error (cached already in results)
+    uncachedWords.forEach(word => {
       const upperKey = toDisplayFormat(word).toUpperCase();
-      results.set(upperKey, {
+      const emptyHookInfo: HookInfo = {
         word,
         hasExternalHooks: false,
         hasInternalHooks: false
-      });
+      };
+      
+      // Cache empty results to avoid repeated failed queries
+      hooksCache.set(upperKey, emptyHookInfo);
+      results.set(upperKey, emptyHookInfo);
     });
   }
 

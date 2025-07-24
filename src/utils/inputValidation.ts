@@ -15,8 +15,8 @@ export const validateAndCleanAnagramInput = (value: string) => {
   
   if (parts.length === 2) {
     const [letters, lengthStr] = parts;
-    // Clean letters part (allow A-Z, Ñ, Ç, *, and commas)
-    const cleanLetters = letters.replace(/[^A-ZÑÇKW*,]/g, '');
+    // Clean letters part (allow A-Z, Ñ, Ç, ?, and commas)
+    const cleanLetters = letters.replace(/[^A-ZÑÇKW?,]/g, '');
     
     // Only allow numbers after the colon
     const cleanLength = lengthStr.replace(/[^0-9]/g, '');
@@ -25,8 +25,8 @@ export const validateAndCleanAnagramInput = (value: string) => {
     return cleanLetters + ':' + cleanLength;
   }
   
-  // If no colon, just clean input (allow A-Z, Ñ, Ç, *, commas and colon)
-  return value.replace(/[^A-ZÑÇKW*,\:]/g, '');
+  // If no colon, just clean input (allow A-Z, Ñ, Ç, ?, commas and colon)
+  return value.replace(/[^A-ZÑÇKW?,\:]/g, '');
 };
 
 export const validateAndCleanPatternInput = (value: string) => {
@@ -37,15 +37,15 @@ export const validateAndCleanPatternInput = (value: string) => {
   if (parts.length > 1) {
     // Split into pattern/length and rack parts
     let [patternPart, rackPart] = parts;
-    const cleanRack = rackPart.replace(/[^A-ZÑÇKW*]/g, '');
+    const cleanRack = rackPart.replace(/[^A-ZÑÇKW?]/g, '');
     
     // Check if pattern part contains a length constraint
     const patternParts = patternPart.split(':');
     if (patternParts.length > 1) {
       const [pattern, lengthStr] = patternParts;
       
-      // Clean pattern (allow A-Z, Ñ, Ç, ?, ^, $, -)
-      const cleanPattern = pattern.replace(/[^A-ZÑÇKW?\^$\-]/g, '');
+      // Clean pattern (allow A-Z, Ñ, Ç, *, ., ^, $, -)
+      const cleanPattern = pattern.replace(/[^A-ZÑÇKW*.\^$\-]/g, '');
       
       // Only allow numbers for length
       const cleanLength = lengthStr.replace(/[^0-9]/g, '');
@@ -54,7 +54,7 @@ export const validateAndCleanPatternInput = (value: string) => {
     }
     
     // If no length constraint in pattern
-    const cleanPattern = patternPart.replace(/[^A-ZÑÇKW?\^$\-]/g, '');
+    const cleanPattern = patternPart.replace(/[^A-ZÑÇKW*.\^$\-]/g, '');
     
     return `${cleanPattern},${cleanRack}`;
   }
@@ -64,8 +64,8 @@ export const validateAndCleanPatternInput = (value: string) => {
   if (patternParts.length > 1) {
     const [pattern, lengthStr, ...rest] = patternParts;
     
-    // Clean pattern (allow A-Z, Ñ, Ç, ?, ^, $, -)
-    const cleanPattern = pattern.replace(/[^A-ZÑÇKW?\^$\-]/g, '');
+    // Clean pattern (allow A-Z, Ñ, Ç, *, ^, $, -)
+    const cleanPattern = pattern.replace(/[^A-ZÑÇKW*\^$\-]/g, '');
     
     // Only allow numbers for length
     const cleanLength = lengthStr.replace(/[^0-9]/g, '');
@@ -76,18 +76,18 @@ export const validateAndCleanPatternInput = (value: string) => {
   // For the simple pattern case, check if the value ends with a colon
   if (value.endsWith(':')) {
     const patternPart = value.slice(0, -1);
-    const cleanPattern = patternPart.replace(/[^A-ZÑÇKW?\^$\-]/g, '');
+    const cleanPattern = patternPart.replace(/[^A-ZÑÇKW*.\^$\-]/g, '');
     return `${cleanPattern}:`;
   }
   
   // If value contains a colon followed by numbers
-  const colonWithNumbersMatch = value.match(/^([A-ZÑÇKW?\^$\-]*):(\d*)$/);
+  const colonWithNumbersMatch = value.match(/^([A-ZÑÇKW*.\^$\-]*):(\d*)$/);
   if (colonWithNumbersMatch) {
     const [_, patternPart, lengthPart] = colonWithNumbersMatch;
-    const cleanPattern = patternPart.replace(/[^A-ZÑÇKW?\^$\-]/g, '');
+    const cleanPattern = patternPart.replace(/[^A-ZÑÇKW*.\^$\-]/g, '');
     return `${cleanPattern}:${lengthPart}`;
   }
   
   // If no colon, only allow pattern characters
-  return value.replace(/[^A-ZÑÇKW?\^$\-\:,]/g, '');
+  return value.replace(/[^A-ZÑÇKW*.\^$\-\:,]/g, '');
 };

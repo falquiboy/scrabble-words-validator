@@ -64,8 +64,9 @@ export const findPatternMatches = async (
         isContainsPattern
       );
     } else {
-      // For patterns without rack letters, we need to handle ? as a wildcard for any letter
-      const finalPattern = processedPatternWithDigraphs.replace(/\?/g, '.');
+      // For patterns without rack letters, handle standard wildcards: . (one char) and * (zero or more)
+      // . stays as . (single character), * becomes .* (zero or more characters)
+      const finalPattern = processedPatternWithDigraphs.replace(/\*/g, '.*');
       const regexPattern = convertPatternToRegex(finalPattern);
       console.log('Searching trie with:', { pattern: regexPattern.toString(), rackLetters: '', hasRackLetters: '' });
       matches = await searchTrie(trie.getRoot(), regexPattern);
@@ -113,7 +114,7 @@ const findPatternMatchesWithRack = async (
   processedPattern = processedPattern.replace(/\.\*/g, '').replace(/\.\+/g, '');
   
   // Si el patrón contiene comodines o se debe extender
-  if (processedPattern.includes('?') || extendPattern || prefixPattern || isContainsPattern) {
+  if (processedPattern.includes('*') || processedPattern.includes('.') || extendPattern || prefixPattern || isContainsPattern) {
     return findWildcardPatternMatches(processedPattern, rackLetters, trie, extendPattern, prefixPattern, isContainsPattern);
   }
   
@@ -160,13 +161,15 @@ const findWildcardPatternMatches = async (
   // Limpiamos la lista de patrones base antes de empezar
   basePatches.length = 0;
   
-  // Para patrones con comodines, primero reemplazamos los ?
-  const wildcardPositions: number[] = [];
+  // Para patrones con comodines, primero encontramos las posiciones de comodines de un carácter (.)
+  const singleWildcardPositions: number[] = [];
   for (let i = 0; i < pattern.length; i++) {
-    if (pattern[i] === '?') {
-      wildcardPositions.push(i);
+    if (pattern[i] === '.') {
+      singleWildcardPositions.push(i);
     }
   }
+  
+  // * se maneja diferente (cero o más caracteres) y se procesa como regex
   
   const patternChars = pattern.split('');
   const processedRack = processDigraphs(rackLetters.toUpperCase());
@@ -175,7 +178,7 @@ const findWildcardPatternMatches = async (
   let wildcards = 0;
   
   for (const char of processedRack) {
-    if (char === '*') {
+    if (char === '?') {
       wildcards++;
     } else {
       availableLetters.set(char, (availableLetters.get(char) || 0) + 1);
@@ -184,10 +187,10 @@ const findWildcardPatternMatches = async (
   
   console.log(`Rack letters available:`, Object.fromEntries(availableLetters.entries()), `Wildcards: ${wildcards}`);
   
-  // Generar variaciones del patrón básico (reemplazando comodines)
+  // Generar variaciones del patrón básico (reemplazando comodines de un carácter)
   await generateAllPatternVariations(
     patternChars, 
-    wildcardPositions, 
+    singleWildcardPositions, 
     0, 
     new Map(availableLetters), 
     wildcards, 
@@ -317,7 +320,7 @@ const canFormWordWithRack = (
   
   const processedRack = processDigraphs(rackLetters.toUpperCase());
   for (const char of processedRack) {
-    if (char === '*') {
+    if (char === '?') {
       wildcards++;
     } else {
       availableLetters.set(char, (availableLetters.get(char) || 0) + 1);
@@ -529,7 +532,7 @@ const generateAllPatternVariations = async (
     // we need to handle that edge case to prevent recursion from stopping
     if (!usedRackLetter) {
       // If we can't fill the wildcard, we shouldn't continue with this branch
-      patternChars[wildcardPos] = '?'; // Restore the original wildcard
+      patternChars[wildcardPos] = '.'; // Restore the original wildcard
     }
   } else {
     // If no rack letters provided, try all possible letters
@@ -552,5 +555,5 @@ const generateAllPatternVariations = async (
     }
   }
   
-  patternChars[wildcardPos] = '?';
+  patternChars[wildcardPos] = '.';
 };

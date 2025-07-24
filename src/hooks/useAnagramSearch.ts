@@ -18,8 +18,8 @@ type AnagramResults = {
 export const useAnagramSearch = (searchTerm: string) => {
   // Memoize the initial processing of the search term
   const { wildcardCount, processedInput, targetAlphagram, inputLength } = useMemo(() => {
-    const count = (searchTerm.match(/\*/g) || []).length;
-    const lettersOnly = searchTerm.replace(/\*/g, '');
+    const count = (searchTerm.match(/\?/g) || []).length;
+    const lettersOnly = searchTerm.replace(/\?/g, '');
     const processed = processDigraphs(lettersOnly);
     return {
       wildcardCount: count,

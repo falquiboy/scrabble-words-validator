@@ -164,7 +164,7 @@ const HooksView: React.FC<HooksViewProps> = ({
     );
   }
 
-  const isPatternSearch = searchTerm.includes('?') || searchTerm.includes('-');
+  const isPatternSearch = searchTerm.includes('*') || searchTerm.includes('.') || searchTerm.includes('-');
 
   return (
     <div className="space-y-6">

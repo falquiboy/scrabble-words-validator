@@ -24,7 +24,8 @@ export const useOfflineAnagramSearch = async (
   }
 
   // Check if it's a pattern search
-  const isPatternSearch = searchTerm.includes('?') || 
+  const isPatternSearch = searchTerm.includes('*') || 
+                         searchTerm.includes('.') || 
                          searchTerm.includes('-') || 
                          searchTerm.includes(':');
   
