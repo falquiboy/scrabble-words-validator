@@ -125,6 +125,18 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
     setSortByEquity(sort);
   };
 
+  // Utilidad para detectar patrones sin rack
+  const isPatternWithoutRack = (term: string) => {
+    const isPatternSearch = term.includes('*') || 
+                           term.includes('.') || 
+                           term.includes('-') || 
+                           term.includes('^') || 
+                           term.includes('$') || 
+                           term.includes(':');
+    const hasRackRestriction = isPatternSearch && term.includes(',');
+    return isPatternSearch && !hasRackRestriction;
+  };
+
   const handleCopyAll = () => {
     if (!searchResults) return;
 
@@ -193,6 +205,7 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
         onCopyAll={handleCopyAll}
         sortByEquity={sortByEquity}
         onSortByEquityChange={handleSortByEquityChange}
+        isPatternWithoutRack={isPatternWithoutRack(searchTerm)}
       />
 
       {/* Main Interface */}

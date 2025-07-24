@@ -12,6 +12,7 @@ interface SettingsMenuProps {
   onCopyAll?: () => void;
   sortByEquity: boolean;
   onSortByEquityChange: (sort: boolean) => void;
+  isPatternWithoutRack?: boolean; // New prop to disable 'shorter words' for patterns without rack
 }
 
 const SettingsMenu: React.FC<SettingsMenuProps> = ({
@@ -24,7 +25,8 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({
   hasActiveSearch,
   onCopyAll,
   sortByEquity,
-  onSortByEquityChange
+  onSortByEquityChange,
+  isPatternWithoutRack = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -115,7 +117,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({
               showShorter,
               onShowShorterChange,
               <ChevronDown size={16} className="text-orange-500" />,
-              !hasActiveSearch
+              !hasActiveSearch || isPatternWithoutRack
             )}
 
             {/* Equity Sort Toggle - Only show when shorter words are enabled */}

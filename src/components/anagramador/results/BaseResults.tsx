@@ -4,6 +4,37 @@ import { processDigraphs, getInternalLength, toDisplayFormat } from "@/utils/dig
 import { calculateWordScore } from "@/utils/scrabbleScore";
 import { calculatePotentialValue, calculateLeave, getBatchLeaveValues } from "@/utils/leavesData";
 
+// Utilidad para extraer información de búsqueda
+const parseSearchTerm = (searchTerm: string) => {
+  // Detectar si es búsqueda de patrón (contiene *, ., -, ^, $, o :)
+  const isPatternSearch = searchTerm.includes('*') || 
+                         searchTerm.includes('.') || 
+                         searchTerm.includes('-') || 
+                         searchTerm.includes('^') || 
+                         searchTerm.includes('$') || 
+                         searchTerm.includes(':');
+  
+  // Detectar si tiene restricción de rack (patrón con coma)
+  const hasRackRestriction = isPatternSearch && searchTerm.includes(',');
+  
+  let rack = '';
+  if (hasRackRestriction) {
+    // Extraer rack de patrón como ".R.Z*,AEEBRS"
+    const parts = searchTerm.split(',');
+    rack = parts[1] || '';
+  } else if (!isPatternSearch) {
+    // Búsqueda de anagrama normal
+    rack = searchTerm;
+  }
+  
+  return {
+    isPatternSearch,
+    hasRackRestriction,
+    rack: rack.trim(),
+    shouldShowEquityAndResidue: !isPatternSearch || hasRackRestriction
+  };
+};
+
 interface BaseResultsProps {
   matches: string[];
   title: string;
@@ -53,8 +84,13 @@ const WordWithEquity: React.FC<{
 
         // Calculate residue if needed
         if (showResidue) {
-          const leave = calculateLeave(searchTerm, displayWord.toUpperCase());
-          setResidue(leave);
+          const searchInfo = parseSearchTerm(searchTerm);
+          if (searchInfo.shouldShowEquityAndResidue && searchInfo.rack) {
+            const leave = calculateLeave(searchInfo.rack, displayWord.toUpperCase());
+            setResidue(leave);
+          } else {
+            setResidue(''); // No residue for patterns without rack
+          }
         }
       } catch (error) {
         console.error('Error calculating equity:', error);
@@ -150,7 +186,9 @@ export const BaseResults = ({
         
         for (const word of subanagrams) {
           const displayWord = toDisplayFormat(word);
-          const leave = calculateLeave(searchTerm, displayWord.toUpperCase());
+          const searchInfo = parseSearchTerm(searchTerm);
+          const rackToUse = searchInfo.rack || searchTerm; // Fallback to searchTerm for anagrams
+          const leave = calculateLeave(rackToUse, displayWord.toUpperCase());
           leavesToQuery.push(leave);
           wordToLeaveMap.set(word, leave);
         }
@@ -189,6 +227,7 @@ export const BaseResults = ({
 
   // Handle unified equity view - all words sorted by absolute equity
   if (unifiedEquityView && equityValues.size > 0) {
+    const searchInfo = parseSearchTerm(searchTerm);
     const sortedWords = [...matches].sort((a, b) => {
       const equityA = equityValues.get(a) || 0;
       const equityB = equityValues.get(b) || 0;
@@ -218,7 +257,7 @@ export const BaseResults = ({
                 highlightWildcardLetter={highlightWildcardLetter}
                 index={index}
                 length={length}
-                showResidue={true} // Show residue instead of equity in unified view
+                showResidue={searchInfo.shouldShowEquityAndResidue} // Show residue only for anagrams and patterns with rack
               />
             );
           })}
@@ -266,30 +305,33 @@ export const BaseResults = ({
           </span>
         )}
       </h3>
-      {sortedLengths.map(length => (
-        <div key={`length-${length}`} className="space-y-2">
-          <h4 className="font-medium text-gray-600">
-            {`Palabras de ${length} ${length === 1 ? 'letra' : 'letras'} (${groupedByLength[length].length}):`}
-          </h4>
-          <div className="flex flex-wrap gap-2">
-            {groupedByLength[length].map((word, index) => {
-              const displayWord = toDisplayFormat(word);
-              return (
-                <WordWithEquity
-                  key={`word-${length}-${index}`}
-                  word={word}
-                  displayWord={displayWord}
-                  searchTerm={searchTerm}
-                  highlightWildcardLetter={highlightWildcardLetter}
-                  index={index}
-                  length={length}
-                  showResidue={true} // Always show unified format in grouped view too
-                />
-              );
-            })}
+      {sortedLengths.map(length => {
+        const searchInfo = parseSearchTerm(searchTerm);
+        return (
+          <div key={`length-${length}`} className="space-y-2">
+            <h4 className="font-medium text-gray-600">
+              {`Palabras de ${length} ${length === 1 ? 'letra' : 'letras'} (${groupedByLength[length].length}):`}
+            </h4>
+            <div className="flex flex-wrap gap-2">
+              {groupedByLength[length].map((word, index) => {
+                const displayWord = toDisplayFormat(word);
+                return (
+                  <WordWithEquity
+                    key={`word-${length}-${index}`}
+                    word={word}
+                    displayWord={displayWord}
+                    searchTerm={searchTerm}
+                    highlightWildcardLetter={highlightWildcardLetter}
+                    index={index}
+                    length={length}
+                    showResidue={searchInfo.shouldShowEquityAndResidue} // Show residue only for anagrams and patterns with rack
+                  />
+                );
+              })}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };
