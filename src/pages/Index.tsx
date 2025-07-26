@@ -17,7 +17,9 @@ const Index = () => {
   const { isLoading: isDBLoading, progress: dbProgress, loadStartTime, isFirstLoad, wordCount } = useWordDatabase();
   const { isLoading: isTrieLoading, trie, loadingProgress, stage: trieStage } = useWordTrie();
   
-  const isDictionaryLoading = isDBLoading || isTrieLoading;
+  // Only consider dictionary loading when IndexedDB is loading
+  // Trie loading happens in background - hybrid service provides immediate access
+  const isDictionaryLoading = isDBLoading;
   
   // Calculate combined progress based on the current stage
   const getCombinedProgress = () => {

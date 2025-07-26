@@ -11,7 +11,8 @@ import { HybridTrieService } from '@/services/HybridTrieService';
 const TOTAL_WORDS = 639293;
 
 export const useWordTrie = () => {
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // Híbrido disponible inmediatamente
+  const [isTrieBuilding, setIsTrieBuilding] = useState(false); // Separar el estado del Trie
   const [error, setError] = useState<Error | null>(null);
   const [actualTrie] = useState<Trie>(() => new Trie());
   const [hybridService] = useState<HybridTrieService>(() => new HybridTrieService());
@@ -113,13 +114,14 @@ export const useWordTrie = () => {
   useEffect(() => {
     // ✅ Servicio híbrido disponible desde el primer momento
     console.log('🚀 Hybrid service ready for immediate use (IndexedDB fallback)');
-    setIsLoading(false); // IndexedDB está listo inmediatamente
+    // isLoading ya está en false - UI disponible inmediatamente
   }, []);
 
   useEffect(() => {
     const initTrie = async () => {
       try {
-        setIsLoading(true); // Solo para la carga del Trie
+        setIsTrieBuilding(true); // Solo trackear construcción del Trie
+        setStage('building');
         const loadedFromCache = await buildTrie();
         if (!loadedFromCache) {
           await buildTrieFromLocalDb();
@@ -132,8 +134,9 @@ export const useWordTrie = () => {
         setError(new Error(errorMessage));
         toast.error(errorMessage);
       } finally {
-        setIsLoading(false);
+        setIsTrieBuilding(false);
         setLoadingProgress(100);
+        setStage('complete');
       }
     };
 
