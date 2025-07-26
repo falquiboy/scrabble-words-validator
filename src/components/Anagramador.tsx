@@ -2,15 +2,15 @@ import React, { useState, useEffect } from "react";
 import SearchContainer from "./anagramador/search/SearchContainer";
 import ResultsList from "./anagramador/ResultsList";
 import SettingsMenu from "./anagramador/SettingsMenu";
-import { useOfflineAnagramSearch } from "@/hooks/useOfflineAnagramSearch";
+import { useHybridAnagramSearch } from "@/hooks/useHybridAnagramSearch";
 import { highlightWildcardLetter } from "@/utils/wildcardHighlighting";
 import { useToast } from "@/hooks/use-toast";
 import { toDisplayFormat } from "@/utils/digraphs";
-import { Trie } from "@/utils/trie/types";
+import { HybridTrieService } from "@/services/HybridTrieService";
 import { SearchResults } from "@/hooks/anagramSearch/types";
 
 interface AnagramadorProps {
-  trie: Trie;
+  trie: HybridTrieService;
 }
 
 const Anagramador = ({ trie }: AnagramadorProps) => {
@@ -18,68 +18,32 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showShorter, setShowShorter] = useState(false);
   const [targetLength, setTargetLength] = useState<number | null>(null);
-  const [isSearchAborted, setIsSearchAborted] = useState(false);
   const [showExtendedView, setShowExtendedView] = useState(false);
   const [showHooksView, setShowHooksView] = useState(false);
   const [sortByEquity, setSortByEquity] = useState(false);
-  const [searchResults, setSearchResults] = useState<SearchResults>({
-    exactMatches: [],
-    wildcardMatches: [],
-    additionalWildcardMatches: [],
-    shorterMatches: [],
-    patternMatches: []
-  });
-  const [isLoading, setIsLoading] = useState(false);
+
+  // Use hybrid anagram search - ALWAYS AVAILABLE! 🌍
+  const { results: searchResults, isLoading, error, currentProvider } = useHybridAnagramSearch(
+    searchTerm,
+    trie,
+    showShorter,
+    targetLength
+  );
 
   useEffect(() => {
     setShowShorter(false);
   }, []);
 
+  // Show error toast if there's an error
   useEffect(() => {
-    const trimmedSearchTerm = searchTerm.trim();
-    if (!trimmedSearchTerm) {
-      setSearchResults({
-        exactMatches: [],
-        wildcardMatches: [],
-        additionalWildcardMatches: [],
-        shorterMatches: [],
-        patternMatches: []
+    if (error) {
+      toast({
+        title: "Error en la búsqueda",
+        description: error,
+        variant: "destructive"
       });
-      setIsLoading(false);
-      return;
     }
-
-    const abortController = new AbortController();
-
-    const search = async () => {
-      setIsLoading(true);
-      setIsSearchAborted(false);
-      try {
-        const results = await useOfflineAnagramSearch(
-          trimmedSearchTerm,
-          trie,
-          showShorter,
-          targetLength
-        );
-        setSearchResults(results);
-      } catch (error: any) {
-        if (error.name === 'AbortError') {
-          setIsSearchAborted(true);
-          console.log("Search aborted:", error);
-        } else {
-          console.error("Error during anagram search:", error);
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    search();
-
-    return () => {
-      abortController.abort();
-    };
-  }, [searchTerm, showShorter, targetLength, trie]);
+  }, [error, toast]);
 
   const handleSearch = (letters: string, newTargetLength: number | null) => {
     if (letters !== searchTerm) {
@@ -93,14 +57,8 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
   const handleClear = () => {
     setSearchTerm("");
     setShowShorter(false);
-    setSearchResults({
-      exactMatches: [],
-      wildcardMatches: [],
-      additionalWildcardMatches: [],
-      shorterMatches: [],
-      patternMatches: []
-    });
-    setIsSearchAborted(false);
+    setTargetLength(null);
+    // Note: searchResults will be cleared automatically by the hybrid hook
   };
 
   const handleShowShorterChange = (show: boolean) => {
@@ -221,7 +179,7 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
             searchTerm={searchTerm}
             results={searchResults}
             highlightWildcardLetter={highlightWildcardLetter}
-            isSearchAborted={isSearchAborted}
+            isSearchAborted={false}
             showShorter={showShorter}
             showExtendedView={showExtendedView}
             showHooksView={showHooksView}

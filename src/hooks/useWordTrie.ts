@@ -5,6 +5,7 @@ import { Trie } from '@/utils/trie';
 import { toast } from 'sonner';
 import { buildTrieFromWords, loadCachedTrie, saveTrie } from '@/utils/trieOperations';
 import { LoadingStage } from './useWordDatabase';
+import { HybridTrieService } from '@/services/HybridTrieService';
 
 // Known total word count from the database
 const TOTAL_WORDS = 639293;
@@ -12,7 +13,8 @@ const TOTAL_WORDS = 639293;
 export const useWordTrie = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [trie] = useState<Trie>(() => new Trie());
+  const [actualTrie] = useState<Trie>(() => new Trie());
+  const [hybridService] = useState<HybridTrieService>(() => new HybridTrieService());
   const [wordCount, setWordCount] = useState(0);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [stage, setStage] = useState<LoadingStage>('initializing');
@@ -61,11 +63,16 @@ export const useWordTrie = () => {
 
   const buildTrie = useCallback(async () => {
     try {
-      const cachedWordCount = await loadCachedTrie(trie);
+      const cachedWordCount = await loadCachedTrie(actualTrie);
       
       if (cachedWordCount > 0 && cachedWordCount >= TOTAL_WORDS) {
         setWordCount(cachedWordCount);
         console.log('Trie loaded from cache with', cachedWordCount, 'words');
+        
+        // ✅ Actualizar el servicio híbrido con el Trie listo
+        hybridService.updateTrie(actualTrie);
+        console.log('🎯 Hybrid service updated with cached Trie');
+        
         return true;
       }
       
@@ -74,7 +81,7 @@ export const useWordTrie = () => {
       console.error('Error loading cached trie:', err);
       return false;
     }
-  }, [trie]);
+  }, [actualTrie, hybridService]);
 
   const buildTrieFromLocalDb = useCallback(async () => {
     try {
@@ -82,13 +89,18 @@ export const useWordTrie = () => {
       const words = await fetchWordsFromDB();
       console.log(`Building trie with ${words.length} words...`);
 
-      await buildTrieFromWords(words, trie, (progress) => {
+      await buildTrieFromWords(words, actualTrie, (progress) => {
         setLoadingProgress(progress);
       });
-      await saveTrie(trie);
+      await saveTrie(actualTrie);
 
       setWordCount(words.length);
       setStage('complete');
+      
+      // ✅ Actualizar el servicio híbrido con el Trie construido
+      hybridService.updateTrie(actualTrie);
+      console.log('🎯 Hybrid service updated with built Trie');
+      
       console.log('Trie built and cached successfully with', words.length, 'words');
     } catch (err) {
       console.error('Error building trie:', err);
@@ -96,11 +108,18 @@ export const useWordTrie = () => {
       setError(new Error(errorMessage));
       toast.error(errorMessage);
     }
-  }, [trie]);
+  }, [actualTrie, hybridService]);
+
+  useEffect(() => {
+    // ✅ Servicio híbrido disponible desde el primer momento
+    console.log('🚀 Hybrid service ready for immediate use (IndexedDB fallback)');
+    setIsLoading(false); // IndexedDB está listo inmediatamente
+  }, []);
 
   useEffect(() => {
     const initTrie = async () => {
       try {
+        setIsLoading(true); // Solo para la carga del Trie
         const loadedFromCache = await buildTrie();
         if (!loadedFromCache) {
           await buildTrieFromLocalDb();
@@ -125,7 +144,7 @@ export const useWordTrie = () => {
     isLoading, 
     error, 
     wordCount, 
-    trie, 
+    trie: hybridService, // ✅ Retornar el servicio híbrido en lugar del Trie directo
     loadingProgress, 
     stage 
   };

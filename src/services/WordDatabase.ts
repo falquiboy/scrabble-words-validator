@@ -1,5 +1,12 @@
 import { SerializedTrie, TrieNode } from '@/utils/trie/types';
 
+export interface WordEntry {
+  word: string;
+  alphagram: string;
+  length: number;
+  points?: number;
+}
+
 export class WordDatabase {
   private db: IDBDatabase | null = null;
   private initPromise: Promise<void> | null = null;
@@ -10,7 +17,7 @@ export class WordDatabase {
     }
 
     this.initPromise = new Promise((resolve, reject) => {
-      const request = indexedDB.open('scrabbleDB', 5);
+      const request = indexedDB.open('scrabbleDB', 6);
 
       request.onerror = () => {
         console.error('IndexedDB error:', request.error);
@@ -37,17 +44,20 @@ export class WordDatabase {
           db.deleteObjectStore('trie');
         }
 
-        db.createObjectStore('words', { keyPath: 'word' });
+        const wordsStore = db.createObjectStore('words', { keyPath: 'word' });
+        wordsStore.createIndex('alphagram', 'alphagram', { unique: false });
+        wordsStore.createIndex('length', 'length', { unique: false });
+        
         db.createObjectStore('trie', { keyPath: 'id' });
         const metaStore = db.createObjectStore('metadata', { keyPath: 'key' });
-        metaStore.put({ key: 'version', value: 5 });
+        metaStore.put({ key: 'version', value: 6 });
       };
     });
 
     return this.initPromise;
   }
 
-  async addWords(words: string[]): Promise<void> {
+  async addWords(wordEntries: WordEntry[]): Promise<void> {
     await this.init();
     if (!this.db) throw new Error('Database not initialized');
 
@@ -62,11 +72,43 @@ export class WordDatabase {
 
       transaction.oncomplete = () => resolve();
 
-      words.forEach(word => {
-        // Store the word as-is, without processing digraphs
-        store.put({ word: word.toUpperCase() });
+      wordEntries.forEach(entry => {
+        // Store the complete word entry with alphagram and length
+        store.put({
+          word: entry.word.toUpperCase(),
+          alphagram: entry.alphagram.toUpperCase(),
+          length: entry.length,
+          points: this.calculatePoints(entry.word)
+        });
       });
     });
+  }
+
+  private calculatePoints(word: string): number {
+    const points: { [key: string]: number } = {
+      'A': 1, 'E': 1, 'I': 1, 'L': 1, 'N': 1, 'O': 1, 'R': 1, 'S': 1, 'T': 1, 'U': 1,
+      'D': 2, 'G': 2,
+      'B': 3, 'C': 3, 'M': 3, 'P': 3,
+      'F': 4, 'H': 4, 'V': 4, 'Y': 4,
+      'J': 5, 'K': 5, 'Ñ': 5, 'Q': 5, 'W': 5, 'X': 5,
+      'Z': 10,
+      'RR': 8, 'LL': 8, 'CH': 5
+    };
+
+    let total = 0;
+    const upperWord = word.toUpperCase();
+    
+    // Handle digraphs first
+    let processedWord = upperWord.replace(/RR/g, 'Ř').replace(/LL/g, 'Ł').replace(/CH/g, 'Ç');
+    
+    for (const char of processedWord) {
+      if (char === 'Ř') total += 8; // RR
+      else if (char === 'Ł') total += 8; // LL  
+      else if (char === 'Ç') total += 5; // CH
+      else total += points[char] || 0;
+    }
+    
+    return total;
   }
 
   async getAllWords(): Promise<string[]> {

@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { wordDB } from '@/services/WordDatabase';
+import { wordDB, WordEntry } from '@/services/WordDatabase';
 import { toast } from 'sonner';
 
 const CSV_BUCKET_NAME = 'words';
@@ -91,9 +91,22 @@ export class CsvWordLoader {
           // Extract columns from CSV line
           // Format: alphagram,word,length (ignoring other columns if present)
           const columns = line.split(',');
-          // We want the word which is in the second column (index 1)
-          return columns.length > 1 ? columns[1].trim().replace(/"/g, '') : '';
-        }).filter(word => word.length > 0);
+          
+          if (columns.length < 3) return null;
+          
+          const alphagram = columns[0].trim().replace(/"/g, '');
+          const word = columns[1].trim().replace(/"/g, '');
+          const length = parseInt(columns[2].trim());
+          
+          // Validate data integrity
+          if (!word || !alphagram || isNaN(length)) return null;
+          
+          return {
+            alphagram: alphagram.toUpperCase(),
+            word: word.toUpperCase(),
+            length: length
+          };
+        }).filter(wordData => wordData !== null);
         
         try {
           await wordDB.addWords(chunkWords);
