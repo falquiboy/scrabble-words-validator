@@ -1,4 +1,4 @@
-import { wordDB } from '@/services/WordDatabase';
+import { sqliteDB } from '@/services/SQLiteWordDatabase';
 import { Trie } from '@/utils/trie';
 
 export const buildTrieFromWords = async (
@@ -31,12 +31,18 @@ export const buildTrieFromWords = async (
 
 export const loadCachedTrie = async (trie: Trie) => {
   console.log('Checking for serialized trie...');
-  const serializedTrie = await wordDB.loadTrie();
   
-  if (serializedTrie) {
-    console.log('Found serialized trie, deserializing...');
-    trie.deserialize(serializedTrie);
-    return trie.getAllWords().length;
+  try {
+    await sqliteDB.init();
+    const serializedTrie = await sqliteDB.loadTrie();
+    
+    if (serializedTrie && serializedTrie.data) {
+      console.log('Found serialized trie in SQLite, deserializing...');
+      trie.deserialize(serializedTrie.data);
+      return trie.getAllWords().length;
+    }
+  } catch (error) {
+    console.warn('Failed to load trie from SQLite cache:', error);
   }
   
   return 0;
@@ -45,5 +51,16 @@ export const loadCachedTrie = async (trie: Trie) => {
 export const saveTrie = async (trie: Trie) => {
   console.log('Saving trie to cache...');
   const serializedTrie = trie.serialize();
-  await wordDB.saveTrie(serializedTrie);
+  
+  try {
+    await sqliteDB.init();
+    await sqliteDB.saveTrie({
+      data: serializedTrie,
+      wordCount: trie.getAllWords().length,
+      timestamp: Date.now()
+    });
+    console.log('✅ Trie saved to SQLite cache');
+  } catch (error) {
+    console.error('❌ Failed to save trie to SQLite cache:', error);
+  }
 };

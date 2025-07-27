@@ -1,6 +1,6 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { wordDB } from '@/services/WordDatabase';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { sqliteDB } from '@/services/SQLiteWordDatabase';
 import { Trie } from '@/utils/trie';
 import { toast } from 'sonner';
 import { buildTrieFromWords, loadCachedTrie, saveTrie } from '@/utils/trieOperations';
@@ -13,6 +13,7 @@ const TOTAL_WORDS = 639293;
 export const useWordTrie = () => {
   const [isLoading, setIsLoading] = useState(false); // Híbrido disponible inmediatamente
   const [isTrieBuilding, setIsTrieBuilding] = useState(false); // Separar el estado del Trie
+  const isTrieConstructionInProgress = useRef(false); // Flag para evitar doble construcción (useRef no causa re-renders)
   const [error, setError] = useState<Error | null>(null);
   const [actualTrie] = useState<Trie>(() => new Trie());
   const [hybridService] = useState<HybridTrieService>(() => new HybridTrieService());
@@ -39,36 +40,67 @@ export const useWordTrie = () => {
 
   const fetchWordsFromDB = async () => {
     try {
-      let words = await wordDB.getAllWords();
-      console.log('Words in local database:', words.length);
+      // Asegurar que SQLite esté inicializada
+      await sqliteDB.init();
+      let words = await sqliteDB.getAllWords();
+      console.log('Words in SQLite database:', words.length);
 
       if (words.length === 0 || words.length < TOTAL_WORDS) {
-        console.log('Local DB empty or incomplete, loading from CSV...');
+        console.log('SQLite DB empty or incomplete, loading from CSV...');
         const csvSuccess = await loadWordsFromCsv();
         
         if (!csvSuccess) {
           setStage('processing');
           toast.error('Error al cargar el diccionario, por favor intente más tarde');
+          return [];
         }
         
-        // Get words from database again after CSV load
-        words = await wordDB.getAllWords();
+        // Esperar un poco para que SQLite termine de procesar
+        console.log('⏳ Waiting for SQLite to finish processing...');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Get words from SQLite again after CSV load
+        words = await sqliteDB.getAllWords();
+        console.log('Words after CSV load:', words.length);
+        
+        // Si aún está incompleta, esperar más
+        let retries = 0;
+        while (words.length < TOTAL_WORDS && retries < 10) {
+          console.log(`⏳ SQLite still processing... ${words.length}/${TOTAL_WORDS} (retry ${retries + 1}/10)`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          words = await sqliteDB.getAllWords();
+          retries++;
+        }
       }
       
       return words;
     } catch (error) {
-      console.error('Error fetching words:', error);
+      console.error('Error fetching words from SQLite:', error);
       throw error;
     }
   };
 
   const buildTrie = useCallback(async () => {
     try {
+      // Intentar cargar Trie desde SQLite cache primero
+      await sqliteDB.init();
+      const cachedTrieData = await sqliteDB.loadTrie();
+      
+      if (cachedTrieData) {
+        // Reconstruir Trie desde datos serializados de SQLite
+        const wordCount = cachedTrieData.wordCount || 0;
+        if (wordCount >= TOTAL_WORDS) {
+          // TODO: Deserializar el Trie (por ahora usar método legacy)
+          console.log('Trie cache found in SQLite, falling back to legacy cache');
+        }
+      }
+      
+      // Fallback al cache legacy
       const cachedWordCount = await loadCachedTrie(actualTrie);
       
       if (cachedWordCount > 0 && cachedWordCount >= TOTAL_WORDS) {
         setWordCount(cachedWordCount);
-        console.log('Trie loaded from cache with', cachedWordCount, 'words');
+        console.log('Trie loaded from legacy cache with', cachedWordCount, 'words');
         
         // ✅ Actualizar el servicio híbrido con el Trie listo
         hybridService.updateTrie(actualTrie);
@@ -85,15 +117,38 @@ export const useWordTrie = () => {
   }, [actualTrie, hybridService]);
 
   const buildTrieFromLocalDb = useCallback(async () => {
+    // Evitar construcción doble usando useRef
+    if (isTrieConstructionInProgress.current) {
+      console.log('🚫 Trie construction already in progress, skipping...');
+      return;
+    }
+
     try {
+      isTrieConstructionInProgress.current = true;
       setStage('building');
+      
       const words = await fetchWordsFromDB();
       console.log(`Building trie with ${words.length} words...`);
 
       await buildTrieFromWords(words, actualTrie, (progress) => {
         setLoadingProgress(progress);
       });
+      
+      // Guardar en ambos lugares: legacy y SQLite
       await saveTrie(actualTrie);
+      
+      // Guardar también en SQLite cache (con metadata)
+      try {
+        const serializedTrie = actualTrie; // TODO: Serialize properly
+        await sqliteDB.saveTrie({ 
+          wordCount: words.length, 
+          data: serializedTrie,
+          timestamp: Date.now()
+        });
+        console.log('💾 Trie saved to SQLite cache');
+      } catch (sqliteError) {
+        console.warn('⚠️ Failed to save Trie to SQLite cache:', sqliteError);
+      }
 
       setWordCount(words.length);
       setStage('complete');
@@ -108,6 +163,8 @@ export const useWordTrie = () => {
       const errorMessage = err instanceof Error ? err.message : 'Error al inicializar el diccionario';
       setError(new Error(errorMessage));
       toast.error(errorMessage);
+    } finally {
+      isTrieConstructionInProgress.current = false;
     }
   }, [actualTrie, hybridService]);
 

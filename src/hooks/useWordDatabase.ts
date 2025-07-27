@@ -48,8 +48,11 @@ export const useWordDatabase = () => {
         // Update word count
         setWordCount(existingWords.length);
 
-        // Only fetch words if database is completely empty or incomplete
-        if (existingWords.length === 0 || existingWords.length < EXPECTED_WORD_COUNT) {
+        // DEPRECATED: useWordDatabase ya no construye la base de datos
+        // useWordTrie maneja toda la construcción (SQLite + Trie)
+        console.log('⚠️ useWordDatabase deprecated - useWordTrie handles database construction');
+        
+        if (false) { // Deshabilitar construcción duplicada
           console.log('Database empty or incomplete, loading from CSV file...');
           setIsFirstLoad(true);
           await wordDB.clear();
@@ -100,15 +103,14 @@ export const useWordDatabase = () => {
             toast.error('Error al cargar el diccionario, por favor intente más tarde');
           }
         } else {
-          console.log('Using existing dictionary');
+          console.log('✅ useWordDatabase skipped - useWordTrie manages everything');
           setProgress({
             stage: 'complete',
             current: 100,
             total: 100,
             percent: 100,
-            message: 'Diccionario listo'
+            message: 'Manejado por useWordTrie'
           });
-          // Removed toast.success notification here
         }
       } catch (err) {
         console.error('Dictionary initialization error:', err);

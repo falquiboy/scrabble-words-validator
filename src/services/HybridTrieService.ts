@@ -46,6 +46,8 @@ export class HybridTrieService {
    */
   private async checkSqliteAvailability(): Promise<boolean> {
     try {
+      console.log('🔍 Checking SQLite availability...');
+      
       // Test ultra-rápido: verificar disponibilidad de SQLite
       const testPromise = sqliteAnagramService.findAnagrams('A', 1, false);
       const timeoutPromise = new Promise<never>((_, reject) => 
@@ -53,6 +55,7 @@ export class HybridTrieService {
       );
       
       const result = await Promise.race([testPromise, timeoutPromise]);
+      console.log(`🔍 SQLite test result: ${result.exactMatches.length} matches for "A"`);
       
       // Verificar si SQLite tiene datos suficientes
       // La letra 'A' debería tener al menos algunas palabras en español
@@ -68,7 +71,7 @@ export class HybridTrieService {
       return true;
     } catch (error) {
       // SQLite está bloqueado (construcción) o no disponible
-      console.log('🚫 SQLite blocked/unavailable, using Supabase fallback');
+      console.log(`🚫 SQLite blocked/unavailable: ${error.message}`);
       this.isSqliteAvailable = false;
       return false;
     }
