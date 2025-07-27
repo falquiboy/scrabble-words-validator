@@ -116,21 +116,25 @@ export const useHybridAnagramSearch = (
             });
 
           } else {
-            // Fallback to IndexedDB (fast, instant availability)
-            console.log('⚡ Using IndexedDB fallback (instant availability)');
-            setCurrentProvider('indexeddb');
+            // Use hybrid service async fallback (IndexedDB → Supabase)
+            console.log('🔄 Using hybrid service fallback chain');
             
-            const indexedDbResults = await indexedDbAnagramService.findAnagrams(
-              trimmedTerm, 
-              2, 
-              showShorter
-            );
+            const exactMatches = await hybridService.findAnagramsAsync(trimmedTerm);
+            let shorterMatches: string[] = [];
+            
+            if (showShorter) {
+              const extendedResults = await hybridService.findAnagramsWithSubAnagrams(trimmedTerm, true);
+              shorterMatches = extendedResults.shorterMatches;
+            }
+
+            // Set provider based on what was actually used
+            setCurrentProvider(hybridService.getCurrentProvider());
 
             setResults({
-              exactMatches: indexedDbResults.exactMatches,
+              exactMatches,
               wildcardMatches: [],
               additionalWildcardMatches: [],
-              shorterMatches: indexedDbResults.partialMatches,
+              shorterMatches,
               patternMatches: []
             });
           }

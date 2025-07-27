@@ -1,17 +1,17 @@
 
 import { useState } from "react";
-import { Trie } from "@/utils/trie";
+import { HybridTrieService } from "@/services/HybridTrieService";
 import Header from "./word-validator/Header";
 import WordInput from "./word-validator/WordInput";
 import LoadingIndicator from "./word-validator/LoadingIndicator";
 import ValidationResult from "./word-validator/ValidationResult";
 import { LoadingStage } from "@/hooks/useWordDatabase";
-import { Check } from "lucide-react";
+import { Check, Database, Zap } from "lucide-react";
 
 interface WordValidatorProps {
   isDictionaryLoading: boolean;
   progress: number;
-  trie: Trie;
+  trie: HybridTrieService;
   stage?: LoadingStage;
   loadStartTime?: number;
   isFirstLoad?: boolean;
@@ -48,16 +48,16 @@ const WordValidator = ({
       const allWords = trie.getAllWords();
       console.log('Total words in trie:', allWords.length);
       
-      const isValid = words.every(w => {
+      const isValid = await Promise.all(words.map(async (w) => {
         // Convert to uppercase without processing digraphs yet
         const upperWord = w.toUpperCase();
         console.log('Validating word:', w, 'uppercase:', upperWord);
         
-        // Search in trie directly with the original word
-        const found = trie.search(upperWord);
-        console.log('Word found in trie?', found);
+        // Use async search with fallback to Supabase
+        const found = await trie.searchAsync(upperWord);
+        console.log('Word found?', found);
         return found;
-      });
+      })).then(results => results.every(result => result));
 
       // Store the original words in uppercase for display
       setResult({ 
@@ -82,6 +82,8 @@ const WordValidator = ({
       setResult(prev => ({ ...prev, checked: false }));
     }
   };
+
+  const currentProvider = trie.getCurrentProvider();
 
   return (
     <div className="w-full max-w-2xl mx-auto p-4 flex flex-col items-center relative">
@@ -114,6 +116,33 @@ const WordValidator = ({
           )}
         </div>
       </div>
+      
+      {/* Fallback method indicator - bottom left */}
+      {!isDictionaryLoading && (
+        <div className="fixed bottom-4 left-4 bg-white shadow-md rounded-lg px-3 py-2 flex items-center gap-2 text-xs text-gray-600 border border-gray-200">
+          {currentProvider === 'trie' ? (
+            <>
+              <Zap size={14} className="text-yellow-600" />
+              <span>Trie</span>
+            </>
+          ) : currentProvider === 'sqlite' ? (
+            <>
+              <Database size={14} className="text-blue-600" />
+              <span>SQLite</span>
+            </>
+          ) : currentProvider === 'supabase' ? (
+            <>
+              <Database size={14} className="text-green-600" />
+              <span>Supabase</span>
+            </>
+          ) : (
+            <>
+              <Database size={14} className="text-gray-400" />
+              <span>Cargando...</span>
+            </>
+          )}
+        </div>
+      )}
       
       {/* Permanent dictionary status indicator */}
       {wordCount > 0 && !isDictionaryLoading && (

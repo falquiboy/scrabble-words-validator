@@ -1,10 +1,10 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { wordDB, WordEntry } from '@/services/WordDatabase';
+import { sqliteDB, WordEntry } from '@/services/SQLiteWordDatabase';
 import { toast } from 'sonner';
 
 const CSV_BUCKET_NAME = 'words';
-const CSV_FILE_PATH = 'words.csv';
+const CSV_FILE_PATH = 'words.csv.gz'; // Usar archivo comprimido para descarga más rápida
 // Reduced chunk size from 10000 to 1000 for better performance on mobile devices
 const CHUNK_SIZE = 1000;
 // Short delay between chunks to allow device to cool down
@@ -59,8 +59,11 @@ export class CsvWordLoader {
   
   private async processCsvFile(file: Blob): Promise<boolean> {
     try {
-      const text = await file.text();
-      const lines = text.split('\n');
+      console.log('🗜️ Decompressing gzipped CSV file...');
+      
+      // Descomprimir el archivo gzip
+      const decompressedText = await this.decompressGzip(file);
+      const lines = decompressedText.split('\n');
       
       // Skip header line
       const wordsData = lines.slice(1).filter(line => line.trim().length > 0);
@@ -109,7 +112,9 @@ export class CsvWordLoader {
         }).filter(wordData => wordData !== null);
         
         try {
-          await wordDB.addWords(chunkWords);
+          // Asegurar que SQLite esté inicializada antes de usar
+          await sqliteDB.init();
+          await sqliteDB.addWords(chunkWords);
           
           this.processedWords += chunkWords.length;
           console.log(`Processed chunk ${i+1}/${chunks.length}, total: ${this.processedWords}/${this.totalWords} words`);
@@ -137,6 +142,31 @@ export class CsvWordLoader {
       console.error('Error processing CSV file:', error);
       toast.error('Error procesando el diccionario');
       return false;
+    }
+  }
+
+  /**
+   * Descomprimir archivo gzip usando la API nativa del navegador
+   */
+  private async decompressGzip(gzipBlob: Blob): Promise<string> {
+    try {
+      // Usar DecompressionStream API nativa del navegador
+      const decompressStream = new DecompressionStream('gzip');
+      const stream = gzipBlob.stream().pipeThrough(decompressStream);
+      
+      // Convertir stream a blob y luego a texto
+      const response = new Response(stream);
+      const decompressedBlob = await response.blob();
+      const text = await decompressedBlob.text();
+      
+      console.log(`✅ Decompression complete: ${gzipBlob.size} bytes → ${text.length} chars`);
+      return text;
+    } catch (error) {
+      console.error('❌ Gzip decompression failed:', error);
+      
+      // Fallback: asumir que es texto plano
+      console.log('🔄 Fallback: treating as plain text');
+      return await gzipBlob.text();
     }
   }
 }
