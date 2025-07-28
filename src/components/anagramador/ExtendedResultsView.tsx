@@ -50,15 +50,15 @@ const ExtendedResultsView: React.FC<ExtendedResultsViewProps> = ({
           {words.map((word, index) => {
             const displayWord = toDisplayFormat(word);
             const wordInfo = wordsData.get(displayWord.toUpperCase());
-            const highlighted = highlightWildcardLetter(word, searchTerm);
+            const highlighted = highlightWildcardLetter(displayWord, searchTerm); // Use display format for highlighting too
             
             return (
               <ExtendedWordView
                 key={index}
-                word={displayWord}
+                word={displayWord} // Use display format for user-facing display
                 wordInfo={wordInfo}
                 isLoading={isLoadingData && !wordInfo}
-                highlightedWord={highlighted}
+                highlightedWord={highlighted} // Already converted by highlightWildcardLetter
               />
             );
           })}
