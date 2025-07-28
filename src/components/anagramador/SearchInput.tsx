@@ -4,6 +4,7 @@ import { RefObject, useState, useEffect, useRef } from "react";
 import { SearchTooltip } from "./SearchTooltip";
 import { validateAndCleanAnagramInput, validateAndCleanPatternInput } from "@/utils/inputValidation";
 import SearchButton from "./search/SearchButton";
+import { useUserActivityContext } from "@/contexts/UserActivityContext";
 
 interface SearchInputProps {
   letters: string;
@@ -25,6 +26,9 @@ const SearchInput = ({
   const [isPatternMode, setIsPatternMode] = useState(false);
   const [hasLengthSpecified, setHasLengthSpecified] = useState(false);
   const cursorPositionRef = useRef<number | null>(null);
+  
+  // Get user activity context to signal typing
+  const { signalTyping, signalSearching } = useUserActivityContext();
   
   // Auto-detect pattern mode and length specification based on input
   useEffect(() => {
@@ -67,6 +71,9 @@ const SearchInput = ({
   }, [letters]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // 🎯 Signal user typing activity for smart Trie upgrade
+    signalTyping();
+    
     cursorPositionRef.current = e.target.selectionStart;
     let value = e.target.value.toUpperCase();
     

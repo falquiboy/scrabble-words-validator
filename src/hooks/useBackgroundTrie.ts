@@ -1,6 +1,7 @@
 /**
  * Hook para construcción de Trie en background usando Web Worker
  * Permite que la UI sea responsiva mientras se construye el Trie
+ * Incluye detección de actividad del usuario para hot upgrade inteligente
  */
 
 import { useState, useEffect, useRef } from 'react';
@@ -8,6 +9,7 @@ import { Trie } from '@/utils/trie';
 import { sqliteDB } from '@/services/SQLiteWordDatabase';
 import { HybridTrieService } from '@/services/HybridTrieService';
 import { loadCachedTrie, saveTrie } from '@/utils/trieOperations';
+import { useUserActivityContext } from '@/contexts/UserActivityContext';
 
 interface TrieProgress {
   progress: number;
@@ -31,6 +33,15 @@ export const useBackgroundTrie = (): UseBackgroundTrieReturn => {
   const [status, setStatus] = useState<'loading' | 'building' | 'ready' | 'error'>('loading');
   const [error, setError] = useState<string | null>(null);
   const workerRef = useRef<Worker | null>(null);
+  const pendingTrieRef = useRef<Trie | null>(null); // Trie pendiente de upgrade
+  
+  // Get user activity context (with fallback for missing provider)
+  let userActivity: ReturnType<typeof useUserActivityContext> | null = null;
+  try {
+    userActivity = useUserActivityContext();
+  } catch (e) {
+    console.warn('⚠️ UserActivityContext not available, using immediate upgrade');
+  }
 
   useEffect(() => {
     const buildTrieInBackground = async () => {
@@ -78,16 +89,29 @@ export const useBackgroundTrie = (): UseBackgroundTrieReturn => {
             const trie = new Trie();
             trie.deserialize(serializedTrie);
             
-            // Hot upgrade the service
-            hybridService.upgradeTrie(trie);
-            setIsTrieReady(true);
-            setStatus('ready');
-            setTrieProgress(null);
+            // 🎯 SMART UPGRADE: Check if user is active before upgrading
+            const performUpgrade = () => {
+              console.log('🔥 Performing smart Trie upgrade');
+              hybridService.upgradeTrie(trie);
+              setIsTrieReady(true);
+              setStatus('ready');
+              setTrieProgress(null);
+              
+              // Save to cache for next time
+              saveTrie(trie);
+              
+              console.log(`✅ Trie smart upgrade complete! ${wordCount} words ready`);
+              pendingTrieRef.current = null;
+            };
             
-            // Save to cache for next time
-            saveTrie(trie);
-            
-            console.log(`✅ Trie hot upgrade complete! ${wordCount} words ready`);
+            if (userActivity && !userActivity.isSafeForUpgrade()) {
+              console.log('🕐 User is active, postponing Trie upgrade...');
+              pendingTrieRef.current = trie;
+              // Continue in the next effect
+            } else {
+              // Safe to upgrade immediately
+              performUpgrade();
+            }
             
             // Clean up worker
             workerRef.current?.terminate();
@@ -126,6 +150,37 @@ export const useBackgroundTrie = (): UseBackgroundTrieReturn => {
       }
     };
   }, [hybridService]);
+
+  // 🎯 SMART UPGRADE MONITOR: Execute pending upgrade when user becomes inactive
+  useEffect(() => {
+    if (!pendingTrieRef.current || !userActivity) return;
+
+    const checkAndUpgrade = () => {
+      if (userActivity.isSafeForUpgrade() && pendingTrieRef.current) {
+        console.log('🔥 User inactive, executing pending Trie upgrade');
+        
+        hybridService.upgradeTrie(pendingTrieRef.current);
+        setIsTrieReady(true);
+        setStatus('ready');
+        setTrieProgress(null);
+        
+        // Save to cache for next time
+        saveTrie(pendingTrieRef.current);
+        
+        const wordCount = pendingTrieRef.current.getAllWords().length;
+        console.log(`✅ Delayed Trie upgrade complete! ${wordCount} words ready`);
+        pendingTrieRef.current = null;
+      }
+    };
+
+    // Check immediately
+    checkAndUpgrade();
+
+    // Set up interval to periodically check
+    const interval = setInterval(checkAndUpgrade, 500); // Check every 500ms
+
+    return () => clearInterval(interval);
+  }, [userActivity?.activityState, hybridService]); // Re-run when activity state changes
 
   return {
     hybridService, // Always available from second 1!

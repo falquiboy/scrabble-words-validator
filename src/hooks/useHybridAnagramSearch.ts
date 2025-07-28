@@ -9,6 +9,7 @@ import { findPatternMatches } from "@/utils/pattern/matching";
 import { HybridTrieService } from '@/services/HybridTrieService';
 import { SearchResults } from "./anagramSearch/types";
 import { sortWordsByAddedLetter } from "@/utils/additionalLetterSort";
+import { useUserActivityContext } from '@/contexts/UserActivityContext';
 
 export const useHybridAnagramSearch = (
   searchTerm: string,
@@ -35,6 +36,9 @@ export const useHybridAnagramSearch = (
   const [error, setError] = useState<string | null>(null);
   const [currentProvider, setCurrentProvider] = useState<'none' | 'indexeddb' | 'trie'>('none');
   const [lastSearchTerm, setLastSearchTerm] = useState<string>('');
+  
+  // Get user activity context to signal searching
+  const { signalSearching } = useUserActivityContext();
 
   // Efecto para cambios en el toggle (con carga lazy de subanagramas)
   useEffect(() => {
@@ -136,6 +140,9 @@ export const useHybridAnagramSearch = (
 
       setIsLoading(true);
       setError(null);
+
+      // 🎯 Signal user searching activity for smart Trie upgrade
+      signalSearching();
 
       try {
         const trimmedTerm = searchTerm.trim();

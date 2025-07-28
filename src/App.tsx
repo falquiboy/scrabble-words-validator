@@ -5,6 +5,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { UserActivityProvider } from "@/contexts/UserActivityContext";
 import Index from "./pages/Index";
 import Privacy from "./pages/Privacy";
 
@@ -15,14 +16,16 @@ const App = () => {
     <React.StrictMode>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/privacy" element={<Privacy />} />
-            </Routes>
-          </BrowserRouter>
+          <UserActivityProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/privacy" element={<Privacy />} />
+              </Routes>
+            </BrowserRouter>
+          </UserActivityProvider>
         </TooltipProvider>
       </QueryClientProvider>
     </React.StrictMode>
