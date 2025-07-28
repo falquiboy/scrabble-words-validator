@@ -25,6 +25,17 @@ export class HybridTrieService {
   }
 
   /**
+   * 🚀 HOT UPGRADE: Actualiza el Trie sin interrumpir el servicio
+   * Permite construcción en background con upgrade transparente
+   */
+  upgradeTrie(trie: Trie): void {
+    console.log('🔥 Hot upgrading HybridTrieService with new Trie');
+    this.actualTrie = trie;
+    this.isTrieReady = true;
+    console.log('✅ Trie upgraded! Ultra-fast mode enabled');
+  }
+
+  /**
    * Inicializar servicios de fallback en background
    */
   private async initializeFallbackServices() {
