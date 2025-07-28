@@ -1,5 +1,5 @@
-import React from 'react';
-import { Loader } from "lucide-react";
+import React, { useState } from 'react';
+import { Loader, ChevronDown, ChevronRight } from "lucide-react";
 import ExtendedWordView from './ExtendedWordView';
 import { toDisplayFormat } from "@/utils/digraphs";
 import { AnagramWordInfo } from '@/utils/anagramWordData';
@@ -29,6 +29,22 @@ const ExtendedResultsView: React.FC<ExtendedResultsViewProps> = ({
   wordsData,
   isLoadingData
 }) => {
+  // State for collapsible sections
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+
+  // Toggle section collapse/expand
+  const toggleSection = (sectionId: string) => {
+    setCollapsedSections(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(sectionId)) {
+        newSet.delete(sectionId);
+      } else {
+        newSet.add(sectionId);
+      }
+      return newSet;
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -38,31 +54,50 @@ const ExtendedResultsView: React.FC<ExtendedResultsViewProps> = ({
     );
   }
 
-  const renderWordSection = (title: string, words: string[], color: string = 'blue') => {
+  const renderWordSection = (title: string, words: string[], color: string = 'blue', sectionId?: string, collapsible: boolean = false) => {
     if (words.length === 0) return null;
+
+    const isCollapsed = sectionId ? collapsedSections.has(sectionId) : false;
 
     return (
       <div className="space-y-3">
-        <h3 className={`font-semibold text-${color}-600 text-sm`}>
-          {title} ({words.length})
-        </h3>
-        <div className="grid gap-3 grid-cols-1">
-          {words.map((word, index) => {
-            const displayWord = toDisplayFormat(word);
-            const wordInfo = wordsData.get(displayWord.toUpperCase());
-            const highlighted = highlightWildcardLetter(displayWord, searchTerm); // Use display format for highlighting too
-            
-            return (
-              <ExtendedWordView
-                key={index}
-                word={displayWord} // Use display format for user-facing display
-                wordInfo={wordInfo}
-                isLoading={isLoadingData && !wordInfo}
-                highlightedWord={highlighted} // Already converted by highlightWildcardLetter
-              />
-            );
-          })}
-        </div>
+        {collapsible && sectionId ? (
+          <button
+            onClick={() => toggleSection(sectionId)}
+            className={`flex items-center gap-2 font-semibold text-${color}-600 text-sm hover:text-${color}-700 transition-colors`}
+          >
+            {isCollapsed ? (
+              <ChevronRight size={16} />
+            ) : (
+              <ChevronDown size={16} />
+            )}
+            {title} ({words.length})
+          </button>
+        ) : (
+          <h3 className={`font-semibold text-${color}-600 text-sm`}>
+            {title} ({words.length})
+          </h3>
+        )}
+        
+        {!isCollapsed && (
+          <div className="grid gap-3 grid-cols-1">
+            {words.map((word, index) => {
+              const displayWord = toDisplayFormat(word);
+              const wordInfo = wordsData.get(displayWord.toUpperCase());
+              const highlighted = highlightWildcardLetter(displayWord, searchTerm); // Use display format for highlighting too
+              
+              return (
+                <ExtendedWordView
+                  key={index}
+                  word={displayWord} // Use display format for user-facing display
+                  wordInfo={wordInfo}
+                  isLoading={isLoadingData && !wordInfo}
+                  highlightedWord={highlighted} // Already converted by highlightWildcardLetter
+                />
+              );
+            })}
+          </div>
+        )}
       </div>
     );
   };
@@ -86,39 +121,49 @@ const ExtendedResultsView: React.FC<ExtendedResultsViewProps> = ({
   return (
     <div className="space-y-6">
 
-      {/* Pattern results (for pattern searches) */}
+      {/* Pattern results (for pattern searches) - Collapsible if many results */}
       {isPatternSearch && renderWordSection(
         "Coincidencias de patrón", 
         results.patternMatches, 
-        "purple"
+        "purple",
+        "pattern-matches",
+        results.patternMatches.length > 10
       )}
 
-      {/* Exact matches */}
+      {/* Exact matches - Collapsible if many results */}
       {!isPatternSearch && renderWordSection(
         "Anagramas exactos", 
         results.exactMatches, 
-        "green"
+        "green",
+        "exact-matches",
+        results.exactMatches.length > 10
       )}
 
-      {/* Wildcard matches */}
+      {/* Wildcard matches - Collapsible if many results */}
       {!isPatternSearch && renderWordSection(
         "Con comodines", 
         results.wildcardMatches, 
-        "blue"
+        "blue",
+        "wildcard-matches",
+        results.wildcardMatches.length > 10
       )}
 
-      {/* Additional wildcard matches */}
+      {/* Additional wildcard matches - Collapsible if many results */}
       {!isPatternSearch && renderWordSection(
         "Comodines adicionales", 
         results.additionalWildcardMatches, 
-        "indigo"
+        "indigo",
+        "additional-wildcard-matches",
+        results.additionalWildcardMatches.length > 10
       )}
 
-      {/* Shorter matches */}
+      {/* Shorter matches - Collapsible */}
       {!isPatternSearch && showShorter && renderWordSection(
         "Palabras más cortas", 
         results.shorterMatches, 
-        "orange"
+        "orange",
+        "shorter-matches",
+        true
       )}
 
       {/* Loading indicator for data */}
