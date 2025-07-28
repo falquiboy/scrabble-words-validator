@@ -181,6 +181,10 @@ export const BaseResults = ({
 
   // Pre-calculate equity values for sorting when sortByEquity or unifiedEquityView is true
   useEffect(() => {
+    // DISABLED: Only calculate leaves when explicitly requested by user
+    // Automatic calculation causes unnecessary performance overhead
+    return; // Don't calculate equity automatically
+    
     if ((!sortByEquity && !unifiedEquityView) || !searchTerm) return;
 
     const calculateAllEquities = async () => {
