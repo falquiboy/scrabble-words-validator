@@ -48,11 +48,12 @@ const ResultsList = ({
   // Load word data when extended view is enabled and we have results
   useEffect(() => {
     if (showExtendedView && results && !isLoading) {
+      // Use results as-is - they're already filtered by showShorter in the hook
       const allWordsRaw = [
         ...results.exactMatches,
         ...results.wildcardMatches,
         ...results.additionalWildcardMatches,
-        ...(showShorter ? results.shorterMatches : []),
+        ...results.shorterMatches,
         ...results.patternMatches
       ];
       
@@ -73,16 +74,17 @@ const ResultsList = ({
           });
       }
     }
-  }, [showExtendedView, results, showShorter, isLoading]);
+  }, [showExtendedView, results, isLoading]);
 
   // Load hooks data when hooks view is enabled and we have results
   useEffect(() => {
     if (showHooksView && results && !isLoading) {
+      // Use results as-is - they're already filtered by showShorter in the hook
       const allWordsRaw = [
         ...results.exactMatches,
         ...results.wildcardMatches,
         ...results.additionalWildcardMatches,
-        ...(showShorter ? results.shorterMatches : []),
+        ...results.shorterMatches,
         ...results.patternMatches
       ];
       
@@ -103,7 +105,7 @@ const ResultsList = ({
           });
       }
     }
-  }, [showHooksView, results, showShorter, isLoading]);
+  }, [showHooksView, results, isLoading]);
 
 
   // Check if we have any results to show the toggle

@@ -9,6 +9,7 @@
  */
 
 import initSqlJs, { Database, SqlJsStatic } from 'sql.js';
+import { persistentCache } from './PersistentCache';
 
 export interface WordEntry {
   word: string;
@@ -23,6 +24,7 @@ export class SQLiteWordDatabase {
   private db: Database | null = null;
   private isInitialized = false;
   private initPromise: Promise<void> | null = null;
+  private hasValidData = false; // Flag para evitar recarga en la misma sesión
 
   constructor() {
     if (SQLiteWordDatabase.instance) {
@@ -51,17 +53,20 @@ export class SQLiteWordDatabase {
         locateFile: (file: string) => `/${file}`
       });
 
-      // Intentar cargar base existente desde cache
-      const cachedDb = await this.loadFromCache();
+      // 🥷 Operación stealth: intentar cargar desde IndexedDB primero
+      const persistentData = await persistentCache.loadSQLiteDatabase();
       
-      if (cachedDb) {
-        this.db = new this.SQL.Database(cachedDb);
-        console.log('✅ SQLite loaded from cache');
+      if (persistentData && persistentData.length > 0) {
+        // Cargar base completa desde IndexedDB
+        this.db = new this.SQL.Database(persistentData);
+        const wordCount = await this.getWordCount();
+        console.log(`🥷 SQLite loaded from persistent cache (${wordCount} words)`);
+        this.hasValidData = wordCount >= 600000;
       } else {
-        // Crear nueva base de datos
+        // Crear nueva base de datos vacía
         this.db = new this.SQL.Database();
         await this.createTables();
-        console.log('✅ SQLite database created');
+        console.log('📝 SQLite database created (no persistent cache found)');
       }
 
       this.isInitialized = true;
@@ -135,6 +140,13 @@ export class SQLiteWordDatabase {
       
       this.db.exec('COMMIT;');
       console.log(`✅ Inserted ${words.length} words into SQLite`);
+      
+      // Marcar que tenemos datos válidos después de insertar
+      const totalWords = await this.getWordCount();
+      if (totalWords >= 600000) {
+        this.hasValidData = true;
+        console.log(`🎯 SQLite marked as having valid data (${totalWords} words)`);
+      }
     } catch (error) {
       this.db.exec('ROLLBACK;');
       throw error;
@@ -249,24 +261,43 @@ export class SQLiteWordDatabase {
   }
 
   /**
-   * Guardar base de datos en cache del navegador (OPFS)
+   * Limpiar cache del Trie (para invalidación)
+   */
+  async clearTrie(): Promise<void> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    const stmt = this.db.prepare('DELETE FROM trie_cache WHERE id = ?');
+    stmt.run(['main']);
+    stmt.free();
+    console.log('🗑️ Trie cache cleared');
+  }
+
+  /**
+   * Guardar base de datos en cache del navegador
    */
   async saveToCache(): Promise<void> {
     if (!this.db) return;
 
     try {
-      const data = this.db.export();
+      const wordCount = await this.getWordCount();
       
-      // Usar OPFS si está disponible
-      if ('showDirectoryPicker' in window) {
-        // TODO: Implementar OPFS
-        console.log('💾 OPFS not implemented yet, using fallback');
+      // 🥷 Operación stealth: guardar en IndexedDB para persistencia de largo plazo
+      if (wordCount >= 600000) {
+        const data = this.db.export();
+        await persistentCache.saveSQLiteDatabase(data, wordCount);
       }
       
-      // Fallback: localStorage (para bases pequeñas) o IndexedDB
-      const compressed = new Uint8Array(data);
-      localStorage.setItem('sqlite_cache', btoa(String.fromCharCode(...compressed)));
-      console.log(`💾 SQLite cached (${compressed.length} bytes)`);
+      // También guardar metadatos ligeros para verificación rápida
+      const metadata = {
+        wordCount,
+        timestamp: Date.now(),
+        version: '1.0',
+        isComplete: wordCount >= 600000
+      };
+      
+      localStorage.setItem('sqlite_metadata', JSON.stringify(metadata));
+      console.log(`💾 SQLite cached in both persistent and metadata storage (${wordCount} words)`);
+      
     } catch (error) {
       console.warn('⚠️ Failed to cache SQLite:', error);
     }
@@ -277,19 +308,40 @@ export class SQLiteWordDatabase {
    */
   private async loadFromCache(): Promise<Uint8Array | null> {
     try {
-      const cached = localStorage.getItem('sqlite_cache');
-      if (!cached) return null;
-
-      const binary = atob(cached);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
+      const metadata = localStorage.getItem('sqlite_metadata');
+      
+      if (!metadata) {
+        console.log('📭 No SQLite metadata found');
+        return null;
       }
 
-      console.log(`🔄 Loading SQLite from cache (${bytes.length} bytes)`);
-      return bytes;
+      const metaData = JSON.parse(metadata);
+      
+      // Verificar si el cache no es muy viejo (7 días)
+      const cacheAge = Date.now() - metaData.timestamp;
+      const ageInDays = cacheAge / (1000 * 60 * 60 * 24);
+      
+      if (ageInDays > 7) {
+        console.log(`⏰ SQLite metadata too old (${ageInDays.toFixed(1)} days), ignoring`);
+        localStorage.removeItem('sqlite_metadata');
+        return null;
+      }
+      
+      // Verificar que SQLite ya tenga datos válidos
+      if (this.db) {
+        const currentWordCount = await this.getWordCount();
+        
+        if (currentWordCount >= metaData.wordCount && metaData.isComplete) {
+          console.log(`✅ SQLite already has valid data (${currentWordCount} words, cached: ${metaData.wordCount})`);
+          return new Uint8Array(0); // Señal de que no necesita recarga pero está válida
+        }
+      }
+      
+      console.log(`📅 SQLite metadata valid but DB needs rebuilding (${ageInDays.toFixed(1)} days old)`);
+      return null;
     } catch (error) {
-      console.warn('⚠️ Failed to load SQLite cache:', error);
+      console.warn('⚠️ Failed to load SQLite metadata:', error);
+      localStorage.removeItem('sqlite_metadata');
       return null;
     }
   }

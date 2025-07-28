@@ -131,8 +131,52 @@ const HooksView: React.FC<HooksViewProps> = ({
     );
   };
 
-  const renderWordSection = (title: string, words: string[], color: string = 'blue') => {
+  const renderWordSection = (title: string, words: string[], color: string = 'blue', groupByLength: boolean = false) => {
     if (words.length === 0) return null;
+
+    if (groupByLength) {
+      // Agrupar por longitud y ordenar
+      const groupedWords = words.reduce((groups, word) => {
+        const length = word.length;
+        if (!groups[length]) {
+          groups[length] = [];
+        }
+        groups[length].push(word);
+        return groups;
+      }, {} as Record<number, string[]>);
+
+      // Ordenar cada grupo alfabéticamente
+      Object.keys(groupedWords).forEach(length => {
+        groupedWords[parseInt(length)].sort();
+      });
+
+      // Obtener longitudes ordenadas (mayor a menor para subanagramas)
+      const sortedLengths = Object.keys(groupedWords)
+        .map(Number)
+        .sort((a, b) => b - a);
+
+      return (
+        <div className="space-y-4">
+          <h3 className={`font-semibold text-${color}-600 text-sm`}>
+            {title} ({words.length})
+          </h3>
+          {sortedLengths.map(length => (
+            <div key={length} className="space-y-2">
+              <h4 className={`text-xs font-medium text-${color}-500 uppercase tracking-wide`}>
+                {length} letras ({groupedWords[length].length})
+              </h4>
+              <div className="border-l-2 border-gray-200 pl-3">
+                {groupedWords[length].map((word, index) => (
+                  <div key={index}>
+                    {renderWordWithHooks(word, searchTerm)}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
 
     return (
       <div className="space-y-3">
@@ -219,11 +263,12 @@ const HooksView: React.FC<HooksViewProps> = ({
         "indigo"
       )}
 
-      {/* Shorter matches */}
+      {/* Shorter matches - SIEMPRE agrupados por longitud */}
       {!isPatternSearch && showShorter && renderWordSection(
-        "Palabras más cortas", 
+        "Subanagramas", 
         results.shorterMatches, 
-        "orange"
+        "orange",
+        true // Activar agrupamiento por longitud
       )}
 
       {/* Loading indicator for hooks data */}

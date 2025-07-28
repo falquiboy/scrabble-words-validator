@@ -2,7 +2,7 @@ import { TrieNode, LengthIndexedTrie, SerializedTrie, SerializedTrieNode } from 
 import { createNode, findNode, collectWords } from './trie/nodeOperations';
 import { findWordsByLength, findWordsByAlphagram } from './trie/indexing';
 import { search } from './trie/search';
-import { sortSpanishLetters } from './spanishSort';
+import { generateAlphagram } from './digraphs';
 
 export class Trie {
   private root: TrieNode;
@@ -50,7 +50,7 @@ export class Trie {
   }
 
   private sortLetters(letters: string): string {
-    return sortSpanishLetters(letters);
+    return generateAlphagram(letters);
   }
 
   search(word: string): boolean {

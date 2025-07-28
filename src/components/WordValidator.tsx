@@ -13,8 +13,6 @@ interface WordValidatorProps {
   progress: number;
   trie: HybridTrieService;
   stage?: LoadingStage;
-  loadStartTime?: number;
-  isFirstLoad?: boolean;
   wordCount?: number;
 }
 
@@ -23,8 +21,6 @@ const WordValidator = ({
   progress, 
   trie, 
   stage = 'processing',
-  loadStartTime = Date.now(),
-  isFirstLoad = false,
   wordCount = 0
 }: WordValidatorProps) => {
   const [word, setWord] = useState("");
@@ -109,9 +105,7 @@ const WordValidator = ({
           {isDictionaryLoading && (
             <LoadingIndicator 
               progress={progress} 
-              loadStartTime={loadStartTime}
               stage={stage}
-              isFirstLoad={isFirstLoad}
             />
           )}
         </div>

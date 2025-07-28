@@ -23,11 +23,8 @@ export class SqliteAnagramService {
     const normalizedLetters = this.normalizeLetters(letters);
     const alphagram = this.createAlphagram(normalizedLetters);
 
-    console.log(`🔍 SQLite exact anagrams: "${letters}" → "${alphagram}"`);
-    
     try {
       const words = await sqliteDB.findAnagramsByAlphagram(alphagram);
-      console.log(`✅ SQLite found ${words.length} exact anagrams`);
       return words;
     } catch (error) {
       console.error('❌ SQLite exact anagram search failed:', error);
@@ -42,10 +39,10 @@ export class SqliteAnagramService {
     await this.ensureDatabase();
     
     const normalizedLetters = this.normalizeLetters(letters);
-    const maxLength = letters.length - 1;
+    const maxLength = normalizedLetters.length - 1; // Exclude words of same length as original
     const results: string[] = [];
 
-    console.log(`🔍 SQLite subanagrams: "${letters}" (${minLength}-${maxLength})`);
+    console.log(`🔍 SQLite subanagrams: "${letters}" → "${normalizedLetters}" (${minLength}-${maxLength})`);
 
     try {
       // Buscar por cada longitud usando índice optimizado
@@ -73,12 +70,8 @@ export class SqliteAnagramService {
    */
   async findAnagrams(letters: string, minLength: number = 2, includeSubanagrams: boolean = false): Promise<AnagramResults> {
     try {
-      console.log(`🔍 SQLite anagram search: "${letters}"`);
-      
       const exactMatches = await this.findExactAnagrams(letters);
       const partialMatches = includeSubanagrams ? await this.findSubAnagrams(letters, minLength) : [];
-      
-      console.log(`✅ SQLite results: ${exactMatches.length} exact, ${partialMatches.length} partial`);
       
       return {
         exactMatches,

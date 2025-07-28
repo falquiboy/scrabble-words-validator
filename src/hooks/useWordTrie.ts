@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { buildTrieFromWords, loadCachedTrie, saveTrie } from '@/utils/trieOperations';
 import { LoadingStage } from './useWordDatabase';
 import { HybridTrieService } from '@/services/HybridTrieService';
+import { persistentCache } from '@/services/PersistentCache';
 
 // Known total word count from the database
 const TOTAL_WORDS = 639293;
@@ -46,7 +47,34 @@ export const useWordTrie = () => {
       console.log('Words in SQLite database:', words.length);
 
       if (words.length === 0 || words.length < TOTAL_WORDS) {
-        console.log('SQLite DB empty or incomplete, loading from CSV...');
+        console.log('SQLite DB empty or incomplete, checking caches...');
+        
+        // 🥷 Verificar cache persistente primero
+        const cacheInfo = await persistentCache.hasValidCache();
+        if (cacheInfo.valid) {
+          console.log(`🥷 Valid persistent cache found, SQLite should reload automatically`);
+          // Reinicializar SQLite para que cargue desde IndexedDB
+          await sqliteDB.init();
+          words = await sqliteDB.getAllWords();
+          console.log(`🥷 Reloaded from persistent cache: ${words.length} words`);
+          
+          if (words.length >= TOTAL_WORDS) {
+            return words; // ¡Cache persistente funcionó!
+          }
+        }
+        
+        // Verificar metadatos para evitar recarga muy reciente
+        const metadata = localStorage.getItem('sqlite_metadata');
+        if (metadata) {
+          const metaData = JSON.parse(metadata);
+          const ageInMinutes = (Date.now() - metaData.timestamp) / (1000 * 60);
+          
+          if (ageInMinutes < 10 && metaData.isComplete) {
+            console.log(`⚡ Recent cache found (${ageInMinutes.toFixed(1)} min), skipping CSV reload`);
+            return [];
+          }
+        }
+        
         const csvSuccess = await loadWordsFromCsv();
         
         if (!csvSuccess) {

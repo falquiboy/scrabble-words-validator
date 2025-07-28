@@ -136,6 +136,15 @@ export class CsvWordLoader {
       }
       
       console.log('CSV processing complete');
+      
+      // Auto-cache SQLite database después de construcción exitosa
+      try {
+        await sqliteDB.saveToCache();
+        console.log('💾 SQLite auto-cached after CSV load');
+      } catch (cacheError) {
+        console.warn('⚠️ Failed to auto-cache SQLite:', cacheError);
+      }
+      
       return true;
       
     } catch (error) {

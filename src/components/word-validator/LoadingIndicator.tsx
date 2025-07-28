@@ -1,38 +1,16 @@
 
 import { Progress } from "@/components/ui/progress";
-import { useEffect, useState } from "react";
 import { LoadingStage } from "@/hooks/useWordDatabase";
 
 interface LoadingIndicatorProps {
   progress: number;
-  loadStartTime: number;
   stage?: LoadingStage;
-  isFirstLoad?: boolean;
 }
 
 const LoadingIndicator = ({ 
   progress, 
-  loadStartTime, 
-  stage = 'processing',
-  isFirstLoad = false
+  stage = 'processing'
 }: LoadingIndicatorProps) => {
-  const [elapsedTime, setElapsedTime] = useState<number>(0);
-  
-  useEffect(() => {
-    if (!isFirstLoad) return;
-    
-    const timer = setInterval(() => {
-      setElapsedTime(Math.floor((Date.now() - loadStartTime) / 1000));
-    }, 1000);
-    
-    return () => clearInterval(timer);
-  }, [loadStartTime, isFirstLoad]);
-  
-  const formatElapsedTime = (seconds: number): string => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}m ${remainingSeconds}s`;
-  };
 
   const getStageText = (): string => {
     switch (stage) {
@@ -73,9 +51,6 @@ const LoadingIndicator = ({
       <Progress value={progress} indicatorColor={getIndicatorColor()} className="w-full" />
       <div className="flex justify-between text-sm text-gray-500">
         <p>{getStageText()} ({Math.floor(progress)}%)</p>
-        {isFirstLoad && (
-          <p>Tiempo: {formatElapsedTime(elapsedTime)}</p>
-        )}
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { processDigraphs, getInternalLength, toDisplayFormat } from "@/utils/digraphs";
 import { calculateWordScore } from "@/utils/scrabbleScore";
 import { calculatePotentialValue, calculateLeave, getBatchLeaveValues } from "@/utils/leavesData";
+import { ChevronDown, ChevronRight } from "lucide-react";
 
 // Utilidad para extraer información de búsqueda
 const parseSearchTerm = (searchTerm: string) => {
@@ -143,8 +144,40 @@ export const BaseResults = ({
 }: BaseResultsProps) => {
   const [equityValues, setEquityValues] = useState<Map<string, number>>(new Map());
   const [isCalculatingEquities, setIsCalculatingEquities] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set());
 
   if (matches.length === 0) return null;
+
+  // Función para alternar expansión de grupos
+  const toggleGroupExpansion = (length: number) => {
+    setExpandedGroups(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(length)) {
+        newSet.delete(length);
+      } else {
+        newSet.add(length);
+      }
+      return newSet;
+    });
+  };
+
+  // Inicializar grupos expandidos por defecto (solo la primera vez)
+  useEffect(() => {
+    const groupedByLength = matches.reduce((acc, word) => {
+      const length = getInternalLength(word);
+      if (!acc[length]) {
+        acc[length] = [];
+      }
+      acc[length].push(word);
+      return acc;
+    }, {} as Record<number, string[]>);
+
+    const lengths = Object.keys(groupedByLength).map(Number).sort((a, b) => b - a);
+    
+    // Expandir automáticamente los primeros 2 grupos más largos
+    const initialExpanded = new Set(lengths.slice(0, 2));
+    setExpandedGroups(initialExpanded);
+  }, [matches]);
 
   // Pre-calculate equity values for sorting when sortByEquity or unifiedEquityView is true
   useEffect(() => {
@@ -307,28 +340,42 @@ export const BaseResults = ({
       </h3>
       {sortedLengths.map(length => {
         const searchInfo = parseSearchTerm(searchTerm);
+        const isExpanded = expandedGroups.has(length);
+        const groupWords = groupedByLength[length];
+        
         return (
           <div key={`length-${length}`} className="space-y-2">
-            <h4 className="font-medium text-gray-600">
-              {`Palabras de ${length} ${length === 1 ? 'letra' : 'letras'} (${groupedByLength[length].length}):`}
-            </h4>
-            <div className="flex flex-wrap gap-2">
-              {groupedByLength[length].map((word, index) => {
-                const displayWord = toDisplayFormat(word);
-                return (
-                  <WordWithEquity
-                    key={`word-${length}-${index}`}
-                    word={word}
-                    displayWord={displayWord}
-                    searchTerm={searchTerm}
-                    highlightWildcardLetter={highlightWildcardLetter}
-                    index={index}
-                    length={length}
-                    showResidue={searchInfo.shouldShowEquityAndResidue} // Show residue only for anagrams and patterns with rack
-                  />
-                );
-              })}
-            </div>
+            <button
+              onClick={() => toggleGroupExpansion(length)}
+              className="flex items-center gap-2 font-medium text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              {isExpanded ? (
+                <ChevronDown size={16} />
+              ) : (
+                <ChevronRight size={16} />
+              )}
+              {`Palabras de ${length} ${length === 1 ? 'letra' : 'letras'} (${groupWords.length})`}
+            </button>
+            
+            {isExpanded && (
+              <div className="flex flex-wrap gap-2 ml-6">
+                {groupWords.map((word, index) => {
+                  const displayWord = toDisplayFormat(word);
+                  return (
+                    <WordWithEquity
+                      key={`word-${length}-${index}`}
+                      word={word}
+                      displayWord={displayWord}
+                      searchTerm={searchTerm}
+                      highlightWildcardLetter={highlightWildcardLetter}
+                      index={index}
+                      length={length}
+                      showResidue={searchInfo.shouldShowEquityAndResidue}
+                    />
+                  );
+                })}
+              </div>
+            )}
           </div>
         );
       })}

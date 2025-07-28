@@ -1,6 +1,9 @@
 import { sqliteDB } from '@/services/SQLiteWordDatabase';
 import { Trie } from '@/utils/trie';
 
+// Versión del formato de Trie - incrementar cuando hay cambios estructurales
+const TRIE_FORMAT_VERSION = 4; // v4: Datos CSV ya vienen con dígrafos procesados
+
 export const buildTrieFromWords = async (
   words: string[],
   trie: Trie,
@@ -13,9 +16,9 @@ export const buildTrieFromWords = async (
   trie.clear();
   
   for (const word of words) {
-    // Store the word as-is in the trie, without processing digraphs
+    // Words from CSV already have digraphs processed (CH→Ç, LL→K, RR→W)
     const upperWord = word.toUpperCase();
-    trie.insert(upperWord, upperWord);
+    trie.insert(upperWord, upperWord); // Data is already correctly processed
     processed++;
     
     const currentProgress = Math.floor((processed / totalWords) * 100);
@@ -37,7 +40,16 @@ export const loadCachedTrie = async (trie: Trie) => {
     const serializedTrie = await sqliteDB.loadTrie();
     
     if (serializedTrie && serializedTrie.data) {
-      console.log('Found serialized trie in SQLite, deserializing...');
+      // Verificar versión del formato
+      const cachedVersion = serializedTrie.formatVersion || 1; // Default v1 para caches antiguos
+      
+      if (cachedVersion !== TRIE_FORMAT_VERSION) {
+        console.log(`🔄 Trie format version mismatch (cached: v${cachedVersion}, required: v${TRIE_FORMAT_VERSION}). Invalidating cache.`);
+        await sqliteDB.clearTrie(); // Limpiar cache obsoleto
+        return 0;
+      }
+      
+      console.log('Found compatible serialized trie in SQLite, deserializing...');
       trie.deserialize(serializedTrie.data);
       return trie.getAllWords().length;
     }
@@ -57,9 +69,10 @@ export const saveTrie = async (trie: Trie) => {
     await sqliteDB.saveTrie({
       data: serializedTrie,
       wordCount: trie.getAllWords().length,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      formatVersion: TRIE_FORMAT_VERSION // Incluir versión del formato
     });
-    console.log('✅ Trie saved to SQLite cache');
+    console.log(`✅ Trie v${TRIE_FORMAT_VERSION} saved to SQLite cache`);
   } catch (error) {
     console.error('❌ Failed to save trie to SQLite cache:', error);
   }
