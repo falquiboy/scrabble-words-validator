@@ -205,6 +205,7 @@ export function getVerbTypeLabel(verbInfo: VerbInfo): string {
     'tr.': 'transitivo',
     'intr.': 'intransitivo', 
     'prnl.': 'pronominal',
+    'defect.': 'defectivo',
     'tr./intr.': 'transitivo/intransitivo',
     'tr./prnl.': 'transitivo/pronominal',
     'intr./prnl.': 'intransitivo/pronominal'

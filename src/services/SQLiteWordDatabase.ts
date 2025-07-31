@@ -67,6 +67,9 @@ export class SQLiteWordDatabase {
         this.db = new this.SQL.Database();
         await this.createTables();
         console.log('📝 SQLite database created (no persistent cache found)');
+        
+        // Iniciar descarga automática de datos
+        this.startAutoDataLoad();
       }
 
       this.isInitialized = true;
@@ -343,6 +346,55 @@ export class SQLiteWordDatabase {
       console.warn('⚠️ Failed to load SQLite metadata:', error);
       localStorage.removeItem('sqlite_metadata');
       return null;
+    }
+  }
+
+  /**
+   * Notificar a HybridTrieService que SQLite está listo
+   */
+  private async notifyHybridService(): Promise<void> {
+    try {
+      // Importar dinámicamente para evitar circular dependencies
+      const { hybridTrieService } = await import('./HybridTrieService');
+      hybridTrieService.notifySqliteReady();
+    } catch (error) {
+      console.warn('⚠️ Failed to notify HybridTrieService:', error);
+    }
+  }
+
+  /**
+   * Iniciar descarga automática de datos cuando no hay caché
+   */
+  private async startAutoDataLoad(): Promise<void> {
+    try {
+      console.log('🚀 Starting automatic CSV data download...');
+      
+      // Importar dinámicamente para evitar circular dependencies
+      const { CsvWordLoader } = await import('./CsvWordLoader');
+      
+      // Crear loader con conteo esperado (aproximado)
+      const loader = new CsvWordLoader(600000);
+      
+      // Ejecutar en background sin bloquear la inicialización
+      setTimeout(async () => {
+        try {
+          const success = await loader.loadCsvFile();
+          if (success) {
+            console.log('✅ SQLite database populated from CSV successfully');
+            this.hasValidData = true;
+            
+            // Notificar a HybridTrieService que SQLite está listo
+            this.notifyHybridService();
+          } else {
+            console.warn('⚠️ Failed to load CSV data, using fallback to Supabase');
+          }
+        } catch (error) {
+          console.error('❌ Auto data load failed:', error);
+        }
+      }, 100); // Pequeño delay para no bloquear la UI
+      
+    } catch (error) {
+      console.error('❌ Failed to start auto data load:', error);
     }
   }
 

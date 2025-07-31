@@ -6,7 +6,7 @@ import { calculatePotentialValue, calculateLeave, getBatchLeaveValues } from "@/
 import { ChevronDown, ChevronRight } from "lucide-react";
 
 // Utilidad para extraer información de búsqueda
-const parseSearchTerm = (searchTerm: string) => {
+const parseSearchTerm = (searchTerm: string, title?: string) => {
   // Detectar si es búsqueda de patrón (contiene *, ., -, ^, $, o :)
   const isPatternSearch = searchTerm.includes('*') || 
                          searchTerm.includes('.') || 
@@ -17,6 +17,12 @@ const parseSearchTerm = (searchTerm: string) => {
   
   // Detectar si tiene restricción de rack (patrón con coma)
   const hasRackRestriction = isPatternSearch && searchTerm.includes(',');
+  
+  // Detectar si son subanagramas reales (palabras más cortas)
+  const isShorterWords = title?.includes("más cortas") || 
+                        title?.includes("cortas") || 
+                        title?.includes("shorter") ||
+                        title?.includes("subanagram") || false;
   
   let rack = '';
   if (hasRackRestriction) {
@@ -32,7 +38,7 @@ const parseSearchTerm = (searchTerm: string) => {
     isPatternSearch,
     hasRackRestriction,
     rack: rack.trim(),
-    shouldShowEquityAndResidue: !isPatternSearch || hasRackRestriction
+    shouldShowEquityAndResidue: hasRackRestriction || isShorterWords // Solo mostrar en patrones con rack O subanagramas
   };
 };
 
@@ -52,16 +58,17 @@ const WordWithEquity: React.FC<{
   word: string;
   displayWord: string;
   searchTerm?: string;
+  title?: string;
   highlightWildcardLetter?: (word: string, originalWord: string) => React.ReactNode;
   index: number;
   length: number;
   showResidue?: boolean; // Nueva prop para mostrar residuo en lugar de equity
-}> = ({ word, displayWord, searchTerm, highlightWildcardLetter, index, length, showResidue = false }) => {
+}> = ({ word, displayWord, searchTerm, title, highlightWildcardLetter, index, length, showResidue = false }) => {
   const [equity, setEquity] = useState<number | null>(null);
   const [residue, setResidue] = useState<string>('');
   const [isCalculating, setIsCalculating] = useState(false);
   
-  const baseScore = calculateWordScore(displayWord);
+  const baseScore = calculateWordScore(displayWord, searchTerm);
   const isSubanagram = searchTerm && displayWord.length < searchTerm.length;
 
   useEffect(() => {
@@ -79,15 +86,16 @@ const WordWithEquity: React.FC<{
         const potentialValue = await calculatePotentialValue(
           baseScore, 
           searchTerm, 
-          displayWord.toUpperCase()
+          displayWord.toUpperCase(),
+          searchTerm
         );
         setEquity(potentialValue);
 
         // Calculate residue if needed
         if (showResidue) {
-          const searchInfo = parseSearchTerm(searchTerm);
+          const searchInfo = parseSearchTerm(searchTerm, title);
           if (searchInfo.shouldShowEquityAndResidue && searchInfo.rack) {
-            const leave = calculateLeave(searchInfo.rack, displayWord.toUpperCase());
+            const leave = calculateLeave(searchInfo.rack, displayWord.toUpperCase(), searchTerm);
             setResidue(leave);
           } else {
             setResidue(''); // No residue for patterns without rack
@@ -124,9 +132,11 @@ const WordWithEquity: React.FC<{
         {highlightWildcardLetter && searchTerm 
           ? highlightWildcardLetter(displayWord, searchTerm)
           : displayWord}
-        <span className={`text-sm ${isSubanagram && equity !== baseScore ? 'text-green-600 font-medium' : 'text-gray-500'}`}>
-          ({isCalculating ? '...' : showResidue && residue ? residue : equity || baseScore})
-        </span>
+        {showResidue && (
+          <span className={`text-sm ${isSubanagram && equity !== baseScore ? 'text-green-600 font-medium' : 'text-gray-500'}`}>
+            ({isCalculating ? '...' : residue ? residue : equity || baseScore})
+          </span>
+        )}
       </span>
     </a>
   );
@@ -145,8 +155,6 @@ export const BaseResults = ({
   const [equityValues, setEquityValues] = useState<Map<string, number>>(new Map());
   const [isCalculatingEquities, setIsCalculatingEquities] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set());
-
-  if (matches.length === 0) return null;
 
   // Función para alternar expansión de grupos
   const toggleGroupExpansion = (length: number) => {
@@ -181,10 +189,7 @@ export const BaseResults = ({
 
   // Pre-calculate equity values for sorting when sortByEquity or unifiedEquityView is true
   useEffect(() => {
-    // DISABLED: Only calculate leaves when explicitly requested by user
-    // Automatic calculation causes unnecessary performance overhead
-    return; // Don't calculate equity automatically
-    
+    // Solo calcular equity cuando el usuario lo solicite explícitamente
     if ((!sortByEquity && !unifiedEquityView) || !searchTerm) return;
 
     const calculateAllEquities = async () => {
@@ -209,7 +214,7 @@ export const BaseResults = ({
       // Procesar palabras normales (solo base score)
       for (const word of normalWords) {
         const displayWord = toDisplayFormat(word);
-        const baseScore = calculateWordScore(displayWord);
+        const baseScore = calculateWordScore(displayWord, searchTerm);
         newEquityValues.set(word, baseScore);
       }
 
@@ -223,9 +228,9 @@ export const BaseResults = ({
         
         for (const word of subanagrams) {
           const displayWord = toDisplayFormat(word);
-          const searchInfo = parseSearchTerm(searchTerm);
+          const searchInfo = parseSearchTerm(searchTerm, title);
           const rackToUse = searchInfo.rack || searchTerm; // Fallback to searchTerm for anagrams
-          const leave = calculateLeave(rackToUse, displayWord.toUpperCase());
+          const leave = calculateLeave(rackToUse, displayWord.toUpperCase(), searchTerm);
           leavesToQuery.push(leave);
           wordToLeaveMap.set(word, leave);
         }
@@ -237,7 +242,7 @@ export const BaseResults = ({
           // Calcular equity para cada subanagrama
           for (const word of subanagrams) {
             const displayWord = toDisplayFormat(word);
-            const baseScore = calculateWordScore(displayWord);
+            const baseScore = calculateWordScore(displayWord, searchTerm);
             const leave = wordToLeaveMap.get(word)!;
             const leaveValue = leaveValues.get(leave);
             
@@ -249,7 +254,7 @@ export const BaseResults = ({
           // Fallback: usar base scores
           for (const word of subanagrams) {
             const displayWord = toDisplayFormat(word);
-            const baseScore = calculateWordScore(displayWord);
+            const baseScore = calculateWordScore(displayWord, searchTerm);
             newEquityValues.set(word, baseScore);
           }
         }
@@ -262,9 +267,12 @@ export const BaseResults = ({
     calculateAllEquities();
   }, [matches, searchTerm, sortByEquity, unifiedEquityView]);
 
+  // Early return after all hooks to avoid "fewer hooks" error
+  if (matches.length === 0) return null;
+
   // Handle unified equity view - all words sorted by absolute equity
-  if (unifiedEquityView && equityValues.size > 0) {
-    const searchInfo = parseSearchTerm(searchTerm);
+  if (unifiedEquityView) {
+    const searchInfo = parseSearchTerm(searchTerm, title);
     const sortedWords = [...matches].sort((a, b) => {
       const equityA = equityValues.get(a) || 0;
       const equityB = equityValues.get(b) || 0;
@@ -291,6 +299,7 @@ export const BaseResults = ({
                 word={word}
                 displayWord={displayWord}
                 searchTerm={searchTerm}
+                title={title}
                 highlightWildcardLetter={highlightWildcardLetter}
                 index={index}
                 length={length}
@@ -314,7 +323,7 @@ export const BaseResults = ({
   }, {} as Record<number, string[]>);
 
   // Sort words within each length group by equity if enabled
-  if (sortByEquity && equityValues.size > 0) {
+  if (sortByEquity) {
     Object.keys(groupedByLength).forEach(lengthKey => {
       groupedByLength[parseInt(lengthKey)].sort((a, b) => {
         const equityA = equityValues.get(a) || 0;
@@ -343,7 +352,7 @@ export const BaseResults = ({
         )}
       </h3>
       {sortedLengths.map(length => {
-        const searchInfo = parseSearchTerm(searchTerm);
+        const searchInfo = parseSearchTerm(searchTerm, title);
         const isExpanded = expandedGroups.has(length);
         const groupWords = groupedByLength[length];
         
@@ -371,6 +380,7 @@ export const BaseResults = ({
                       word={word}
                       displayWord={displayWord}
                       searchTerm={searchTerm}
+                      title={title}
                       highlightWildcardLetter={highlightWildcardLetter}
                       index={index}
                       length={length}

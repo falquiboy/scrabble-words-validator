@@ -6,8 +6,8 @@
 import { useBackgroundTrie } from './useBackgroundTrie';
 
 // Re-export del hook background como interfaz principal
-export const useWordTrie = () => {
-  const { hybridService, isTrieReady, trieProgress, status, error } = useBackgroundTrie();
+export const useWordTrie = (enableUltraFastMode: boolean = false) => {
+  const { hybridService, isTrieReady, trieProgress, status, error } = useBackgroundTrie(enableUltraFastMode);
   
   // Mapear los estados para compatibilidad con la interfaz legacy
   const isLoading = status === 'loading' || status === 'building';

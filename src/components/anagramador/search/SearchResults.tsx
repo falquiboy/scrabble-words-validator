@@ -61,7 +61,13 @@ const SearchResults = ({
     results.patternMatches?.length > 0;
 
   if (!hasResults) {
-    return <p className="text-gray-500 text-lg">No se encontraron palabras.</p>;
+    // Si tenemos un término de búsqueda pero no resultados y no está cargando,
+    // entonces realmente no hay resultados
+    if (searchTerm && !isLoading) {
+      return <p className="text-gray-500 text-lg">No se encontraron palabras.</p>;
+    }
+    // Si está cargando o no hay término de búsqueda, no mostrar nada
+    return null;
   }
 
   return (

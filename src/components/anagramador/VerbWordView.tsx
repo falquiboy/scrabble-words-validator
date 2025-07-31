@@ -18,6 +18,43 @@ const VerbWordView: React.FC<VerbWordViewProps> = ({
     window.open(`https://dle.rae.es/${word.toLowerCase()}`, '_blank');
   };
 
+  const formatLemmaWithSuperscript = (lemma: string) => {
+    // Check if lemma ends with a digit for homonymy
+    const match = lemma.match(/^(.+?)(\d+)$/);
+    if (match) {
+      const [, base, digit] = match;
+      return (
+        <>
+          {base}
+          <sup>{digit}</sup>
+        </>
+      );
+    }
+    return lemma;
+  };
+
+  const getVerbTypeColor = (verbTypeLabel: string) => {
+    if (verbTypeLabel.includes('transitivo') && !verbTypeLabel.includes('intransitivo')) {
+      return 'bg-green-100 text-green-700'; // Verde para transitivo
+    }
+    if (verbTypeLabel.includes('intransitivo') && !verbTypeLabel.includes('transitivo')) {
+      return 'bg-lime-100 text-lime-700'; // Lima para intransitivo
+    }
+    if (verbTypeLabel.includes('pronominal')) {
+      return 'bg-yellow-100 text-yellow-700'; // Amarillo para pronominal
+    }
+    if (verbTypeLabel.includes('defectivo')) {
+      return 'bg-orange-100 text-orange-800'; // Naranja para defectivo con buen contraste
+    }
+    if (verbTypeLabel.includes('no conj.')) {
+      return 'bg-red-100 text-red-700'; // Rojo para no conjugable
+    }
+    if (verbTypeLabel.includes('transitivo') && verbTypeLabel.includes('intransitivo')) {
+      return 'bg-teal-100 text-teal-700'; // Teal para transitivo/intransitivo
+    }
+    return 'bg-gray-100 text-gray-700'; // Default
+  };
+
   if (!wordInfo.verbInfo) return null;
 
   const verbInfo = wordInfo.verbInfo;
@@ -50,8 +87,8 @@ const VerbWordView: React.FC<VerbWordViewProps> = ({
           className="font-medium text-lg cursor-pointer hover:text-blue-600 transition-colors"
         >
           {highlightedWord || word}
-          <span className="text-sm font-normal text-green-600 ml-1">
-            ({wordInfo.wordType} de "{verbInfo.norm_lemma}", verbo {verbTypeLabel}, {regularityLabel})
+          <span className="text-sm font-normal text-blue-600 ml-1">
+            ({wordInfo.wordType === 'conjugación' ? 'conjug.' : wordInfo.wordType} de <strong>"{formatLemmaWithSuperscript(wordInfo.lemma || verbInfo.norm_lemma)}"</strong>, <span className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${getVerbTypeColor(verbTypeLabel)}`}>verbo {verbTypeLabel}</span>, {regularityLabel})
           </span>
         </span>
       </div>
@@ -91,17 +128,6 @@ const VerbWordView: React.FC<VerbWordViewProps> = ({
           }
         </div>
 
-        {/* Legend */}
-        <div className="flex items-center space-x-4 text-xs text-gray-500 mt-2 pt-2 border-t border-gray-100">
-          <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 bg-green-100 rounded-full"></div>
-            <span>Válida para Scrabble</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 bg-red-100 rounded-full"></div>
-            <span>No válida para Scrabble</span>
-          </div>
-        </div>
       </div>
     </div>
   );

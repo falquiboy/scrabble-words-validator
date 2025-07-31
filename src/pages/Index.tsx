@@ -11,12 +11,13 @@ import { useWordTrie } from "@/hooks/useWordTrie";
 const Index = () => {
   const [activeModule, setActiveModule] = useState<'judge' | 'anagram' | 'lists' | 'training'>('judge');
   const [showTraining, setShowTraining] = useState(false);
+  const [enableUltraFastMode, setEnableUltraFastMode] = useState(false); // 🚫 DISABLED BY DEFAULT
   
   // Use only useWordTrie - it handles all dictionary/database construction
-  const { isLoading: isTrieLoading, trie, loadingProgress, stage: trieStage, wordCount } = useWordTrie();
+  const { isLoading: isTrieLoading, trie, loadingProgress, stage: trieStage, wordCount } = useWordTrie(enableUltraFastMode);
   
-  // Trie loading happens in background - hybrid service provides immediate access
-  const isDictionaryLoading = false; // Always false - hybrid service available immediately
+  // Dictionary loading is only true when Trie is being built (ultra-fast mode enabled)
+  const isDictionaryLoading = isTrieLoading;
   
   // Get loading progress from Trie only
   const getProgress = () => {
@@ -71,7 +72,10 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <NewModuleSelector activeModule={activeModule} onModuleChange={setActiveModule} />
+      <NewModuleSelector 
+        activeModule={activeModule} 
+        onModuleChange={setActiveModule}
+      />
       <div className="mt-20 flex-1 w-full">
         {showTraining ? (
           <div className="container mx-auto px-4 py-6">

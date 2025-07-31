@@ -30,6 +30,21 @@ const ExtendedWordView: React.FC<ExtendedWordViewProps> = ({
     }
   };
 
+  const formatLemmaWithSuperscript = (lemma: string) => {
+    // Check if lemma ends with a digit for homonymy
+    const match = lemma.match(/^(.+?)(\d+)$/);
+    if (match) {
+      const [, base, digit] = match;
+      return (
+        <>
+          {base}
+          <sup>{digit}</sup>
+        </>
+      );
+    }
+    return lemma;
+  };
+
   const getWordTypeLabel = (type?: string, lemma?: string, partOfSpeech?: string) => {
     if (!type) return null;
     
@@ -57,13 +72,21 @@ const ExtendedWordView: React.FC<ExtendedWordViewProps> = ({
     
     switch (type) {
       case 'femenino': 
-        return lemma && lemma !== word.toLowerCase() ? `femenino de "${lemma}"${posText}` : `femenino${posText}`;
+        return lemma && lemma !== word.toLowerCase() ? (
+          <>femenino de <strong>"{formatLemmaWithSuperscript(lemma)}"</strong>{posText}</>
+        ) : `femenino${posText}`;
       case 'plural': 
-        return lemma && lemma !== word.toLowerCase() ? `plural de "${lemma}"${posText}` : `plural${posText}`;
+        return lemma && lemma !== word.toLowerCase() ? (
+          <>plural de <strong>"{formatLemmaWithSuperscript(lemma)}"</strong>{posText}</>
+        ) : `plural${posText}`;
       case 'conjugación': 
-        return lemma && lemma !== word.toLowerCase() ? `conj. de "${lemma}"${posText}` : `conj.${posText}`;
+        return lemma && lemma !== word.toLowerCase() ? (
+          <>conjug. de <strong>"{formatLemmaWithSuperscript(lemma)}"</strong>{posText}</>
+        ) : `conjug.${posText}`;
       case 'variante': 
-        return lemma && lemma !== word.toLowerCase() ? `variante de "${lemma}"${posText}` : `variante${posText}`;
+        return lemma && lemma !== word.toLowerCase() ? (
+          <>variante de <strong>"{formatLemmaWithSuperscript(lemma)}"</strong>{posText}</>
+        ) : `variante${posText}`;
       case 'base': return `lema${posText}`;
       default: return null;
     }
@@ -127,7 +150,7 @@ const ExtendedWordView: React.FC<ExtendedWordViewProps> = ({
         >
           {highlightedWord || word}
           {wordInfo?.wordType && (
-            <span className={`text-sm font-normal ml-1 ${getTypeColor(wordInfo.wordType, wordInfo.partOfSpeech)}`}>
+            <span className="text-sm font-normal ml-1 text-blue-600">
               ({getWordTypeLabel(wordInfo.wordType, wordInfo.lemma, wordInfo.partOfSpeech)})
             </span>
           )}
@@ -152,11 +175,7 @@ const ExtendedWordView: React.FC<ExtendedWordViewProps> = ({
             </div>
           )}
         </div>
-      ) : (
-        <div className="text-xs text-red-500">
-          No válida para Scrabble
-        </div>
-      )}
+      ) : null}
     </div>
   );
 };

@@ -9,7 +9,6 @@ import { Trie } from '@/utils/trie';
 import { sqliteDB } from '@/services/SQLiteWordDatabase';
 import { HybridTrieService } from '@/services/HybridTrieService';
 import { loadCachedTrie, saveTrie } from '@/utils/trieOperations';
-import { useUserActivityContext } from '@/contexts/UserActivityContext';
 
 interface TrieProgress {
   progress: number;
@@ -25,7 +24,7 @@ interface UseBackgroundTrieReturn {
   error: string | null;
 }
 
-export const useBackgroundTrie = (): UseBackgroundTrieReturn => {
+export const useBackgroundTrie = (enableUltraFastMode: boolean = false): UseBackgroundTrieReturn => {
   // Initialize HybridService immediately WITHOUT Trie (fallback ready from second 1)
   const [hybridService] = useState(() => new HybridTrieService(null));
   const [isTrieReady, setIsTrieReady] = useState(false);
@@ -33,20 +32,19 @@ export const useBackgroundTrie = (): UseBackgroundTrieReturn => {
   const [status, setStatus] = useState<'loading' | 'building' | 'ready' | 'error'>('loading');
   const [error, setError] = useState<string | null>(null);
   const workerRef = useRef<Worker | null>(null);
-  const pendingTrieRef = useRef<Trie | null>(null); // Trie pendiente de upgrade
   
-  // Get user activity context (with fallback for missing provider)
-  let userActivity: ReturnType<typeof useUserActivityContext> | null = null;
-  try {
-    userActivity = useUserActivityContext();
-  } catch (e) {
-    console.warn('⚠️ UserActivityContext not available, using immediate upgrade');
-  }
+  // Simplified: always do immediate upgrade when Trie is ready
 
   useEffect(() => {
+    // Solo construir Trie si el usuario activa "Búsquedas ultra rápidas"
+    if (!enableUltraFastMode) {
+      setStatus('ready'); // Usar solo fallback service
+      return;
+    }
+
     const buildTrieInBackground = async () => {
       try {
-        console.log('🚀 Starting background Trie construction...');
+        // Starting background Trie construction
         
         // Try to load cached Trie first
         const trie = new Trie();
@@ -60,7 +58,7 @@ export const useBackgroundTrie = (): UseBackgroundTrieReturn => {
           return;
         }
 
-        console.log('📦 No cached Trie found, building from words...');
+        // No cached Trie found, building from words
         setStatus('building');
 
         // Get words from SQLite
@@ -71,7 +69,7 @@ export const useBackgroundTrie = (): UseBackgroundTrieReturn => {
           throw new Error('No words found in database');
         }
 
-        console.log(`🔧 Building Trie with ${words.length} words using Web Worker...`);
+        console.log(`🔧 Building Trie with ${words.length} words...`);
 
         // Create Web Worker
         workerRef.current = new Worker('/trie-builder.worker.js');
@@ -81,7 +79,10 @@ export const useBackgroundTrie = (): UseBackgroundTrieReturn => {
           
           if (type === 'PROGRESS') {
             setTrieProgress({ progress, processed, total });
-            console.log(`⚙️ Trie building progress: ${progress}% (${processed}/${total})`);
+            // Solo mostrar progreso cada 25%
+            if (progress % 25 === 0) {
+              console.log(`⚙️ Trie building progress: ${progress}%`);
+            }
           } else if (type === 'COMPLETE') {
             console.log('🎉 Trie construction completed, deserializing...');
             
@@ -100,18 +101,11 @@ export const useBackgroundTrie = (): UseBackgroundTrieReturn => {
               // Save to cache for next time
               saveTrie(trie);
               
-              console.log(`✅ Trie smart upgrade complete! ${wordCount} words ready`);
-              pendingTrieRef.current = null;
+              console.log(`✅ Trie upgrade complete! ${wordCount} words ready`);
             };
             
-            if (userActivity && !userActivity.isSafeForUpgrade()) {
-              console.log('🕐 User is active, postponing Trie upgrade...');
-              pendingTrieRef.current = trie;
-              // Continue in the next effect
-            } else {
-              // Safe to upgrade immediately
-              performUpgrade();
-            }
+            // Always upgrade immediately
+            performUpgrade();
             
             // Clean up worker
             workerRef.current?.terminate();
@@ -149,38 +143,9 @@ export const useBackgroundTrie = (): UseBackgroundTrieReturn => {
         workerRef.current = null;
       }
     };
-  }, [hybridService]);
+  }, [hybridService, enableUltraFastMode]);
 
-  // 🎯 SMART UPGRADE MONITOR: Execute pending upgrade when user becomes inactive
-  useEffect(() => {
-    if (!pendingTrieRef.current || !userActivity) return;
-
-    const checkAndUpgrade = () => {
-      if (userActivity.isSafeForUpgrade() && pendingTrieRef.current) {
-        console.log('🔥 User inactive, executing pending Trie upgrade');
-        
-        hybridService.upgradeTrie(pendingTrieRef.current);
-        setIsTrieReady(true);
-        setStatus('ready');
-        setTrieProgress(null);
-        
-        // Save to cache for next time
-        saveTrie(pendingTrieRef.current);
-        
-        const wordCount = pendingTrieRef.current.getAllWords().length;
-        console.log(`✅ Delayed Trie upgrade complete! ${wordCount} words ready`);
-        pendingTrieRef.current = null;
-      }
-    };
-
-    // Check immediately
-    checkAndUpgrade();
-
-    // Set up interval to periodically check
-    const interval = setInterval(checkAndUpgrade, 500); // Check every 500ms
-
-    return () => clearInterval(interval);
-  }, [userActivity?.activityState, hybridService]); // Re-run when activity state changes
+  // Activity monitoring completely removed
 
   return {
     hybridService, // Always available from second 1!

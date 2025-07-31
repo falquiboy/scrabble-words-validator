@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { fetchVerbInfo, fetchBatchVerbInfo, VerbInfo } from "./verbData";
+import { processDigraphs } from "./digraphs";
 
 // Cache local para evitar queries repetidas de anagramWordData
 const anagramWordCache = new Map<string, AnagramWordInfo>();
@@ -10,7 +11,7 @@ export interface AnagramWordInfo {
   lemma?: string;
   partOfSpeech?: string;
   wordType?: 'femenino' | 'plural' | 'conjugación' | 'variante' | 'base';
-  shortDefinition?: string; // First 50 characters
+  shortDefinition?: string; // Complete definition
   isScrabbleValid?: boolean;
   // Verb-specific information
   isVerb?: boolean;
@@ -52,14 +53,24 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
     // Step 1: Query scrabble_words table first to determine word types through key assignments
     console.log('📊 Step 1: Querying scrabble_words table...');
     
-    // Convert solo las uncached words to lowercase for the query 
-    const lowerWords = uncachedWords.map(word => word.toLowerCase());
-    console.log('📊 Converted uncached words to lowercase for query:', lowerWords);
+    // Convert and normalize uncached words (digraphs + lowercase) for the query 
+    const normalizedWords = uncachedWords.map(word => processDigraphs(word).toLowerCase());
+    console.log('📊 Normalized uncached words (digraphs + lowercase) for query:', normalizedWords);
+    
+    // Create mapping from normalized word back to original words for result association
+    const normalizedToOriginal = new Map<string, string[]>();
+    uncachedWords.forEach(originalWord => {
+      const normalized = processDigraphs(originalWord).toLowerCase();
+      if (!normalizedToOriginal.has(normalized)) {
+        normalizedToOriginal.set(normalized, []);
+      }
+      normalizedToOriginal.get(normalized)!.push(originalWord);
+    });
     
     const { data: scrabbleData, error: scrabbleError } = await supabase
       .from('scrabble_words')
       .select('word, key_lemma, key_feminine, key_plural, key_conj, key_variant')
-      .in('word', lowerWords);
+      .in('word', normalizedWords);
 
     if (scrabbleError) {
       console.error('❌ Scrabble words table error:', scrabbleError);
@@ -79,9 +90,16 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
 
     if (scrabbleData && scrabbleData.length > 0) {
       scrabbleData.forEach(row => {
-        // Map both lowercase and uppercase versions to handle the conversion
+        // Map normalized word to database row
         wordToKeys.set(row.word, row);
         wordToKeys.set(row.word.toUpperCase(), row);
+        
+        // Also map all original words that normalize to this result
+        const originalWords = normalizedToOriginal.get(row.word) || [];
+        originalWords.forEach(originalWord => {
+          wordToKeys.set(originalWord, row);
+          wordToKeys.set(originalWord.toUpperCase(), row);
+        });
         
         // Helper function to parse keys (handle comma-separated and decimal values)
         const parseKeys = (keyString: string) => {
@@ -119,6 +137,12 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
         
         wordTypes.set(row.word, wordType);
         wordTypes.set(row.word.toUpperCase(), wordType);
+        
+        // Also map word types for all original words that normalize to this result
+        originalWords.forEach(originalWord => {
+          wordTypes.set(originalWord, wordType);
+          wordTypes.set(originalWord.toUpperCase(), wordType);
+        });
       });
     }
 
@@ -171,6 +195,12 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
       }
     }
 
+    // Helper function to normalize lemma by removing homonym digit
+    const normalizeLemma = (lemma: string) => {
+      // Remove digit at the end for homonym normalization (e.g., "ser2" → "ser")
+      return lemma.replace(/\d+$/, '');
+    };
+
     // Step 4: Collect all potential verb lemmas for batch query
     console.log('🔄 Step 4a: Collecting potential verb lemmas for batch query...');
     const potentialVerbLemmas = new Set<string>();
@@ -193,10 +223,13 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
         const entry = keyToEntry.get(primaryKey);
         let lemmaToCheck = entry?.lemma || word.toLowerCase();
         
-        // Add both the original lemma and base form (without -se) for pronominal verbs
-        potentialVerbLemmas.add(lemmaToCheck);
-        if (lemmaToCheck.endsWith('se')) {
-          potentialVerbLemmas.add(lemmaToCheck.slice(0, -2)); // Remove 'se'
+        // Normalize lemma by removing homonym digit for verb lookup
+        const normalizedLemma = normalizeLemma(lemmaToCheck);
+        
+        // Add both the normalized lemma and base form (without -se) for pronominal verbs
+        potentialVerbLemmas.add(normalizedLemma);
+        if (normalizedLemma.endsWith('se')) {
+          potentialVerbLemmas.add(normalizedLemma.slice(0, -2)); // Remove 'se'
         }
       }
     }
@@ -239,22 +272,26 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
         let lemmaToCheck = entry?.lemma || word.toLowerCase();
         let verbInfo = null;
         
-        // Check batch results for verb info
-        if (lemmaToCheck.endsWith('se')) {
-          const baseForm = lemmaToCheck.slice(0, -2); // Remove 'se'
-          console.log(`🔄 Checking pronominal verb in batch results: ${lemmaToCheck} → ${baseForm}`);
+        // Normalize lemma for verb lookup (remove homonym digits like "ser2" → "ser")
+        const normalizedLemmaForLookup = normalizeLemma(lemmaToCheck);
+        
+        // Check batch results for verb info using normalized lemma
+        if (normalizedLemmaForLookup.endsWith('se')) {
+          const baseForm = normalizedLemmaForLookup.slice(0, -2); // Remove 'se'
+          console.log(`🔄 Checking pronominal verb in batch results: ${lemmaToCheck} → ${normalizedLemmaForLookup} → ${baseForm}`);
           verbInfo = verbInfoMap.get(baseForm);
           if (!verbInfo) {
-            // Fallback to full lemma from batch results
-            verbInfo = verbInfoMap.get(lemmaToCheck);
+            // Fallback to full normalized lemma from batch results
+            verbInfo = verbInfoMap.get(normalizedLemmaForLookup);
           }
           if (verbInfo) {
             console.log(`✅ Found verb info in batch for: ${verbInfo.norm_lemma}`, verbInfo);
           }
         } else {
-          verbInfo = verbInfoMap.get(lemmaToCheck);
+          console.log(`🔄 Checking normalized verb in batch results: ${lemmaToCheck} → ${normalizedLemmaForLookup}`);
+          verbInfo = verbInfoMap.get(normalizedLemmaForLookup);
           if (verbInfo) {
-            console.log(`✅ Found verb info in batch for: ${lemmaToCheck}`, verbInfo);
+            console.log(`✅ Found verb info in batch for: ${normalizedLemmaForLookup}`, verbInfo);
           }
         }
         
@@ -264,18 +301,14 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
         if (verbInfo) {
           // Use verb-specific information
           console.log(`🌟 Found verb info for: ${word}`, verbInfo);
-          shortDefinition = verbInfo.prime_sense?.length > 50 
-            ? verbInfo.prime_sense.substring(0, 50) + '...'
-            : verbInfo.prime_sense || '';
+          shortDefinition = verbInfo.prime_sense || '';
           partOfSpeech = 'verbo';
         } else {
           // Use dictionary senses
           if (senses.length > 0) {
             const firstSense = senses[0];
             if (firstSense.definition) {
-              shortDefinition = firstSense.definition.length > 50 
-                ? firstSense.definition.substring(0, 50) + '...'
-                : firstSense.definition;
+              shortDefinition = firstSense.definition;
             }
             partOfSpeech = firstSense.part_of_speech_1 || '';
           }
@@ -284,7 +317,7 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
         const wordInfo: AnagramWordInfo = {
           word,
           isScrabbleValid: true,
-          lemma: verbInfo?.norm_lemma || entry?.lemma || word.toLowerCase(),
+          lemma: entry?.lemma || verbInfo?.norm_lemma || word.toLowerCase(),
           partOfSpeech,
           wordType: wordType as 'femenino' | 'plural' | 'conjugación' | 'variante' | 'base',
           shortDefinition,

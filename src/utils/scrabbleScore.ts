@@ -9,20 +9,40 @@ const LETTER_VALUES: { [key: string]: number } = {
   'Z': 10
 };
 
-export const calculateWordScore = (word: string): number => {
+import { identifyWildcardLetters } from './wildcardUtils';
+
+export const calculateWordScore = (word: string, searchTerm?: string): number => {
   let score = 0;
   let i = 0;
+  
+  // Si hay comodín, identificar qué letras vienen del comodín
+  let wildcardIndices: number[] = [];
+  if (searchTerm && searchTerm.includes('?')) {
+    wildcardIndices = identifyWildcardLetters(word, searchTerm);
+  }
   
   while (i < word.length) {
     // Check for digraphs first
     const twoChars = word.substring(i, i + 2).toUpperCase();
     if ((twoChars === 'CH' || twoChars === 'LL' || twoChars === 'RR') && LETTER_VALUES[twoChars]) {
-      score += LETTER_VALUES[twoChars];
+      // Check if this digraph is from wildcard
+      const isWildcardDigraph = wildcardIndices.includes(i) || wildcardIndices.includes(i + 1);
+      if (isWildcardDigraph) {
+        score += 0; // Wildcard = 0 points
+      } else {
+        score += LETTER_VALUES[twoChars];
+      }
       i += 2;
     } else {
       // Single character
       const char = word[i].toUpperCase();
-      score += LETTER_VALUES[char] || 0;
+      const isWildcardChar = wildcardIndices.includes(i);
+      if (isWildcardChar) {
+        score += 0; // Wildcard = 0 points
+      } else {
+        const letterScore = LETTER_VALUES[char] || 0;
+        score += letterScore;
+      }
       i++;
     }
   }

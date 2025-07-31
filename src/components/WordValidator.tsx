@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { HybridTrieService } from "@/services/HybridTrieService";
 import Header from "./word-validator/Header";
 import WordInput from "./word-validator/WordInput";
@@ -30,6 +30,31 @@ const WordValidator = ({
     checked: boolean;
     words: string[];
   }>({ isValid: false, checked: false, words: [] });
+  const [currentProvider, setCurrentProvider] = useState<'trie' | 'sqlite' | 'supabase' | 'none'>('none');
+
+  // Actualizar provider status periódicamente
+  useEffect(() => {
+    const updateProvider = () => {
+      const provider = trie.getCurrentProvider();
+      setCurrentProvider(provider);
+    };
+
+    // Actualizar inmediatamente
+    updateProvider();
+
+    // Actualizar cada 2 segundos hasta que SQLite esté listo
+    const interval = setInterval(() => {
+      const provider = trie.getCurrentProvider();
+      setCurrentProvider(provider);
+      
+      // Dejar de chequear cuando SQLite esté listo
+      if (provider === 'sqlite' || provider === 'trie') {
+        clearInterval(interval);
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [trie]);
 
   const handleValidate = async () => {
     if (!word.trim() || isDictionaryLoading) return;
@@ -78,8 +103,6 @@ const WordValidator = ({
       setResult(prev => ({ ...prev, checked: false }));
     }
   };
-
-  const currentProvider = trie.getCurrentProvider();
 
   return (
     <div className="w-full max-w-2xl mx-auto p-4 flex flex-col items-center relative">

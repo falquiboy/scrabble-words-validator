@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { processDigraphs } from "./digraphs";
+import { identifyWildcardLetters } from "./wildcardUtils";
 
 export interface LeaveInfo {
   leave: string;  // The combination column (e.g., "AS", "[CH]A")
@@ -39,7 +40,7 @@ SCRABBLE_ORDER_MAP.set('Ç', SCRABBLE_ORDER_MAP.get('C')! + 0.1); // CH después
 SCRABBLE_ORDER_MAP.set('K', SCRABBLE_ORDER_MAP.get('L')! + 0.1); // LL después de L  
 SCRABBLE_ORDER_MAP.set('W', SCRABBLE_ORDER_MAP.get('R')! + 0.1); // RR después de R
 
-console.log('📝 Orden alfabético mapeado:', SCRABBLE_ORDER_MAP);
+// Scrabble order mapping ready
 
 /**
  * Ordena letras según el orden alfabético del Scrabble español
@@ -64,39 +65,81 @@ function sortByScrabbleOrder(letters: string[]): string[] {
  * @param word - La palabra formada (ej: "CERO", "HARO")
  * @returns El residuo en formato de tabla leaves (ej: "AS", "[CH]A")
  */
-export function calculateLeave(rack: string, word: string): string {
+export function calculateLeave(rack: string, word: string, searchTerm?: string): string {
   // CRÍTICO: Convertir ambos a formato interno primero
-  // "CHARO" -> "ÇARO", "CERO" -> "CERO"
   const internalRack = processDigraphs(rack.toUpperCase());
   const internalWord = processDigraphs(word.toUpperCase());
   
-  console.log(`🔄 calculateLeave: "${rack}" -> "${internalRack}", "${word}" -> "${internalWord}"`);
+  // MANEJO ESPECIAL DE COMODINES
+  const wildcardCount = (internalRack.match(/\?/g) || []).length;
   
-  const rackLetters = internalRack.split('').sort();
-  const wordLetters = internalWord.split('').sort();
-  
-  const leave = [...rackLetters];
-  
-  // Remover las letras de la palabra del rack
-  for (const letter of wordLetters) {
-    const index = leave.indexOf(letter);
-    if (index !== -1) {
-      leave.splice(index, 1);
+  if (wildcardCount > 0 && searchTerm) {
+    // Identificar exactamente qué letras vienen del comodín
+    const wildcardIndices = identifyWildcardLetters(word, searchTerm);
+    
+    // Comenzar con el rack completo
+    const rackLetters = internalRack.split('');
+    const leave = [...rackLetters];
+    
+    // PASO 1: Consumir comodines (tantos como letras de comodín identificadas)
+    const wildcardsUsed = wildcardIndices.length;
+    for (let i = 0; i < wildcardsUsed; i++) {
+      const wildcardIndex = leave.indexOf('?');
+      if (wildcardIndex !== -1) {
+        leave.splice(wildcardIndex, 1);
+      }
     }
+    
+    // PASO 2: Remover solo las letras que NO vienen del comodín
+    for (let i = 0; i < internalWord.length; i++) {
+      const letter = internalWord[i];
+      const isWildcardLetter = wildcardIndices.includes(i);
+      
+      if (!isWildcardLetter) {
+        // Esta letra viene del rack real, removerla del leave
+        const leaveIndex = leave.indexOf(letter);
+        if (leaveIndex !== -1) {
+          leave.splice(leaveIndex, 1);
+        }
+      }
+    }
+    
+    // Ordenar y convertir
+    const sortedLeave = sortByScrabbleOrder(leave);
+    let leaveStr = sortedLeave.join('');
+    
+    // Convertir dígrafos internos al formato de tabla leaves
+    leaveStr = leaveStr.replace(/Ç/g, '[CH]');
+    leaveStr = leaveStr.replace(/K/g, '[LL]');
+    leaveStr = leaveStr.replace(/W/g, '[RR]');
+    
+    return leaveStr;
+  } else {
+    // Lógica original para palabras sin comodines
+    const rackLetters = internalRack.split('').sort();
+    const wordLetters = internalWord.split('').sort();
+    
+    const leave = [...rackLetters];
+    
+    // Remover las letras de la palabra del rack
+    for (const letter of wordLetters) {
+      const index = leave.indexOf(letter);
+      if (index !== -1) {
+        leave.splice(index, 1);
+      }
+    }
+    
+    // Ordenar y convertir
+    const sortedLeave = sortByScrabbleOrder(leave);
+    let leaveStr = sortedLeave.join('');
+    
+    // Convertir dígrafos internos al formato de tabla leaves
+    leaveStr = leaveStr.replace(/Ç/g, '[CH]');
+    leaveStr = leaveStr.replace(/K/g, '[LL]');
+    leaveStr = leaveStr.replace(/W/g, '[RR]');
+    
+    return leaveStr;
   }
-  
-  // CRÍTICO: Usar ordenamiento alfagramático correcto del Scrabble español
-  const sortedLeave = sortByScrabbleOrder(leave);
-  let leaveStr = sortedLeave.join('');
-  
-  // Convertir dígrafos internos al formato de tabla leaves: Ç->[CH], K->[LL], W->[RR]
-  leaveStr = leaveStr.replace(/Ç/g, '[CH]');
-  leaveStr = leaveStr.replace(/K/g, '[LL]');
-  leaveStr = leaveStr.replace(/W/g, '[RR]');
-  
-  console.log(`🎯 calculateLeave result: "${leaveStr}" (ordered: ${sortedLeave.join('')} -> ${leaveStr})`);
-  
-  return leaveStr;
 }
 
 /**
@@ -246,9 +289,10 @@ export async function getBatchLeaveValues(leaveStrings: string[]): Promise<Map<s
 export async function calculatePotentialValue(
   wordValue: number, 
   rack: string, 
-  word: string
+  word: string,
+  searchTerm?: string
 ): Promise<number> {
-  const leave = calculateLeave(rack, word);
+  const leave = calculateLeave(rack, word, searchTerm);
   const leaveValue = await getLeaveValue(leave);
   
   if (leaveValue === null) {

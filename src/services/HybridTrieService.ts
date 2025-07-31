@@ -53,6 +53,14 @@ export class HybridTrieService {
   }
 
   /**
+   * Notificar que SQLite está listo (llamado desde SQLiteWordDatabase)
+   */
+  notifySqliteReady(): void {
+    console.log('🔔 SQLite notified as ready to HybridTrieService');
+    this.isSqliteAvailable = true;
+  }
+
+  /**
    * Verificar dinámicamente si SQLite está disponible para consultas
    * Detecta si está bloqueado por construcción O si tiene datos insuficientes
    */
@@ -108,19 +116,23 @@ export class HybridTrieService {
    * Método search asíncrono con fallback completo de 3 niveles
    */
   async searchAsync(word: string): Promise<boolean> {
+    // Normalize word with digraphs for all searches
+    const normalizedWord = processDigraphs(word);
+    console.log(`🔤 Normalized word: ${word} → ${normalizedWord}`);
+    
     // Nivel 1: Trie (ultra-rápido)
     if (this.isTrieReady && this.actualTrie) {
-      console.log(`🚀 Level 1 - Trie search: ${word}`);
-      return this.actualTrie.search(word);
+      console.log(`🚀 Level 1 - Trie search: ${normalizedWord}`);
+      return this.actualTrie.search(normalizedWord);
     }
 
     // Nivel 2: SQLite (rápido, pero verificar disponibilidad real)
     const isSqliteReady = await this.checkSqliteAvailability();
     if (isSqliteReady) {
-      console.log(`⚡ Level 2 - SQLite search: ${word}`);
+      console.log(`⚡ Level 2 - SQLite search: ${normalizedWord}`);
       try {
-        const results = await sqliteAnagramService.findAnagrams(word, word.length, false);
-        return results.exactMatches.includes(word.toUpperCase());
+        const results = await sqliteAnagramService.findAnagrams(normalizedWord, normalizedWord.length, false);
+        return results.exactMatches.includes(normalizedWord.toUpperCase());
       } catch (error) {
         console.log(`⚠️ SQLite search failed, falling back: ${error}`);
         this.isSqliteAvailable = false; // Marcar como no disponible
@@ -129,8 +141,8 @@ export class HybridTrieService {
 
     // Nivel 3: Supabase (remoto)
     if (this.isSupabaseAvailable) {
-      console.log(`🌐 Level 3 - Supabase search: ${word}`);
-      return await supabaseWordService.search(word);
+      console.log(`🌐 Level 3 - Supabase search: ${normalizedWord}`);
+      return await supabaseWordService.search(normalizedWord);
     }
 
     console.log(`❌ No services available for search: ${word}`);
@@ -362,6 +374,56 @@ export class HybridTrieService {
   }
 
   /**
+   * 🎯 Método findPatternMatches - Buscar por patrones con fallback completo
+   */
+  async findPatternMatches(
+    pattern: string, 
+    showLongerWords: boolean = false,
+    maxDefaultLength: number = 8,
+    targetLength: number | null = null
+  ): Promise<string[]> {
+    // Nivel 1: Trie (ultra-rápido)
+    if (this.isTrieReady && this.actualTrie) {
+      console.log(`🚀 Level 1 - Trie pattern search: ${pattern}`);
+      try {
+        // Usar la función importada de pattern matching
+        const { findPatternMatches } = await import('@/utils/pattern/matching');
+        return await findPatternMatches(pattern, this.actualTrie, showLongerWords, maxDefaultLength, targetLength);
+      } catch (error) {
+        console.log(`⚠️ Trie pattern search failed, falling back: ${error}`);
+      }
+    }
+
+    // Nivel 2: SQLite (rápido, pero verificar disponibilidad real)
+    const isSqliteReady = await this.checkSqliteAvailability();
+    if (isSqliteReady) {
+      console.log(`⚡ Level 2 - SQLite pattern search: ${pattern}`);
+      try {
+        return await sqliteAnagramService.findPatternMatches(
+          pattern, 
+          showLongerWords, 
+          maxDefaultLength, 
+          targetLength || undefined
+        );
+      } catch (error) {
+        console.log(`⚠️ SQLite pattern search failed, falling back: ${error}`);
+        this.isSqliteAvailable = false;
+      }
+    }
+
+    // Nivel 3: Supabase (remoto) - implementación básica
+    if (this.isSupabaseAvailable) {
+      console.log(`🌐 Level 3 - Supabase pattern search: ${pattern}`);
+      // Por ahora, Supabase no tiene búsqueda de patrones implementada
+      console.log(`⚠️ Supabase pattern search not implemented yet`);
+      return [];
+    }
+
+    console.log(`❌ No services available for pattern search: ${pattern}`);
+    return [];
+  }
+
+  /**
    * Obtener estadísticas del servicio
    */
   getStats(): { 
@@ -477,22 +539,16 @@ export class HybridTrieService {
     wildcardMatches: string[];
     additionalWildcardMatches: string[];
   }> {
-    // SQLite no tiene soporte nativo para wildcards todavía
-    // Por ahora delegamos al método básico
-    const lettersOnly = letters.replace(/\?/g, '');
+    console.log(`🔍 SQLite: processing ${wildcardCount} wildcards for "${letters}"`);
     
-    if (wildcardCount === 0) {
-      const results = await sqliteAnagramService.findAnagrams(lettersOnly, 2, false);
-      return {
-        exactMatches: results.exactMatches,
-        wildcardMatches: [],
-        additionalWildcardMatches: []
-      };
+    try {
+      // Usar el nuevo método de SQLite que maneja wildcards completos
+      return await sqliteAnagramService.findAnagramsWithWildcards(letters, 2);
+    } catch (error) {
+      console.error('❌ SQLite wildcards search failed:', error);
+      // Fallback to Supabase on error
+      return this.processWildcardsWithSupabase(letters, wildcardCount);
     }
-
-    // TODO: Implementar lógica de wildcards específica para SQLite
-    console.log('🔄 SQLite wildcards not fully implemented, using basic search');
-    return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [] };
   }
 
   /**

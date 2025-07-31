@@ -5,11 +5,10 @@
 
 import { useState, useEffect } from 'react';
 // import { indexedDbAnagramService } from '@/services/IndexedDbAnagramService'; // Deprecated - using hybrid service
-import { findPatternMatches } from "@/utils/pattern/matching";
 import { HybridTrieService } from '@/services/HybridTrieService';
 import { SearchResults } from "./anagramSearch/types";
 import { sortWordsByAddedLetter } from "@/utils/additionalLetterSort";
-import { useUserActivityContext } from '@/contexts/UserActivityContext';
+// UserActivityContext removed - simplified approach
 
 export const useHybridAnagramSearch = (
   searchTerm: string,
@@ -37,8 +36,7 @@ export const useHybridAnagramSearch = (
   const [currentProvider, setCurrentProvider] = useState<'none' | 'indexeddb' | 'trie'>('none');
   const [lastSearchTerm, setLastSearchTerm] = useState<string>('');
   
-  // Get user activity context to signal searching
-  const { signalSearching } = useUserActivityContext();
+  // User activity signaling removed
 
   // Efecto para cambios en el toggle (con carga lazy de subanagramas)
   useEffect(() => {
@@ -142,7 +140,7 @@ export const useHybridAnagramSearch = (
       setError(null);
 
       // 🎯 Signal user searching activity for smart Trie upgrade
-      signalSearching();
+      // Search signaling removed
 
       try {
         const trimmedTerm = searchTerm.trim();
@@ -174,23 +172,23 @@ export const useHybridAnagramSearch = (
             }
           }
 
-          // For patterns, use traditional pattern matching if Trie is available
-          let patternMatches: string[] = [];
-          if (hybridService.isTrieAvailable()) {
-            const actualTrie = (hybridService as any).actualTrie;
-            if (actualTrie) {
-              patternMatches = await findPatternMatches(cleanPattern, actualTrie, showShorter, 8, patternLength);
-              setCurrentProvider('trie');
-            }
-          }
+          // For patterns, use hybrid service with full fallback chain
+          const patternMatches = await hybridService.findPatternMatches(cleanPattern, showShorter, 8, patternLength);
+          setCurrentProvider(hybridService.getCurrentProvider() as any);
 
-          setResults({
+          // Solo actualizar cuando tengamos los resultados completos
+          const patternResults = {
             exactMatches: [],
             wildcardMatches: [],
             additionalWildcardMatches: [],
             shorterMatches: [],
             patternMatches
-          });
+          };
+          
+          setFullResults(patternResults);
+          setResults(patternResults);
+          setLastSearchTerm(trimmedTerm);
+          setIsLoading(false);
 
         } else if (isWildcardSearch) {
           // 🎯 Wildcard anagram search (?)
@@ -216,8 +214,9 @@ export const useHybridAnagramSearch = (
             patternMatches: []
           };
           setFullResults(wildcardFullResults);
-
           setResults(wildcardFullResults);
+          setLastSearchTerm(trimmedTerm);
+          setIsLoading(false);
 
         } else {
           // Regular anagram search with hybrid fallback
@@ -230,6 +229,7 @@ export const useHybridAnagramSearch = (
             
             // For palabras con letra adicional, use 1 wildcard search
             const additionalResults = await hybridService.findAnagramsWithWildcards(trimmedTerm + '?');
+            // Para búsquedas normales, wildcardMatches son palabras con 1 letra adicional
             const additionalWildcardMatches = sortWordsByAddedLetter(trimmedTerm, additionalResults.wildcardMatches);
             
             // Obtener subanagramas solo si showShorter está activo (optimización)
@@ -267,6 +267,8 @@ export const useHybridAnagramSearch = (
                 patternMatches: []
               });
             }
+            
+            // setLastSearchTerm se ejecuta al final del bloque principal
 
           } else {
             // Use hybrid service async fallback (SQLite → Supabase)
@@ -275,6 +277,7 @@ export const useHybridAnagramSearch = (
             
             // For palabras con letra adicional, use 1 wildcard search
             const additionalResults = await hybridService.findAnagramsWithWildcards(trimmedTerm + '?');
+            // Para búsquedas normales, wildcardMatches son palabras con 1 letra adicional
             const additionalWildcardMatches = sortWordsByAddedLetter(trimmedTerm, additionalResults.wildcardMatches);
             
             // Obtener subanagramas solo si showShorter está activo (optimización)
@@ -315,9 +318,10 @@ export const useHybridAnagramSearch = (
                 patternMatches: []
               });
             }
+            
           }
 
-          // Filter by target length if specified
+          // Filter by target length if specified (ANTES de setIsLoading)
           if (targetLength !== null) {
             setResults(prev => ({
               exactMatches: prev.exactMatches.filter(word => word.length === targetLength),
@@ -327,10 +331,10 @@ export const useHybridAnagramSearch = (
               patternMatches: prev.patternMatches.filter(word => word.length === targetLength)
             }));
           }
+          
+          setLastSearchTerm(trimmedTerm);
+          setIsLoading(false);
         }
-
-        // Actualizar término de búsqueda para cache
-        setLastSearchTerm(trimmedTerm);
 
       } catch (err) {
         console.error('❌ Hybrid anagram search error:', err);
@@ -345,7 +349,6 @@ export const useHybridAnagramSearch = (
         setResults(errorResults);
         setFullResults(errorResults);
         setCurrentProvider('none');
-      } finally {
         setIsLoading(false);
       }
     };
