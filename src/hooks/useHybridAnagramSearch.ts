@@ -41,8 +41,7 @@ export const useHybridAnagramSearch = (
   // Efecto para cambios en el toggle (con carga lazy de subanagramas)
   useEffect(() => {
     const handleToggleChange = async () => {
-      if (lastSearchTerm === searchTerm && searchTerm.trim() && 
-          (fullResults.exactMatches.length > 0 || fullResults.wildcardMatches.length > 0 || fullResults.patternMatches.length > 0)) {
+      if (lastSearchTerm === searchTerm && searchTerm.trim()) {
         
         if (showShorter) {
           // Cargar subanagramas si no están en cache

@@ -104,7 +104,8 @@ export class SqliteAnagramService {
       
       for (const candidate of candidates) {
         const targetWord = candidate.word;
-        const targetLetters = targetWord.split('').sort();
+        const normalizedTargetWord = this.normalizeLetters(targetWord);
+        const targetLetters = normalizedTargetWord.split('').sort();
         
         // Verificar si se puede formar con exactamente 1 letra adicional
         if (this.canMakeWordWithOneExtra(availableLetters, targetLetters)) {
@@ -149,7 +150,8 @@ export class SqliteAnagramService {
    */
   private canMakeWord(availableLetters: string, targetWord: string): boolean {
     const available = [...availableLetters.toUpperCase()];
-    const needed = [...targetWord.toUpperCase()];
+    // targetWord should already be normalized from SQLite DB, but ensure consistency
+    const needed = [...this.normalizeLetters(targetWord).toUpperCase()];
 
     for (const letter of needed) {
       const index = available.indexOf(letter);
