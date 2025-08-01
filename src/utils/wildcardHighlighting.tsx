@@ -113,41 +113,31 @@ export const highlightWildcardLetter = (word: string, searchTerm: string): React
 };
 
 /**
- * Highlight pattern matches with rack letters
- * For patterns like "-NAS,AOL*", highlight the rack letters used to complete the pattern
+ * Enhanced pattern highlighting for all pattern types
+ * Highlights fixed letters in normal color and wildcard/fill letters in blue
  */
-export const highlightPatternMatch = (word: string, pattern: string, rackLetters: string): React.ReactNode => {
+export const highlightPatternMatchEnhanced = (word: string, pattern: string, rackLetters: string): React.ReactNode => {
   if (!word || !pattern) return word;
   
-  // Process the pattern to handle hyphen notation
-  const translatedPattern = translateHyphenPattern(pattern);
-
-  // Determine pattern type (starts with, ends with, contains)
-  const isStartPattern = translatedPattern.startsWith('^') || pattern.endsWith('-');
-  const isEndPattern = translatedPattern.endsWith('$') || pattern.startsWith('-') && !pattern.endsWith('-');
-  const isContainsPattern = pattern.startsWith('-') && pattern.endsWith('-');
+  // Remove any length specification
+  const cleanPattern = pattern.replace(/:\d+$/, '');
   
-  // Extract the fixed part of the pattern (without notation symbols)
-  let fixedPattern = pattern;
-  if (isEndPattern) {
-    fixedPattern = pattern.replace(/^-/, '');
-  } else if (isStartPattern) {
-    fixedPattern = pattern.replace(/-$/, '');
-  } else if (isContainsPattern) {
-    fixedPattern = pattern.replace(/^-|-$/g, '');
-  }
-  
-  // Remove any length filter (e.g., :6)
-  fixedPattern = fixedPattern.replace(/:\d+$/, '');
-  
-  // Find positions of the fixed pattern in the word
-  const fixedPatternPos = word.indexOf(fixedPattern);
+  // For patterns with . or *, use original pattern directly
+  // For hyphen patterns, use translation
+  const workingPattern = cleanPattern.includes('.') || cleanPattern.includes('*') ? 
+    cleanPattern : translateHyphenPattern(cleanPattern);
   
   // Find digraph positions in the original word
   const digraphPositions = findDigraphPositions(word);
-  
-  // Used to track positions we've processed to avoid duplicates with digraphs
   const processedIndices = new Set<number>();
+  
+  // Analyze pattern to identify fixed positions
+  const fixedPositions = getFixedLetterPositions(word, workingPattern);
+  
+  // Debug logging
+  console.log(`🔍 Pattern: "${pattern}" → "${workingPattern}"`);
+  console.log(`🔍 Word: "${word}"`);
+  console.log(`🔍 Fixed positions:`, fixedPositions);
   
   return (
     <span className="inline-flex">
@@ -168,86 +158,151 @@ export const highlightPatternMatch = (word: string, pattern: string, rackLetters
           processedIndices.add(digraph.end);
         }
         
-        // For end patterns like -ZAS, ALL characters before the pattern should be blue
-        if (isEndPattern && fixedPatternPos > 0 && index < fixedPatternPos) {
-          return (
-            <span key={index} className="text-blue-600 font-semibold">
-              {displayText.toUpperCase()}
-            </span>
-          );
-        }
+        // Determine if this position is fixed or fill
+        const isFixed = fixedPositions.includes(index) || 
+                       (isDiGraphStart && digraph && fixedPositions.includes(digraph.end));
         
-        // For end patterns, the fixed pattern itself should be normal (not highlighted)
-        if (isEndPattern && fixedPatternPos >= 0 && 
-            index >= fixedPatternPos && index < fixedPatternPos + fixedPattern.length) {
+        if (isFixed) {
+          // Fixed letter - normal color
           return (
             <span key={index} className="font-semibold">
               {displayText.toUpperCase()}
             </span>
           );
-        }
-
-        // For start patterns like CO-, ALL characters after the pattern should be blue
-        if (isStartPattern && fixedPatternPos >= 0 && 
-            index >= fixedPatternPos + fixedPattern.length) {
+        } else {
+          // Fill letter - blue color
           return (
             <span key={index} className="text-blue-600 font-semibold">
               {displayText.toUpperCase()}
             </span>
           );
         }
-        
-        // For start patterns, the fixed pattern itself should be normal (not highlighted)
-        if (isStartPattern && fixedPatternPos >= 0 && 
-            index >= fixedPatternPos && index < fixedPatternPos + fixedPattern.length) {
-          return (
-            <span key={index} className="font-semibold">
-              {displayText.toUpperCase()}
-            </span>
-          );
-        }
-
-        // For contains patterns, highlight everything except the pattern
-        if (isContainsPattern && fixedPatternPos >= 0) {
-          // If within the fixed pattern, display as normal
-          if (index >= fixedPatternPos && index < fixedPatternPos + fixedPattern.length) {
-            return (
-              <span key={index} className="font-semibold">
-                {displayText.toUpperCase()}
-              </span>
-            );
-          }
-          
-          // If outside the fixed pattern, highlight in blue
-          return (
-            <span key={index} className="text-blue-600 font-semibold">
-              {displayText.toUpperCase()}
-            </span>
-          );
-        }
-
-        // For cases not covered by the specific patterns above, 
-        // check if they might be from wildcards
-        const isLikelyWildcard = rackLetters && 
-                               rackLetters.includes('?') && 
-                               !rackLetters.replace(/\?/g, '').toUpperCase().includes(char.toUpperCase());
-                               
-        // If it's a likely wildcard, highlight in red and lowercase
-        if (isLikelyWildcard) {
-          return (
-            <span key={index} className="text-red-600 font-semibold">
-              {displayText.toUpperCase()}
-            </span>
-          );
-        }
-
-        // Regular rack letter (non-wildcard) - highlight in blue
-        return (
-          <span key={index} className="text-blue-600 font-semibold">
-            {displayText.toUpperCase()}
-          </span>
-        );
       })}
     </span>
   );
+};
+
+/**
+ * Analyze pattern and word to determine which positions contain fixed letters
+ * Uses pattern matching to find actual positions of fixed letters in the word
+ */
+const getFixedLetterPositions = (word: string, pattern: string): number[] => {
+  const fixedPositions: number[] = [];
+  
+  // Handle different pattern types
+  if (pattern.startsWith('*') && pattern.endsWith('*')) {
+    // *PATTERN* - contains pattern anywhere
+    const fixedPart = pattern.slice(1, -1);
+    const startIndex = word.indexOf(fixedPart);
+    if (startIndex >= 0) {
+      for (let i = 0; i < fixedPart.length; i++) {
+        fixedPositions.push(startIndex + i);
+      }
+    }
+  } else if (pattern.startsWith('*')) {
+    // *PATTERN - ends with pattern
+    const fixedPart = pattern.slice(1);
+    const startIndex = word.length - fixedPart.length;
+    if (startIndex >= 0) {
+      for (let i = 0; i < fixedPart.length; i++) {
+        fixedPositions.push(startIndex + i);
+      }
+    }
+  } else if (pattern.endsWith('*')) {
+    // PATTERN* - starts with pattern but may contain dots
+    const fixedPart = pattern.slice(0, -1);
+    
+    if (fixedPart.includes('.')) {
+      // Handle patterns like .R.Z* - need to match the pattern structure
+      const positions = matchPatternWithDots(word, fixedPart);
+      fixedPositions.push(...positions);
+    } else {
+      // Simple prefix match like CO*
+      for (let i = 0; i < fixedPart.length && i < word.length; i++) {
+        fixedPositions.push(i);
+      }
+    }
+  } else if (pattern.includes('.')) {
+    // Pattern with dots but no *, like .R.Z or R..S
+    const positions = matchPatternWithDots(word, pattern);
+    fixedPositions.push(...positions);
+  } else {
+    // For other patterns, try to match fixed letters
+    const fixedLetters = pattern.replace(/[*.\-^$]/g, '');
+    if (fixedLetters) {
+      const startIndex = word.indexOf(fixedLetters);
+      if (startIndex >= 0) {
+        for (let i = 0; i < fixedLetters.length; i++) {
+          fixedPositions.push(startIndex + i);
+        }
+      }
+    }
+  }
+  
+  return fixedPositions;
+};
+
+/**
+ * Match a pattern containing dots against a word to find fixed letter positions
+ * Example: pattern ".R.Z" against word "BREZ" would return [1, 3] for R and Z
+ */
+const matchPatternWithDots = (word: string, pattern: string): number[] => {
+  const fixedPositions: number[] = [];
+  
+  console.log(`🔍 Matching pattern "${pattern}" against word "${word}"`);
+  
+  // Simple approach: if pattern and word have same length, map directly
+  if (pattern.length === word.length) {
+    // Direct position mapping for same-length patterns
+    for (let i = 0; i < pattern.length; i++) {
+      const patternChar = pattern[i];
+      const wordChar = word[i];
+      
+      if (patternChar !== '.') {
+        // This should be a fixed letter
+        if (patternChar === wordChar) {
+          fixedPositions.push(i);
+          console.log(`🔍 Fixed letter '${patternChar}' found at position ${i} in "${word}"`);
+        } else {
+          console.log(`🔍 Mismatch: expected '${patternChar}' at position ${i}, got '${wordChar}'`);
+        }
+      } else {
+        console.log(`🔍 Wildcard '.' at position ${i} matches '${wordChar}'`);
+      }
+    }
+  } else {
+    console.log(`🔍 Length mismatch: pattern "${pattern}" (${pattern.length}) vs word "${word}" (${word.length})`);
+    
+    // For different lengths, try to find the fixed letters in sequence
+    let wordIndex = 0;
+    for (let patternIndex = 0; patternIndex < pattern.length && wordIndex < word.length; patternIndex++) {
+      const patternChar = pattern[patternIndex];
+      
+      if (patternChar !== '.') {
+        // Look for this fixed letter starting from current word position
+        const foundIndex = word.indexOf(patternChar, wordIndex);
+        if (foundIndex >= 0 && foundIndex >= wordIndex) {
+          fixedPositions.push(foundIndex);
+          wordIndex = foundIndex + 1;
+          console.log(`🔍 Fixed letter '${patternChar}' found at position ${foundIndex} in "${word}"`);
+        }
+      } else {
+        // Skip one character for the wildcard
+        wordIndex++;
+      }
+    }
+  }
+  
+  console.log(`🔍 Pattern "${pattern}" → Fixed positions:`, fixedPositions);
+  return fixedPositions;
+};
+
+/**
+ * Legacy function for backward compatibility - now uses enhanced version
+ * Highlight pattern matches with rack letters
+ * For patterns like "-NAS,AOL*", highlight the rack letters used to complete the pattern
+ */
+export const highlightPatternMatch = (word: string, pattern: string, rackLetters: string): React.ReactNode => {
+  // Use the enhanced version for better pattern support
+  return highlightPatternMatchEnhanced(word, pattern, rackLetters);
 };

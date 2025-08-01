@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import SearchContainer from "./anagramador/search/SearchContainer";
 import ResultsList from "./anagramador/ResultsList";
-import SettingsMenu from "./anagramador/SettingsMenu";
 import { useHybridAnagramSearch } from "@/hooks/useHybridAnagramSearch";
 import { highlightWildcardLetter } from "@/utils/wildcardHighlighting";
 import { useToast } from "@/hooks/use-toast";
@@ -11,16 +10,38 @@ import { SearchResults } from "@/hooks/anagramSearch/types";
 
 interface AnagramadorProps {
   trie: HybridTrieService;
+  // Settings props (controlled from parent)
+  showShorter: boolean;
+  onShowShorterChange: (show: boolean) => void;
+  showExtendedView: boolean;
+  onExtendedViewChange: (show: boolean) => void;
+  showHooksView: boolean;
+  onHooksViewChange: (show: boolean) => void;
+  sortByEquity: boolean;
+  onSortByEquityChange: (sort: boolean) => void;
+  // Callback props to communicate state changes to parent
+  onSearchStateChange: (hasActiveSearch: boolean) => void;
+  onCopyAllCallbackChange: (callback: (() => void) | undefined) => void;
+  onPatternWithoutRackChange: (isPatternWithoutRack: boolean) => void;
 }
 
-const Anagramador = ({ trie }: AnagramadorProps) => {
+const Anagramador = ({ 
+  trie, 
+  showShorter, 
+  onShowShorterChange,
+  showExtendedView, 
+  onExtendedViewChange,
+  showHooksView, 
+  onHooksViewChange,
+  sortByEquity, 
+  onSortByEquityChange,
+  onSearchStateChange,
+  onCopyAllCallbackChange,
+  onPatternWithoutRackChange
+}: AnagramadorProps) => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
-  const [showShorter, setShowShorter] = useState(false);
   const [targetLength, setTargetLength] = useState<number | null>(null);
-  const [showExtendedView, setShowExtendedView] = useState(false);
-  const [showHooksView, setShowHooksView] = useState(false);
-  const [sortByEquity, setSortByEquity] = useState(false);
 
   // Use hybrid anagram search - ALWAYS AVAILABLE! 🌍
   const { results: searchResults, isLoading, error, currentProvider } = useHybridAnagramSearch(
@@ -30,9 +51,24 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
     targetLength
   );
 
+  // Notify parent about search state changes
   useEffect(() => {
-    setShowShorter(false);
-  }, []);
+    onSearchStateChange(!!searchTerm);
+  }, [searchTerm, onSearchStateChange]);
+
+  // Notify parent about pattern without rack state
+  useEffect(() => {
+    onPatternWithoutRackChange(isPatternWithoutRack(searchTerm));
+  }, [searchTerm, onPatternWithoutRackChange]);
+
+  // Provide copy callback to parent
+  useEffect(() => {
+    if (searchTerm) {
+      onCopyAllCallbackChange(() => handleCopyAll);
+    } else {
+      onCopyAllCallbackChange(undefined);
+    }
+  }, [searchTerm, searchResults, onCopyAllCallbackChange]);
 
   // Show error toast if there's an error
   useEffect(() => {
@@ -47,7 +83,7 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
 
   const handleSearch = (letters: string, newTargetLength: number | null) => {
     if (letters !== searchTerm) {
-      setShowShorter(false);
+      onShowShorterChange(false);
     }
     
     setSearchTerm(letters);
@@ -56,31 +92,24 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
 
   const handleClear = () => {
     setSearchTerm("");
-    setShowShorter(false);
+    onShowShorterChange(false);
     setTargetLength(null);
     // Note: searchResults will be cleared automatically by the hybrid hook
   };
 
-  const handleShowShorterChange = (show: boolean) => {
-    setShowShorter(show);
-  };
-
+  // Handle mutually exclusive view changes
   const handleExtendedViewChange = (show: boolean) => {
-    setShowExtendedView(show);
+    onExtendedViewChange(show);
     if (show) {
-      setShowHooksView(false); // Mutually exclusive
+      onHooksViewChange(false); // Mutually exclusive
     }
   };
 
   const handleHooksViewChange = (show: boolean) => {
-    setShowHooksView(show);
+    onHooksViewChange(show);
     if (show) {
-      setShowExtendedView(false); // Mutually exclusive
+      onExtendedViewChange(false); // Mutually exclusive
     }
-  };
-
-  const handleSortByEquityChange = (sort: boolean) => {
-    setSortByEquity(sort);
   };
 
   // Utilidad para detectar patrones sin rack
@@ -151,21 +180,6 @@ const Anagramador = ({ trie }: AnagramadorProps) => {
 
   return (
     <>
-      {/* Settings Menu */}
-      <SettingsMenu
-        showShorter={showShorter}
-        onShowShorterChange={handleShowShorterChange}
-        showExtendedView={showExtendedView}
-        onExtendedViewChange={handleExtendedViewChange}
-        showHooksView={showHooksView}
-        onHooksViewChange={handleHooksViewChange}
-        hasActiveSearch={!!searchTerm}
-        onCopyAll={handleCopyAll}
-        sortByEquity={sortByEquity}
-        onSortByEquityChange={handleSortByEquityChange}
-        isPatternWithoutRack={isPatternWithoutRack(searchTerm)}
-      />
-
       {/* Main Interface */}
       <div className="w-full max-w-2xl mx-auto p-4 flex flex-col items-center">
         <div className="w-full max-w-md space-y-4">

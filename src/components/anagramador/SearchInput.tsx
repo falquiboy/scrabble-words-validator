@@ -133,7 +133,7 @@ const SearchInput = ({
             placeholder={
               isPatternMode 
                 ? "Ej: -AR (termina con AR), CO* (empieza con CO), .R.. (. = una letra, * = cero o más)" 
-                : "Signo de interrogación es comodín"
+                : "? es comodín"
             }
             value={letters}
             onChange={handleInputChange}

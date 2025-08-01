@@ -6,12 +6,22 @@ import Lists from "@/components/Lists";
 // Temporarily commented out for build fix
 // import { TrainingSystemDemo } from "@/components/TrainingSystemDemo";
 import NewModuleSelector from "@/components/NewModuleSelector";
+import GlobalSettingsMenu from "@/components/GlobalSettingsMenu";
 import { useWordTrie } from "@/hooks/useWordTrie";
 
 const Index = () => {
   const [activeModule, setActiveModule] = useState<'judge' | 'anagram' | 'lists' | 'training'>('judge');
   const [showTraining, setShowTraining] = useState(false);
   const [enableUltraFastMode, setEnableUltraFastMode] = useState(false); // 🚫 DISABLED BY DEFAULT
+  
+  // States for anagram settings (lifted up from Anagramador)
+  const [showShorter, setShowShorter] = useState(false);
+  const [showExtendedView, setShowExtendedView] = useState(false);
+  const [showHooksView, setShowHooksView] = useState(false);
+  const [sortByEquity, setSortByEquity] = useState(false);
+  const [hasActiveAnagramSearch, setHasActiveAnagramSearch] = useState(false);
+  const [anagramCopyAllCallback, setAnagramCopyAllCallback] = useState<(() => void) | undefined>(undefined);
+  const [isPatternWithoutRack, setIsPatternWithoutRack] = useState(false);
   
   // Use only useWordTrie - it handles all dictionary/database construction
   const { isLoading: isTrieLoading, trie, loadingProgress, stage: trieStage, wordCount } = useWordTrie(enableUltraFastMode);
@@ -76,6 +86,22 @@ const Index = () => {
         activeModule={activeModule} 
         onModuleChange={setActiveModule}
       />
+      <GlobalSettingsMenu 
+        activeModule={activeModule}
+        anagramSettings={{
+          showShorter,
+          onShowShorterChange: setShowShorter,
+          showExtendedView,
+          onExtendedViewChange: setShowExtendedView,
+          showHooksView,
+          onHooksViewChange: setShowHooksView,
+          hasActiveSearch: hasActiveAnagramSearch,
+          onCopyAll: anagramCopyAllCallback,
+          sortByEquity,
+          onSortByEquityChange: setSortByEquity,
+          isPatternWithoutRack
+        }}
+      />
       <div className="mt-20 flex-1 w-full">
         {showTraining ? (
           <div className="container mx-auto px-4 py-6">
@@ -113,7 +139,20 @@ const Index = () => {
                 wordCount={wordCount}
               />
             ) : activeModule === 'anagram' ? (
-              <Anagramador trie={trie} />
+              <Anagramador 
+                trie={trie}
+                showShorter={showShorter}
+                onShowShorterChange={setShowShorter}
+                showExtendedView={showExtendedView}
+                onExtendedViewChange={setShowExtendedView}
+                showHooksView={showHooksView}
+                onHooksViewChange={setShowHooksView}
+                sortByEquity={sortByEquity}
+                onSortByEquityChange={setSortByEquity}
+                onSearchStateChange={setHasActiveAnagramSearch}
+                onCopyAllCallbackChange={setAnagramCopyAllCallback}
+                onPatternWithoutRackChange={setIsPatternWithoutRack}
+              />
             ) : (
               <Lists trie={trie} />
             )}

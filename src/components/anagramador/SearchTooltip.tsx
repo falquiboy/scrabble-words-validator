@@ -16,9 +16,6 @@ interface SearchTooltipProps {
 export const SearchTooltip = ({ isPatternMode, children }: SearchTooltipProps) => {
   const [showTooltip, setShowTooltip] = useState(false);
 
-  // We've removed the useEffect that would automatically show the tooltip
-  // Now it will only show when explicitly triggered by the help button
-
   // If not in pattern mode, just return the children without wrapping in tooltip
   if (!isPatternMode) {
     return <>{children}</>;

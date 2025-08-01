@@ -38,7 +38,7 @@ const parseSearchTerm = (searchTerm: string, title?: string) => {
     isPatternSearch,
     hasRackRestriction,
     rack: rack.trim(),
-    shouldShowEquityAndResidue: hasRackRestriction || isShorterWords // Solo mostrar en patrones con rack O subanagramas
+    shouldShowEquityAndResidue: isShorterWords && !hasRackRestriction // Solo mostrar en subanagramas, NO en patrones con rack
   };
 };
 
@@ -73,6 +73,15 @@ const WordWithEquity: React.FC<{
 
   useEffect(() => {
     const calculateEquity = async () => {
+      // Early return if search term contains pattern characters
+      if (searchTerm && (searchTerm.includes('*') || searchTerm.includes('.') || searchTerm.includes(',') || searchTerm.includes('-'))) {
+        setEquity(baseScore);
+        if (showResidue) {
+          setResidue('');
+        }
+        return;
+      }
+
       if (!isSubanagram) {
         setEquity(baseScore);
         if (showResidue) {
@@ -191,6 +200,11 @@ export const BaseResults = ({
   useEffect(() => {
     // Solo calcular equity cuando el usuario lo solicite explícitamente
     if ((!sortByEquity && !unifiedEquityView) || !searchTerm) return;
+
+    // Early return if search term contains pattern characters
+    if (searchTerm.includes('*') || searchTerm.includes('.') || searchTerm.includes(',') || searchTerm.includes('-')) {
+      return;
+    }
 
     const calculateAllEquities = async () => {
       setIsCalculatingEquities(true);

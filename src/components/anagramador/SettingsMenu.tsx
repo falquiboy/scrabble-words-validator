@@ -68,8 +68,8 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({
 
   return (
     <>
-      {/* Hamburger Button */}
-      <div className="fixed top-4 right-4 z-50">
+      {/* Hamburger Button - Aligned with tabs */}
+      <div className="fixed top-0 right-4 h-16 flex items-center z-50">
         <button
           onClick={toggleMenu}
           className="p-2 bg-white rounded-lg shadow-lg border border-gray-200 hover:shadow-xl transition-shadow"

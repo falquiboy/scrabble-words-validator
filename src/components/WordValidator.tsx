@@ -165,7 +165,7 @@ const WordValidator = ({
       {wordCount > 0 && !isDictionaryLoading && (
         <div className="fixed bottom-4 right-4 bg-white shadow-md rounded-lg px-3 py-2 flex items-center gap-2 text-sm text-gray-700 border border-gray-200">
           <Check size={16} className="text-green-600" />
-          <span>Diccionario cargado: {wordCount.toLocaleString('es-ES')} palabras</span>
+          <span>{wordCount.toLocaleString('en-US')} palabras</span>
         </div>
       )}
     </div>
