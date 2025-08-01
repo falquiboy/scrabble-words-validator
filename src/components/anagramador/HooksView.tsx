@@ -1,5 +1,5 @@
-import React from 'react';
-import { Loader } from "lucide-react";
+import React, { useState } from 'react';
+import { Loader, ChevronDown, ChevronRight } from "lucide-react";
 import { toDisplayFormat } from "@/utils/digraphs";
 import { HookInfo, processHooks } from '@/utils/hooksData';
 
@@ -28,6 +28,32 @@ const HooksView: React.FC<HooksViewProps> = ({
   hooksData,
   isLoadingHooks
 }) => {
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['exact', 'wildcard', 'pattern', 'additional', 'shorter']));
+  const [expandedLengthGroups, setExpandedLengthGroups] = useState<Set<string>>(new Set());
+
+  const toggleSection = (sectionId: string) => {
+    setExpandedSections(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(sectionId)) {
+        newSet.delete(sectionId);
+      } else {
+        newSet.add(sectionId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleLengthGroup = (groupId: string) => {
+    setExpandedLengthGroups(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(groupId)) {
+        newSet.delete(groupId);
+      } else {
+        newSet.add(groupId);
+      }
+      return newSet;
+    });
+  };
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -44,7 +70,6 @@ const HooksView: React.FC<HooksViewProps> = ({
         className={`inline-flex items-center justify-center w-5 h-5 text-xs bg-blue-100 text-blue-700 border border-blue-200 rounded mx-0.5 ${
           isLeft ? 'mr-1' : 'ml-1'
         }`}
-        title={`Hook: +${letter}`}
       >
         {letter.toLowerCase()}
       </span>
@@ -82,22 +107,32 @@ const HooksView: React.FC<HooksViewProps> = ({
 
     const hooks = processHooks(hookInfo);
 
-    // Build the word with internal hook indicators integrated
+    // Build the word with internal hooks (dimmed first/last letters)
     const buildWordWithInternalHooks = () => {
-      let wordDisplay = highlighted;
+      if (!hooks.hasLeftInternal && !hooks.hasRightInternal) {
+        return highlighted;
+      }
       
-      // Add internal hook indicators as part of the word string
-      const leftIndicator = hooks.hasLeftInternal ? 
-        <span className="text-black text-xs select-none" style={{ fontSize: '0.6rem' }}>◀</span> : null;
-      const rightIndicator = hooks.hasRightInternal ? 
-        <span className="text-black text-xs select-none" style={{ fontSize: '0.6rem' }}>▶</span> : null;
+      // We need to process the word character by character to dim first/last letters
+      const wordChars = displayWord.split('');
       
       return (
-        <>
-          {leftIndicator}
-          {wordDisplay}
-          {rightIndicator}
-        </>
+        <span className="inline-flex">
+          {wordChars.map((char, index) => {
+            const isFirst = index === 0;
+            const isLast = index === wordChars.length - 1;
+            const shouldDim = (isFirst && hooks.hasLeftInternal) || (isLast && hooks.hasRightInternal);
+            
+            return (
+              <span 
+                key={index} 
+                className={shouldDim ? "text-gray-400 font-semibold text-lg" : "font-semibold text-lg"}
+              >
+                {char.toUpperCase()}
+              </span>
+            );
+          })}
+        </span>
       );
     };
 
@@ -115,7 +150,6 @@ const HooksView: React.FC<HooksViewProps> = ({
           <span 
             className="font-semibold text-lg cursor-pointer hover:text-blue-600 transition-colors inline-flex items-center"
             onClick={handleRAEClick}
-            title={`Consultar "${displayWord}" en RAE`}
           >
             {buildWordWithInternalHooks()}
           </span>
@@ -131,8 +165,10 @@ const HooksView: React.FC<HooksViewProps> = ({
     );
   };
 
-  const renderWordSection = (title: string, words: string[], color: string = 'blue', groupByLength: boolean = false) => {
+  const renderWordSection = (sectionId: string, title: string, words: string[], color: string = 'blue', groupByLength: boolean = false) => {
     if (words.length === 0) return null;
+
+    const isExpanded = expandedSections.has(sectionId);
 
     if (groupByLength) {
       // Agrupar por longitud y ordenar
@@ -157,39 +193,79 @@ const HooksView: React.FC<HooksViewProps> = ({
 
       return (
         <div className="space-y-4">
-          <h3 className={`font-semibold text-${color}-600 text-sm`}>
+          <button
+            onClick={() => toggleSection(sectionId)}
+            className={`flex items-center gap-2 font-semibold text-${color}-600 text-sm hover:text-${color}-700 transition-colors`}
+          >
+            {isExpanded ? (
+              <ChevronDown size={16} />
+            ) : (
+              <ChevronRight size={16} />
+            )}
             {title} ({words.length})
-          </h3>
-          {sortedLengths.map(length => (
-            <div key={length} className="space-y-2">
-              <h4 className={`text-xs font-medium text-${color}-500 uppercase tracking-wide`}>
-                {length} letras ({groupedWords[length].length})
-              </h4>
-              <div className="border-l-2 border-gray-200 pl-3">
-                {groupedWords[length].map((word, index) => (
-                  <div key={index}>
-                    {renderWordWithHooks(word, searchTerm)}
+          </button>
+          
+          {isExpanded && (
+            <div>
+              {sortedLengths.map(length => {
+                const lengthGroupId = `${sectionId}-${length}`;
+                const isLengthExpanded = expandedLengthGroups.has(lengthGroupId);
+                
+                return (
+                  <div key={length} className="space-y-2 mb-4">
+                    <button
+                      onClick={() => toggleLengthGroup(lengthGroupId)}
+                      className={`flex items-center justify-center gap-2 w-full text-xs font-medium text-${color}-500 uppercase tracking-wide hover:text-${color}-600 transition-colors`}
+                    >
+                      {isLengthExpanded ? (
+                        <ChevronDown size={14} />
+                      ) : (
+                        <ChevronRight size={14} />
+                      )}
+                      {length} letras ({groupedWords[length].length})
+                    </button>
+                    
+                    {isLengthExpanded && (
+                      <div className="space-y-1">
+                        {groupedWords[length].map((word, index) => (
+                          <div key={index}>
+                            {renderWordWithHooks(word, searchTerm)}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
-          ))}
+          )}
         </div>
       );
     }
 
     return (
       <div className="space-y-3">
-        <h3 className={`font-semibold text-${color}-600 text-sm`}>
+        <button
+          onClick={() => toggleSection(sectionId)}
+          className={`flex items-center gap-2 font-semibold text-${color}-600 text-sm hover:text-${color}-700 transition-colors`}
+        >
+          {isExpanded ? (
+            <ChevronDown size={16} />
+          ) : (
+            <ChevronRight size={16} />
+          )}
           {title} ({words.length})
-        </h3>
-        <div>
-          {words.map((word, index) => (
-            <div key={index}>
-              {renderWordWithHooks(word, searchTerm)}
-            </div>
-          ))}
-        </div>
+        </button>
+        
+        {isExpanded && (
+          <div>
+            {words.map((word, index) => (
+              <div key={index}>
+                {renderWordWithHooks(word, searchTerm)}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   };
@@ -218,25 +294,11 @@ const HooksView: React.FC<HooksViewProps> = ({
           <span className="font-medium">Vista de Ganchos</span> - Letras para extender palabras
         </div>
 
-        {/* Legend */}
-        <div className="flex flex-wrap items-center gap-4 text-xs text-gray-600 bg-gray-50 p-3 rounded">
-          <div className="flex items-center space-x-1">
-            <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded font-mono">A</span>
-            <span>Gancho externo</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <span className="text-green-600 font-bold">&lt;</span>
-            <span>Gancho interno izquierdo</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <span className="text-green-600 font-bold">&gt;</span>
-            <span>Gancho interno derecho</span>
-          </div>
-        </div>
       </div>
 
       {/* Pattern results (for pattern searches) */}
       {isPatternSearch && renderWordSection(
+        "pattern",
         "Coincidencias de patrón", 
         results.patternMatches, 
         "purple"
@@ -244,6 +306,7 @@ const HooksView: React.FC<HooksViewProps> = ({
 
       {/* Exact matches */}
       {!isPatternSearch && renderWordSection(
+        "exact",
         "Anagramas exactos", 
         results.exactMatches, 
         "green"
@@ -251,6 +314,7 @@ const HooksView: React.FC<HooksViewProps> = ({
 
       {/* Wildcard matches */}
       {!isPatternSearch && renderWordSection(
+        "wildcard",
         "Con comodines", 
         results.wildcardMatches, 
         "blue"
@@ -258,6 +322,7 @@ const HooksView: React.FC<HooksViewProps> = ({
 
       {/* Additional wildcard matches */}
       {!isPatternSearch && renderWordSection(
+        "additional",
         "Comodines adicionales", 
         results.additionalWildcardMatches, 
         "indigo"
@@ -265,6 +330,7 @@ const HooksView: React.FC<HooksViewProps> = ({
 
       {/* Shorter matches - SIEMPRE agrupados por longitud */}
       {!isPatternSearch && showShorter && renderWordSection(
+        "shorter",
         "Subanagramas", 
         results.shorterMatches, 
         "orange",
