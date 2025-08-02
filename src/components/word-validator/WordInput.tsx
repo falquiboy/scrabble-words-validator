@@ -100,7 +100,7 @@ const WordInput = ({
             autoCapitalize="off"
             autoComplete="off"
             data-form-type="other"
-            inputMode="none"
+            inputMode="text"
           />
         </div>
         <Button 

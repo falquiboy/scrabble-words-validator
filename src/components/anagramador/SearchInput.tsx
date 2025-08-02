@@ -156,7 +156,7 @@ const SearchInput = ({
             autoCapitalize="off"
             autoComplete="off"
             data-form-type="other"
-            inputMode="none"
+            inputMode="text"
           />
           <div className="absolute right-2 top-1/2 -translate-y-1/2">
             <SearchButton
