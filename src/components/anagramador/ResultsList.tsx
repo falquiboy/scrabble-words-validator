@@ -9,6 +9,7 @@ import { toDisplayFormat } from "@/utils/digraphs";
 import { fetchAnagramWordsData, AnagramWordInfo } from "@/utils/anagramWordData";
 import { fetchHooksData, HookInfo } from "@/utils/hooksData";
 import { useState, useEffect } from "react";
+import { Loader } from "lucide-react";
 
 interface ResultsListProps {
   isLoading: boolean;
@@ -47,7 +48,7 @@ const ResultsList = ({
 
   // Load word data when extended view is enabled and we have results
   useEffect(() => {
-    if (showExtendedView && results && !isLoading) {
+    if (showExtendedView && !showHooksView && results && !isLoading) {
       // Use results as-is - they're already filtered by showShorter in the hook
       const allWordsRaw = [
         ...results.exactMatches,
@@ -74,7 +75,15 @@ const ResultsList = ({
           });
       }
     }
-  }, [showExtendedView, results, isLoading]);
+  }, [showExtendedView, showHooksView, results, isLoading]);
+
+  // Clear extended data when hooks view becomes active
+  useEffect(() => {
+    if (showHooksView) {
+      setWordsData(new Map());
+      setIsLoadingData(false);
+    }
+  }, [showHooksView]);
 
   // Load hooks data when hooks view is enabled and we have results
   useEffect(() => {
@@ -107,6 +116,14 @@ const ResultsList = ({
     }
   }, [showHooksView, results, isLoading]);
 
+  // Clear hooks data when extended view becomes active
+  useEffect(() => {
+    if (showExtendedView) {
+      setHooksData(new Map());
+      setIsLoadingHooks(false);
+    }
+  }, [showExtendedView]);
+
 
   // Check if we have any results to show the toggle
   const hasResults = results && (
@@ -120,36 +137,48 @@ const ResultsList = ({
   return (
     <ScrollArea className="h-[calc(100vh-12rem)] px-1">
       <div className="space-y-4 pb-4">
+        {/* Loading spinner for initial search */}
+        {isLoading && searchTerm && (
+          <div className="flex flex-col items-center justify-center py-8 space-y-3">
+            <Loader className="animate-spin text-blue-600" size={24} />
+            <span className="text-gray-600 text-sm">Buscando...</span>
+          </div>
+        )}
 
-        {showHooksView ? (
-          <HooksView
-            isLoading={isLoading}
-            searchTerm={searchTerm}
-            results={results}
-            highlightWildcardLetter={highlightWildcardLetter}
-            showShorter={showShorter}
-            hooksData={hooksData}
-            isLoadingHooks={isLoadingHooks}
-          />
-        ) : showExtendedView ? (
-          <ExtendedResultsView
-            isLoading={isLoading}
-            searchTerm={searchTerm}
-            results={results}
-            highlightWildcardLetter={highlightWildcardLetter}
-            showShorter={showShorter}
-            wordsData={wordsData}
-            isLoadingData={isLoadingData}
-          />
-        ) : (
-          <SearchResults
-            isLoading={isLoading}
-            searchTerm={searchTerm}
-            results={results}
-            highlightWildcardLetter={highlightWildcardLetter}
-            showShorter={showShorter}
-            sortByEquity={sortByEquity}
-          />
+        {/* Results (only show when not loading) */}
+        {!isLoading && (
+          <>
+            {showHooksView ? (
+              <HooksView
+                isLoading={isLoading}
+                searchTerm={searchTerm}
+                results={results}
+                highlightWildcardLetter={highlightWildcardLetter}
+                showShorter={showShorter}
+                hooksData={hooksData}
+                isLoadingHooks={isLoadingHooks}
+              />
+            ) : showExtendedView ? (
+              <ExtendedResultsView
+                isLoading={isLoading}
+                searchTerm={searchTerm}
+                results={results}
+                highlightWildcardLetter={highlightWildcardLetter}
+                showShorter={showShorter}
+                wordsData={wordsData}
+                isLoadingData={isLoadingData}
+              />
+            ) : (
+              <SearchResults
+                isLoading={isLoading}
+                searchTerm={searchTerm}
+                results={results}
+                highlightWildcardLetter={highlightWildcardLetter}
+                showShorter={showShorter}
+                sortByEquity={sortByEquity}
+              />
+            )}
+          </>
         )}
       </div>
     </ScrollArea>

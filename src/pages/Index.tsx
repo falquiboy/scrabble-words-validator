@@ -23,6 +23,12 @@ const Index = () => {
   const [anagramCopyAllCallback, setAnagramCopyAllCallback] = useState<(() => void) | undefined>(undefined);
   const [isPatternWithoutRack, setIsPatternWithoutRack] = useState(false);
   
+  // Persistent anagram search state (survives tab navigation)
+  const [persistentAnagramSearch, setPersistentAnagramSearch] = useState({
+    searchTerm: "",
+    targetLength: null as number | null
+  });
+  
   // Use only useWordTrie - it handles all dictionary/database construction
   const { isLoading: isTrieLoading, trie, loadingProgress, stage: trieStage, wordCount } = useWordTrie(enableUltraFastMode);
   
@@ -92,9 +98,15 @@ const Index = () => {
           showShorter,
           onShowShorterChange: setShowShorter,
           showExtendedView,
-          onExtendedViewChange: setShowExtendedView,
+          onExtendedViewChange: (show: boolean) => {
+            setShowExtendedView(show);
+            if (show) setShowHooksView(false);
+          },
           showHooksView,
-          onHooksViewChange: setShowHooksView,
+          onHooksViewChange: (show: boolean) => {
+            setShowHooksView(show);
+            if (show) setShowExtendedView(false);
+          },
           hasActiveSearch: hasActiveAnagramSearch,
           onCopyAll: anagramCopyAllCallback,
           sortByEquity,
@@ -152,6 +164,9 @@ const Index = () => {
                 onSearchStateChange={setHasActiveAnagramSearch}
                 onCopyAllCallbackChange={setAnagramCopyAllCallback}
                 onPatternWithoutRackChange={setIsPatternWithoutRack}
+                persistentSearchTerm={persistentAnagramSearch.searchTerm}
+                persistentTargetLength={persistentAnagramSearch.targetLength}
+                onPersistentSearchChange={setPersistentAnagramSearch}
               />
             ) : (
               <Lists trie={trie} />

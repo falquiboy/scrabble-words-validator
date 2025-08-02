@@ -21,7 +21,7 @@ export const ShorterResults = ({ matches, highlightWildcardLetter, searchTerm, t
       searchTerm={searchTerm}
       isShortMode={!isAdditionalLetterMode}
       sortByEquity={sortByEquity} // Pasar el prop desde el toggle
-      unifiedEquityView={unifiedEquityView || sortByEquity} // Nueva prop para vista unificada con residuos
+      unifiedEquityView={unifiedEquityView} // Keep grouped view by default
     />
   );
 };

@@ -95,7 +95,7 @@ const SearchResults = ({
               searchTerm={searchTerm}
               title="palabras encontradas usando todas las fichas más una letra adicional"
               sortByEquity={sortByEquity}
-              unifiedEquityView={sortByEquity} // Use unified view only when sorting by equity
+              unifiedEquityView={false} // Keep grouped view, just sort within groups
             />
           )}
           {results.shorterMatches?.length > 0 && (
@@ -105,7 +105,7 @@ const SearchResults = ({
               searchTerm={searchTerm}
               title="palabras más cortas encontradas"
               sortByEquity={sortByEquity}
-              unifiedEquityView={sortByEquity} // Use unified view only when sorting by equity
+              unifiedEquityView={false} // Keep grouped view, just sort within groups
             />
           )}
         </>

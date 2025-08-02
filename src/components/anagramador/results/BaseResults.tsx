@@ -125,12 +125,9 @@ const WordWithEquity: React.FC<{
   }, [baseScore, searchTerm, displayWord, isSubanagram, showResidue]);
 
   return (
-    <a
+    <div
       key={`word-${length}-${index}`}
-      href={`https://dle.rae.es/?w=${displayWord}`}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={`hover:bg-gray-100 p-1.5 rounded transition-colors text-lg ${showResidue ? 'block w-full' : ''}`}
+      className={`p-1.5 text-lg ${showResidue ? 'block w-full' : ''}`}
     >
       <span className="flex items-center gap-2">
         {showResidue && (
@@ -138,16 +135,23 @@ const WordWithEquity: React.FC<{
             {isCalculating ? '...' : equity || baseScore}
           </span>
         )}
-        {highlightWildcardLetter && searchTerm 
-          ? highlightWildcardLetter(displayWord, searchTerm)
-          : displayWord}
+        <a
+          href={`https://dle.rae.es/?w=${displayWord}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-blue-600 transition-colors"
+        >
+          {highlightWildcardLetter && searchTerm 
+            ? highlightWildcardLetter(displayWord, searchTerm)
+            : displayWord}
+        </a>
         {showResidue && (
           <span className={`text-sm ${isSubanagram && equity !== baseScore ? 'text-green-600 font-medium' : 'text-gray-500'}`}>
             ({isCalculating ? '...' : residue ? residue : equity || baseScore})
           </span>
         )}
       </span>
-    </a>
+    </div>
   );
 };
 
@@ -276,10 +280,11 @@ export const BaseResults = ({
 
       setEquityValues(newEquityValues);
       setIsCalculatingEquities(false);
+      // Force re-render to apply sorting with calculated values
     };
 
     calculateAllEquities();
-  }, [matches, searchTerm, sortByEquity, unifiedEquityView]);
+  }, [matches, searchTerm, sortByEquity, unifiedEquityView, title]);
 
   // Early return after all hooks to avoid "fewer hooks" error
   if (matches.length === 0) return null;
@@ -336,8 +341,8 @@ export const BaseResults = ({
     return acc;
   }, {} as Record<number, string[]>);
 
-  // Sort words within each length group by equity if enabled
-  if (sortByEquity) {
+  // Sort words within each length group by equity if enabled and values are available
+  if (sortByEquity && equityValues.size > 0 && !isCalculatingEquities) {
     Object.keys(groupedByLength).forEach(lengthKey => {
       groupedByLength[parseInt(lengthKey)].sort((a, b) => {
         const equityA = equityValues.get(a) || 0;
@@ -385,7 +390,7 @@ export const BaseResults = ({
             </button>
             
             {isExpanded && (
-              <div className="flex flex-wrap gap-2 ml-6">
+              <div className="flex flex-col gap-1 ml-6">
                 {groupWords.map((word, index) => {
                   const displayWord = toDisplayFormat(word);
                   return (

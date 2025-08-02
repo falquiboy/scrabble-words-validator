@@ -53,14 +53,14 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
     // Step 1: Query scrabble_words table first to determine word types through key assignments
     console.log('📊 Step 1: Querying scrabble_words table...');
     
-    // Convert and normalize uncached words (digraphs + lowercase) for the query 
-    const normalizedWords = uncachedWords.map(word => processDigraphs(word).toLowerCase());
-    console.log('📊 Normalized uncached words (digraphs + lowercase) for query:', normalizedWords);
+    // Normalize uncached words (lowercase only, NO digraph processing yet - DB has display format)
+    const normalizedWords = uncachedWords.map(word => word.toLowerCase());
+    console.log('📊 Normalized uncached words (lowercase only, preserving display format) for query:', normalizedWords);
     
     // Create mapping from normalized word back to original words for result association
     const normalizedToOriginal = new Map<string, string[]>();
     uncachedWords.forEach(originalWord => {
-      const normalized = processDigraphs(originalWord).toLowerCase();
+      const normalized = originalWord.toLowerCase(); // No digraph processing here
       if (!normalizedToOriginal.has(normalized)) {
         normalizedToOriginal.set(normalized, []);
       }

@@ -23,6 +23,10 @@ interface AnagramadorProps {
   onSearchStateChange: (hasActiveSearch: boolean) => void;
   onCopyAllCallbackChange: (callback: (() => void) | undefined) => void;
   onPatternWithoutRackChange: (isPatternWithoutRack: boolean) => void;
+  // Persistent search state (survives tab navigation)
+  persistentSearchTerm: string;
+  persistentTargetLength: number | null;
+  onPersistentSearchChange: (state: { searchTerm: string; targetLength: number | null }) => void;
 }
 
 const Anagramador = ({ 
@@ -37,11 +41,16 @@ const Anagramador = ({
   onSortByEquityChange,
   onSearchStateChange,
   onCopyAllCallbackChange,
-  onPatternWithoutRackChange
+  onPatternWithoutRackChange,
+  persistentSearchTerm,
+  persistentTargetLength,
+  onPersistentSearchChange
 }: AnagramadorProps) => {
   const { toast } = useToast();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [targetLength, setTargetLength] = useState<number | null>(null);
+  
+  // Use persistent state from parent instead of local state
+  const searchTerm = persistentSearchTerm;
+  const targetLength = persistentTargetLength;
 
   // Use hybrid anagram search - ALWAYS AVAILABLE! 🌍
   const { results: searchResults, isLoading, error, currentProvider } = useHybridAnagramSearch(
@@ -86,29 +95,39 @@ const Anagramador = ({
       onShowShorterChange(false);
     }
     
-    setSearchTerm(letters);
-    setTargetLength(newTargetLength);
+    // Update persistent state instead of local state
+    onPersistentSearchChange({
+      searchTerm: letters,
+      targetLength: newTargetLength
+    });
   };
 
   const handleClear = () => {
-    setSearchTerm("");
     onShowShorterChange(false);
-    setTargetLength(null);
+    // Clear persistent state
+    onPersistentSearchChange({
+      searchTerm: "",
+      targetLength: null
+    });
     // Note: searchResults will be cleared automatically by the hybrid hook
   };
 
   // Handle mutually exclusive view changes
   const handleExtendedViewChange = (show: boolean) => {
+    console.log(`🔄 Extended view changing: ${show}, hooks currently: ${showHooksView}`);
     onExtendedViewChange(show);
     if (show) {
       onHooksViewChange(false); // Mutually exclusive
+      console.log(`🔄 Disabled hooks view when enabling extended`);
     }
   };
 
   const handleHooksViewChange = (show: boolean) => {
+    console.log(`🔄 Hooks view changing: ${show}, extended currently: ${showExtendedView}`);
     onHooksViewChange(show);
     if (show) {
       onExtendedViewChange(false); // Mutually exclusive
+      console.log(`🔄 Disabled extended view when enabling hooks`);
     }
   };
 
