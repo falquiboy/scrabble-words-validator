@@ -66,6 +66,10 @@ const WordInput = ({
     if (e.key === 'Enter' && !e.shiftKey && !isLoading) {
       e.preventDefault();
       onValidate();
+      // Hide keyboard on mobile after search
+      if (inputRef.current) {
+        inputRef.current.blur();
+      }
     } else if (e.key === 'Escape') {
       e.preventDefault();
       if (isChecked && !isLoading) {
@@ -82,9 +86,34 @@ const WordInput = ({
   return <div className="relative">
       <div className="flex gap-2">
         <div className="relative flex-1">
-          <input ref={inputRef} type="text" value={word} onChange={handleInputChange} onKeyDown={handleKeyDown} className="w-full px-4 py-2 text-lg border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder={isLoading ? "Cargando diccionario..." : "Escribe una o más palabras..."} disabled={isLoading} />
+          <input 
+            ref={inputRef} 
+            type="text" 
+            value={word} 
+            onChange={handleInputChange} 
+            onKeyDown={handleKeyDown} 
+            className="w-full px-4 py-2 text-lg border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" 
+            placeholder={isLoading ? "Cargando diccionario..." : "Escribe una o más palabras..."} 
+            disabled={isLoading}
+            spellCheck={false}
+            autoCorrect="off"
+            autoCapitalize="off"
+            autoComplete="off"
+            data-form-type="other"
+            inputMode="none"
+          />
         </div>
-        <Button onClick={onValidate} disabled={!word.trim() && !isChecked || isLoading} className="mx-0 my-[2px] px-[7px]">
+        <Button 
+          onClick={() => {
+            onValidate();
+            // Hide keyboard on mobile after search
+            if (inputRef.current) {
+              inputRef.current.blur();
+            }
+          }} 
+          disabled={!word.trim() && !isChecked || isLoading} 
+          className="mx-0 my-[2px] px-[7px]"
+        >
           {buttonText}
         </Button>
       </div>

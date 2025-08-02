@@ -46,6 +46,11 @@ const SearchContainer = ({
         setSearchHistory([letters, ...searchHistory.slice(0, 9)]);
       }
       setHistoryIndex(-1);
+      
+      // Hide keyboard on mobile after search
+      if (inputRef.current) {
+        inputRef.current.blur();
+      }
     }
   };
 

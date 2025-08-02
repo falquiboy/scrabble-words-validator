@@ -110,6 +110,12 @@ const SearchInput = ({
     if (e.key === "Escape" && onClear) {
       e.preventDefault();
       onClear();
+    } else if (e.key === 'Enter') {
+      // Hide keyboard on mobile after search
+      if (inputRef.current) {
+        inputRef.current.blur();
+      }
+      onKeyPress(e);
     } else {
       onKeyPress(e);
     }
@@ -120,6 +126,10 @@ const SearchInput = ({
       onClear();
     } else {
       onSearch();
+      // Hide keyboard on mobile after search
+      if (inputRef.current) {
+        inputRef.current.blur();
+      }
     }
   };
 
@@ -144,6 +154,9 @@ const SearchInput = ({
             spellCheck={false}
             autoCorrect="off"
             autoCapitalize="off"
+            autoComplete="off"
+            data-form-type="other"
+            inputMode="none"
           />
           <div className="absolute right-2 top-1/2 -translate-y-1/2">
             <SearchButton

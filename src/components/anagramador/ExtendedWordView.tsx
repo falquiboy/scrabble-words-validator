@@ -87,7 +87,10 @@ const ExtendedWordView: React.FC<ExtendedWordViewProps> = ({
         return lemma && lemma !== word.toLowerCase() ? (
           <>variante de <strong>"{formatLemmaWithSuperscript(lemma)}"</strong>{posText}</>
         ) : `variante${posText}`;
-      case 'base': return `lema${posText}`;
+      case 'base': 
+        return lemma ? (
+          <>lema: <strong>"{formatLemmaWithSuperscript(lemma)}"</strong>{posText}</>
+        ) : `lema${posText}`;
       default: return null;
     }
   };
