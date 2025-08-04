@@ -60,15 +60,16 @@ const SearchResults = ({
     results.shorterMatches?.length > 0 ||
     results.patternMatches?.length > 0;
 
-  if (!hasResults) {
-    // Si tenemos un término de búsqueda pero no resultados y no está cargando,
-    // entonces realmente no hay resultados
+  // For pattern searches, show the generic message if no results
+  if (!hasResults && isPatternSearch) {
     if (searchTerm && !isLoading) {
       return <p className="text-gray-500 text-lg">No se encontraron palabras.</p>;
     }
-    // Si está cargando o no hay término de búsqueda, no mostrar nada
     return null;
   }
+
+  // For non-pattern searches, always show the specific notifications
+  // even if there are no results in any category
 
   return (
     <>
@@ -80,23 +81,34 @@ const SearchResults = ({
         />
       ) : (
         <>
-          {hasExactMatches && (
-            <ExactResults
-              matches={wildcardCount === 0 ? results.exactMatches : results.wildcardMatches}
-              wildcardCount={wildcardCount}
-              highlightWildcardLetter={highlightWildcardLetter}
-              searchTerm={searchTerm}
-            />
-          )}
-          {filteredAdditionalMatches.length > 0 && (
-            <ShorterResults
-              matches={filteredAdditionalMatches}
-              highlightWildcardLetter={highlightWildcardLetter}
-              searchTerm={searchTerm}
-              title="palabras encontradas usando todas las fichas más una letra adicional"
-              sortByEquity={sortByEquity}
-              unifiedEquityView={false} // Keep grouped view, just sort within groups
-            />
+          {!showShorter && (
+            <>
+              <ExactResults
+                matches={wildcardCount === 0 ? results.exactMatches : results.wildcardMatches}
+                wildcardCount={wildcardCount}
+                highlightWildcardLetter={highlightWildcardLetter}
+                searchTerm={searchTerm}
+              />
+              {filteredAdditionalMatches.length > 0 ? (
+                <ShorterResults
+                  matches={filteredAdditionalMatches}
+                  highlightWildcardLetter={highlightWildcardLetter}
+                  searchTerm={searchTerm}
+                  title="palabras encontradas usando todas las fichas más una letra adicional"
+                  sortByEquity={sortByEquity}
+                  unifiedEquityView={false} // Keep grouped view, just sort within groups
+                />
+              ) : (
+                <ShorterResults
+                  matches={[]}
+                  highlightWildcardLetter={highlightWildcardLetter}
+                  searchTerm={searchTerm}
+                  title="palabras encontradas usando todas las fichas más una letra adicional"
+                  sortByEquity={sortByEquity}
+                  unifiedEquityView={false}
+                />
+              )}
+            </>
           )}
           {results.shorterMatches?.length > 0 && (
             <ShorterResults

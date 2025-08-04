@@ -39,7 +39,7 @@ class WorkerTrie {
 
   sortLetters(letters) {
     // Use same alphagram logic as main thread
-    const CUSTOM_ALPHABET = "AEIOUBCÇDFGHJLKMNÑPRWSTVXYZ";
+    const CUSTOM_ALPHABET = "AEIOUBCÇDFGHJLKMNÑPQRWSTVXYZ";
     return [...letters].sort((a, b) => {
       const posA = CUSTOM_ALPHABET.indexOf(a);
       const posB = CUSTOM_ALPHABET.indexOf(b);

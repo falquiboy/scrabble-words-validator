@@ -1,10 +1,13 @@
 import React from 'react';
-import { processDigraphs } from './digraphs';
+import { processDigraphs, toDisplayFormat } from './digraphs';
 import { translateHyphenPattern } from './pattern/translation';
 
 const findDigraphPositions = (word: string): { start: number, end: number }[] => {
   const positions: { start: number, end: number }[] = [];
-  const chars = word.split('');
+  
+  // Convert to display format first to handle both internal (Ç) and display (CH) formats consistently
+  const displayWord = toDisplayFormat(word);
+  const chars = displayWord.split('');
   
   for (let i = 0; i < chars.length - 1; i++) {
     if (
@@ -26,44 +29,71 @@ export const highlightWildcardLetter = (word: string, searchTerm: string): React
   // Remove length filter if present
   const cleanSearchTerm = searchTerm.replace(/\/\d+$/, '');
   
-  // Process both the word and search term to handle digraphs
-  const processedWord = processDigraphs(word);
-  const processedSearch = processDigraphs(cleanSearchTerm.replace(/\*/g, ''));
+  // Convert to display format first to handle both internal and display formats consistently
+  const displayWord = toDisplayFormat(word);
   
-  // Find digraph positions in the original word
-  const digraphPositions = findDigraphPositions(word);
+  // Process both the word and search term to handle digraphs
+  const processedWord = processDigraphs(displayWord);
+  const processedSearchNoWildcards = processDigraphs(cleanSearchTerm.replace(/\*/g, '').replace(/\?/g, ''));
+  
+  // Count wildcards
+  const wildcardCount = (cleanSearchTerm.match(/\?/g) || []).length;
+  
+  // Check if this is an additional letter word
+  const totalRackLength = processedSearchNoWildcards.length + wildcardCount;
+  const isAdditionalLetterWord = processedWord.length > totalRackLength;
+  
+  // Find digraph positions in the display word
+  const digraphPositions = findDigraphPositions(displayWord);
   
   // Create a map to track letter usage from the search term
   const letterUsage = new Map<string, number>();
-  for (const char of processedSearch) {
+  for (const char of processedSearchNoWildcards) {
     letterUsage.set(char, (letterUsage.get(char) || 0) + 1);
   }
   
-  // Track which characters have been matched
+  // Track which characters have been matched and which are wildcards
   const matchedIndices = new Set<number>();
+  const wildcardIndices = new Set<number>();
   
   // First pass: mark exact matches
-  for (let i = 0; i < word.length; i++) {
-    // Skip if this index is part of an already matched digraph
+  const availableLetters = new Map(letterUsage);
+  for (let i = 0; i < displayWord.length; i++) {
     if (matchedIndices.has(i)) continue;
     
-    // Check if this position is part of a digraph
     const digraph = digraphPositions.find(pos => pos.start === i || pos.end === i);
     
-    if (digraph) {
-      const digraphStr = word.slice(digraph.start, digraph.end + 1);
+    if (digraph && digraph.start === i) {
+      const digraphStr = displayWord.slice(digraph.start, digraph.end + 1);
       const processedDigraph = processDigraphs(digraphStr);
       
-      if (letterUsage.has(processedDigraph) && letterUsage.get(processedDigraph)! > 0) {
+      if (availableLetters.has(processedDigraph) && availableLetters.get(processedDigraph)! > 0) {
         matchedIndices.add(digraph.start);
         matchedIndices.add(digraph.end);
-        letterUsage.set(processedDigraph, letterUsage.get(processedDigraph)! - 1);
+        availableLetters.set(processedDigraph, availableLetters.get(processedDigraph)! - 1);
       }
-    } else {
-      const char = word[i];
-      if (letterUsage.has(char) && letterUsage.get(char)! > 0) {
+    } else if (!digraph) {
+      const char = displayWord[i];
+      if (availableLetters.has(char) && availableLetters.get(char)! > 0) {
         matchedIndices.add(i);
-        letterUsage.set(char, letterUsage.get(char)! - 1);
+        availableLetters.set(char, availableLetters.get(char)! - 1);
+      }
+    }
+  }
+  
+  // Second pass: assign wildcards to remaining unmatched positions
+  let remainingWildcards = wildcardCount;
+  for (let i = 0; i < displayWord.length && remainingWildcards > 0; i++) {
+    if (!matchedIndices.has(i)) {
+      const digraph = digraphPositions.find(pos => pos.start === i || pos.end === i);
+      
+      if (digraph && digraph.start === i) {
+        wildcardIndices.add(digraph.start);
+        wildcardIndices.add(digraph.end);
+        remainingWildcards--;
+      } else if (!digraph) {
+        wildcardIndices.add(i);
+        remainingWildcards--;
       }
     }
   }
@@ -71,24 +101,30 @@ export const highlightWildcardLetter = (word: string, searchTerm: string): React
   // Return the word with highlighted characters
   return (
     <span className="inline-flex">
-      {word.split('').map((char, index) => {
+      {displayWord.split('').map((char, index) => {
         // Find if this position is part of a digraph
         const digraph = digraphPositions.find(pos => pos?.start === index || pos?.end === index);
         
-        // Check if this character or digraph is unmatched
-        const isUnmatched = !matchedIndices.has(index);
+        // Determine character type
+        const isMatched = matchedIndices.has(index);
+        const isWildcard = wildcardIndices.has(index);
+        const isAdditional = !isMatched && !isWildcard;
+        
+        // Determine color class
+        let colorClass = "font-semibold";
+        if (isAdditional) {
+          colorClass = "text-red-600 font-semibold";
+        } else if (isWildcard) {
+          colorClass = "text-blue-600 font-semibold";
+        }
         
         // Handle digraphs
         if (digraph) {
           if (index === digraph.start) {
             // Only render the digraph at its start position
-            return isUnmatched ? (
-              <span key={index} className="text-red-600 font-semibold">
-                {char.toUpperCase()}{word[index + 1].toUpperCase()}
-              </span>
-            ) : (
-              <span key={index} className="font-semibold">
-                {char.toUpperCase()}{word[index + 1].toUpperCase()}
+            return (
+              <span key={index} className={colorClass}>
+                {char.toUpperCase()}{displayWord[index + 1].toUpperCase()}
               </span>
             );
           } else if (index === digraph.end) {
@@ -98,12 +134,8 @@ export const highlightWildcardLetter = (word: string, searchTerm: string): React
         }
         
         // Handle regular characters
-        return isUnmatched ? (
-          <span key={index} className="text-red-600 font-semibold">
-            {char.toUpperCase()}
-          </span>
-        ) : (
-          <span key={index} className="font-semibold">
+        return (
+          <span key={index} className={colorClass}>
             {char.toUpperCase()}
           </span>
         );

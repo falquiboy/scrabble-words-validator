@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Loader, ChevronDown, ChevronRight } from "lucide-react";
-import { toDisplayFormat } from "@/utils/digraphs";
+import { toDisplayFormat, processDigraphs } from "@/utils/digraphs";
 import { HookInfo, processHooks } from '@/utils/hooksData';
+import { highlightWildcardLetter } from "@/utils/wildcardHighlighting";
 
 interface HooksViewProps {
   isLoading: boolean;
@@ -54,6 +55,7 @@ const HooksView: React.FC<HooksViewProps> = ({
       return newSet;
     });
   };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -76,11 +78,63 @@ const HooksView: React.FC<HooksViewProps> = ({
     );
   };
 
-  const renderWordWithHooks = (word: string, originalWord: string) => {
+  const renderWordWithHooks = (word: string, originalWord: string, isAdditionalSection: boolean = false) => {
     const displayWord = toDisplayFormat(word);
     const hookInfoKey = displayWord.toUpperCase();
     const hookInfo = hooksData.get(hookInfoKey);
-    const highlighted = highlightWildcardLetter(word, searchTerm);
+    
+    // Check if this word is longer than the search term (has additional letters)
+    const cleanSearchTerm = searchTerm.replace(/\/\d+$/, '');
+    const processedWordLength = processDigraphs(displayWord).length;
+    const processedSearchLength = processDigraphs(cleanSearchTerm.replace(/\*/g, '').replace(/\?/g, '')).length;
+    const wildcardCount = (cleanSearchTerm.match(/\?/g) || []).length;
+    const totalRackLength = processedSearchLength + wildcardCount;
+    const hasAdditionalLetters = processedWordLength > totalRackLength;
+    
+    // Always use the global highlighting function, then add hook coloring if needed
+    const baseHighlighted = highlightWildcardLetter(word, searchTerm);
+    const hooks = hookInfo ? processHooks(hookInfo) : null;
+    
+    // Function to enhance colors for internal hooks
+    const enhanceWithHookColors = (element: React.ReactElement): React.ReactElement => {
+      if (!element.props.children || !hooks) return element;
+      
+      const children = React.Children.toArray(element.props.children);
+      const enhancedChildren = children.map((child, index) => {
+        if (React.isValidElement(child)) {
+          const isFirst = index === 0;
+          const isLast = index === children.length - 1;
+          const isInternalHook = (isFirst && hooks.hasLeftInternal) || (isLast && hooks.hasRightInternal);
+          
+          if (isInternalHook) {
+            const currentClass = child.props.className || '';
+            let newClass = currentClass;
+            
+            // Check if this is an overlapping case (additional letter + internal hook)
+            if (currentClass.includes('text-red-600')) {
+              // Additional letter + internal hook = more transparent red
+              newClass = currentClass.replace('text-red-600', 'text-red-300');
+            } else if (currentClass.includes('text-blue-600')) {
+              // Wildcard + internal hook = keep blue (no change needed)
+              newClass = currentClass;
+            } else {
+              // Only internal hook = gray
+              newClass = currentClass + ' text-gray-400';
+            }
+            
+            return React.cloneElement(child, { className: newClass });
+          }
+        }
+        return child;
+      });
+      
+      return React.cloneElement(element, {}, ...enhancedChildren);
+    };
+    
+    // Apply hook enhancements if needed
+    const highlighted = (hookInfo && (hooks?.hasLeftInternal || hooks?.hasRightInternal)) 
+      ? enhanceWithHookColors(baseHighlighted as React.ReactElement)
+      : baseHighlighted;
 
     const handleRAEClick = (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -88,13 +142,13 @@ const HooksView: React.FC<HooksViewProps> = ({
     };
 
     if (!hookInfo || (!hookInfo.hasExternalHooks && !hookInfo.hasInternalHooks)) {
-      // No hooks available
+      // No hooks available - use normal color, not gray
       return (
         <div className="grid grid-cols-3 items-center py-1.5 px-3">
           <div></div>
           <div className="text-center">
             <span 
-              className="text-gray-500 text-lg cursor-pointer hover:text-blue-600 transition-colors"
+              className="text-lg cursor-pointer hover:text-blue-600 transition-colors"
               onClick={handleRAEClick}
             >
               {highlighted}
@@ -105,36 +159,6 @@ const HooksView: React.FC<HooksViewProps> = ({
       );
     }
 
-    const hooks = processHooks(hookInfo);
-
-    // Build the word with internal hooks (dimmed first/last letters)
-    const buildWordWithInternalHooks = () => {
-      if (!hooks.hasLeftInternal && !hooks.hasRightInternal) {
-        return highlighted;
-      }
-      
-      // We need to process the word character by character to dim first/last letters
-      const wordChars = displayWord.split('');
-      
-      return (
-        <span className="inline-flex">
-          {wordChars.map((char, index) => {
-            const isFirst = index === 0;
-            const isLast = index === wordChars.length - 1;
-            const shouldDim = (isFirst && hooks.hasLeftInternal) || (isLast && hooks.hasRightInternal);
-            
-            return (
-              <span 
-                key={index} 
-                className={shouldDim ? "text-gray-400 font-semibold text-lg" : "font-semibold text-lg"}
-              >
-                {char.toUpperCase()}
-              </span>
-            );
-          })}
-        </span>
-      );
-    };
 
     return (
       <div className="grid grid-cols-3 items-center py-1.5 px-3 hover:bg-gray-50 transition-colors">
@@ -151,7 +175,7 @@ const HooksView: React.FC<HooksViewProps> = ({
             className="font-semibold text-lg cursor-pointer hover:text-blue-600 transition-colors inline-flex items-center"
             onClick={handleRAEClick}
           >
-            {buildWordWithInternalHooks()}
+            {highlighted}
           </span>
         </div>
 
@@ -165,7 +189,7 @@ const HooksView: React.FC<HooksViewProps> = ({
     );
   };
 
-  const renderWordSection = (sectionId: string, title: string, words: string[], color: string = 'blue', groupByLength: boolean = false) => {
+  const renderWordSection = (sectionId: string, title: string, words: string[], color: string = 'blue', groupByLength: boolean = false, isAdditionalSection: boolean = false) => {
     if (words.length === 0) return null;
 
     const isExpanded = expandedSections.has(sectionId);
@@ -229,7 +253,7 @@ const HooksView: React.FC<HooksViewProps> = ({
                       <div className="space-y-1">
                         {groupedWords[length].map((word, index) => (
                           <div key={index}>
-                            {renderWordWithHooks(word, searchTerm)}
+                            {renderWordWithHooks(word, searchTerm, isAdditionalSection)}
                           </div>
                         ))}
                       </div>
@@ -261,7 +285,7 @@ const HooksView: React.FC<HooksViewProps> = ({
           <div>
             {words.map((word, index) => (
               <div key={index}>
-                {renderWordWithHooks(word, searchTerm)}
+                {renderWordWithHooks(word, searchTerm, isAdditionalSection)}
               </div>
             ))}
           </div>
@@ -325,7 +349,9 @@ const HooksView: React.FC<HooksViewProps> = ({
         "additional",
         "Comodines adicionales", 
         results.additionalWildcardMatches, 
-        "indigo"
+        "indigo",
+        false,
+        true
       )}
 
       {/* Shorter matches - SIEMPRE agrupados por longitud */}

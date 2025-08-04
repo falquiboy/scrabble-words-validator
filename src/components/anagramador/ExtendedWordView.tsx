@@ -31,6 +31,19 @@ const ExtendedWordView: React.FC<ExtendedWordViewProps> = ({
   };
 
   const formatLemmaWithSuperscript = (lemma: string) => {
+    // Check for digit before comma (homonym digit pattern)
+    const commaMatch = lemma.match(/^(.+?)(\d+)(,.*)$/);
+    if (commaMatch) {
+      const [, base, digit, afterComma] = commaMatch;
+      return (
+        <>
+          {base}
+          <sup>{digit}</sup>
+          {afterComma}
+        </>
+      );
+    }
+    
     // Check if lemma ends with a digit for homonymy
     const match = lemma.match(/^(.+?)(\d+)$/);
     if (match) {

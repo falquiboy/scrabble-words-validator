@@ -3,7 +3,6 @@
  */
 
 import { processDigraphs } from './digraphs';
-import { sortSpanishLetters } from './spanishSort';
 
 /**
  * Determina qué letra fue añadida a una palabra base para formar una palabra más larga
@@ -72,7 +71,16 @@ export function sortWordsByAddedLetter(
   
   // Obtener letras ordenadas alfabéticamente usando el orden español
   const sortedLetters = Array.from(groups.keys()).sort((a, b) => {
-    return sortSpanishLetters(a + 'X').localeCompare(sortSpanishLetters(b + 'X'));
+    // Use the same custom alphabet as digraphs for consistency
+    const CUSTOM_ALPHABET = "AEIOUBCÇDFGHJLKMNÑPQRWSTVXYZ";
+    const posA = CUSTOM_ALPHABET.indexOf(a);
+    const posB = CUSTOM_ALPHABET.indexOf(b);
+    
+    // If letter not found in alphabet, put it at the end
+    if (posA === -1) return 1;
+    if (posB === -1) return -1;
+    
+    return posA - posB;
   });
   
   // Construir array final ordenado

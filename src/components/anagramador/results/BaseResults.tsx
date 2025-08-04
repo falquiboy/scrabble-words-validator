@@ -4,6 +4,7 @@ import { processDigraphs, getInternalLength, toDisplayFormat } from "@/utils/dig
 import { calculateWordScore } from "@/utils/scrabbleScore";
 import { calculatePotentialValue, calculateLeave, getBatchLeaveValues } from "@/utils/leavesData";
 import { ChevronDown, ChevronRight } from "lucide-react";
+import { highlightWildcardLetter } from "@/utils/wildcardHighlighting";
 
 // Utilidad para extraer información de búsqueda
 const parseSearchTerm = (searchTerm: string, title?: string) => {
@@ -286,8 +287,19 @@ export const BaseResults = ({
     calculateAllEquities();
   }, [matches, searchTerm, sortByEquity, unifiedEquityView, title]);
 
-  // Early return after all hooks to avoid "fewer hooks" error
-  if (matches.length === 0) return null;
+  // Handle empty matches case - show only header
+  if (matches.length === 0) {
+    return (
+      <div className="space-y-4 pb-8">
+        <h3 className="font-semibold text-lg">
+          {title.includes("adicional") 
+            ? "0 palabras encontradas usando todas las fichas más una letra adicional:" 
+            : "0 palabras encontradas usando todas las fichas:"
+          }
+        </h3>
+      </div>
+    );
+  }
 
   // Handle unified equity view - all words sorted by absolute equity
   if (unifiedEquityView) {
@@ -357,8 +369,88 @@ export const BaseResults = ({
     .map(Number)
     .sort((a, b) => sortAscending ? a - b : b - a);
 
+  // Create highest equity section for subanagrams
+  const searchInfo = parseSearchTerm(searchTerm, title);
+  const isSubanagramView = searchInfo.shouldShowEquityAndResidue && matches.some(word => {
+    const displayWord = toDisplayFormat(word);
+    return searchTerm && displayWord.length < searchTerm.length;
+  });
+
+  const highestEquityByLength = () => {
+    if (!isSubanagramView || equityValues.size === 0) return null;
+
+    const highestByLength: Record<number, { word: string; equity: number; residue: string }> = {};
+    
+    sortedLengths.forEach(length => {
+      const groupWords = groupedByLength[length];
+      let maxEquity = -Infinity;
+      let bestWord = '';
+      
+      groupWords.forEach(word => {
+        const equity = equityValues.get(word) || 0;
+        if (equity > maxEquity) {
+          maxEquity = equity;
+          bestWord = word;
+        }
+      });
+      
+      if (bestWord) {
+        // Calculate residue for the best word
+        const displayWord = toDisplayFormat(bestWord);
+        const rackToUse = searchInfo.rack || searchTerm || '';
+        const residue = calculateLeave(rackToUse, displayWord.toUpperCase(), searchTerm || '');
+        
+        highestByLength[length] = { word: bestWord, equity: maxEquity, residue };
+      }
+    });
+
+    return highestByLength;
+  };
+
+  const topEquityWords = highestEquityByLength();
+
   return (
     <div className="space-y-4 pb-8">
+      {/* Highest equity section */}
+      {topEquityWords && Object.keys(topEquityWords).length > 0 && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+          <h3 className="font-semibold text-lg text-green-800 mb-3">
+            🏆 Mejor equity por longitud:
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            {Object.entries(topEquityWords)
+              .sort(([, a], [, b]) => b.equity - a.equity)
+              .map(([length, { word, equity, residue }]) => {
+                const displayWord = toDisplayFormat(word);
+                const lengthNum = parseInt(length);
+                return (
+                  <div key={`top-${length}`} className="flex items-center gap-2 bg-white rounded-md p-2 border border-green-100">
+                    <span className="text-sm font-medium text-green-700 min-w-[60px]">
+                      {lengthNum} {lengthNum === 1 ? 'letra' : 'letras'}:
+                    </span>
+                    <a
+                      href={`https://dle.rae.es/?w=${displayWord}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-green-900 hover:text-green-600 transition-colors flex-grow"
+                    >
+                      {highlightWildcardLetter && searchTerm 
+                        ? highlightWildcardLetter(displayWord, searchTerm)
+                        : displayWord}
+                    </a>
+                    <span className="text-sm text-green-700">
+                      ({residue})
+                    </span>
+                    <span className="text-sm font-semibold text-green-600 bg-green-100 px-2 py-1 rounded">
+                      {equity.toFixed(1)}
+                    </span>
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+      )}
+
       <h3 className="font-semibold text-lg">
         {title.includes("adicional") 
           ? `${matches.length} ${matches.length === 1 ? "palabra encontrada" : "palabras encontradas"} usando todas las fichas más una letra adicional:` 
