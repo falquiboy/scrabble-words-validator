@@ -42,3 +42,11 @@
 
 [context.branch-deploy]
   command = "npm run build"
+
+# Staging branch configuration with password protection
+[context."staging/test-features"]
+  command = "npm run build"
+  publish = "dist"
+  
+  [context."staging/test-features".environment]
+    NODE_ENV = "staging"
