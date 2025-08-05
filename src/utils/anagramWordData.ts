@@ -50,17 +50,17 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
   try {
     // Words are already in uppercase from ResultsList
     
-    // Step 1: Query scrabble_words table first to determine word types through key assignments
-    console.log('📊 Step 1: Querying scrabble_words table...');
+    // Step 1: Query lexicon_keys table first to determine word types through key assignments
+    console.log('📊 Step 1: Querying lexicon_keys table...');
     
-    // Normalize uncached words (lowercase only, NO digraph processing yet - DB has display format)
-    const normalizedWords = uncachedWords.map(word => word.toLowerCase());
-    console.log('📊 Normalized uncached words (lowercase only, preserving display format) for query:', normalizedWords);
+    // Normalize uncached words (uppercase for lexicon_keys, NO digraph processing yet - DB has display format)
+    const normalizedWords = uncachedWords.map(word => word.toUpperCase());
+    console.log('📊 Normalized uncached words (uppercase for lexicon_keys) for query:', normalizedWords);
     
     // Create mapping from normalized word back to original words for result association
     const normalizedToOriginal = new Map<string, string[]>();
     uncachedWords.forEach(originalWord => {
-      const normalized = originalWord.toLowerCase(); // No digraph processing here
+      const normalized = originalWord.toUpperCase(); // No digraph processing here, uppercase for lexicon_keys
       if (!normalizedToOriginal.has(normalized)) {
         normalizedToOriginal.set(normalized, []);
       }
@@ -68,16 +68,16 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
     });
     
     const { data: scrabbleData, error: scrabbleError } = await supabase
-      .from('scrabble_words')
-      .select('word, key_lemma, key_feminine, key_plural, key_conj, key_variant')
-      .in('word', normalizedWords);
+      .from('lexicon_keys')
+      .select('norm_word, key_lemma, key_feminine, key_plural, key_conj, key_variant')
+      .in('norm_word', normalizedWords);
 
     if (scrabbleError) {
-      console.error('❌ Scrabble words table error:', scrabbleError);
+      console.error('❌ Lexicon keys table error:', scrabbleError);
       throw scrabbleError;
     }
 
-    console.log('✅ Scrabble words response:', scrabbleData);
+    console.log('✅ Lexicon keys response:', scrabbleData);
     console.log('✅ Number of rows returned:', scrabbleData?.length || 0);
     if (scrabbleData && scrabbleData.length > 0) {
       console.log('✅ First row example:', scrabbleData[0]);
@@ -91,11 +91,11 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
     if (scrabbleData && scrabbleData.length > 0) {
       scrabbleData.forEach(row => {
         // Map normalized word to database row
-        wordToKeys.set(row.word, row);
-        wordToKeys.set(row.word.toUpperCase(), row);
+        wordToKeys.set(row.norm_word, row);
+        wordToKeys.set(row.norm_word.toUpperCase(), row);
         
         // Also map all original words that normalize to this result
-        const originalWords = normalizedToOriginal.get(row.word) || [];
+        const originalWords = normalizedToOriginal.get(row.norm_word) || [];
         originalWords.forEach(originalWord => {
           wordToKeys.set(originalWord, row);
           wordToKeys.set(originalWord.toUpperCase(), row);
@@ -135,8 +135,8 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
         // Add all keys to the collection
         primaryKeys.forEach(key => allKeys.add(key));
         
-        wordTypes.set(row.word, wordType);
-        wordTypes.set(row.word.toUpperCase(), wordType);
+        wordTypes.set(row.norm_word, wordType);
+        wordTypes.set(row.norm_word.toUpperCase(), wordType);
         
         // Also map word types for all original words that normalize to this result
         originalWords.forEach(originalWord => {
@@ -331,7 +331,7 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
         anagramWordCache.set(word, wordInfo);
         results.set(word, wordInfo);
       } else {
-        // Word not found in scrabble_words
+        // Word not found in lexicon_keys
         const wordInfo: AnagramWordInfo = {
           word,
           isScrabbleValid: false
