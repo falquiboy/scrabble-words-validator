@@ -135,6 +135,7 @@ export const useHybridAnagramSearch = (
         return;
       }
 
+      console.log('🔄 Setting loading to TRUE');
       setIsLoading(true);
       setError(null);
 
@@ -187,6 +188,7 @@ export const useHybridAnagramSearch = (
           setFullResults(patternResults);
           setResults(patternResults);
           setLastSearchTerm(trimmedTerm);
+          console.log('✅ Setting loading to FALSE (pattern search)');
           setIsLoading(false);
 
         } else if (isWildcardSearch) {
@@ -215,6 +217,7 @@ export const useHybridAnagramSearch = (
           setFullResults(wildcardFullResults);
           setResults(wildcardFullResults);
           setLastSearchTerm(trimmedTerm);
+          console.log('✅ Setting loading to FALSE (wildcard search)');
           setIsLoading(false);
 
         } else {
@@ -332,6 +335,7 @@ export const useHybridAnagramSearch = (
           }
           
           setLastSearchTerm(trimmedTerm);
+          console.log('✅ Setting loading to FALSE (hybrid/sqlite search)');
           setIsLoading(false);
         }
 
@@ -348,6 +352,7 @@ export const useHybridAnagramSearch = (
         setResults(errorResults);
         setFullResults(errorResults);
         setCurrentProvider('none');
+        console.log('❌ Setting loading to FALSE (error case)');
         setIsLoading(false);
       }
     };

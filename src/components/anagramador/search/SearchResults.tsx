@@ -42,6 +42,7 @@ const SearchResults = ({
   const hasExactMatches = wildcardCount === 0 ? results.exactMatches?.length > 0 : results.wildcardMatches?.length > 0;
 
   if (isLoading) {
+    console.log('🔄 SearchResults: Showing loading spinner');
     return (
       <div className="flex items-center gap-2 text-gray-500">
         <Loader className="h-4 w-4 animate-spin" />
