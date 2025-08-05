@@ -27,36 +27,7 @@ interface AnagramadorProps {
   persistentSearchTerm: string;
   persistentTargetLength: number | null;
   onPersistentSearchChange: (state: { searchTerm: string; targetLength: number | null }) => void;
-  // Persistent results cache (avoids re-searching on tab switches)
-  persistentResults: SearchResults;
-  onPersistentResultsChange: (results: SearchResults) => void;
 }
-
-// Helper functions for cached results
-const getLastSearchKey = (results: any): string => {
-  return results._searchKey || "";
-};
-
-const getLastTargetLength = (results: any): number | null => {
-  return results._targetLength || null;
-};
-
-const hasValidCachedResults = (results: SearchResults): boolean => {
-  return !!(results.exactMatches.length > 0 || 
-           results.wildcardMatches.length > 0 || 
-           results.additionalWildcardMatches.length > 0 || 
-           results.shorterMatches.length > 0 || 
-           results.patternMatches.length > 0 ||
-           (results as any)._searchKey); // Even empty results are valid if they have metadata
-};
-
-const hasValidResults = (results: SearchResults): boolean => {
-  return !!(results.exactMatches.length > 0 || 
-           results.wildcardMatches.length > 0 || 
-           results.additionalWildcardMatches.length > 0 || 
-           results.shorterMatches.length > 0 || 
-           results.patternMatches.length > 0);
-};
 
 const Anagramador = ({ 
   trie, 
@@ -73,9 +44,7 @@ const Anagramador = ({
   onPatternWithoutRackChange,
   persistentSearchTerm,
   persistentTargetLength,
-  onPersistentSearchChange,
-  persistentResults,
-  onPersistentResultsChange
+  onPersistentSearchChange
 }: AnagramadorProps) => {
   const { toast } = useToast();
   
@@ -83,35 +52,14 @@ const Anagramador = ({
   const searchTerm = persistentSearchTerm;
   const targetLength = persistentTargetLength;
 
-  // Check if we can use cached results (same search term and target length)
-  const canUseCachedResults = searchTerm === getLastSearchKey(persistentResults) && 
-                              targetLength === getLastTargetLength(persistentResults);
-  
   // Use hybrid anagram search - ALWAYS AVAILABLE! 🌍
-  const { results: freshResults, isLoading, error, currentProvider } = useHybridAnagramSearch(
-    canUseCachedResults ? "" : searchTerm, // Skip search if we have cached results
+  const { results: searchResults, isLoading, error, currentProvider } = useHybridAnagramSearch(
+    searchTerm,
     trie,
     showShorter,
     targetLength
   );
-  
-  // Use cached results if available, otherwise use fresh results
-  const searchResults = canUseCachedResults && hasValidCachedResults(persistentResults) ? 
-                       persistentResults : freshResults;
 
-  // Update persistent results when fresh results are available
-  useEffect(() => {
-    if (!canUseCachedResults && searchTerm && hasValidResults(freshResults)) {
-      const resultsWithMetadata = {
-        ...freshResults,
-        _searchKey: searchTerm,
-        _targetLength: targetLength,
-        _timestamp: Date.now()
-      } as SearchResults & { _searchKey: string; _targetLength: number | null; _timestamp: number };
-      onPersistentResultsChange(resultsWithMetadata);
-    }
-  }, [freshResults, searchTerm, targetLength, canUseCachedResults, onPersistentResultsChange]);
-  
   // Notify parent about search state changes
   useEffect(() => {
     onSearchStateChange(!!searchTerm);
@@ -160,14 +108,6 @@ const Anagramador = ({
     onPersistentSearchChange({
       searchTerm: "",
       targetLength: null
-    });
-    // Clear cached results
-    onPersistentResultsChange({
-      exactMatches: [],
-      wildcardMatches: [],
-      additionalWildcardMatches: [],
-      shorterMatches: [],
-      patternMatches: []
     });
     // Note: searchResults will be cleared automatically by the hybrid hook
   };
