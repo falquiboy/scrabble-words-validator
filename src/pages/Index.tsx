@@ -8,6 +8,7 @@ import Lists from "@/components/Lists";
 import NewModuleSelector from "@/components/NewModuleSelector";
 import GlobalSettingsMenu from "@/components/GlobalSettingsMenu";
 import { useWordTrie } from "@/hooks/useWordTrie";
+import { SearchResults } from "@/hooks/anagramSearch/types";
 
 const Index = () => {
   const [activeModule, setActiveModule] = useState<'judge' | 'anagram' | 'lists' | 'training'>('judge');
@@ -28,6 +29,47 @@ const Index = () => {
     searchTerm: "",
     targetLength: null as number | null
   });
+  
+  // Persistent results cache (avoids re-searching on tab switches)
+  const [persistentAnagramResults, setPersistentAnagramResults] = useState<SearchResults>(() => {
+    try {
+      const saved = sessionStorage.getItem('anagram-results-cache');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Check if results are still fresh (within 30 minutes)
+        if (parsed._timestamp && Date.now() - parsed._timestamp < 30 * 60 * 1000) {
+          return parsed;
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to load cached anagram results:', error);
+    }
+    return {
+      exactMatches: [],
+      wildcardMatches: [],
+      additionalWildcardMatches: [],
+      shorterMatches: [],
+      patternMatches: []
+    };
+  });
+  
+  // Save results to sessionStorage when they change
+  useEffect(() => {
+    try {
+      if (persistentAnagramResults.exactMatches.length > 0 || 
+          persistentAnagramResults.wildcardMatches.length > 0 || 
+          persistentAnagramResults.additionalWildcardMatches.length > 0 || 
+          persistentAnagramResults.shorterMatches.length > 0 || 
+          persistentAnagramResults.patternMatches.length > 0 ||
+          (persistentAnagramResults as any)._searchKey) {
+        sessionStorage.setItem('anagram-results-cache', JSON.stringify(persistentAnagramResults));
+      } else {
+        sessionStorage.removeItem('anagram-results-cache');
+      }
+    } catch (error) {
+      console.warn('Failed to save anagram results to cache:', error);
+    }
+  }, [persistentAnagramResults]);
   
   // Use only useWordTrie - it handles all dictionary/database construction
   const { isLoading: isTrieLoading, trie, loadingProgress, stage: trieStage, wordCount } = useWordTrie(enableUltraFastMode);
@@ -167,6 +209,8 @@ const Index = () => {
                 persistentSearchTerm={persistentAnagramSearch.searchTerm}
                 persistentTargetLength={persistentAnagramSearch.targetLength}
                 onPersistentSearchChange={setPersistentAnagramSearch}
+                persistentResults={persistentAnagramResults}
+                onPersistentResultsChange={setPersistentAnagramResults}
               />
             ) : (
               <Lists trie={trie} />
