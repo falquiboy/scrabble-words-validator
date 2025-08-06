@@ -105,43 +105,31 @@ const WordValidator = ({
   };
 
   return (
-    <div className="relative h-full">
-      {/* Absolutely Fixed Header and Search */}
-      <div className="fixed top-16 left-0 right-0 z-40 bg-gray-50/95 backdrop-blur-sm">
-        <div className="w-full max-w-2xl mx-auto px-4 py-4">
-          <div className="w-full max-w-md mx-auto space-y-4">
-            <Header />
-            <WordInput
-              word={word}
-              isLoading={isDictionaryLoading || isLoading}
-              onWordChange={handleWordChange}
-              onValidate={result.checked ? handleClear : handleValidate}
-              buttonText={result.checked ? "Limpiar" : "Validar"}
-              isChecked={result.checked}
-            />
-          </div>
-        </div>
-      </div>
-      
-      {/* Scrollable Content Only */}
-      <div className="pt-28 h-full overflow-y-auto">
-        <div className="w-full max-w-2xl mx-auto px-4 pb-4">
-          <div className="w-full max-w-md mx-auto space-y-4">
-            {result.checked && (
-              <ValidationResult
-                word={word}
-                result={result}
-              />
-            )}
-            
-            {isDictionaryLoading && (
-              <LoadingIndicator 
-                progress={progress} 
-                stage={stage}
-              />
-            )}
-          </div>
-        </div>
+    <div className="w-full max-w-2xl mx-auto p-4 flex flex-col items-center">
+      <div className="w-full max-w-md space-y-4">
+        <Header />
+        <WordInput
+          word={word}
+          isLoading={isDictionaryLoading || isLoading}
+          onWordChange={handleWordChange}
+          onValidate={result.checked ? handleClear : handleValidate}
+          buttonText={result.checked ? "Limpiar" : "Validar"}
+          isChecked={result.checked}
+        />
+        
+        {result.checked && (
+          <ValidationResult
+            word={word}
+            result={result}
+          />
+        )}
+        
+        {isDictionaryLoading && (
+          <LoadingIndicator 
+            progress={progress} 
+            stage={stage}
+          />
+        )}
       </div>
       
       {/* Fallback method indicator - bottom left */}
