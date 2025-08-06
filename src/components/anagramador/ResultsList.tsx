@@ -1,5 +1,4 @@
 
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import SearchResults from "./search/SearchResults";
 import ExtendedWordView from "./ExtendedWordView";
@@ -135,8 +134,7 @@ const ResultsList = ({
   );
 
   return (
-    <ScrollArea className="h-[calc(100vh-12rem)] px-1">
-      <div className="space-y-4 pb-4">
+    <div className="space-y-4 pb-4">
         {/* Loading spinner for initial search */}
         {isLoading && searchTerm && (
           <div className="flex flex-col items-center justify-center py-8 space-y-3">
@@ -180,8 +178,7 @@ const ResultsList = ({
             )}
           </>
         )}
-      </div>
-    </ScrollArea>
+    </div>
   );
 };
 

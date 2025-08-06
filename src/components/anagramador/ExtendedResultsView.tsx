@@ -3,6 +3,7 @@ import { Loader, ChevronDown, ChevronRight } from "lucide-react";
 import ExtendedWordView from './ExtendedWordView';
 import { toDisplayFormat } from "@/utils/digraphs";
 import { AnagramWordInfo } from '@/utils/anagramWordData';
+import { highlightPatternMatch } from '@/utils/wildcardHighlighting';
 
 interface ExtendedResultsViewProps {
   isLoading: boolean;
@@ -54,7 +55,7 @@ const ExtendedResultsView: React.FC<ExtendedResultsViewProps> = ({
     );
   }
 
-  const renderWordSection = (title: string, words: string[], color: string = 'blue', sectionId?: string, collapsible: boolean = false) => {
+  const renderWordSection = (title: string, words: string[], color: string = 'blue', sectionId?: string, collapsible: boolean = false, wordArray?: string[]) => {
     if (words.length === 0) return null;
 
     const isCollapsed = sectionId ? collapsedSections.has(sectionId) : false;
@@ -64,7 +65,7 @@ const ExtendedResultsView: React.FC<ExtendedResultsViewProps> = ({
         {collapsible && sectionId ? (
           <button
             onClick={() => toggleSection(sectionId)}
-            className={`flex items-center gap-2 font-semibold text-${color}-600 text-sm hover:text-${color}-700 transition-colors`}
+            className={`sticky top-0 z-20 bg-gray-50/95 backdrop-blur-sm flex items-center gap-2 font-semibold text-${color}-600 text-sm hover:text-${color}-700 transition-colors py-2 -mx-4 px-4 mb-2`}
           >
             {isCollapsed ? (
               <ChevronRight size={16} />
@@ -74,7 +75,7 @@ const ExtendedResultsView: React.FC<ExtendedResultsViewProps> = ({
             {title} ({words.length})
           </button>
         ) : (
-          <h3 className={`font-semibold text-${color}-600 text-sm`}>
+          <h3 className={`sticky top-0 z-20 bg-gray-50/95 backdrop-blur-sm font-semibold text-${color}-600 text-sm py-2 -mx-4 px-4 mb-2`}>
             {title} ({words.length})
           </h3>
         )}
@@ -84,7 +85,7 @@ const ExtendedResultsView: React.FC<ExtendedResultsViewProps> = ({
             {words.map((word, index) => {
               const displayWord = toDisplayFormat(word);
               const wordInfo = wordsData.get(displayWord.toUpperCase());
-              const highlighted = highlightWildcardLetter(displayWord, searchTerm); // Use display format for highlighting too
+              const highlighted = getHighlightedWord(displayWord, wordArray || words); // Use correct highlighting based on context
               
               return (
                 <ExtendedWordView
@@ -117,53 +118,92 @@ const ExtendedResultsView: React.FC<ExtendedResultsViewProps> = ({
   }
 
   const isPatternSearch = searchTerm.includes('*') || searchTerm.includes('.') || searchTerm.includes('-');
+  
+  // Helper function to get correct highlighting based on search type and word context
+  const getHighlightedWord = (displayWord: string, currentWordArray: string[]) => {
+    // For pattern matches, always use pattern highlighting
+    if (currentWordArray === results.patternMatches) {
+      // For pattern searches with rack letters, extract pattern and rack parts
+      const [patternPart, rackPart] = searchTerm.includes(',') ? 
+        searchTerm.split(',') : [searchTerm, ''];
+      return highlightPatternMatch(displayWord, patternPart, rackPart || '');
+    } else {
+      // For wildcard/exact matches, use wildcard highlighting
+      return highlightWildcardLetter(displayWord, searchTerm);
+    }
+  };
 
   return (
     <div className="space-y-6">
 
       {/* Pattern results (for pattern searches) - Collapsible if many results */}
-      {isPatternSearch && renderWordSection(
-        "Coincidencias de patrón", 
-        results.patternMatches, 
-        "purple",
-        "pattern-matches",
-        results.patternMatches.length > 10
+      {isPatternSearch && (
+        <div style={{position: 'relative', zIndex: 25}}>
+          {renderWordSection(
+            "Coincidencias de patrón", 
+            results.patternMatches, 
+            "purple",
+            "pattern-matches",
+            results.patternMatches.length > 10,
+            results.patternMatches
+          )}
+        </div>
       )}
 
       {/* Exact matches - Collapsible if many results */}
-      {!isPatternSearch && renderWordSection(
-        "Anagramas exactos", 
-        results.exactMatches, 
-        "green",
-        "exact-matches",
-        results.exactMatches.length > 10
+      {!isPatternSearch && (
+        <div style={{position: 'relative', zIndex: 25}}>
+          {renderWordSection(
+            "Anagramas exactos", 
+            results.exactMatches, 
+            "green",
+            "exact-matches",
+            results.exactMatches.length > 10,
+            results.exactMatches
+          )}
+        </div>
       )}
 
       {/* Wildcard matches - Collapsible if many results */}
-      {!isPatternSearch && renderWordSection(
-        "Con comodines", 
-        results.wildcardMatches, 
-        "blue",
-        "wildcard-matches",
-        results.wildcardMatches.length > 10
+      {!isPatternSearch && (
+        <div style={{position: 'relative', zIndex: 24}}>
+          {renderWordSection(
+            "Con comodines", 
+            results.wildcardMatches, 
+            "blue",
+            "wildcard-matches",
+            results.wildcardMatches.length > 10,
+            results.wildcardMatches
+          )}
+        </div>
       )}
 
       {/* Additional wildcard matches - Collapsible if many results */}
-      {!isPatternSearch && renderWordSection(
-        "Comodines adicionales", 
-        results.additionalWildcardMatches, 
-        "indigo",
-        "additional-wildcard-matches",
-        results.additionalWildcardMatches.length > 10
+      {!isPatternSearch && (
+        <div style={{position: 'relative', zIndex: 23}}>
+          {renderWordSection(
+            "Comodines adicionales", 
+            results.additionalWildcardMatches, 
+            "indigo",
+            "additional-wildcard-matches",
+            results.additionalWildcardMatches.length > 10,
+            results.additionalWildcardMatches
+          )}
+        </div>
       )}
 
       {/* Shorter matches - Collapsible */}
-      {!isPatternSearch && showShorter && renderWordSection(
-        "Palabras más cortas", 
-        results.shorterMatches, 
-        "orange",
-        "shorter-matches",
-        true
+      {!isPatternSearch && showShorter && (
+        <div style={{position: 'relative', zIndex: 22}}>
+          {renderWordSection(
+            "Palabras más cortas", 
+            results.shorterMatches, 
+            "orange",
+            "shorter-matches",
+            true,
+            results.shorterMatches
+          )}
+        </div>
       )}
 
       {/* Loading indicator for data */}

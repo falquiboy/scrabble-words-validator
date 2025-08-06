@@ -95,7 +95,7 @@ const SearchResults = ({
                   matches={filteredAdditionalMatches}
                   highlightWildcardLetter={highlightWildcardLetter}
                   searchTerm={searchTerm}
-                  title="palabras encontradas usando todas las fichas más una letra adicional"
+                  title="palabras con letra adicional"
                   sortByEquity={sortByEquity}
                   unifiedEquityView={false} // Keep grouped view, just sort within groups
                 />
@@ -104,7 +104,7 @@ const SearchResults = ({
                   matches={[]}
                   highlightWildcardLetter={highlightWildcardLetter}
                   searchTerm={searchTerm}
-                  title="palabras encontradas usando todas las fichas más una letra adicional"
+                  title="palabras con letra adicional"
                   sortByEquity={sortByEquity}
                   unifiedEquityView={false}
                 />

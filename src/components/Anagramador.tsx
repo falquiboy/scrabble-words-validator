@@ -198,29 +198,38 @@ const Anagramador = ({
   };
 
   return (
-    <>
-      {/* Main Interface */}
-      <div className="w-full max-w-2xl mx-auto p-4 flex flex-col items-center">
-        <div className="w-full max-w-md space-y-4">
-          <SearchContainer
-            onSearch={handleSearch}
-            onClear={handleClear}
-          />
-          
-          <ResultsList
-            isLoading={isLoading}
-            searchTerm={searchTerm}
-            results={searchResults}
-            highlightWildcardLetter={highlightWildcardLetter}
-            isSearchAborted={false}
-            showShorter={showShorter}
-            showExtendedView={showExtendedView}
-            showHooksView={showHooksView}
-            sortByEquity={sortByEquity}
-          />
+    <div className="relative h-full">
+      {/* Absolutely Fixed Search Container */}
+      <div className="fixed top-16 left-0 right-0 z-40 bg-gray-50/95 backdrop-blur-sm">
+        <div className="w-full max-w-2xl mx-auto px-4 py-4">
+          <div className="w-full max-w-md mx-auto">
+            <SearchContainer
+              onSearch={handleSearch}
+              onClear={handleClear}
+            />
+          </div>
         </div>
       </div>
-    </>
+      
+      {/* Scrollable Results Only */}
+      <div className="pt-20 h-full overflow-y-auto">
+        <div className="w-full max-w-2xl mx-auto px-4 pb-4">
+          <div className="w-full max-w-md mx-auto">
+            <ResultsList
+              isLoading={isLoading}
+              searchTerm={searchTerm}
+              results={searchResults}
+              highlightWildcardLetter={highlightWildcardLetter}
+              isSearchAborted={false}
+              showShorter={showShorter}
+              showExtendedView={showExtendedView}
+              showHooksView={showHooksView}
+              sortByEquity={sortByEquity}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

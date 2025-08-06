@@ -115,7 +115,7 @@ const Index = () => {
           isPatternWithoutRack
         }}
       />
-      <div className="mt-20 flex-1 w-full">
+      <div className="mt-20 flex-1 w-full h-0 min-h-0">
         {showTraining ? (
           <div className="container mx-auto px-4 py-6">
             <div className="mb-4 p-3 bg-blue-100 border border-blue-300 rounded-lg">
@@ -143,35 +143,37 @@ const Index = () => {
           </div>
         ) : (
           <>
-            {activeModule === 'judge' ? (
-              <WordValidator 
-                isDictionaryLoading={isDictionaryLoading} 
-                progress={getProgress()}
-                trie={trie}
-                stage={getCurrentStage()}
-                wordCount={wordCount}
-              />
-            ) : activeModule === 'anagram' ? (
-              <Anagramador 
-                trie={trie}
-                showShorter={showShorter}
-                onShowShorterChange={setShowShorter}
-                showExtendedView={showExtendedView}
-                onExtendedViewChange={setShowExtendedView}
-                showHooksView={showHooksView}
-                onHooksViewChange={setShowHooksView}
-                sortByEquity={sortByEquity}
-                onSortByEquityChange={setSortByEquity}
-                onSearchStateChange={setHasActiveAnagramSearch}
-                onCopyAllCallbackChange={setAnagramCopyAllCallback}
-                onPatternWithoutRackChange={setIsPatternWithoutRack}
-                persistentSearchTerm={persistentAnagramSearch.searchTerm}
-                persistentTargetLength={persistentAnagramSearch.targetLength}
-                onPersistentSearchChange={setPersistentAnagramSearch}
-              />
-            ) : (
-              <Lists trie={trie} />
-            )}
+            <div className="h-full">
+              {activeModule === 'judge' ? (
+                <WordValidator 
+                  isDictionaryLoading={isDictionaryLoading} 
+                  progress={getProgress()}
+                  trie={trie}
+                  stage={getCurrentStage()}
+                  wordCount={wordCount}
+                />
+              ) : activeModule === 'anagram' ? (
+                <Anagramador 
+                  trie={trie}
+                  showShorter={showShorter}
+                  onShowShorterChange={setShowShorter}
+                  showExtendedView={showExtendedView}
+                  onExtendedViewChange={setShowExtendedView}
+                  showHooksView={showHooksView}
+                  onHooksViewChange={setShowHooksView}
+                  sortByEquity={sortByEquity}
+                  onSortByEquityChange={setSortByEquity}
+                  onSearchStateChange={setHasActiveAnagramSearch}
+                  onCopyAllCallbackChange={setAnagramCopyAllCallback}
+                  onPatternWithoutRackChange={setIsPatternWithoutRack}
+                  persistentSearchTerm={persistentAnagramSearch.searchTerm}
+                  persistentTargetLength={persistentAnagramSearch.targetLength}
+                  onPersistentSearchChange={setPersistentAnagramSearch}
+                />
+              ) : (
+                <Lists trie={trie} />
+              )}
+            </div>
           </>
         )}
       </div>

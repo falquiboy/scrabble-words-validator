@@ -112,10 +112,9 @@ export const highlightWildcardLetter = (word: string, searchTerm: string): React
         
         // Determine color class
         let colorClass = "font-semibold";
-        if (isAdditional) {
+        if (isAdditional || isWildcard) {
+          // Both wildcards (?) and additional letters should be red
           colorClass = "text-red-600 font-semibold";
-        } else if (isWildcard) {
-          colorClass = "text-blue-600 font-semibold";
         }
         
         // Handle digraphs

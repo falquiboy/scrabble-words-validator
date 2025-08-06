@@ -16,7 +16,7 @@ const ModuleSelector = ({ activeModule, onModuleChange }: ModuleSelectorProps) =
   };
 
   return (
-    <div className="fixed top-4 right-4 flex gap-2 items-center bg-white/80 backdrop-blur-sm p-2 rounded-lg">
+    <div className="fixed top-4 right-4 flex gap-2 items-center bg-white/90 backdrop-blur-sm p-2 rounded-lg shadow-lg border border-gray-200 z-50">
       <Button 
         variant="outline" 
         size="default"

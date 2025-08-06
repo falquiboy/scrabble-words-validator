@@ -291,10 +291,10 @@ export const BaseResults = ({
   if (matches.length === 0) {
     return (
       <div className="space-y-4 pb-8">
-        <h3 className="font-semibold text-lg">
+        <h3 className="sticky top-0 z-20 bg-gray-50/95 backdrop-blur-sm font-semibold text-lg py-2 -mx-4 px-4 mb-2">
           {title.includes("adicional") 
-            ? "0 palabras encontradas usando todas las fichas más una letra adicional:" 
-            : "0 palabras encontradas usando todas las fichas:"
+            ? "0 palabras con letra adicional:" 
+            : "0 palabras con todas las fichas:"
           }
         </h3>
       </div>
@@ -312,8 +312,8 @@ export const BaseResults = ({
 
     return (
       <div className="space-y-4 pb-8">
-        <h3 className="font-semibold text-lg">
-          {`${matches.length} ${matches.length === 1 ? "palabra encontrada" : "palabras encontradas"} ordenadas por equity:`}
+        <h3 className="sticky top-0 z-20 bg-gray-50/95 backdrop-blur-sm font-semibold text-lg py-2 -mx-4 px-4 mb-2">
+          {`${matches.length} ${matches.length === 1 ? "palabra" : "palabras"} ordenadas por equity:`}
           {isCalculatingEquities && (
             <span className="text-sm text-orange-600 font-normal">
               {" "}(calculando equity...)
@@ -451,10 +451,10 @@ export const BaseResults = ({
         </div>
       )}
 
-      <h3 className="font-semibold text-lg">
+      <h3 className="sticky top-0 z-20 bg-gray-50/95 backdrop-blur-sm font-semibold text-lg py-2 -mx-4 px-4 mb-2">
         {title.includes("adicional") 
-          ? `${matches.length} ${matches.length === 1 ? "palabra encontrada" : "palabras encontradas"} usando todas las fichas más una letra adicional:` 
-          : `${matches.length} ${matches.length === 1 ? "palabra encontrada" : "palabras encontradas"}${isShortMode ? "" : " usando todas las fichas"}:`
+          ? `${matches.length} ${matches.length === 1 ? "palabra" : "palabras"} con letra adicional:` 
+          : `${matches.length} ${matches.length === 1 ? "palabra" : "palabras"}${isShortMode ? "" : " con todas las fichas"}:`
         }
         {sortByEquity && isCalculatingEquities && (
           <span className="text-sm text-orange-600 font-normal">
