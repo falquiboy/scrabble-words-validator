@@ -26,6 +26,24 @@
         padding: 0;
       }
       
+      /* Prevent scrolling when mobile keyboard appears */
+      html {
+        height: 100%;
+        overflow: hidden;
+      }
+      
+      body {
+        height: 100vh;
+        overflow: hidden;
+        position: relative;
+      }
+      
+      #root {
+        height: 100vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
+      
       /* Disable mobile keyboard features globally */
       input[type="text"], input[type="search"], textarea {
         -webkit-appearance: none;

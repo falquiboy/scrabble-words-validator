@@ -54,8 +54,15 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
     console.log('📊 Step 1: Querying lexicon_keys table...');
     
     // Normalize uncached words (uppercase + digraph processing for lexicon_keys lookup)
-    const normalizedWords = uncachedWords.map(word => processDigraphs(word.toUpperCase()));
-    console.log('📊 Normalized uncached words (uppercase + digraphs processed for lexicon_keys) for query:', normalizedWords);
+    const normalizedWords = uncachedWords.map(word => {
+      const normalized = processDigraphs(word.toUpperCase());
+      if (word.includes('LL') || word.includes('CH') || word.includes('RR')) {
+        console.log(`📊 Digraph conversion: ${word} → ${normalized}`);
+      }
+      return normalized;
+    });
+    console.log('📊 Normalized uncached words (with digraphs processed for lexicon_keys) for query:', normalizedWords);
+    console.log('📊 Original uncached words:', uncachedWords);
     
     // Create mapping from normalized word back to original words for result association
     const normalizedToOriginal = new Map<string, string[]>();
@@ -154,12 +161,15 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
     const keyToSenses = new Map();
     
     if (allKeys.size > 0) {
+      // Convert keys to numbers for database query (they're stored as numeric type)
+      const numericKeys = Array.from(allKeys).map(k => Number(k));
+      
       // Fetch dictionary entries
       console.log('📚 Step 3a: Fetching dictionary entries...');
       const { data: entries, error: entriesError } = await supabase
         .from('dictionary_entries')
         .select('key, lemma, etymology_info')
-        .in('key', Array.from(allKeys));
+        .in('key', numericKeys);
       
       if (entriesError) {
         console.error('❌ Dictionary entries error:', entriesError);
@@ -167,7 +177,9 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
         console.log('✅ Dictionary entries response:', entries);
         if (entries) {
           entries.forEach(entry => {
-            keyToEntry.set(entry.key, entry);
+            // Store with both the numeric key and string representation for lookup flexibility
+            keyToEntry.set(Number(entry.key), entry);
+            keyToEntry.set(String(entry.key), entry);
           });
         }
       }
@@ -177,19 +189,28 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
       const { data: senses, error: sensesError } = await supabase
         .from('dictionary_senses')
         .select('entry_key, definition, part_of_speech_1')
-        .in('entry_key', Array.from(allKeys));
+        .in('entry_key', numericKeys);
       
       if (sensesError) {
         console.error('❌ Dictionary senses error:', sensesError);
       } else {
         console.log('✅ Dictionary senses response:', senses);
         if (senses) {
-          // Group senses by entry_key
+          // Group senses by entry_key (store with both numeric and string keys)
           senses.forEach(sense => {
-            if (!keyToSenses.has(sense.entry_key)) {
-              keyToSenses.set(sense.entry_key, []);
+            const numKey = Number(sense.entry_key);
+            const strKey = String(sense.entry_key);
+            
+            if (!keyToSenses.has(numKey)) {
+              keyToSenses.set(numKey, []);
             }
-            keyToSenses.get(sense.entry_key).push(sense);
+            keyToSenses.get(numKey).push(sense);
+            
+            // Also store with string key for lookup flexibility
+            if (!keyToSenses.has(strKey)) {
+              keyToSenses.set(strKey, []);
+            }
+            keyToSenses.get(strKey).push(sense);
           });
         }
       }
