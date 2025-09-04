@@ -119,20 +119,53 @@ export const useHybridAnagramSearch = (
         return;
       }
 
-      // Validación de longitud mínima (2 letras sin contar comodines ni patrones)
-      const lettersOnly = searchTerm.replace(/[\?\*\.\-\:]/g, '');
-      if (lettersOnly.length < 2) {
-        setResults({
-          exactMatches: [],
-          wildcardMatches: [],
-          additionalWildcardMatches: [],
-          shorterMatches: [],
-          patternMatches: []
-        });
-        setIsLoading(false);
-        setError('Mínimo 2 letras requeridas');
-        setCurrentProvider('none');
-        return;
+      // Check if it's a pattern search first
+      const isPatternSearch = searchTerm.includes('*') || 
+                             searchTerm.includes('.') || 
+                             searchTerm.includes('-') || 
+                             searchTerm.includes(':');
+      
+      // For pattern searches, calculate the minimum word length differently
+      if (isPatternSearch) {
+        // Count the minimum length the pattern represents
+        // Each dot (.) represents exactly one character
+        // Each letter represents exactly one character
+        // Asterisk (*) represents zero or more characters
+        // Minus (-) and colon (:) are separators, not part of the pattern
+        const patternWithoutSeparators = searchTerm.replace(/[\-\:].*/g, '');
+        const minPatternLength = patternWithoutSeparators.replace(/\*/g, '').length;
+        
+        // Patterns must represent at least 2-letter words (minimum valid Scrabble word)
+        if (minPatternLength < 2) {
+          setResults({
+            exactMatches: [],
+            wildcardMatches: [],
+            additionalWildcardMatches: [],
+            shorterMatches: [],
+            patternMatches: []
+          });
+          setIsLoading(false);
+          setError('El patrón debe representar palabras de al menos 2 letras');
+          setCurrentProvider('none');
+          return;
+        }
+      } else {
+        // For non-pattern searches (regular anagrams with wildcards)
+        // Validate minimum of 2 actual letters (not counting wildcards)
+        const lettersOnly = searchTerm.replace(/[\?\*]/g, '');
+        if (lettersOnly.length < 2) {
+          setResults({
+            exactMatches: [],
+            wildcardMatches: [],
+            additionalWildcardMatches: [],
+            shorterMatches: [],
+            patternMatches: []
+          });
+          setIsLoading(false);
+          setError('Mínimo 2 letras requeridas');
+          setCurrentProvider('none');
+          return;
+        }
       }
 
       console.log('🔄 Setting loading to TRUE');
