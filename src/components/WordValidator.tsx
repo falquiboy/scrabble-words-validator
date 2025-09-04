@@ -29,6 +29,7 @@ const WordValidator = ({
     isValid: boolean;
     checked: boolean;
     words: string[];
+    wordStatuses?: boolean[];
   }>({ isValid: false, checked: false, words: [] });
   const [currentProvider, setCurrentProvider] = useState<'trie' | 'sqlite' | 'supabase' | 'none'>('none');
 
@@ -69,7 +70,8 @@ const WordValidator = ({
       const allWords = trie.getAllWords();
       console.log('Total words in trie:', allWords.length);
       
-      const isValid = await Promise.all(words.map(async (w) => {
+      // Get individual word validation results
+      const wordResults = await Promise.all(words.map(async (w) => {
         // Convert to uppercase without processing digraphs yet
         const upperWord = w.toUpperCase();
         console.log('Validating word:', w, 'uppercase:', upperWord);
@@ -78,13 +80,17 @@ const WordValidator = ({
         const found = await trie.searchAsync(upperWord);
         console.log('Word found?', found);
         return found;
-      })).then(results => results.every(result => result));
+      }));
+      
+      // Overall validation is valid only if ALL words are valid
+      const isValid = wordResults.every(result => result);
 
-      // Store the original words in uppercase for display
+      // Store the original words in uppercase for display with individual statuses
       setResult({ 
         isValid, 
         checked: true, 
-        words: words.map(w => w.toUpperCase()) 
+        words: words.map(w => w.toUpperCase()),
+        wordStatuses: wordResults 
       });
     } finally {
       setIsLoading(false);
