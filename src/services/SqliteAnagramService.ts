@@ -6,6 +6,7 @@
  */
 
 import { sqliteDB, WordEntry } from './SQLiteWordDatabase';
+import { hasConstraints, parseConstraints, filterByConstraints } from '../utils/pattern/constraints';
 
 export interface AnagramResults {
   exactMatches: string[];
@@ -337,9 +338,22 @@ export class SqliteAnagramService {
     targetLength?: number
   ): Promise<string[]> {
     
+    // Check if pattern has inclusion/exclusion constraints
+    const constraints = hasConstraints(pattern) ? parseConstraints(pattern) : null;
+    let actualPattern = constraints?.pattern || pattern;
+    
+    // If there are constraints but no pattern (or pattern is just ":number"), search all words
+    if (constraints && (!constraints.pattern || /^:\d+$/.test(constraints.pattern))) {
+      actualPattern = '*';  // Search all words and then filter
+      // If pattern was ":number", preserve the length specification
+      if (constraints.pattern && constraints.pattern.startsWith(':')) {
+        actualPattern = '*' + constraints.pattern;
+      }
+    }
+    
     // Parsear el patrón (basado en matching.ts)
-    const patternParts = pattern.split(':');
-    let processedPattern = pattern;
+    const patternParts = actualPattern.split(':');
+    let processedPattern = actualPattern;
     let specifiedLength = targetLength;
     
     if (patternParts.length > 1) {
@@ -353,10 +367,19 @@ export class SqliteAnagramService {
     const [patternPart, rackPart] = processedPattern.includes(',') ? 
       processedPattern.split(',') : [processedPattern, ''];
     
-    console.log('Processing SQLite pattern search:', { patternPart, rackPart, showLongerWords, specifiedLength });
+    // If pattern is empty but we have constraints, use wildcard to search all
+    const effectivePattern = patternPart || '*';
+    
+    console.log('Processing SQLite pattern search:', { 
+      patternPart: effectivePattern, 
+      rackPart, 
+      showLongerWords, 
+      specifiedLength, 
+      constraints 
+    });
     
     // Traducir patrón de guiones (basado en translation.ts)
-    const translatedPattern = this.translateHyphenPattern(patternPart);
+    const translatedPattern = this.translateHyphenPattern(effectivePattern);
     console.log('Translated pattern:', translatedPattern);
     
     // Procesar digraphs
@@ -379,17 +402,29 @@ export class SqliteAnagramService {
       matches = await this.searchTrieWithSQLite(regexPattern, '');
     }
     
-    console.log(`Found ${matches.length} matches before filtering`);
+    console.log(`Found ${matches.length} matches before filtering:`, matches.slice(0, 10));
+    
+    // Apply inclusion/exclusion constraints if present
+    if (constraints) {
+      matches = filterByConstraints(matches, constraints);
+      console.log(`After constraint filtering: ${matches.length} matches`);
+    }
     
     // Aplicar filtros de longitud
     if (specifiedLength !== null && specifiedLength !== undefined) {
-      return matches.filter(word => word.length === specifiedLength);
+      const filtered = matches.filter(word => word.length === specifiedLength);
+      console.log(`After length=${specifiedLength} filter: ${filtered.length} matches`);
+      return filtered;
     }
     
     if (showLongerWords) {
-      return matches.filter(word => word.length > maxDefaultLength);
+      const filtered = matches.filter(word => word.length > maxDefaultLength);
+      console.log(`After >8 filter: ${filtered.length} matches`);
+      return filtered;
     } else {
-      return matches.filter(word => word.length <= maxDefaultLength);
+      const filtered = matches.filter(word => word.length <= maxDefaultLength);
+      console.log(`After <=8 filter: ${filtered.length} matches from`, matches);
+      return filtered;
     }
   }
 

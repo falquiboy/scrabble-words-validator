@@ -29,7 +29,13 @@ const SearchResults = ({
   sortByEquity
 }: SearchResultsProps) => {
   const wildcardCount = (searchTerm.match(/\?/g) || []).length;
-  const isPatternSearch = searchTerm.includes('*') || searchTerm.includes('.') || searchTerm.includes('-');
+  const isPatternSearch = searchTerm.includes('*') || 
+                         searchTerm.includes('.') || 
+                         searchTerm.includes('-') ||
+                         searchTerm.includes('@') ||
+                         searchTerm.includes('&') ||
+                         searchTerm.includes('+') ||
+                         /[+\-]\d*[A-Za-z]/.test(searchTerm); // Numeric notation
 
   const filteredAdditionalMatches = results.additionalWildcardMatches.filter(word => {
     if (wildcardCount === 0) {

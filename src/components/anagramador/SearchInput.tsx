@@ -35,7 +35,11 @@ const SearchInput = ({
                            letters.includes('.') || 
                            letters.includes('^') || 
                            letters.includes('$') || 
-                           letters.includes('-');
+                           letters.includes('-') ||
+                           letters.includes('+') ||
+                           letters.includes('@') ||
+                           letters.includes('&') ||
+                           /[+\-]\d*[A-Za-z]/.test(letters); // Numeric notation
     setIsPatternMode(hasPatternChars);
     
     // Check if length is specified using colon
@@ -86,7 +90,11 @@ const SearchInput = ({
                            value.includes('.') || 
                            value.includes('^') || 
                            value.includes('$') || 
-                           value.includes('-');
+                           value.includes('-') ||
+                           value.includes('+') ||
+                           value.includes('@') ||
+                           value.includes('&') ||
+                           /[+\-]\d*[A-Za-z]/.test(value); // Numeric notation
     
     // Apply the appropriate validation
     const cleanedValue = hasPatternChars ? 

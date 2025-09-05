@@ -8,13 +8,15 @@ import { highlightWildcardLetter } from "@/utils/wildcardHighlighting";
 
 // Utilidad para extraer información de búsqueda
 const parseSearchTerm = (searchTerm: string, title?: string) => {
-  // Detectar si es búsqueda de patrón (contiene *, ., -, ^, $, o :)
+  // Detectar si es búsqueda de patrón (contiene *, ., -, ^, $, :, @ o &)
   const isPatternSearch = searchTerm.includes('*') || 
                          searchTerm.includes('.') || 
                          searchTerm.includes('-') || 
                          searchTerm.includes('^') || 
                          searchTerm.includes('$') || 
-                         searchTerm.includes(':');
+                         searchTerm.includes(':') ||
+                         searchTerm.includes('@') ||
+                         searchTerm.includes('&');
   
   // Detectar si tiene restricción de rack (patrón con coma)
   const hasRackRestriction = isPatternSearch && searchTerm.includes(',');

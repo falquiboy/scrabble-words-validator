@@ -138,7 +138,9 @@ const Anagramador = ({
                            term.includes('-') || 
                            term.includes('^') || 
                            term.includes('$') || 
-                           term.includes(':');
+                           term.includes(':') ||
+                           term.includes('@') ||
+                           term.includes('&');
     const hasRackRestriction = isPatternSearch && term.includes(',');
     return isPatternSearch && !hasRackRestriction;
   };
@@ -146,7 +148,13 @@ const Anagramador = ({
   const handleCopyAll = () => {
     if (!searchResults) return;
 
-    const isPatternSearch = searchTerm.includes('*') || searchTerm.includes('.') || searchTerm.includes('-');
+    const isPatternSearch = searchTerm.includes('*') || 
+                           searchTerm.includes('.') || 
+                           searchTerm.includes('-') ||
+                           searchTerm.includes('@') ||
+                           searchTerm.includes('&') ||
+                           searchTerm.includes('+') ||
+                           /[+\-]\d*[A-Za-z]/.test(searchTerm); // Numeric notation
     const wildcardCount = (searchTerm.match(/\?/g) || []).length;
 
     let allWords: string[] = [];

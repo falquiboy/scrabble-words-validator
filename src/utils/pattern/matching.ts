@@ -6,6 +6,7 @@ import { translateHyphenPattern } from "./translation";
 import { processDigraphs } from "../digraphs";
 import { generatePatternCombinations } from "./combinations";
 import { SPANISH_LETTERS } from '@/hooks/anagramSearch/constants';
+import { parseConstraints, filterByConstraints, hasConstraints } from "./constraints";
 
 // Variable para almacenar los patrones base generados
 const basePatches: string[] = [];
@@ -20,8 +21,17 @@ export const findPatternMatches = async (
   // Limpiar los patrones base de búsquedas anteriores
   basePatches.length = 0;
 
-  const patternParts = pattern.split(':');
-  let processedPattern = pattern;
+  // Check if pattern has inclusion/exclusion constraints
+  const constraints = hasConstraints(pattern) ? parseConstraints(pattern) : null;
+  let actualPattern = constraints?.pattern || pattern;
+  
+  // If there are constraints but no pattern, we need to search all words
+  if (constraints && !constraints.pattern) {
+    actualPattern = '*';  // Search all words and then filter
+  }
+
+  const patternParts = actualPattern.split(':');
+  let processedPattern = actualPattern;
   let specifiedLength = targetLength;
   
   if (patternParts.length > 1) {
@@ -36,7 +46,7 @@ export const findPatternMatches = async (
   const [patternPart, rackPart] = processedPattern.includes(',') ? 
     processedPattern.split(',') : [processedPattern, ''];
   
-  console.log('Processing pattern search:', { patternPart, rackPart, showLongerWords, specifiedLength });
+  console.log('Processing pattern search:', { patternPart, rackPart, showLongerWords, specifiedLength, constraints });
   
   const translatedPattern = translateHyphenPattern(patternPart);
   console.log('Translated pattern:', translatedPattern);
@@ -73,6 +83,12 @@ export const findPatternMatches = async (
     }
     
     console.log(`Found ${matches.length} matches before filtering`);
+    
+    // Apply inclusion/exclusion constraints if present
+    if (constraints) {
+      matches = filterByConstraints(matches, constraints);
+      console.log(`After constraint filtering: ${matches.length} matches`);
+    }
     
     if (specifiedLength !== null) {
       return matches.filter(word => word.length === specifiedLength);

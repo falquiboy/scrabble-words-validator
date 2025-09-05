@@ -117,7 +117,11 @@ const ExtendedResultsView: React.FC<ExtendedResultsViewProps> = ({
     );
   }
 
-  const isPatternSearch = searchTerm.includes('*') || searchTerm.includes('.') || searchTerm.includes('-');
+  const isPatternSearch = searchTerm.includes('*') || 
+                         searchTerm.includes('.') || 
+                         searchTerm.includes('-') ||
+                         searchTerm.includes('@') ||
+                         searchTerm.includes('&');
   
   // Helper function to get correct highlighting based on search type and word context
   const getHighlightedWord = (displayWord: string, currentWordArray: string[]) => {

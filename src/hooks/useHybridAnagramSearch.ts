@@ -123,50 +123,16 @@ export const useHybridAnagramSearch = (
       const isPatternSearch = searchTerm.includes('*') || 
                              searchTerm.includes('.') || 
                              searchTerm.includes('-') || 
-                             searchTerm.includes(':');
+                             searchTerm.includes(':') ||
+                             searchTerm.includes('+') ||
+                             searchTerm.includes('@') ||
+                             searchTerm.includes('&') ||
+                             /[+\-]\d*[A-Za-z]/.test(searchTerm); // Numeric notation
       
-      // For pattern searches, calculate the minimum word length differently
-      if (isPatternSearch) {
-        // Count the minimum length the pattern represents
-        // Each dot (.) represents exactly one character
-        // Each letter represents exactly one character
-        // Asterisk (*) represents zero or more characters
-        // Minus (-) and colon (:) are separators, not part of the pattern
-        const patternWithoutSeparators = searchTerm.replace(/[\-\:].*/g, '');
-        const minPatternLength = patternWithoutSeparators.replace(/\*/g, '').length;
-        
-        // Patterns must represent at least 2-letter words (minimum valid Scrabble word)
-        if (minPatternLength < 2) {
-          setResults({
-            exactMatches: [],
-            wildcardMatches: [],
-            additionalWildcardMatches: [],
-            shorterMatches: [],
-            patternMatches: []
-          });
-          setIsLoading(false);
-          setError('El patrón debe representar palabras de al menos 2 letras');
-          setCurrentProvider('none');
-          return;
-        }
-      } else {
-        // For non-pattern searches (regular anagrams with wildcards)
-        // Validate minimum of 2 actual letters (not counting wildcards)
-        const lettersOnly = searchTerm.replace(/[\?\*]/g, '');
-        if (lettersOnly.length < 2) {
-          setResults({
-            exactMatches: [],
-            wildcardMatches: [],
-            additionalWildcardMatches: [],
-            shorterMatches: [],
-            patternMatches: []
-          });
-          setIsLoading(false);
-          setError('Mínimo 2 letras requeridas');
-          setCurrentProvider('none');
-          return;
-        }
-      }
+      // REMOVED: Minimum length validation for all searches
+      // Spanish Scrabble has valid 1-letter words (A, E, O, Y)
+      // Pattern searches should work with any length
+      // Let the user search for whatever they want!
 
       console.log('🔄 Setting loading to TRUE');
       setIsLoading(true);
@@ -183,7 +149,11 @@ export const useHybridAnagramSearch = (
         const isPatternSearch = trimmedTerm.includes('*') || 
                                trimmedTerm.includes('.') || 
                                trimmedTerm.includes('-') || 
-                               trimmedTerm.includes(':');
+                               trimmedTerm.includes(':') ||
+                               trimmedTerm.includes('+') ||
+                               trimmedTerm.includes('@') ||
+                               trimmedTerm.includes('&') ||
+                               /[+\-]\d*[A-Za-z]/.test(trimmedTerm); // Numeric notation
 
         // Check if it's a wildcard search (?)
         const isWildcardSearch = trimmedTerm.includes('?');
