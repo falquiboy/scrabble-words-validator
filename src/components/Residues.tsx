@@ -18,14 +18,14 @@ const normalizeInput = (input: string): string => {
 const generateLeaveCombinations = (letters: string[]): string[] => {
   const n = letters.length;
 
-  if (n <= 1) {
+  if (n === 0) {
     return [];
   }
 
   const combinations = new Set<string>();
   const totalMasks = 1 << n;
 
-  for (let mask = 1; mask < totalMasks - 1; mask++) {
+  for (let mask = 1; mask < totalMasks; mask++) {
     const subset: string[] = [];
 
     for (let idx = 0; idx < n; idx++) {
@@ -34,7 +34,7 @@ const generateLeaveCombinations = (letters: string[]): string[] => {
       }
     }
 
-    if (subset.length === 0 || subset.length === n) {
+    if (subset.length === 0) {
       continue;
     }
 
@@ -62,7 +62,7 @@ const Residues = () => {
     const trimmed = rack.trim();
 
     if (!trimmed) {
-      setError("Ingresa entre 2 y 7 fichas para calcular sus residuos.");
+      setError("Ingresa hasta siete fichas para calcular sus residuos.");
       setResults([]);
       return;
     }
@@ -82,13 +82,6 @@ const Residues = () => {
 
       const internal = processDigraphs(sanitized);
       const letters = Array.from(internal);
-
-      if (letters.length < 2) {
-        setError("Se necesitan al menos dos fichas para calcular residuos.");
-        setResults([]);
-        setIsLoading(false);
-        return;
-      }
 
       if (letters.length > 7) {
         setError("El cálculo admite como máximo siete fichas (incluyendo dígrafos y comodines).");
@@ -134,7 +127,7 @@ const Residues = () => {
         <h2 className="text-2xl font-semibold text-gray-800 mb-4">Residuos del atril</h2>
         <p className="text-sm text-gray-600 mb-6">
           Ingresa hasta siete letras (incluyendo comodines con «?»). El sistema calculará el valor de todos los
-          residuos posibles, desde {"n - 1"} letras hasta 1 letra, usando la tabla de equity más reciente.
+          residuos posibles, desde {"n"} letras (atril completo) hasta 1 letra, usando la tabla de equity más reciente.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
