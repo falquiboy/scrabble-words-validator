@@ -172,7 +172,7 @@ const Index = () => {
               ) : activeModule === 'lists' ? (
                 <Lists trie={trie} />
               ) : activeModule === 'residues' ? (
-                <Residues />
+                <Residues trie={trie} />
               ) : (
                 null
               )}
