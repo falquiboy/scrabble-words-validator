@@ -323,3 +323,18 @@ export function formatLeaveStringFromInternalLetters(letters: string[]): string 
 
   return leaveStr;
 }
+
+export function formatLeaveTokensFromInternalLetters(letters: string[]): string[] {
+  if (letters.length === 0) {
+    return [];
+  }
+
+  const sorted = sortByScrabbleOrder([...letters]);
+
+  return sorted.map((letter) => {
+    if (letter === 'Ç') return '[CH]';
+    if (letter === 'K') return '[LL]';
+    if (letter === 'W') return '[RR]';
+    return letter;
+  });
+}

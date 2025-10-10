@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { getBatchLeaveValues, formatLeaveStringFromInternalLetters } from "@/utils/leavesData";
+import { getBatchLeaveValues, formatLeaveTokensFromInternalLetters } from "@/utils/leavesData";
 import { processDigraphs } from "@/utils/digraphs";
 
 interface ResidueResult {
   leave: string;
   value: number | null;
+  complement: string;
+  complementTokens: string[];
 }
 
 const normalizeInput = (input: string): string => {
@@ -15,22 +17,27 @@ const normalizeInput = (input: string): string => {
     .normalize("NFC");
 };
 
-const generateLeaveCombinations = (letters: string[]): string[] => {
+const generateLeaveCombinations = (
+  letters: string[]
+): Array<{ leave: string; complement: string; complementTokens: string[] }> => {
   const n = letters.length;
 
   if (n === 0) {
     return [];
   }
 
-  const combinations = new Set<string>();
+  const combinations = new Map<string, { complement: string; complementTokens: string[] }>();
   const totalMasks = 1 << n;
 
   for (let mask = 1; mask < totalMasks; mask++) {
     const subset: string[] = [];
+    const complementSubset: string[] = [];
 
     for (let idx = 0; idx < n; idx++) {
       if (mask & (1 << idx)) {
         subset.push(letters[idx]);
+      } else {
+        complementSubset.push(letters[idx]);
       }
     }
 
@@ -38,13 +45,22 @@ const generateLeaveCombinations = (letters: string[]): string[] => {
       continue;
     }
 
-    const leaveStr = formatLeaveStringFromInternalLetters(subset);
-    if (leaveStr) {
-      combinations.add(leaveStr);
+    const leaveTokens = formatLeaveTokensFromInternalLetters(subset);
+    if (leaveTokens.length > 0) {
+      const leaveStr = leaveTokens.join('');
+      const complementTokens = formatLeaveTokensFromInternalLetters(complementSubset);
+      const complementStr = complementTokens.join('');
+      if (!combinations.has(leaveStr)) {
+        combinations.set(leaveStr, { complement: complementStr, complementTokens });
+      }
     }
   }
 
-  return Array.from(combinations);
+  return Array.from(combinations.entries()).map(([leave, info]) => ({
+    leave,
+    complement: info.complement,
+    complementTokens: info.complementTokens
+  }));
 };
 
 const Residues = () => {
@@ -90,7 +106,11 @@ const Residues = () => {
         return;
       }
 
-      const leavesToQuery = generateLeaveCombinations(letters);
+      const leavesCombinations = generateLeaveCombinations(letters);
+      const leavesToQuery = leavesCombinations.map(({ leave }) => leave);
+      const combinationDetails = new Map(
+        leavesCombinations.map(({ leave, complement, complementTokens }) => [leave, { complement, complementTokens }])
+      );
 
       if (leavesToQuery.length === 0) {
         setResults([]);
@@ -100,10 +120,15 @@ const Residues = () => {
       }
 
       const valuesMap = await getBatchLeaveValues(leavesToQuery);
-      const mappedResults: ResidueResult[] = Array.from(valuesMap.entries()).map(([leave, value]) => ({
-        leave,
-        value
-      }));
+      const mappedResults: ResidueResult[] = Array.from(valuesMap.entries()).map(([leave, value]) => {
+        const info = combinationDetails.get(leave);
+        return {
+          leave,
+          value,
+          complement: info?.complement ?? "",
+          complementTokens: info?.complementTokens ?? []
+        };
+      });
 
       mappedResults.sort((a, b) => {
         const valueA = a.value ?? Number.NEGATIVE_INFINITY;
@@ -186,7 +211,7 @@ const Residues = () => {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      Residuo
+                      Residuo → complemento
                     </th>
                     <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                       Valor
@@ -194,14 +219,22 @@ const Residues = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-100">
-                  {results.map(({ leave, value }) => (
-                    <tr key={leave}>
-                      <td className="px-4 py-2 font-mono text-sm text-gray-800">{leave}</td>
-                      <td className="px-4 py-2 text-sm text-gray-700">
-                        {value !== null ? value.toFixed(3) : "—"}
-                      </td>
-                    </tr>
-                  ))}
+                  {results.map(({ leave, value, complement, complementTokens }) => {
+                    const complementDisplay = complementTokens.length > 0 ? complementTokens.join('') : '∅';
+
+                    return (
+                      <tr key={`${leave}-${complementDisplay}`}>
+                        <td className="px-4 py-2 font-mono text-sm text-gray-800">
+                          <span>{leave}</span>
+                          <span className="mx-2 text-gray-400">→</span>
+                          <span>{complementDisplay}</span>
+                        </td>
+                        <td className="px-4 py-2 text-sm text-gray-700">
+                          {value !== null ? value.toFixed(3) : "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
