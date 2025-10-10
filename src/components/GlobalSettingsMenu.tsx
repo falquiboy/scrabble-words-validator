@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Menu, X, Info, Anchor, ChevronDown, Copy, TrendingUp, Settings } from 'lucide-react';
 
 interface GlobalSettingsMenuProps {
-  activeModule: 'judge' | 'anagram' | 'lists';
+  activeModule: 'judge' | 'anagram' | 'lists' | 'residues' | 'training';
   // Anagram-specific props (only used when activeModule === 'anagram')
   anagramSettings?: {
     showShorter: boolean;
@@ -163,11 +163,13 @@ const GlobalSettingsMenu: React.FC<GlobalSettingsMenuProps> = ({
         );
       
       case 'lists':
+      case 'residues':
+      case 'training':
         return (
           <div className="py-8 text-center">
             <Settings size={24} className="text-gray-400 mx-auto mb-3" />
             <p className="text-sm text-gray-500">
-              No hay opciones de configuración disponibles para el módulo de listas
+              No hay opciones de configuración disponibles para este módulo
             </p>
           </div>
         );

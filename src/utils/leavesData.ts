@@ -304,3 +304,22 @@ export async function calculatePotentialValue(
   return Math.round(potentialValue * 100) / 100; // Redondear a 2 decimales
 }
 
+/**
+ * Convierte una colección de letras en el formato estándar usado por la tabla `leaves`.
+ * Recibe letras ya convertidas al formato interno (digrafos → Ç/K/W) y aplica el orden Scrabble.
+ */
+export function formatLeaveStringFromInternalLetters(letters: string[]): string {
+  if (letters.length === 0) {
+    return '';
+  }
+
+  const sorted = sortByScrabbleOrder([...letters]);
+  let leaveStr = sorted.join('');
+
+  leaveStr = leaveStr
+    .replace(/Ç/g, '[CH]')
+    .replace(/K/g, '[LL]')
+    .replace(/W/g, '[RR]');
+
+  return leaveStr;
+}

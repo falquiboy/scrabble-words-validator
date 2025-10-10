@@ -1,8 +1,8 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 interface ModuleSelectorProps {
-  activeModule: 'judge' | 'anagram' | 'lists';
-  onModuleChange: (module: 'judge' | 'anagram' | 'lists') => void;
+  activeModule: 'judge' | 'anagram' | 'lists' | 'residues' | 'training';
+  onModuleChange: (module: 'judge' | 'anagram' | 'lists' | 'residues' | 'training') => void;
 }
 const NewModuleSelector = ({
   activeModule,
@@ -30,6 +30,13 @@ const NewModuleSelector = ({
           className="w-20 sm:w-24 md:w-28 lg:w-32 text-xs sm:text-sm md:text-base shadow-lg hover:shadow-xl transition-shadow"
         >
           Listas
+        </Button>
+        <Button 
+          variant={activeModule === 'residues' ? 'default' : 'outline'} 
+          onClick={() => onModuleChange('residues')} 
+          className="w-20 sm:w-24 md:w-28 lg:w-32 text-xs sm:text-sm md:text-base shadow-lg hover:shadow-xl transition-shadow"
+        >
+          Residuos
         </Button>
       </div>
       {/* Spacer to prevent overlap with hamburger menu */}

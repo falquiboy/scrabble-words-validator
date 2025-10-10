@@ -8,9 +8,10 @@ import Lists from "@/components/Lists";
 import NewModuleSelector from "@/components/NewModuleSelector";
 import GlobalSettingsMenu from "@/components/GlobalSettingsMenu";
 import { useWordTrie } from "@/hooks/useWordTrie";
+import Residues from "@/components/Residues";
 
 const Index = () => {
-  const [activeModule, setActiveModule] = useState<'judge' | 'anagram' | 'lists' | 'training'>('judge');
+  const [activeModule, setActiveModule] = useState<'judge' | 'anagram' | 'lists' | 'residues' | 'training'>('judge');
   const [showTraining, setShowTraining] = useState(false);
   const [enableUltraFastMode, setEnableUltraFastMode] = useState(false); // 🚫 DISABLED BY DEFAULT
   
@@ -48,6 +49,8 @@ const Index = () => {
 
   // Manejar navegación con Control + AvPág/RePág y acceso al sistema de entrenamiento
   useEffect(() => {
+    const moduleOrder: Array<'judge' | 'anagram' | 'lists' | 'residues'> = ['judge', 'anagram', 'lists', 'residues'];
+
     const handleKeyDown = (e: KeyboardEvent) => {
       // Acceso especial al sistema de entrenamiento: Ctrl + Shift + E (⌘ + Shift + E en Mac)
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'E') {
@@ -60,12 +63,10 @@ const Index = () => {
       if (e.ctrlKey && e.key === 'PageDown') {
         e.preventDefault();
         setActiveModule((current) => {
-          switch (current) {
-            case 'judge': return 'anagram';
-            case 'anagram': return 'lists';
-            case 'lists': return 'judge';
-            default: return current;
-          }
+          const currentIndex = moduleOrder.indexOf(current as typeof moduleOrder[number]);
+          if (currentIndex === -1) return current;
+          const nextIndex = (currentIndex + 1) % moduleOrder.length;
+          return moduleOrder[nextIndex];
         });
       }
       
@@ -73,12 +74,10 @@ const Index = () => {
       if (e.ctrlKey && e.key === 'PageUp') {
         e.preventDefault();
         setActiveModule((current) => {
-          switch (current) {
-            case 'judge': return 'lists';
-            case 'anagram': return 'judge';
-            case 'lists': return 'anagram';
-            default: return current;
-          }
+          const currentIndex = moduleOrder.indexOf(current as typeof moduleOrder[number]);
+          if (currentIndex === -1) return current;
+          const previousIndex = (currentIndex - 1 + moduleOrder.length) % moduleOrder.length;
+          return moduleOrder[previousIndex];
         });
       }
     };
@@ -170,8 +169,12 @@ const Index = () => {
                   persistentTargetLength={persistentAnagramSearch.targetLength}
                   onPersistentSearchChange={setPersistentAnagramSearch}
                 />
-              ) : (
+              ) : activeModule === 'lists' ? (
                 <Lists trie={trie} />
+              ) : activeModule === 'residues' ? (
+                <Residues />
+              ) : (
+                null
               )}
             </div>
           </>
