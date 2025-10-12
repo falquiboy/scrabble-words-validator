@@ -28,11 +28,18 @@ interface ResiduesProps {
 }
 
 const normalizeInput = (input: string): string => {
-  return input
-    .toUpperCase()
+  let result = input.toUpperCase();
+
+  // Preserve Ñ while stripping diacritics from other letters
+  result = result.replace(/Ñ/g, "#");
+  result = result
     .normalize("NFD")
-    .replace(/[^A-ZÁÉÍÓÚÜÑ?]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Z#?]/g, "")
+    .replace(/#/g, "Ñ")
     .normalize("NFC");
+
+  return result;
 };
 
 const generateLeaveCombinations = (
