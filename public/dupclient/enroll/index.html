@@ -62,8 +62,8 @@
 <body>
     <div class="card">
         <div class="tag">🏆 Torneo oficial DUPLICADA</div>
-        <h1>Necesitas DUPCLIENT</h1>
-        <p>Este link se abre automáticamente en la app <strong>DUPCLIENT</strong>. Si estás viendo esta página es porque aún no la tienes instalada.</p>
+        <h1>Abriendo DUPCLIENT…</h1>
+        <p id="msg">Si el app no abre automáticamente en unos segundos, probablemente no lo tienes instalado. Descárgalo abajo y vuelve a escanear el QR.</p>
         <div class="badges">
             <a class="badge" href="https://play.google.com/store/apps/details?id=com.dupclient.android">
                 <div>
@@ -85,5 +85,30 @@
             ¿Problemas? Contacta al director del torneo.
         </footer>
     </div>
+
+    <script>
+    // Intentar abrir DUPCLIENT vía custom scheme (fallback) con los mismos query
+    // params. Si el app está instalado, el navegador redirecciona al app y esta
+    // página queda en background. Si no, el navegador se queda aquí y el usuario
+    // ve los botones de descarga.
+    //
+    // Nota seguridad: evitamos mostrar server IP y token en pantalla — el usuario
+    // no necesita verlos; solo la app los usa internamente.
+    (function() {
+        try {
+            var qs = window.location.search || '';
+            if (qs) {
+                // Intento de auto-open del app. Si existe el handler registrado,
+                // el SO intercepta y abre DUPCLIENT. Si no, no pasa nada visible.
+                var deepLink = 'dupclient://enroll' + qs;
+                // Replace en vez de assign para que el historial quede limpio.
+                window.location.replace(deepLink);
+            }
+        } catch (e) {
+            // Silenciamos el error; la landing permanece visible con las opciones manuales.
+            console.warn('Auto-redirect failed:', e);
+        }
+    })();
+    </script>
 </body>
 </html>
