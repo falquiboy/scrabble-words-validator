@@ -1,0 +1,15 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["BB37URD2G3.com.isaacfalconer.dupclient"],
+        "components": [
+          {
+            "/": "/dupclient/enroll*",
+            "comment": "Abre DUPCLIENT en el flujo de enrolamiento oficial"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.dupclient.android",
+      "sha256_cert_fingerprints": [
+        "CC:82:8F:5E:62:AF:F9:B5:BA:33:F5:39:78:40:BD:9F:F9:AA:49:DC:86:A9:5F:67:25:41:9B:27:7A:09:43:39"
+      ]
+    }
+  }
+]

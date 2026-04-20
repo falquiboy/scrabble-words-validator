@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Unirte al torneo · DUPCLIENT</title>
+    <meta name="description" content="Escanea el QR con la app DUPCLIENT instalada para unirte al torneo oficial.">
+    <style>
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(180deg, #2c3e50 0%, #1a1a2e 100%);
+            color: #ecf0f1;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .card {
+            max-width: 460px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+            padding: 36px 28px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+        h1 { margin: 0 0 8px; font-size: 26px; }
+        .tag { color: #7fdbff; font-size: 14px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 16px; }
+        p { line-height: 1.55; color: #bdc3c7; }
+        .badges { display: flex; justify-content: center; gap: 14px; margin-top: 28px; flex-wrap: wrap; }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 12px 22px;
+            background: #fff;
+            color: #2c3e50;
+            border-radius: 10px;
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            transition: transform 0.15s;
+        }
+        .badge:hover { transform: translateY(-2px); }
+        .badge span.store { display: block; font-size: 11px; color: #7f8c8d; font-weight: 400; }
+        .note {
+            margin-top: 24px;
+            padding: 12px 14px;
+            background: rgba(255, 231, 89, 0.08);
+            border-left: 3px solid #f39c12;
+            font-size: 13px;
+            color: #f1c40f;
+            text-align: left;
+            border-radius: 4px;
+        }
+        footer { margin-top: 32px; font-size: 12px; color: #7f8c8d; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="tag">🏆 Torneo oficial DUPLICADA</div>
+        <h1>Necesitas DUPCLIENT</h1>
+        <p>Este link se abre automáticamente en la app <strong>DUPCLIENT</strong>. Si estás viendo esta página es porque aún no la tienes instalada.</p>
+        <div class="badges">
+            <a class="badge" href="https://play.google.com/store/apps/details?id=com.dupclient.android">
+                <div>
+                    <span class="store">Descargar para</span>
+                    Android
+                </div>
+            </a>
+            <a class="badge" href="https://apps.apple.com/app/dupclient">
+                <div>
+                    <span class="store">Descargar para</span>
+                    iPhone
+                </div>
+            </a>
+        </div>
+        <div class="note">
+            Una vez instalada, vuelve a escanear el QR desde la cámara de tu teléfono — DUPCLIENT se abrirá con tu acceso al torneo.
+        </div>
+        <footer>
+            ¿Problemas? Contacta al director del torneo.
+        </footer>
+    </div>
+</body>
+</html>
