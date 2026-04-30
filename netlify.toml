@@ -27,6 +27,16 @@
   status = 200
   force = true
 
+# Netlify's edge proxy does not forward Cross-Origin-Opener-Policy /
+# Cross-Origin-Embedder-Policy from the upstream site, so we re-apply them
+# locally. Without these headers `crossOriginIsolated` is false in the
+# browser and SharedArrayBuffer (used by MAGPIE pthreads) is unavailable.
+[[headers]]
+  for = "/quetzal/*"
+  [headers.values]
+    Cross-Origin-Opener-Policy = "same-origin"
+    Cross-Origin-Embedder-Policy = "require-corp"
+
 # Settings for SPA (Single Page Application)
 [[redirects]]
   from = "/*"
