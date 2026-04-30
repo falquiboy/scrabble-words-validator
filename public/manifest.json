@@ -1,9 +1,11 @@
 
 {
+  "id": "/",
   "name": "+Léxico",
   "short_name": "+Léxico",
   "description": "Herramientas para los que se toman en serio los juegos de palabras",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#9F9EA1",
   "theme_color": "#9F9EA1",
