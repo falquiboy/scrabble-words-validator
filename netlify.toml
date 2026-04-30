@@ -9,17 +9,12 @@
 # ── Quetzal sub-app proxy ────────────────────────────────────────────────
 # Quetzal (Svelte+WASM Scrabble client) lives in its own Netlify site,
 # `https://quetzal-app.netlify.app/`, and is exposed under maslexico.app/quetzal/
-# via these rewrites. The bare /quetzal redirects to /quetzal/ for proper
-# resolution of relative asset URLs in the manifest. The wildcard rewrite is
-# a 200/force proxy so the user's browser stays on maslexico.app while the
-# Quetzal Netlify site responds (with its own COOP/COEP headers needed for
-# SharedArrayBuffer). These rules MUST come before the SPA fallback below.
-
-[[redirects]]
-  from = "/quetzal"
-  to = "/quetzal/"
-  status = 301
-  force = true
+# via this rewrite. The wildcard rewrite is a 200/force proxy so the user's
+# browser stays on maslexico.app while the Quetzal Netlify site responds.
+# This rule MUST come before the SPA fallback below.
+#
+# `splat` is empty for `/quetzal/`, so it forwards to `quetzal-app.../quetzal/`
+# which is Quetzal's own internal subpath (matching Vite's base = '/quetzal/').
 
 [[redirects]]
   from = "/quetzal/*"
