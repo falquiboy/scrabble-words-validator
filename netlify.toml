@@ -7,18 +7,19 @@
   command = "npm run build"
 
 # ── Quetzal sub-app proxy ────────────────────────────────────────────────
-# Quetzal (Svelte+WASM Scrabble client) lives in its own Netlify site,
-# `https://quetzal-app.netlify.app/`, and is exposed under maslexico.app/quetzal/
-# via this rewrite. The wildcard rewrite is a 200/force proxy so the user's
-# browser stays on maslexico.app while the Quetzal Netlify site responds.
+# Quetzal (Svelte+WASM Scrabble client) is hosted on Cloudflare Pages
+# (`https://quetzal-app.pages.dev/`) — moved from Netlify to escape the
+# 100 GB/month bandwidth cap, since Pages offers unlimited egress on the
+# free tier. The proxy URL `maslexico.app/quetzal/*` is preserved so any
+# installed PWA or shared link keeps working without reinstall.
 # This rule MUST come before the SPA fallback below.
 #
-# `splat` is empty for `/quetzal/`, so it forwards to `quetzal-app.../quetzal/`
+# `splat` is empty for `/quetzal/`, so it forwards to `quetzal-app.pages.dev/quetzal/`
 # which is Quetzal's own internal subpath (matching Vite's base = '/quetzal/').
 
 [[redirects]]
   from = "/quetzal/*"
-  to = "https://quetzal-app.netlify.app/quetzal/:splat"
+  to = "https://quetzal-app.pages.dev/quetzal/:splat"
   status = 200
   force = true
 
