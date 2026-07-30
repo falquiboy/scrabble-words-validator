@@ -1,14 +1,7 @@
-/**
- * Hook para construcción de Trie en background usando Web Worker
- * Permite que la UI sea responsiva mientras se construye el Trie
- * Incluye detección de actividad del usuario para hot upgrade inteligente
- */
-
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Trie } from '@/utils/trie';
 import { sqliteDB } from '@/services/SQLiteWordDatabase';
 import { HybridTrieService } from '@/services/HybridTrieService';
-import { loadCachedTrie, saveTrie } from '@/utils/trieOperations';
 
 interface TrieProgress {
   progress: number;
@@ -24,134 +17,108 @@ interface UseBackgroundTrieReturn {
   error: string | null;
 }
 
-export const useBackgroundTrie = (enableUltraFastMode: boolean = false): UseBackgroundTrieReturn => {
-  // Initialize HybridService immediately WITHOUT Trie (fallback ready from second 1)
+const shouldKeepOnlySQLite = (): boolean => {
+  const navigatorWithMemory = navigator as Navigator & { deviceMemory?: number };
+  const isAppleTouchDevice =
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const hasTightMemory =
+    navigatorWithMemory.deviceMemory !== undefined &&
+    navigatorWithMemory.deviceMemory <= 4;
+
+  return isAppleTouchDevice || hasTightMemory;
+};
+
+export const useBackgroundTrie = (
+  enableUltraFastMode = false
+): UseBackgroundTrieReturn => {
   const [hybridService] = useState(() => new HybridTrieService(null));
   const [isTrieReady, setIsTrieReady] = useState(false);
   const [trieProgress, setTrieProgress] = useState<TrieProgress | null>(null);
-  const [status, setStatus] = useState<'loading' | 'building' | 'ready' | 'error'>('loading');
+  const [status, setStatus] =
+    useState<'loading' | 'building' | 'ready' | 'error'>('loading');
   const [error, setError] = useState<string | null>(null);
   const workerRef = useRef<Worker | null>(null);
-  
-  // Simplified: always do immediate upgrade when Trie is ready
 
   useEffect(() => {
-    // Solo construir Trie si el usuario activa "Búsquedas ultra rápidas"
-    if (!enableUltraFastMode) {
-      setStatus('ready'); // Usar solo fallback service
-      return;
-    }
+    let cancelled = false;
 
-    const buildTrieInBackground = async () => {
+    const initializeOfflineDictionary = async () => {
       try {
-        // Starting background Trie construction
-        
-        // Try to load cached Trie first
-        const trie = new Trie();
-        const cachedWordCount = await loadCachedTrie(trie);
-        
-        if (cachedWordCount > 0) {
-          console.log(`✅ Loaded cached Trie with ${cachedWordCount} words`);
-          hybridService.upgradeTrie(trie);
-          setIsTrieReady(true);
+        setStatus('loading');
+        await sqliteDB.init();
+        const wordCount = await sqliteDB.getWordCount();
+        if (cancelled) return;
+
+        // En iPhone/iPad SQLite es el índice rápido. Construir además el árbol
+        // de objetos JS duplica varias veces el diccionario y Safari lo cierra.
+        if (!enableUltraFastMode || shouldKeepOnlySQLite()) {
+          setTrieProgress({ progress: 100, processed: wordCount, total: wordCount });
           setStatus('ready');
           return;
         }
 
-        // No cached Trie found, building from words
         setStatus('building');
-
-        // Get words from SQLite
-        await sqliteDB.init();
         const words = await sqliteDB.getAllWords();
-        
-        if (words.length === 0) {
-          throw new Error('No words found in database');
-        }
+        if (cancelled) return;
+        if (!words.length) throw new Error('No words found in database');
 
-        console.log(`🔧 Building Trie with ${words.length} words...`);
-
-        // Create Web Worker
         workerRef.current = new Worker('/trie-builder.worker.js');
-        
-        workerRef.current.onmessage = (e) => {
-          const { type, progress, processed, total, serializedTrie, wordCount } = e.data;
-          
+        workerRef.current.onmessage = (event) => {
+          const { type, progress, processed, total, serializedTrie, wordCount: count } =
+            event.data;
+
           if (type === 'PROGRESS') {
             setTrieProgress({ progress, processed, total });
-            // Solo mostrar progreso cada 25%
-            if (progress % 25 === 0) {
-              console.log(`⚙️ Trie building progress: ${progress}%`);
-            }
-          } else if (type === 'COMPLETE') {
-            console.log('🎉 Trie construction completed, deserializing...');
-            
-            // Deserialize the Trie
+            return;
+          }
+
+          if (type === 'COMPLETE') {
+            if (cancelled) return;
             const trie = new Trie();
             trie.deserialize(serializedTrie);
-            
-            // 🎯 SMART UPGRADE: Check if user is active before upgrading
-            const performUpgrade = () => {
-              console.log('🔥 Performing smart Trie upgrade');
-              hybridService.upgradeTrie(trie);
-              setIsTrieReady(true);
-              setStatus('ready');
-              setTrieProgress(null);
-              
-              // Save to cache for next time
-              saveTrie(trie);
-              
-              console.log(`✅ Trie upgrade complete! ${wordCount} words ready`);
-            };
-            
-            // Always upgrade immediately
-            performUpgrade();
-            
-            // Clean up worker
+            hybridService.upgradeTrie(trie);
+            setIsTrieReady(true);
+            setStatus('ready');
+            setTrieProgress({ progress: 100, processed: count, total: count });
             workerRef.current?.terminate();
             workerRef.current = null;
           }
         };
 
-        workerRef.current.onerror = (error) => {
-          console.error('❌ Web Worker error:', error);
-          setError('Error building Trie');
-          setStatus('error');
+        workerRef.current.onerror = (workerError) => {
+          console.error('Trie worker failed; SQLite remains active.', workerError);
+          if (!cancelled) {
+            setError('No se pudo construir el Trie; SQLite sigue disponible.');
+            setStatus('ready');
+          }
           workerRef.current?.terminate();
           workerRef.current = null;
         };
 
-        // Start building
-        workerRef.current.postMessage({
-          type: 'BUILD_TRIE',
-          words
-        });
-
-      } catch (err) {
-        console.error('❌ Background Trie construction failed:', err);
-        setError(err instanceof Error ? err.message : 'Unknown error');
-        setStatus('error');
+        workerRef.current.postMessage({ type: 'BUILD_TRIE', words });
+      } catch (initializationError) {
+        console.error('Offline dictionary initialization failed.', initializationError);
+        if (!cancelled) {
+          // HybridTrieService conserva Supabase como último fallback online.
+          setError(
+            initializationError instanceof Error
+              ? initializationError.message
+              : 'No se pudo preparar el diccionario offline.'
+          );
+          setStatus('ready');
+        }
       }
     };
 
-    buildTrieInBackground();
+    void initializeOfflineDictionary();
 
-    // Cleanup on unmount
     return () => {
-      if (workerRef.current) {
-        workerRef.current.terminate();
-        workerRef.current = null;
-      }
+      cancelled = true;
+      workerRef.current?.terminate();
+      workerRef.current = null;
     };
-  }, [hybridService, enableUltraFastMode]);
+  }, [enableUltraFastMode, hybridService]);
 
-  // Activity monitoring completely removed
-
-  return {
-    hybridService, // Always available from second 1!
-    isTrieReady,
-    trieProgress,
-    status,
-    error
-  };
+  return { hybridService, isTrieReady, trieProgress, status, error };
 };

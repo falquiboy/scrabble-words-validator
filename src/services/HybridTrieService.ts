@@ -16,6 +16,7 @@ export class HybridTrieService {
   private isSqliteAvailable: boolean = false;
   private isSupabaseAvailable: boolean = false;
   private supabaseAvailabilityPromise: Promise<boolean> | null = null;
+  private sqliteAvailabilityPromise: Promise<boolean> | null = null;
 
   constructor(trie: Trie | null = null) {
     this.actualTrie = trie;
@@ -40,10 +41,33 @@ export class HybridTrieService {
    * Inicializar servicios de fallback en background
    */
   private async initializeFallbackServices() {
-    // Supabase is the lightweight default. Do not initialize SQLite here:
-    // doing so downloads and expands the full dictionary on every device,
-    // which can exhaust Safari's memory before the first search.
-    await this.ensureSupabaseAvailability();
+    // La SQLite llega preconstruida: abrirla ya no crea 639 mil filas ni
+    // serializa un segundo diccionario dentro de Safari.
+    void this.ensureSqliteAvailability();
+    void this.ensureSupabaseAvailability();
+  }
+
+  private async ensureSqliteAvailability(): Promise<boolean> {
+    if (this.isSqliteAvailable) return true;
+
+    if (!this.sqliteAvailabilityPromise) {
+      this.sqliteAvailabilityPromise = sqliteAnagramService.isAvailable()
+        .then((available) => {
+          this.isSqliteAvailable = available;
+          console.log(`📱 SQLite offline availability: ${available}`);
+          return available;
+        })
+        .catch((error) => {
+          console.warn('SQLite offline initialization failed:', error);
+          this.isSqliteAvailable = false;
+          return false;
+        })
+        .finally(() => {
+          if (!this.isSqliteAvailable) this.sqliteAvailabilityPromise = null;
+        });
+    }
+
+    return this.sqliteAvailabilityPromise;
   }
 
   /**
@@ -88,18 +112,10 @@ export class HybridTrieService {
    * Detecta si está bloqueado por construcción O si tiene datos insuficientes
    */
   private async checkSqliteAvailability(): Promise<boolean> {
-    // SQLite is opt-in and only becomes available after the full dictionary
-    // loader explicitly notifies us. Never start that heavy load from a search.
-    if (!this.isSqliteAvailable) return false;
+    if (!(await this.ensureSqliteAvailability())) return false;
 
     try {
-      // Test ultra-rápido: verificar disponibilidad de SQLite con palabra común
-      const testPromise = sqliteAnagramService.findAnagrams('ES', 2, false);
-      const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('SQLite blocked or timeout')), 500)
-      );
-      
-      const result = await Promise.race([testPromise, timeoutPromise]);
+      const result = await sqliteAnagramService.findAnagrams('ES', 2, false);
       
       // Verificar si SQLite tiene datos suficientes
       if (result.exactMatches.length === 0) {

@@ -13,7 +13,7 @@ import Residues from "@/components/Residues";
 const Index = () => {
   const [activeModule, setActiveModule] = useState<'judge' | 'anagram' | 'lists' | 'residues' | 'training'>('judge');
   const [showTraining, setShowTraining] = useState(false);
-  const [enableUltraFastMode, setEnableUltraFastMode] = useState(false); // 🚫 DISABLED BY DEFAULT
+  const [enableUltraFastMode] = useState(true);
   
   // States for anagram settings (lifted up from Anagramador)
   const [showShorter, setShowShorter] = useState(false);
