@@ -87,7 +87,10 @@ const Index = () => {
   }, [showTraining]);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div
+      className="h-screen bg-gray-50 flex flex-col overflow-hidden"
+      style={{ height: '100dvh' }}
+    >
       <NewModuleSelector 
         activeModule={activeModule} 
         onModuleChange={setActiveModule}
@@ -114,7 +117,7 @@ const Index = () => {
           isPatternWithoutRack
         }}
       />
-      <div className="mt-20 flex-1 w-full h-0 min-h-0">
+      <div className="mt-20 flex-1 w-full min-h-0">
         {showTraining ? (
           <div className="container mx-auto px-4 py-6">
             <div className="mb-4 p-3 bg-blue-100 border border-blue-300 rounded-lg">
