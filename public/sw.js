@@ -1,4 +1,4 @@
-const CACHE_NAME = 'maslexico-offline-v1';
+const CACHE_NAME = 'maslexico-offline-v2';
 const CORE_ASSETS = [
   '/',
   '/index.html',
@@ -8,12 +8,14 @@ const CORE_ASSETS = [
   '/lexicon.dbpack',
 ];
 
+const getBuiltAssets = (html) =>
+  [...html.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)].map((match) => match[1]);
+
 const cacheAppShell = async () => {
   const cache = await caches.open(CACHE_NAME);
   const pageResponse = await fetch('/index.html', { cache: 'reload' });
   const html = await pageResponse.clone().text();
-  const builtAssets = [...html.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)]
-    .map((match) => match[1]);
+  const builtAssets = getBuiltAssets(html);
 
   await cache.put('/index.html', pageResponse.clone());
   await cache.put('/', pageResponse);
@@ -44,9 +46,11 @@ self.addEventListener('fetch', (event) => {
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
-        .then((response) => {
-          const copy = response.clone();
-          void caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', copy));
+        .then(async (response) => {
+          const cache = await caches.open(CACHE_NAME);
+          const html = await response.clone().text();
+          await cache.put('/index.html', response.clone());
+          await cache.addAll([...new Set(getBuiltAssets(html))]);
           return response;
         })
         .catch(() => caches.match('/index.html'))
