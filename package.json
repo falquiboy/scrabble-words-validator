@@ -8,7 +8,8 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "pages:deploy": "npm run build && npx wrangler pages deploy dist --project-name maslexico-juez --branch main --commit-dirty=true"
   },
   "dependencies": {
     "@capacitor/android": "^7.0.1",

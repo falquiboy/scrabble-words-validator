@@ -77,6 +77,59 @@ export class SupabaseWordService {
   }
 
   /**
+   * Find words formed by adding wildcard letters in a small number of batched
+   * requests. A normal anagram search uses this for the "+1 letter" results.
+   */
+  async findAnagramsWithAddedLetters(letters: string, addedLetterCount: number): Promise<string[]> {
+    try {
+      const normalizedLetters = letters.toUpperCase();
+      // Ç/K/W are the lexicon's one-character encodings for CH/LL/RR.
+      const spanishLetters = [...'ABCDEFGHIJKLMNÑOPQRSTUVWXYZÇ'];
+      let additions = [''];
+
+      for (let depth = 0; depth < addedLetterCount; depth++) {
+        additions = additions.flatMap((prefix) =>
+          spanishLetters.map((letter) => prefix + letter)
+        );
+      }
+
+      const alphagrams = Array.from(new Set(
+        additions.map((addition) => this.createAlphagram(normalizedLetters + addition))
+      ));
+
+      // Keep URLs comfortably below browser and proxy limits for two blanks.
+      const batches: string[][] = [];
+      for (let index = 0; index < alphagrams.length; index += 75) {
+        batches.push(alphagrams.slice(index, index + 75));
+      }
+
+      const responses = await Promise.all(
+        batches.map((batch) =>
+          supabase
+            .from(this.tableName)
+            .select('norm_word')
+            .in('norm_alph', batch)
+            .order('norm_word')
+        )
+      );
+
+      const words: string[] = [];
+      for (const { data, error } of responses) {
+        if (error) {
+          console.error('❌ Supabase wildcard batch error:', error);
+          continue;
+        }
+        words.push(...(data?.map((entry) => entry.norm_word) || []));
+      }
+
+      return Array.from(new Set(words)).sort();
+    } catch (error) {
+      console.error('❌ Supabase wildcard search error:', error);
+      return [];
+    }
+  }
+
+  /**
    * Buscar subanagramas (palabras más cortas) en Supabase usando norm_length
    */
   async findSubanagrams(letters: string, minLength: number = 2): Promise<string[]> {

@@ -15,6 +15,7 @@ export class HybridTrieService {
   private isTrieReady: boolean = false;
   private isSqliteAvailable: boolean = false;
   private isSupabaseAvailable: boolean = false;
+  private supabaseAvailabilityPromise: Promise<boolean> | null = null;
 
   constructor(trie: Trie | null = null) {
     this.actualTrie = trie;
@@ -39,17 +40,39 @@ export class HybridTrieService {
    * Inicializar servicios de fallback en background
    */
   private async initializeFallbackServices() {
-    // Verificar Supabase primero (más confiable)
-    try {
-      this.isSupabaseAvailable = await supabaseWordService.isAvailable();
-      console.log(`🌐 Supabase availability: ${this.isSupabaseAvailable}`);
-    } catch (error) {
-      console.warn('⚠️ Supabase check failed:', error);
-      this.isSupabaseAvailable = false;
+    // Supabase is the lightweight default. Do not initialize SQLite here:
+    // doing so downloads and expands the full dictionary on every device,
+    // which can exhaust Safari's memory before the first search.
+    await this.ensureSupabaseAvailability();
+  }
+
+  /**
+   * Share the connectivity check with searches so a slow mobile connection
+   * cannot race the background initialization. Failed checks may retry.
+   */
+  private async ensureSupabaseAvailability(): Promise<boolean> {
+    if (this.isSupabaseAvailable) return true;
+
+    if (!this.supabaseAvailabilityPromise) {
+      this.supabaseAvailabilityPromise = supabaseWordService.isAvailable()
+        .then((available) => {
+          this.isSupabaseAvailable = available;
+          console.log(`🌐 Supabase availability: ${available}`);
+          return available;
+        })
+        .catch((error) => {
+          console.warn('⚠️ Supabase check failed:', error);
+          this.isSupabaseAvailable = false;
+          return false;
+        })
+        .finally(() => {
+          if (!this.isSupabaseAvailable) {
+            this.supabaseAvailabilityPromise = null;
+          }
+        });
     }
-    
-    // SQLite se verifica dinámicamente para evitar bloqueos durante construcción
-    this.checkSqliteAvailability();
+
+    return this.supabaseAvailabilityPromise;
   }
 
   /**
@@ -65,6 +88,10 @@ export class HybridTrieService {
    * Detecta si está bloqueado por construcción O si tiene datos insuficientes
    */
   private async checkSqliteAvailability(): Promise<boolean> {
+    // SQLite is opt-in and only becomes available after the full dictionary
+    // loader explicitly notifies us. Never start that heavy load from a search.
+    if (!this.isSqliteAvailable) return false;
+
     try {
       // Test ultra-rápido: verificar disponibilidad de SQLite con palabra común
       const testPromise = sqliteAnagramService.findAnagrams('ES', 2, false);
@@ -140,7 +167,7 @@ export class HybridTrieService {
     }
 
     // Nivel 3: Supabase (remoto)
-    if (this.isSupabaseAvailable) {
+    if (await this.ensureSupabaseAvailability()) {
       console.log(`🌐 Level 3 - Supabase search: ${normalizedWord}`);
       return await supabaseWordService.search(normalizedWord);
     }
@@ -191,7 +218,7 @@ export class HybridTrieService {
     }
 
     // Nivel 3: Supabase (remoto)
-    if (this.isSupabaseAvailable) {
+    if (await this.ensureSupabaseAvailability()) {
       console.log(`🌐 Level 3 - Supabase anagrams: ${letters}`);
       return await supabaseWordService.findAnagrams(letters);
     }
@@ -232,7 +259,7 @@ export class HybridTrieService {
     }
 
     // Nivel 3: Supabase + wildcards
-    if (this.isSupabaseAvailable) {
+    if (await this.ensureSupabaseAvailability()) {
       return await this.processWildcardsWithSupabase(letters, wildcardCount);
     }
 
@@ -312,7 +339,7 @@ export class HybridTrieService {
     }
 
     // Nivel 3: Supabase
-    if (this.isSupabaseAvailable) {
+    if (await this.ensureSupabaseAvailability()) {
       console.log(`🌐 Level 3 - Supabase extended anagrams: ${letters}`);
       const exactMatches = await supabaseWordService.findAnagrams(letters);
       let shorterMatches: string[] = [];
@@ -412,7 +439,7 @@ export class HybridTrieService {
     }
 
     // Nivel 3: Supabase (remoto) - implementación básica
-    if (this.isSupabaseAvailable) {
+    if (await this.ensureSupabaseAvailability()) {
       console.log(`🌐 Level 3 - Supabase pattern search: ${pattern}`);
       // Por ahora, Supabase no tiene búsqueda de patrones implementada
       console.log(`⚠️ Supabase pattern search not implemented yet`);
@@ -466,7 +493,7 @@ export class HybridTrieService {
     const spanishLetters = ["A", "B", "C", "Ç", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "Ñ", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
     
     let wildcardMatches: string[] = [];
-    let additionalWildcardMatches: string[] = [];
+    const additionalWildcardMatches: string[] = [];
 
     if (wildcardCount > 0) {
       // Estrategia optimizada: buscar palabras por longitud específica
@@ -562,37 +589,17 @@ export class HybridTrieService {
     // Usar la lógica legacy de useAnagramSearch
     const lettersOnly = letters.replace(/\?/g, '');
     const processedInput = processDigraphs(lettersOnly);
-    const inputLength = processedInput.length;
-    
     let exactMatches: string[] = [];
     let wildcardMatches: string[] = [];
-    let additionalWildcardMatches: string[] = [];
+    const additionalWildcardMatches: string[] = [];
 
     if (wildcardCount === 0) {
       exactMatches = await supabaseWordService.findAnagrams(processedInput);
     } else {
-      // Usar la lógica de combinaciones del useAnagramSearch legacy
-      const spanishLetters = ["A", "B", "C", "Ç", "CH", "D", "E", "F", "G", "H", "I", "J", "K", "L", "LL", "M", "N", "Ñ", "O", "P", "Q", "R", "RR", "S", "T", "U", "V", "W", "X", "Y", "Z"];
-      
-      const generateCombinations = (depth: number): string[] => {
-        if (depth === 0) return [''];
-        const results: string[] = [];
-        const prev = generateCombinations(depth - 1);
-        for (const p of prev) {
-          for (const letter of spanishLetters) {
-            results.push(p + letter);
-          }
-        }
-        return results;
-      };
-
-      // Limitar combinaciones para performance en Supabase
-      const combinations = generateCombinations(wildcardCount).slice(0, 50);
-      for (const combo of combinations) {
-        const fullLetters = processedInput + combo;
-        const matches = await supabaseWordService.findAnagrams(fullLetters);
-        wildcardMatches.push(...matches);
-      }
+      wildcardMatches = await supabaseWordService.findAnagramsWithAddedLetters(
+        processedInput,
+        wildcardCount
+      );
     }
 
     return {

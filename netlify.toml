@@ -6,6 +6,10 @@
   # Build command for Vite
   command = "npm run build"
 
+  # This project moved to Cloudflare Pages. Never spend Netlify build credits,
+  # even if the suspended Netlify team is reactivated later.
+  ignore = "exit 0"
+
 # ── Quetzal sub-app proxy ────────────────────────────────────────────────
 # Quetzal (Svelte+WASM Scrabble client) is hosted on Cloudflare Pages
 # (`https://quetzal-app.pages.dev/`) — moved from Netlify to escape the
