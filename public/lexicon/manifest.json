@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "format": "sqlite-length-shards",
+  "wordCount": 639293,
+  "totalCompressedBytes": 11198654,
+  "totalSqliteBytes": 33382400,
+  "lengths": {
+    "2": {
+      "url": "/lexicon/length-2.dbpack",
+      "wordCount": 91,
+      "compressedBytes": 1596,
+      "sqliteBytes": 16384
+    },
+    "3": {
+      "url": "/lexicon/length-3.dbpack",
+      "wordCount": 548,
+      "compressedBytes": 10189,
+      "sqliteBytes": 36864
+    },
+    "4": {
+      "url": "/lexicon/length-4.dbpack",
+      "wordCount": 3509,
+      "compressedBytes": 51952,
+      "sqliteBytes": 126976
+    },
+    "5": {
+      "url": "/lexicon/length-5.dbpack",
+      "wordCount": 12271,
+      "compressedBytes": 184944,
+      "sqliteBytes": 450560
+    },
+    "6": {
+      "url": "/lexicon/length-6.dbpack",
+      "wordCount": 28148,
+      "compressedBytes": 431680,
+      "sqliteBytes": 1110016
+    },
+    "7": {
+      "url": "/lexicon/length-7.dbpack",
+      "wordCount": 53124,
+      "compressedBytes": 864070,
+      "sqliteBytes": 2277376
+    },
+    "8": {
+      "url": "/lexicon/length-8.dbpack",
+      "wordCount": 78295,
+      "compressedBytes": 1314391,
+      "sqliteBytes": 3629056
+    },
+    "9": {
+      "url": "/lexicon/length-9.dbpack",
+      "wordCount": 98579,
+      "compressedBytes": 1686176,
+      "sqliteBytes": 4866048
+    },
+    "10": {
+      "url": "/lexicon/length-10.dbpack",
+      "wordCount": 105182,
+      "compressedBytes": 1850342,
+      "sqliteBytes": 5521408
+    },
+    "11": {
+      "url": "/lexicon/length-11.dbpack",
+      "wordCount": 93829,
+      "compressedBytes": 1682964,
+      "sqliteBytes": 5206016
+    },
+    "12": {
+      "url": "/lexicon/length-12.dbpack",
+      "wordCount": 72813,
+      "compressedBytes": 1351676,
+      "sqliteBytes": 4288512
+    },
+    "13": {
+      "url": "/lexicon/length-13.dbpack",
+      "wordCount": 49325,
+      "compressedBytes": 923542,
+      "sqliteBytes": 3010560
+    },
+    "14": {
+      "url": "/lexicon/length-14.dbpack",
+      "wordCount": 28798,
+      "compressedBytes": 550960,
+      "sqliteBytes": 1843200
+    },
+    "15": {
+      "url": "/lexicon/length-15.dbpack",
+      "wordCount": 14781,
+      "compressedBytes": 294172,
+      "sqliteBytes": 999424
+    }
+  }
+}

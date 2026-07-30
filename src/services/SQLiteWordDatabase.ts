@@ -1,8 +1,9 @@
 /**
- * Diccionario SQLite offline-first.
+ * Diccionario SQLite offline-first fragmentado por longitud.
  *
- * La base completa se genera antes del deploy. El navegador sólo descarga,
- * descomprime y abre una SQLite ya indexada; nunca construye 639 mil filas.
+ * Safari nunca abre la base completa: conserva como máximo cuatro fragmentos
+ * pequeños y expulsa los menos recientes. Así mantenemos índices SQL sin el
+ * pico de memoria de una SQLite monolítica.
  */
 
 import initSqlJs, { Database, SqlJsStatic } from 'sql.js';
@@ -15,13 +16,38 @@ export interface WordEntry {
   points?: number;
 }
 
-const OFFLINE_DATABASE_URL = '/lexicon.dbpack';
+interface DictionaryShard {
+  url: string;
+  wordCount: number;
+  compressedBytes: number;
+  sqliteBytes: number;
+}
+
+interface DictionaryManifest {
+  version: number;
+  format: string;
+  wordCount: number;
+  totalCompressedBytes: number;
+  totalSqliteBytes: number;
+  lengths: Record<string, DictionaryShard>;
+}
+
+interface OpenShard {
+  db: Database;
+  activeQueries: number;
+  lastUsed: number;
+}
+
+const MANIFEST_URL = '/lexicon/manifest.json';
 const MINIMUM_WORD_COUNT = 600_000;
+const MAX_OPEN_SHARDS = 4;
 
 export class SQLiteWordDatabase {
   private static instance: SQLiteWordDatabase;
   private SQL: SqlJsStatic | null = null;
-  private db: Database | null = null;
+  private manifest: DictionaryManifest | null = null;
+  private shards = new Map<number, OpenShard>();
+  private shardPromises = new Map<number, Promise<OpenShard>>();
   private isInitialized = false;
   private initPromise: Promise<void> | null = null;
 
@@ -41,126 +67,188 @@ export class SQLiteWordDatabase {
   }
 
   private async initializeDatabase(): Promise<void> {
-    console.log('📚 Iniciando diccionario SQLite offline…');
-    this.SQL = await initSqlJs({ locateFile: (file) => `/${file}` });
+    console.log('📚 Iniciando índice SQLite fragmentado…');
+    const [SQL, manifestResponse] = await Promise.all([
+      initSqlJs({ locateFile: (file) => `/${file}` }),
+      fetch(MANIFEST_URL, { cache: 'force-cache' }),
+    ]);
 
-    const databaseBytes = await this.downloadPackagedDatabase();
-    this.db = new this.SQL.Database(databaseBytes);
-    const wordCount = await this.getWordCount();
-    if (wordCount < MINIMUM_WORD_COUNT) {
-      this.db.close();
-      this.db = null;
-      throw new Error(`Diccionario offline incompleto (${wordCount} palabras)`);
+    if (!manifestResponse.ok) {
+      throw new Error(`No se pudo cargar el manifiesto offline (${manifestResponse.status})`);
     }
 
+    const manifest = (await manifestResponse.json()) as DictionaryManifest;
+    if (
+      manifest.format !== 'sqlite-length-shards' ||
+      manifest.wordCount < MINIMUM_WORD_COUNT
+    ) {
+      throw new Error(`Diccionario offline incompleto (${manifest.wordCount ?? 0})`);
+    }
+
+    this.SQL = SQL;
+    this.manifest = manifest;
     this.isInitialized = true;
     await this.notifyHybridService();
-    console.log(`✅ SQLite offline lista (${wordCount} palabras)`);
-
+    console.log(`✅ Índice SQLite listo (${manifest.wordCount} palabras)`);
   }
 
-  private async downloadPackagedDatabase(): Promise<Uint8Array> {
-    const response = await fetch(OFFLINE_DATABASE_URL, { cache: 'force-cache' });
+  private async withShard<T>(
+    length: number,
+    operation: (db: Database) => T | Promise<T>
+  ): Promise<T> {
+    await this.init();
+    const shard = await this.getShard(length);
+    shard.activeQueries += 1;
+    shard.lastUsed = Date.now();
+    try {
+      return await operation(shard.db);
+    } finally {
+      shard.activeQueries -= 1;
+      shard.lastUsed = Date.now();
+      this.evictUnusedShards();
+    }
+  }
+
+  private async getShard(length: number): Promise<OpenShard> {
+    const existing = this.shards.get(length);
+    if (existing) return existing;
+
+    const inFlight = this.shardPromises.get(length);
+    if (inFlight) return inFlight;
+
+    const promise = this.loadShard(length).finally(() => {
+      this.shardPromises.delete(length);
+    });
+    this.shardPromises.set(length, promise);
+    return promise;
+  }
+
+  private async loadShard(length: number): Promise<OpenShard> {
+    if (!this.SQL || !this.manifest) throw new Error('Database not initialized');
+    const descriptor = this.manifest.lengths[String(length)];
+    if (!descriptor) throw new Error(`No dictionary shard for length ${length}`);
+
+    const response = await fetch(descriptor.url, { cache: 'force-cache' });
     if (!response.ok) {
-      throw new Error(`No se pudo descargar el diccionario offline (${response.status})`);
+      throw new Error(`No se pudo cargar el índice de ${length} letras (${response.status})`);
     }
 
+    const databaseBytes = await this.decompressResponse(response);
+    const shard: OpenShard = {
+      db: new this.SQL.Database(databaseBytes),
+      activeQueries: 0,
+      lastUsed: Date.now(),
+    };
+    this.shards.set(length, shard);
+    console.log(`⚡ SQLite ${length} letras lista (${descriptor.wordCount} palabras)`);
+    return shard;
+  }
+
+  private async decompressResponse(response: Response): Promise<Uint8Array> {
     if ('DecompressionStream' in globalThis && response.body) {
       const stream = response.body.pipeThrough(new DecompressionStream('gzip'));
       return new Uint8Array(await new Response(stream).arrayBuffer());
     }
-
-    // Compatibilidad con iOS/Safari anteriores a DecompressionStream.
     return gunzipSync(new Uint8Array(await response.arrayBuffer()));
   }
 
-  async addWords(words: WordEntry[]): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
-    const statement = this.db.prepare(
-      'INSERT INTO words (word, alphagram, length) VALUES (?, ?, ?)'
-    );
-    this.db.exec('BEGIN');
-    try {
-      for (const entry of words) statement.run([entry.word, entry.alphagram, entry.length]);
-      this.db.exec('COMMIT');
-    } catch (error) {
-      this.db.exec('ROLLBACK');
-      throw error;
-    } finally {
-      statement.free();
+  private evictUnusedShards(): void {
+    if (this.shards.size <= MAX_OPEN_SHARDS) return;
+    const candidates = [...this.shards.entries()]
+      .filter(([, shard]) => shard.activeQueries === 0)
+      .sort((left, right) => left[1].lastUsed - right[1].lastUsed);
+
+    while (this.shards.size > MAX_OPEN_SHARDS && candidates.length) {
+      const [length, shard] = candidates.shift()!;
+      shard.db.close();
+      this.shards.delete(length);
     }
+  }
+
+  async addWords(_words: WordEntry[]): Promise<void> {
+    throw new Error('El diccionario offline empaquetado es de sólo lectura');
   }
 
   async findAnagramsByAlphagram(alphagram: string): Promise<string[]> {
-    if (!this.db) throw new Error('Database not initialized');
-    const statement = this.db.prepare(
-      'SELECT word FROM words WHERE alphagram = ? ORDER BY word'
-    );
-    statement.bind([alphagram]);
-    const words: string[] = [];
-    while (statement.step()) words.push(statement.getAsObject().word as string);
-    statement.free();
-    return words;
+    const length = [...alphagram].length;
+    return this.withShard(length, (db) => {
+      const statement = db.prepare(
+        'SELECT word FROM words WHERE alphagram = ? ORDER BY word'
+      );
+      statement.bind([alphagram]);
+      const words: string[] = [];
+      while (statement.step()) words.push(statement.getAsObject().word as string);
+      statement.free();
+      return words;
+    });
   }
 
   async findWordsByLength(length: number): Promise<WordEntry[]> {
-    if (!this.db) throw new Error('Database not initialized');
-    const statement = this.db.prepare(
-      'SELECT word, alphagram, length FROM words WHERE length = ? ORDER BY word'
-    );
-    statement.bind([length]);
-    const words: WordEntry[] = [];
-    while (statement.step()) {
-      const row = statement.getAsObject();
-      words.push({
-        word: row.word as string,
-        alphagram: row.alphagram as string,
-        length: row.length as number,
-      });
-    }
-    statement.free();
-    return words;
+    await this.init();
+    if (!this.manifest?.lengths[String(length)]) return [];
+    return this.withShard(length, (db) => {
+      const statement = db.prepare(
+        'SELECT word, alphagram, length FROM words ORDER BY word'
+      );
+      const words: WordEntry[] = [];
+      while (statement.step()) {
+        const row = statement.getAsObject();
+        words.push({
+          word: row.word as string,
+          alphagram: row.alphagram as string,
+          length: row.length as number,
+        });
+      }
+      statement.free();
+      return words;
+    });
   }
 
   async getAllWords(): Promise<string[]> {
-    if (!this.db) throw new Error('Database not initialized');
-    const statement = this.db.prepare('SELECT word FROM words ORDER BY word');
+    await this.init();
+    if (!this.manifest) return [];
     const words: string[] = [];
-    while (statement.step()) words.push(statement.getAsObject().word as string);
-    statement.free();
+    const lengths = Object.keys(this.manifest.lengths)
+      .map(Number)
+      .sort((left, right) => left - right);
+    for (const length of lengths) {
+      const shardWords = await this.withShard(length, (db) => {
+        const statement = db.prepare('SELECT word FROM words ORDER BY word');
+        const result: string[] = [];
+        while (statement.step()) result.push(statement.getAsObject().word as string);
+        statement.free();
+        return result;
+      });
+      words.push(...shardWords);
+    }
     return words;
   }
 
   async getWordCount(): Promise<number> {
-    if (!this.db) throw new Error('Database not initialized');
-    const result = this.db.exec('SELECT COUNT(*) AS count FROM words')[0];
-    return (result?.values[0][0] as number) || 0;
+    await this.init();
+    return this.manifest?.wordCount ?? 0;
   }
 
-  // No se vuelve a serializar el trie dentro de SQLite: esa segunda copia
-  // gigante era la causa del cierre de Safari.
   async saveTrie(): Promise<void> {}
   async loadTrie(): Promise<null> { return null; }
   async clearTrie(): Promise<void> {}
-
-  async saveToCache(): Promise<void> {
-    // El service worker conserva el paquete comprimido (15 MB). Guardar además
-    // la SQLite expandida (39 MB) en IndexedDB duplicaba memoria y almacenamiento.
-  }
+  async saveToCache(): Promise<void> {}
 
   private async notifyHybridService(): Promise<void> {
     try {
       const { hybridTrieService } = await import('./HybridTrieService');
       hybridTrieService.notifySqliteReady();
     } catch {
-      // React puede estar usando otra instancia híbrida; esa instancia también
-      // espera directamente a sqliteDB.init().
+      // La instancia usada por React también espera directamente a init().
     }
   }
 
   close(): void {
-    this.db?.close();
-    this.db = null;
+    for (const shard of this.shards.values()) shard.db.close();
+    this.shards.clear();
+    this.shardPromises.clear();
+    this.SQL = null;
+    this.manifest = null;
     this.isInitialized = false;
     this.initPromise = null;
   }

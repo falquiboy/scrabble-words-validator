@@ -1,11 +1,11 @@
-const CACHE_NAME = 'maslexico-offline-v2';
+const CACHE_NAME = 'maslexico-offline-v3';
 const CORE_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
   '/maslexico-icon.png',
   '/sql-wasm.wasm',
-  '/lexicon.dbpack',
+  '/lexicon/manifest.json',
 ];
 
 const getBuiltAssets = (html) =>
@@ -13,13 +13,20 @@ const getBuiltAssets = (html) =>
 
 const cacheAppShell = async () => {
   const cache = await caches.open(CACHE_NAME);
-  const pageResponse = await fetch('/index.html', { cache: 'reload' });
+  const [pageResponse, dictionaryResponse] = await Promise.all([
+    fetch('/index.html', { cache: 'reload' }),
+    fetch('/lexicon/manifest.json', { cache: 'reload' }),
+  ]);
   const html = await pageResponse.clone().text();
+  const dictionary = await dictionaryResponse.clone().json();
   const builtAssets = getBuiltAssets(html);
+  const dictionaryAssets = Object.values(dictionary.lengths).map((shard) => shard.url);
 
   await cache.put('/index.html', pageResponse.clone());
   await cache.put('/', pageResponse);
+  await cache.put('/lexicon/manifest.json', dictionaryResponse);
   await cache.addAll([...new Set([...CORE_ASSETS.slice(2), ...builtAssets])]);
+  for (const asset of dictionaryAssets) await cache.add(asset);
 };
 
 self.addEventListener('install', (event) => {
