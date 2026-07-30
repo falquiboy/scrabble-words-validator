@@ -17,7 +17,7 @@ root.render(
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
-    void navigator.serviceWorker.register('/sw.js').catch((error) => {
+    void navigator.serviceWorker.register('/sw.js?v=1', { updateViaCache: 'none' }).catch((error) => {
       console.warn('No se pudo registrar el modo offline.', error);
     });
   });
