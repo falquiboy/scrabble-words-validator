@@ -2,6 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import { Trie } from '@/utils/trie';
 import { sqliteDB } from '@/services/SQLiteWordDatabase';
 import { HybridTrieService } from '@/services/HybridTrieService';
+import {
+  getTrieBuildDecision,
+  markTrieBuildFailed,
+  markTrieBuildStarted,
+  markTrieBuildSucceeded,
+  TRIE_BUILD_TIMEOUT_MS,
+} from '@/utils/trieBuildPolicy';
 
 interface TrieProgress {
   progress: number;
@@ -17,16 +24,13 @@ interface UseBackgroundTrieReturn {
   error: string | null;
 }
 
-const shouldKeepOnlySQLite = (): boolean => {
-  const navigatorWithMemory = navigator as Navigator & { deviceMemory?: number };
-  const isAppleTouchDevice =
-    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  const hasTightMemory =
-    navigatorWithMemory.deviceMemory !== undefined &&
-    navigatorWithMemory.deviceMemory <= 4;
-
-  return isAppleTouchDevice || hasTightMemory;
+const waitForIdleTurn = (): Promise<void> => {
+  if ('requestIdleCallback' in window) {
+    return new Promise((resolve) => {
+      window.requestIdleCallback(() => resolve(), { timeout: 1_500 });
+    });
+  }
+  return new Promise((resolve) => window.setTimeout(resolve, 250));
 };
 
 export const useBackgroundTrie = (
@@ -42,6 +46,29 @@ export const useBackgroundTrie = (
 
   useEffect(() => {
     let cancelled = false;
+    let buildTimeout: number | null = null;
+    let trieBuildStarted = false;
+
+    const clearBuildTimeout = () => {
+      if (buildTimeout !== null) {
+        window.clearTimeout(buildTimeout);
+        buildTimeout = null;
+      }
+    };
+
+    const keepSQLiteActive = (message: string, cause?: unknown) => {
+      clearBuildTimeout();
+      workerRef.current?.terminate();
+      workerRef.current = null;
+      markTrieBuildFailed();
+      trieBuildStarted = false;
+      if (cause) console.error(message, cause);
+      else console.warn(message);
+      if (!cancelled) {
+        setError('El Trie no estuvo disponible; SQLite sigue funcionando.');
+        setStatus('ready');
+      }
+    };
 
     const initializeOfflineDictionary = async () => {
       try {
@@ -50,15 +77,29 @@ export const useBackgroundTrie = (
         const wordCount = await sqliteDB.getWordCount();
         if (cancelled) return;
 
-        // En iPhone/iPad SQLite es el índice rápido. Construir además el árbol
-        // de objetos JS duplica varias veces el diccionario y Safari lo cierra.
-        if (!enableUltraFastMode || shouldKeepOnlySQLite()) {
+        if (!enableUltraFastMode) {
           setTrieProgress({ progress: 100, processed: wordCount, total: wordCount });
           setStatus('ready');
           return;
         }
 
+        const decision = getTrieBuildDecision();
+        if (!decision.shouldBuild) {
+          console.info(`SQLite-only mode: ${decision.reason}`);
+          setTrieProgress({ progress: 100, processed: wordCount, total: wordCount });
+          setStatus('ready');
+          return;
+        }
+
+        // SQLite is usable now. Give rendering and the first interaction an idle
+        // turn before the optional in-memory accelerator starts loading shards.
+        setTrieProgress({ progress: 0, processed: 0, total: wordCount });
         setStatus('building');
+        await waitForIdleTurn();
+        if (cancelled) return;
+
+        markTrieBuildStarted();
+        trieBuildStarted = true;
         const words = await sqliteDB.getAllWords();
         if (cancelled) return;
         if (!words.length) throw new Error('No words found in database');
@@ -75,30 +116,48 @@ export const useBackgroundTrie = (
 
           if (type === 'COMPLETE') {
             if (cancelled) return;
-            const trie = new Trie();
-            trie.deserialize(serializedTrie);
-            hybridService.upgradeTrie(trie);
-            setIsTrieReady(true);
-            setStatus('ready');
-            setTrieProgress({ progress: 100, processed: count, total: count });
+            clearBuildTimeout();
             workerRef.current?.terminate();
             workerRef.current = null;
+            try {
+              const trie = new Trie();
+              trie.deserialize(serializedTrie);
+              if (cancelled) return;
+              hybridService.upgradeTrie(trie);
+              markTrieBuildSucceeded();
+              trieBuildStarted = false;
+              setIsTrieReady(true);
+              setStatus('ready');
+              setTrieProgress({ progress: 100, processed: count, total: count });
+            } catch (deserializationError) {
+              keepSQLiteActive('Trie deserialization failed; SQLite remains active.', deserializationError);
+            }
+            return;
+          }
+
+          if (type === 'ERROR') {
+            keepSQLiteActive(
+              'Trie worker failed; SQLite remains active.',
+              new Error(event.data.message || 'Unknown worker error')
+            );
           }
         };
 
         workerRef.current.onerror = (workerError) => {
-          console.error('Trie worker failed; SQLite remains active.', workerError);
-          if (!cancelled) {
-            setError('No se pudo construir el Trie; SQLite sigue disponible.');
-            setStatus('ready');
-          }
-          workerRef.current?.terminate();
-          workerRef.current = null;
+          keepSQLiteActive('Trie worker failed; SQLite remains active.', workerError);
         };
 
+        buildTimeout = window.setTimeout(() => {
+          keepSQLiteActive('Trie build timed out; SQLite remains active.');
+        }, TRIE_BUILD_TIMEOUT_MS);
         workerRef.current.postMessage({ type: 'BUILD_TRIE', words });
       } catch (initializationError) {
         console.error('Offline dictionary initialization failed.', initializationError);
+        if (trieBuildStarted) markTrieBuildFailed();
+        trieBuildStarted = false;
+        clearBuildTimeout();
+        workerRef.current?.terminate();
+        workerRef.current = null;
         if (!cancelled) {
           // HybridTrieService conserva Supabase como último fallback online.
           setError(
@@ -115,6 +174,7 @@ export const useBackgroundTrie = (
 
     return () => {
       cancelled = true;
+      clearBuildTimeout();
       workerRef.current?.terminate();
       workerRef.current = null;
     };

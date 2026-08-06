@@ -10,7 +10,8 @@ export const useWordTrie = (enableUltraFastMode: boolean = false) => {
   const { hybridService, isTrieReady, trieProgress, status, error } = useBackgroundTrie(enableUltraFastMode);
   
   // Mapear los estados para compatibilidad con la interfaz legacy
-  const isLoading = status === 'loading' || status === 'building';
+  // SQLite is already usable while the optional Trie is built in background.
+  const isLoading = status === 'loading';
   const isTrieBuilding = status === 'building';
   const loadingProgress = trieProgress ? trieProgress.progress : (status === 'ready' ? 100 : 0);
   
@@ -26,6 +27,7 @@ export const useWordTrie = (enableUltraFastMode: boolean = false) => {
   return {
     isLoading,
     isTrieBuilding,
+    isTrieReady,
     error: error ? new Error(error) : null,
     wordCount,
     trie: hybridService, // ✅ Servicio híbrido siempre disponible

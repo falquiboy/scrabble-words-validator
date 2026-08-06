@@ -32,9 +32,17 @@ const Index = () => {
   
   
   // Use only useWordTrie - it handles all dictionary/database construction
-  const { isLoading: isTrieLoading, trie, loadingProgress, stage: trieStage, wordCount } = useWordTrie(enableUltraFastMode);
+  const {
+    isLoading: isTrieLoading,
+    isTrieBuilding,
+    isTrieReady,
+    trie,
+    loadingProgress,
+    stage: trieStage,
+    wordCount
+  } = useWordTrie(enableUltraFastMode);
   
-  // Dictionary loading is only true when Trie is being built (ultra-fast mode enabled)
+  // Only SQLite startup blocks the controls; Trie promotion stays in background.
   const isDictionaryLoading = isTrieLoading;
   
   // Get loading progress from Trie only
@@ -153,6 +161,8 @@ const Index = () => {
                   trie={trie}
                   stage={getCurrentStage()}
                   wordCount={wordCount}
+                  isTrieBuilding={isTrieBuilding}
+                  isTrieReady={isTrieReady}
                 />
               ) : activeModule === 'anagram' ? (
                 <Anagramador 

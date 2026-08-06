@@ -14,14 +14,18 @@ interface WordValidatorProps {
   trie: HybridTrieService;
   stage?: LoadingStage;
   wordCount?: number;
+  isTrieBuilding?: boolean;
+  isTrieReady?: boolean;
 }
 
 const WordValidator = ({ 
   isDictionaryLoading, 
   progress, 
-  trie, 
+  trie,
   stage = 'processing',
-  wordCount = 0
+  wordCount = 0,
+  isTrieBuilding = false,
+  isTrieReady = false
 }: WordValidatorProps) => {
   const [word, setWord] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -43,19 +47,21 @@ const WordValidator = ({
     // Actualizar inmediatamente
     updateProvider();
 
-    // Actualizar cada 2 segundos hasta que SQLite esté listo
+    if (!isTrieBuilding) return;
+
+    // The provider changes without replacing the service instance, so poll only
+    // while the optional background promotion is active.
     const interval = setInterval(() => {
       const provider = trie.getCurrentProvider();
       setCurrentProvider(provider);
       
-      // Dejar de chequear cuando SQLite esté listo
-      if (provider === 'sqlite' || provider === 'trie') {
+      if (provider === 'trie') {
         clearInterval(interval);
       }
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [trie]);
+  }, [trie, isDictionaryLoading, isTrieBuilding, isTrieReady]);
 
   const handleValidate = async () => {
     if (!word.trim() || isDictionaryLoading) return;

@@ -108,10 +108,22 @@ export class Trie {
   }
 
   deserialize(data: SerializedTrie): void {
+    this.lengthIndex = {};
+
     const deserializeNode = (serialized: SerializedTrieNode): TrieNode => {
       const node = createNode();
       node.isEndOfWord = serialized.isEndOfWord;
       node.word = serialized.word;
+
+      if (node.isEndOfWord && node.word) {
+        const length = node.word.length;
+        const alphagram = this.sortLetters(node.word);
+        if (!this.lengthIndex[length]) this.lengthIndex[length] = {};
+        if (!this.lengthIndex[length][alphagram]) {
+          this.lengthIndex[length][alphagram] = [];
+        }
+        this.lengthIndex[length][alphagram].push(node.word);
+      }
 
       serialized.children.forEach(([key, value]) => {
         node.children.set(key, deserializeNode(value));
@@ -121,22 +133,6 @@ export class Trie {
     };
 
     this.root = deserializeNode(data.root);
-    
-    // Rebuild length index
-    this.lengthIndex = {};
-    const words = this.getAllWords();
-    words.forEach(word => {
-      const length = word.length;
-      const alphagram = this.sortLetters(word);
-      
-      if (!this.lengthIndex[length]) {
-        this.lengthIndex[length] = {};
-      }
-      if (!this.lengthIndex[length][alphagram]) {
-        this.lengthIndex[length][alphagram] = [];
-      }
-      this.lengthIndex[length][alphagram].push(word);
-    });
   }
 }
 
