@@ -65,6 +65,30 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // The Trie worker carries runtime behavior but has a stable URL. Prefer the
+  // network so an installed PWA does not keep an older worker indefinitely;
+  // retain the cached copy only as the offline fallback.
+  if (url.pathname === '/trie-builder.worker.js') {
+    event.respondWith(
+      fetch(request, { cache: 'no-store' })
+        .then(async (response) => {
+          if (!response.ok) {
+            return (await caches.match(request)) || response;
+          }
+
+          const cache = await caches.open(CACHE_NAME);
+          await cache.put(request, response.clone());
+          return response;
+        })
+        .catch(async (error) => {
+          const cached = await caches.match(request);
+          if (cached) return cached;
+          throw error;
+        })
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(request).then(
       (cached) =>
