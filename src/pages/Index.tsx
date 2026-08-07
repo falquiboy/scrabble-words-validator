@@ -4,7 +4,6 @@ import WordValidator from "@/components/WordValidator";
 import Anagramador from "@/components/Anagramador";
 import Lists from "@/components/Lists";
 // Temporarily commented out for build fix
-// import { TrainingSystemDemo } from "@/components/TrainingSystemDemo";
 import NewModuleSelector from "@/components/NewModuleSelector";
 import GlobalSettingsMenu from "@/components/GlobalSettingsMenu";
 import { useWordTrie } from "@/hooks/useWordTrie";
@@ -144,8 +143,6 @@ const Index = () => {
                 Sistema dual de entrenamiento para agentes de IA. Usa ⌘+Shift+E para mostrar/ocultar.
               </p>
             </div>
-            {/* Temporarily commented out for build fix */}
-            {/* <TrainingSystemDemo /> */}
             <div className="p-8 text-center">
               <h2 className="text-xl font-semibold mb-4">🔧 Sistema de Entrenamiento</h2>
               <p className="text-gray-600">Funcionalidad en desarrollo...</p>
