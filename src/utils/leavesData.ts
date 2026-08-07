@@ -9,6 +9,7 @@ export interface LeaveInfo {
 
 // Cache local para evitar queries repetidas
 const leavesCache = new Map<string, number | null>();
+const generationLeavesCache = new Map<number, Map<string, number | null>>();
 const CACHE_STATS = { hits: 0, misses: 0 };
 
 // Orden ALFABÉTICO correcto para Scrabble español (según user)
@@ -275,6 +276,70 @@ export async function getBatchLeaveValues(leaveStrings: string[]): Promise<Map<s
       leavesCache.set(leaveStr, null);
       results.set(leaveStr, null);
     }
+    return results;
+  }
+}
+
+/**
+ * Busca residuos de una generación concreta sin mezclar sus valores con la
+ * tabla `leaves`, que se conserva como semilla histórica.
+ */
+export async function getBatchGenerationLeaveValues(
+  generation: number,
+  leaveStrings: string[]
+): Promise<Map<string, number | null>> {
+  const cache = generationLeavesCache.get(generation) ?? new Map<string, number | null>();
+  generationLeavesCache.set(generation, cache);
+
+  const results = new Map<string, number | null>();
+  const uncachedLeaves: string[] = [];
+
+  for (const leaveStr of leaveStrings) {
+    if (cache.has(leaveStr)) {
+      results.set(leaveStr, cache.get(leaveStr)!);
+    } else {
+      uncachedLeaves.push(leaveStr);
+    }
+  }
+
+  if (uncachedLeaves.length === 0) {
+    return results;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('leave_values_by_generation')
+      .select('leave, value')
+      .eq('generation', generation)
+      .in('leave', uncachedLeaves);
+
+    if (error) {
+      throw error;
+    }
+
+    const foundLeaves = new Set<string>();
+
+    for (const row of data ?? []) {
+      cache.set(row.leave, row.value);
+      results.set(row.leave, row.value);
+      foundLeaves.add(row.leave);
+    }
+
+    for (const leaveStr of uncachedLeaves) {
+      if (!foundLeaves.has(leaveStr)) {
+        cache.set(leaveStr, null);
+        results.set(leaveStr, null);
+      }
+    }
+
+    return results;
+  } catch (error) {
+    console.error(`Error consultando residuos de la generación ${generation}:`, error);
+
+    for (const leaveStr of uncachedLeaves) {
+      results.set(leaveStr, null);
+    }
+
     return results;
   }
 }

@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import {
   getBatchLeaveValues,
+  getBatchGenerationLeaveValues,
   formatLeaveTokensFromInternalLetters
 } from "@/utils/leavesData";
 import { processDigraphs } from "@/utils/digraphs";
@@ -17,11 +18,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ResidueResult {
   leave: string;
-  value: number | null;
+  seedValue: number | null;
+  generationValue: number | null;
   complement: string;
   complementTokens: string[];
   complementInternal: string;
 }
+
+const COMPARISON_GENERATION = 6;
 
 interface ResiduesProps {
   trie: HybridTrieService;
@@ -238,12 +242,16 @@ const Residues = ({ trie }: ResiduesProps) => {
         return;
       }
 
-      const valuesMap = await getBatchLeaveValues(leavesToQuery);
-      const mappedResults: ResidueResult[] = Array.from(valuesMap.entries()).map(([leave, value]) => {
+      const [seedValues, generationValues] = await Promise.all([
+        getBatchLeaveValues(leavesToQuery),
+        getBatchGenerationLeaveValues(COMPARISON_GENERATION, leavesToQuery)
+      ]);
+      const mappedResults: ResidueResult[] = leavesToQuery.map((leave) => {
         const info = combinationDetails.get(leave);
         return {
           leave,
-          value,
+          seedValue: seedValues.get(leave) ?? null,
+          generationValue: generationValues.get(leave) ?? null,
           complement: info?.complement ?? "",
           complementTokens: info?.complementTokens ?? [],
           complementInternal: info?.complementInternal ?? ""
@@ -251,8 +259,8 @@ const Residues = ({ trie }: ResiduesProps) => {
       });
 
       mappedResults.sort((a, b) => {
-        const valueA = a.value ?? Number.NEGATIVE_INFINITY;
-        const valueB = b.value ?? Number.NEGATIVE_INFINITY;
+        const valueA = a.generationValue ?? a.seedValue ?? Number.NEGATIVE_INFINITY;
+        const valueB = b.generationValue ?? b.seedValue ?? Number.NEGATIVE_INFINITY;
         return valueB - valueA;
       });
 
@@ -331,12 +339,12 @@ const Residues = ({ trie }: ResiduesProps) => {
 
   return (
     <>
-      <div className="max-w-3xl mx-auto px-4 py-8">
+      <div className="h-full max-w-3xl mx-auto overflow-y-auto px-4 py-8">
         <div className="bg-white shadow-sm rounded-xl p-6">
           <h2 className="text-2xl font-semibold text-gray-800 mb-4">Residuos del atril</h2>
           <p className="text-sm text-gray-600 mb-6">
             Ingresa hasta siete letras (incluyendo comodines con «?»). El sistema calculará el valor de todos los
-            residuos posibles, desde {"n"} letras (atril completo) hasta 1 letra, usando la tabla de equity más reciente.
+            residuos posibles y comparará la semilla KLV2 con la generación 6 del ejercicio del 30 de julio de 2026.
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -390,7 +398,7 @@ const Residues = ({ trie }: ResiduesProps) => {
                 <h3 className="text-lg font-semibold text-gray-800">Valores encontrados</h3>
                 <span className="text-sm text-gray-500">{results.length} residuos únicos</span>
               </div>
-              <div className="overflow-hidden border border-gray-200 rounded-lg">
+              <div className="overflow-x-auto border border-gray-200 rounded-lg">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
@@ -398,7 +406,13 @@ const Residues = ({ trie }: ResiduesProps) => {
                         Residuo → complemento
                       </th>
                       <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                        Valor
+                        Semilla
+                      </th>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        Gen. 6
+                      </th>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        Δ
                       </th>
                       <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
                         Jugadas
@@ -407,10 +421,13 @@ const Residues = ({ trie }: ResiduesProps) => {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-100">
                     {results.map((result) => {
-                      const { leave, value, complementTokens } = result;
+                      const { leave, seedValue, generationValue, complementTokens } = result;
                       const complementDisplay = complementTokens.length > 0 ? complementTokens.join("") : "∅";
                       const containsWildcard = complementTokens.includes("?");
                       const canInspect = complementTokens.length > 0 && !containsWildcard;
+                      const delta = seedValue !== null && generationValue !== null
+                        ? generationValue - seedValue
+                        : null;
 
                       return (
                         <tr key={`${leave}-${complementDisplay}`}>
@@ -420,7 +437,23 @@ const Residues = ({ trie }: ResiduesProps) => {
                             <span>{complementDisplay}</span>
                           </td>
                           <td className="px-4 py-2 text-sm text-gray-700">
-                            {value !== null ? value.toFixed(3) : "—"}
+                            {seedValue !== null ? seedValue.toFixed(3) : "—"}
+                          </td>
+                          <td className="px-4 py-2 text-sm text-gray-700">
+                            {generationValue !== null ? generationValue.toFixed(3) : "—"}
+                          </td>
+                          <td
+                            className={`px-4 py-2 text-sm font-medium ${
+                              delta === null
+                                ? "text-gray-400"
+                                : delta > 0
+                                  ? "text-emerald-600"
+                                  : delta < 0
+                                    ? "text-red-600"
+                                    : "text-gray-500"
+                            }`}
+                          >
+                            {delta !== null ? `${delta > 0 ? "+" : ""}${delta.toFixed(3)}` : "—"}
                           </td>
                           <td className="px-4 py-2 text-sm text-right">
                             {canInspect ? (

@@ -146,6 +146,24 @@ export type Database = {
         }
         Relationships: []
       }
+      leave_values_by_generation: {
+        Row: {
+          generation: number
+          leave: string
+          value: number
+        }
+        Insert: {
+          generation: number
+          leave: string
+          value: number
+        }
+        Update: {
+          generation?: number
+          leave?: string
+          value?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
