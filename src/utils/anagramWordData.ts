@@ -86,15 +86,13 @@ const toVerbInfo = (row: AnagramWordInfoRpcRow): VerbInfo | undefined => {
 };
 
 const fetchRpcWordInfo = async (normalizedWords: string[]): Promise<Map<string, AnagramWordInfo>> => {
-  const rpc = supabase.rpc as unknown as (
-    functionName: string,
-    args: { p_words: string[] }
-  ) => Promise<{ data: AnagramWordInfoRpcRow[] | null; error: { message: string } | null }>;
-  const { data, error } = await rpc('get_anagram_word_info_v1', { p_words: normalizedWords });
+  const { data, error } = await supabase.rpc('get_anagram_word_info_v1', {
+    p_words: normalizedWords,
+  });
   if (error) throw new Error(error.message);
 
   const result = new Map<string, AnagramWordInfo>();
-  for (const row of data || []) {
+  for (const row of (data || []) as AnagramWordInfoRpcRow[]) {
     const verbInfo = toVerbInfo(row);
     result.set(row.norm_word, {
       word: row.norm_word,

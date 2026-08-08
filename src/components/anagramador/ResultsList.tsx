@@ -47,16 +47,19 @@ const ResultsList = ({
   const dataGenerationRef = useRef(0);
   const pendingWordsRef = useRef(new Set<string>());
   const loadedWordsRef = useRef(new Set<string>());
+  const dataScope = `${searchTerm}\u0000${showExtendedView}\u0000${showHooksView}`;
+  const dataScopeRef = useRef(dataScope);
 
-  // Start a fresh view cache only for a new search. Progressive result sections
-  // from the same query retain the metadata that already arrived.
-  useEffect(() => {
+  // Reset synchronously when the query/view changes so child effects cannot
+  // start a request that a later parent effect immediately marks as stale.
+  if (dataScopeRef.current !== dataScope) {
+    dataScopeRef.current = dataScope;
     dataGenerationRef.current += 1;
     pendingWordsRef.current.clear();
     loadedWordsRef.current.clear();
     setWordsData(new Map());
     setIsLoadingData(false);
-  }, [searchTerm, showExtendedView, showHooksView]);
+  }
 
   const requestWordInfo = useCallback((words: string[]) => {
     const uniqueWords = Array.from(new Set(

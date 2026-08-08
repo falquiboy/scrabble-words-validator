@@ -449,6 +449,33 @@ export type Database = {
           letter: string
         }[]
       }
+      get_anagram_word_info_v1: {
+        Args: { p_words: string[] }
+        Returns: {
+          norm_word: string
+          lemma: string | null
+          part_of_speech: string | null
+          word_type: string | null
+          short_definition: string | null
+          is_scrabble_valid: boolean
+          is_verb: boolean
+          entry_key: number | null
+          norm_lemma: string | null
+          prime_sense: string | null
+          prime_type: string | null
+          regularity: string | null
+          participle_masculine: string | null
+          has_participle_masculine: boolean | null
+          participle_masculine_plural: string | null
+          has_participle_masculine_plural: boolean | null
+          participle_feminine: string | null
+          has_participle_feminine: boolean | null
+          prnl_end: string | null
+          voseo_imperative_plural: string | null
+          has_voseo_imperative: boolean | null
+          is_prnl_end: boolean | null
+        }[]
+      }
       get_words_batch: {
         Args: { batch_size: number; last_word?: string }
         Returns: {
