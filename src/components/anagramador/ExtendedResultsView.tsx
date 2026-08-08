@@ -22,8 +22,8 @@ interface ExtendedResultsViewProps {
   onRequestWords: (words: string[]) => void;
 }
 
-const INITIAL_VISIBLE_WORDS = 24;
-const VISIBLE_WORD_PAGE = 24;
+const INITIAL_VISIBLE_WORDS = 225;
+const VISIBLE_WORD_PAGE = 225;
 
 const WordInfoRequester: React.FC<{
   words: string[];
