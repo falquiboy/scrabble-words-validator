@@ -1,10 +1,13 @@
 import { supabase } from "@/integrations/supabase/client";
-import { fetchVerbInfo, fetchBatchVerbInfo, VerbInfo } from "./verbData";
+import { fetchBatchVerbInfo, VerbInfo } from "./verbData";
 import { processDigraphs } from "./digraphs";
 
 // Cache local para evitar queries repetidas de anagramWordData
 const anagramWordCache = new Map<string, AnagramWordInfo>();
 const ANAGRAM_CACHE_STATS = { hits: 0, misses: 0 };
+const MAX_CACHE_ENTRIES = 1_500;
+const WORD_INFO_BATCH_SIZE = 100;
+const inFlightBatches = new Map<string, Promise<Map<string, AnagramWordInfo>>>();
 
 export interface AnagramWordInfo {
   word: string;
@@ -18,7 +21,160 @@ export interface AnagramWordInfo {
   verbInfo?: VerbInfo;
 }
 
+interface AnagramWordInfoRpcRow {
+  norm_word: string;
+  lemma: string | null;
+  part_of_speech: string | null;
+  word_type: AnagramWordInfo['wordType'] | null;
+  short_definition: string | null;
+  is_scrabble_valid: boolean;
+  is_verb: boolean;
+  entry_key: number | null;
+  norm_lemma: string | null;
+  prime_sense: string | null;
+  prime_type: string | null;
+  regularity: string | null;
+  participle_masculine: string | null;
+  has_participle_masculine: boolean | null;
+  participle_masculine_plural: string | null;
+  has_participle_masculine_plural: boolean | null;
+  participle_feminine: string | null;
+  has_participle_feminine: boolean | null;
+  prnl_end: string | null;
+  voseo_imperative_plural: string | null;
+  has_voseo_imperative: boolean | null;
+  is_prnl_end: boolean | null;
+}
+
+const cacheWordInfo = (word: string, wordInfo: AnagramWordInfo): void => {
+  anagramWordCache.delete(word);
+  anagramWordCache.set(word, wordInfo);
+  while (anagramWordCache.size > MAX_CACHE_ENTRIES) {
+    const oldestKey = anagramWordCache.keys().next().value;
+    if (!oldestKey) break;
+    anagramWordCache.delete(oldestKey);
+  }
+};
+
+const getCachedWordInfo = (word: string): AnagramWordInfo | undefined => {
+  const cached = anagramWordCache.get(word);
+  if (!cached) return undefined;
+  anagramWordCache.delete(word);
+  anagramWordCache.set(word, cached);
+  return cached;
+};
+
+const toVerbInfo = (row: AnagramWordInfoRpcRow): VerbInfo | undefined => {
+  if (!row.is_verb || !row.norm_lemma || row.entry_key === null) return undefined;
+  return {
+    entry_key: row.entry_key,
+    norm_lemma: row.norm_lemma,
+    prime_sense: row.prime_sense || '',
+    prime_type: row.prime_type || '',
+    regularity: row.regularity || '',
+    participle_masculine: row.participle_masculine || undefined,
+    has_participle_masculine: row.has_participle_masculine || undefined,
+    participle_masculine_plural: row.participle_masculine_plural || undefined,
+    has_participle_masculine_plural: row.has_participle_masculine_plural || undefined,
+    participle_feminine: row.participle_feminine || undefined,
+    has_participle_feminine: row.has_participle_feminine || undefined,
+    prnl_end: row.prnl_end || undefined,
+    voseo_imperative_plural: row.voseo_imperative_plural || undefined,
+    has_voseo_imperative: row.has_voseo_imperative || undefined,
+    is_prnl_end: row.is_prnl_end || undefined,
+  };
+};
+
+const fetchRpcWordInfo = async (normalizedWords: string[]): Promise<Map<string, AnagramWordInfo>> => {
+  const rpc = supabase.rpc as unknown as (
+    functionName: string,
+    args: { p_words: string[] }
+  ) => Promise<{ data: AnagramWordInfoRpcRow[] | null; error: { message: string } | null }>;
+  const { data, error } = await rpc('get_anagram_word_info_v1', { p_words: normalizedWords });
+  if (error) throw new Error(error.message);
+
+  const result = new Map<string, AnagramWordInfo>();
+  for (const row of data || []) {
+    const verbInfo = toVerbInfo(row);
+    result.set(row.norm_word, {
+      word: row.norm_word,
+      lemma: row.lemma || row.norm_lemma || row.norm_word.toLowerCase(),
+      partOfSpeech: row.part_of_speech || '',
+      wordType: row.word_type || 'base',
+      shortDefinition: row.short_definition || '',
+      isScrabbleValid: row.is_scrabble_valid,
+      isVerb: row.is_verb,
+      verbInfo,
+    });
+  }
+  return result;
+};
+
 export async function fetchAnagramWordsData(words: string[]): Promise<Map<string, AnagramWordInfo>> {
+  const uniqueWords = Array.from(new Set(words.filter(Boolean)));
+  const results = new Map<string, AnagramWordInfo>();
+  const missingWords: string[] = [];
+
+  for (const word of uniqueWords) {
+    const cached = getCachedWordInfo(word);
+    if (cached) {
+      ANAGRAM_CACHE_STATS.hits++;
+      results.set(word, cached);
+    } else {
+      missingWords.push(word);
+    }
+  }
+
+  if (missingWords.length === 0) return results;
+  ANAGRAM_CACHE_STATS.misses += missingWords.length;
+
+  const normalizedToOriginal = new Map<string, string[]>();
+  for (const word of missingWords) {
+    const normalized = processDigraphs(word.toUpperCase());
+    const originals = normalizedToOriginal.get(normalized) || [];
+    originals.push(word);
+    normalizedToOriginal.set(normalized, originals);
+  }
+
+  const normalizedWords = [...normalizedToOriginal.keys()];
+  const batches: string[][] = [];
+  for (let index = 0; index < normalizedWords.length; index += WORD_INFO_BATCH_SIZE) {
+    batches.push(normalizedWords.slice(index, index + WORD_INFO_BATCH_SIZE));
+  }
+
+  const batchResults = await Promise.all(batches.map(async (batch) => {
+    const batchKey = batch.slice().sort().join('|');
+    let request = inFlightBatches.get(batchKey);
+    if (!request) {
+      request = fetchRpcWordInfo(batch).catch(async (rpcError) => {
+        console.warn('Word-info RPC unavailable; using legacy batch fallback.', rpcError);
+        return fetchLegacyAnagramWordsData(
+          batch.flatMap((normalized) => normalizedToOriginal.get(normalized) || [])
+        );
+      });
+      inFlightBatches.set(batchKey, request);
+      void request.finally(() => {
+        if (inFlightBatches.get(batchKey) === request) inFlightBatches.delete(batchKey);
+      }).catch(() => undefined);
+    }
+    return request;
+  }));
+
+  for (const batchResult of batchResults) {
+    for (const [normalizedWord, normalizedInfo] of batchResult) {
+      const originals = normalizedToOriginal.get(processDigraphs(normalizedWord.toUpperCase())) || [normalizedWord];
+      for (const original of originals) {
+        const wordInfo = { ...normalizedInfo, word: original };
+        cacheWordInfo(original, wordInfo);
+        results.set(original, wordInfo);
+      }
+    }
+  }
+
+  return results;
+}
+
+async function fetchLegacyAnagramWordsData(words: string[]): Promise<Map<string, AnagramWordInfo>> {
   const results = new Map<string, AnagramWordInfo>();
   
   if (words.length === 0) return results;
@@ -29,9 +185,10 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
   const uncachedWords: string[] = [];
   
   for (const word of words) {
-    if (anagramWordCache.has(word)) {
+    const cached = getCachedWordInfo(word);
+    if (cached) {
       ANAGRAM_CACHE_STATS.hits++;
-      results.set(word, anagramWordCache.get(word)!);
+      results.set(word, cached);
       console.log(`🎯 AnagramWord Cache HIT for: ${word}`);
     } else {
       uncachedWords.push(word);
@@ -164,13 +321,22 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
       // Convert keys to numbers for database query (they're stored as numeric type)
       const numericKeys = Array.from(allKeys).map(k => Number(k));
       
-      // Fetch dictionary entries
-      console.log('📚 Step 3a: Fetching dictionary entries...');
-      const { data: entries, error: entriesError } = await supabase
+      // Entries and senses are independent once the key set is known.
+      const entriesRequest = supabase
         .from('dictionary_entries')
         .select('key, lemma, etymology_info')
         .in('key', numericKeys);
-      
+      const sensesRequest = supabase
+        .from('dictionary_senses')
+        .select('entry_key, definition, part_of_speech_1')
+        .in('entry_key', numericKeys)
+        .order('entry_key')
+        .order('sense_number');
+      const [
+        { data: entries, error: entriesError },
+        { data: senses, error: sensesError }
+      ] = await Promise.all([entriesRequest, sensesRequest]);
+
       if (entriesError) {
         console.error('❌ Dictionary entries error:', entriesError);
       } else {
@@ -184,13 +350,6 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
         }
       }
 
-      // Fetch dictionary senses
-      console.log('📖 Step 3b: Fetching dictionary senses...');
-      const { data: senses, error: sensesError } = await supabase
-        .from('dictionary_senses')
-        .select('entry_key, definition, part_of_speech_1')
-        .in('entry_key', numericKeys);
-      
       if (sensesError) {
         console.error('❌ Dictionary senses error:', sensesError);
       } else {
@@ -349,7 +508,7 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
         console.log(`✅ Processed valid word: ${word}`, wordInfo);
         
         // Guardar en cache Y en results
-        anagramWordCache.set(word, wordInfo);
+        cacheWordInfo(word, wordInfo);
         results.set(word, wordInfo);
       } else {
         // Word not found in lexicon_keys
@@ -361,7 +520,7 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
         console.log(`❌ Word not valid for Scrabble: ${word}`);
         
         // Guardar en cache Y en results (incluso invalid words para evitar re-queries)
-        anagramWordCache.set(word, wordInfo);
+        cacheWordInfo(word, wordInfo);
         results.set(word, wordInfo);
       }
     }
@@ -382,8 +541,6 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
     // Return basic info for uncached words on error (cached already in results)
     uncachedWords.forEach(word => {
       const errorWordInfo: AnagramWordInfo = { word, isScrabbleValid: false };
-      // Cache error results to avoid repeated failed queries
-      anagramWordCache.set(word, errorWordInfo);
       results.set(word, errorWordInfo);
     });
   }

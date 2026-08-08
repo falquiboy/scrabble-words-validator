@@ -14,7 +14,7 @@ export type TrieBuildDecision =
   | { shouldBuild: true; reason: 'capable' }
   | {
       shouldBuild: false;
-      reason: 'low-memory' | 'recent-failure' | 'interrupted-build';
+      reason: 'low-memory' | 'unknown-memory' | 'recent-failure' | 'interrupted-build';
     };
 
 const readTimestamp = (storage: StorageLike | undefined, key: string): number | null => {
@@ -66,13 +66,19 @@ export const getTrieBuildDecision = (): TrieBuildDecision => {
   const { local, session } = getStorages();
   const navigatorWithMemory = navigator as Navigator & { deviceMemory?: number };
 
-  // Chromium exposes this hint. Safari does not, so an iPhone proves its
-  // capability by completing the guarded build instead of being excluded by UA.
+  // Chromium exposes this hint. WebKit does not, and building the full trie
+  // duplicates the dictionary in memory while users are trying to search.
   if (
     navigatorWithMemory.deviceMemory !== undefined &&
     navigatorWithMemory.deviceMemory <= 4
   ) {
     return { shouldBuild: false, reason: 'low-memory' };
+  }
+
+  const isWebKit = /AppleWebKit/i.test(navigator.userAgent) &&
+    !/(Chrome|Chromium|Edg)/i.test(navigator.userAgent);
+  if (navigatorWithMemory.deviceMemory === undefined && isWebKit) {
+    return { shouldBuild: false, reason: 'unknown-memory' };
   }
 
   const pendingSince = readTimestamp(session, PENDING_KEY);

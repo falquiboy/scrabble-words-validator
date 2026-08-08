@@ -7,7 +7,7 @@ import HooksView from "./HooksView";
 import { toDisplayFormat } from "@/utils/digraphs";
 import { fetchAnagramWordsData, AnagramWordInfo } from "@/utils/anagramWordData";
 import { fetchHooksData, HookInfo } from "@/utils/hooksData";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Loader } from "lucide-react";
 
 interface ResultsListProps {
@@ -44,37 +44,54 @@ const ResultsList = ({
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [hooksData, setHooksData] = useState<Map<string, HookInfo>>(new Map());
   const [isLoadingHooks, setIsLoadingHooks] = useState(false);
+  const dataGenerationRef = useRef(0);
+  const pendingWordsRef = useRef(new Set<string>());
+  const loadedWordsRef = useRef(new Set<string>());
 
-  // Load word data when extended view is enabled and we have results
+  // Start a fresh view cache only for a new search. Progressive result sections
+  // from the same query retain the metadata that already arrived.
   useEffect(() => {
-    if (showExtendedView && !showHooksView && results && !isLoading) {
-      // Use results as-is - they're already filtered by showShorter in the hook
-      const allWordsRaw = [
-        ...results.exactMatches,
-        ...results.wildcardMatches,
-        ...results.additionalWildcardMatches,
-        ...results.shorterMatches,
-        ...results.patternMatches
-      ];
-      
-      const allWordsForQuery = allWordsRaw.map(word => toDisplayFormat(word).toUpperCase());
+    dataGenerationRef.current += 1;
+    pendingWordsRef.current.clear();
+    loadedWordsRef.current.clear();
+    setWordsData(new Map());
+    setIsLoadingData(false);
+  }, [searchTerm, showExtendedView, showHooksView]);
 
-      if (allWordsForQuery.length > 0) {
-        setIsLoadingData(true);
-        fetchAnagramWordsData(allWordsForQuery)
-          .then(data => {
-            setWordsData(data);
-          })
-          .catch(error => {
-            console.error('Error loading words data:', error);
-            toast({ title: 'Error cargando información adicional', variant: 'destructive' });
-          })
-          .finally(() => {
-            setIsLoadingData(false);
-          });
-      }
-    }
-  }, [showExtendedView, showHooksView, results, isLoading]);
+  const requestWordInfo = useCallback((words: string[]) => {
+    const uniqueWords = Array.from(new Set(
+      words.map((word) => toDisplayFormat(word).toUpperCase()).filter(Boolean)
+    ));
+    const toLoad = uniqueWords.filter((word) =>
+      !loadedWordsRef.current.has(word) && !pendingWordsRef.current.has(word)
+    );
+    if (toLoad.length === 0) return;
+
+    const generation = dataGenerationRef.current;
+    toLoad.forEach((word) => pendingWordsRef.current.add(word));
+    setIsLoadingData(true);
+
+    void fetchAnagramWordsData(toLoad)
+      .then((data) => {
+        if (generation !== dataGenerationRef.current) return;
+        toLoad.forEach((word) => loadedWordsRef.current.add(word));
+        setWordsData((previous) => {
+          const next = new Map(previous);
+          data.forEach((wordInfo, word) => next.set(word, wordInfo));
+          return next;
+        });
+      })
+      .catch((error) => {
+        if (generation !== dataGenerationRef.current) return;
+        console.error('Error loading words data:', error);
+        toast({ title: 'Error cargando información adicional', variant: 'destructive' });
+      })
+      .finally(() => {
+        if (generation !== dataGenerationRef.current) return;
+        toLoad.forEach((word) => pendingWordsRef.current.delete(word));
+        setIsLoadingData(pendingWordsRef.current.size > 0);
+      });
+  }, [toast]);
 
   // Clear extended data when hooks view becomes active
   useEffect(() => {
@@ -113,7 +130,7 @@ const ResultsList = ({
           });
       }
     }
-  }, [showHooksView, results, isLoading]);
+  }, [showHooksView, results, isLoading, toast]);
 
   // Clear hooks data when extended view becomes active
   useEffect(() => {
@@ -165,6 +182,7 @@ const ResultsList = ({
                 showShorter={showShorter}
                 wordsData={wordsData}
                 isLoadingData={isLoadingData}
+                onRequestWords={requestWordInfo}
               />
             ) : (
               <SearchResults

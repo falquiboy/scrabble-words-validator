@@ -183,6 +183,46 @@ export class SQLiteWordDatabase {
     });
   }
 
+  async findAnagramsByAlphagrams(alphagrams: string[]): Promise<string[]> {
+    const uniqueAlphagrams = Array.from(new Set(alphagrams));
+    if (uniqueAlphagrams.length === 0) return [];
+
+    const alphagramsByLength = new Map<number, string[]>();
+    for (const alphagram of uniqueAlphagrams) {
+      const length = [...alphagram].length;
+      const group = alphagramsByLength.get(length) || [];
+      group.push(alphagram);
+      alphagramsByLength.set(length, group);
+    }
+
+    const resultGroups = await Promise.all(
+      [...alphagramsByLength.entries()].map(async ([length, group]) => {
+        const chunks: string[][] = [];
+        for (let index = 0; index < group.length; index += 900) {
+          chunks.push(group.slice(index, index + 900));
+        }
+
+        const chunkResults = await Promise.all(
+          chunks.map((chunk) => this.withShard(length, (db) => {
+            const placeholders = chunk.map(() => '?').join(', ');
+            const statement = db.prepare(
+              `SELECT word FROM words WHERE alphagram IN (${placeholders}) ORDER BY word`
+            );
+            statement.bind(chunk);
+            const words: string[] = [];
+            while (statement.step()) words.push(statement.getAsObject().word as string);
+            statement.free();
+            return words;
+          }))
+        );
+
+        return chunkResults.flat();
+      })
+    );
+
+    return Array.from(new Set(resultGroups.flat())).sort();
+  }
+
   async findWordsByLength(length: number): Promise<WordEntry[]> {
     await this.init();
     if (!this.manifest?.lengths[String(length)]) return [];

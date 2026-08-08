@@ -3,7 +3,7 @@
  * Reemplaza useOfflineAnagramSearch con fallback verdadero
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 // import { indexedDbAnagramService } from '@/services/IndexedDbAnagramService'; // Deprecated - using hybrid service
 import { HybridTrieService } from '@/services/HybridTrieService';
 import { SearchResults } from "./anagramSearch/types";
@@ -35,6 +35,7 @@ export const useHybridAnagramSearch = (
   const [error, setError] = useState<string | null>(null);
   const [currentProvider, setCurrentProvider] = useState<'none' | 'indexeddb' | 'trie'>('none');
   const [lastSearchTerm, setLastSearchTerm] = useState<string>('');
+  const searchGenerationRef = useRef(0);
   
   // User activity signaling removed
 
@@ -96,6 +97,9 @@ export const useHybridAnagramSearch = (
   }, [showShorter, fullResults, lastSearchTerm, searchTerm, hybridService]);
 
   useEffect(() => {
+    const generation = ++searchGenerationRef.current;
+    let cancelled = false;
+
     const searchAnagrams = async () => {
       // Detectar si es una búsqueda nueva
       if (searchTerm.trim() === lastSearchTerm.trim()) {
@@ -177,6 +181,7 @@ export const useHybridAnagramSearch = (
 
           // For patterns, use hybrid service with full fallback chain
           const patternMatches = await hybridService.findPatternMatches(cleanPattern, showShorter, 8, patternLength);
+          if (cancelled || generation !== searchGenerationRef.current) return;
           setCurrentProvider(hybridService.getCurrentProvider() as any);
 
           // Solo actualizar cuando tengamos los resultados completos
@@ -201,6 +206,7 @@ export const useHybridAnagramSearch = (
           }
           
           const wildcardResults = await hybridService.findAnagramsWithWildcards(trimmedTerm);
+          if (cancelled || generation !== searchGenerationRef.current) return;
           
           // Ordenar palabras con letra adicional según la letra añadida
           const baseLetters = trimmedTerm.replace(/\?/g, ''); // Remover comodines para obtener letras base
@@ -231,11 +237,25 @@ export const useHybridAnagramSearch = (
             setCurrentProvider('trie');
             
             const exactMatches = hybridService.findAnagrams(trimmedTerm);
-            
-            // For palabras con letra adicional, use 1 wildcard search
-            const additionalResults = await hybridService.findAnagramsWithWildcards(trimmedTerm + '?');
-            // Para búsquedas normales, wildcardMatches son palabras con 1 letra adicional
-            const additionalWildcardMatches = sortWordsByAddedLetter(trimmedTerm, additionalResults.wildcardMatches);
+            const additionalMatchesPromise = hybridService.findAnagramsWithOneAdditionalLetter(trimmedTerm);
+
+            if (!showShorter && !cancelled && generation === searchGenerationRef.current) {
+              const exactResults = {
+                exactMatches,
+                wildcardMatches: [],
+                additionalWildcardMatches: [],
+                shorterMatches: [],
+                patternMatches: []
+              };
+              setFullResults(exactResults);
+              setResults(exactResults);
+              setIsLoading(false);
+            }
+
+            const additionalWildcardMatches = sortWordsByAddedLetter(
+              trimmedTerm,
+              await additionalMatchesPromise
+            );
             
             // Obtener subanagramas solo si showShorter está activo (optimización)
             let allShorterMatches: string[] = [];
@@ -243,6 +263,8 @@ export const useHybridAnagramSearch = (
               const extendedResults = await hybridService.findAnagramsWithSubAnagrams(trimmedTerm, true);
               allShorterMatches = extendedResults.shorterMatches;
             }
+
+            if (cancelled || generation !== searchGenerationRef.current) return;
 
             // Guardar TODOS los resultados en fullResults
             const allResults = {
@@ -278,12 +300,27 @@ export const useHybridAnagramSearch = (
           } else {
             // Use hybrid service async fallback (SQLite → Supabase)
             
-            const exactMatches = await hybridService.findAnagramsAsync(trimmedTerm);
-            
-            // For palabras con letra adicional, use 1 wildcard search
-            const additionalResults = await hybridService.findAnagramsWithWildcards(trimmedTerm + '?');
-            // Para búsquedas normales, wildcardMatches son palabras con 1 letra adicional
-            const additionalWildcardMatches = sortWordsByAddedLetter(trimmedTerm, additionalResults.wildcardMatches);
+            const exactMatchesPromise = hybridService.findAnagramsAsync(trimmedTerm);
+            const additionalMatchesPromise = hybridService.findAnagramsWithOneAdditionalLetter(trimmedTerm);
+            const exactMatches = await exactMatchesPromise;
+
+            if (!showShorter && !cancelled && generation === searchGenerationRef.current) {
+              const exactResults = {
+                exactMatches,
+                wildcardMatches: [],
+                additionalWildcardMatches: [],
+                shorterMatches: [],
+                patternMatches: []
+              };
+              setFullResults(exactResults);
+              setResults(exactResults);
+              setIsLoading(false);
+            }
+
+            const additionalWildcardMatches = sortWordsByAddedLetter(
+              trimmedTerm,
+              await additionalMatchesPromise
+            );
             
             // Obtener subanagramas solo si showShorter está activo (optimización)
             let allShorterMatches: string[] = [];
@@ -291,6 +328,8 @@ export const useHybridAnagramSearch = (
               const extendedResults = await hybridService.findAnagramsWithSubAnagrams(trimmedTerm, true);
               allShorterMatches = extendedResults.shorterMatches;
             }
+
+            if (cancelled || generation !== searchGenerationRef.current) return;
 
             // Set provider based on what was actually used
             setCurrentProvider(hybridService.getCurrentProvider());
@@ -326,6 +365,8 @@ export const useHybridAnagramSearch = (
             
           }
 
+          if (cancelled || generation !== searchGenerationRef.current) return;
+
           // Filter by target length if specified (ANTES de setIsLoading)
           if (targetLength !== null) {
             setResults(prev => ({
@@ -343,6 +384,7 @@ export const useHybridAnagramSearch = (
         }
 
       } catch (err) {
+        if (cancelled || generation !== searchGenerationRef.current) return;
         console.error('❌ Hybrid anagram search error:', err);
         setError(err instanceof Error ? err.message : 'Error en la búsqueda');
         const errorResults = {
@@ -360,7 +402,10 @@ export const useHybridAnagramSearch = (
       }
     };
 
-    searchAnagrams();
+    void searchAnagrams();
+    return () => {
+      cancelled = true;
+    };
   }, [searchTerm, targetLength, hybridService]); // Remover showShorter de dependencias
 
   return {

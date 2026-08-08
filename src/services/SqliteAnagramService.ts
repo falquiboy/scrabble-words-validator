@@ -89,61 +89,25 @@ export class SqliteAnagramService {
    */
   async findWordsWithOneAdditionalLetter(letters: string): Promise<string[]> {
     console.log(`🔍 SQLite additional letter search: "${letters}"`);
-    
+
     try {
-      // Buscar palabras de exactamente letters.length + 1 que contengan todas nuestras letras
-      const targetLength = letters.length + 1;
-      
       await this.ensureDatabase();
-      
-      // Usar findWordsByLength del SQLiteWordDatabase
-      const candidates = await sqliteDB.findWordsByLength(targetLength);
-      
-      // Filtrar palabras que se pueden formar con nuestras letras + 1 adicional
-      const results: string[] = [];
-      const availableLetters = letters.split('').sort();
-      
-      for (const candidate of candidates) {
-        const targetWord = candidate.word;
-        const normalizedTargetWord = this.normalizeLetters(targetWord);
-        const targetLetters = normalizedTargetWord.split('').sort();
-        
-        // Verificar si se puede formar con exactamente 1 letra adicional
-        if (this.canMakeWordWithOneExtra(availableLetters, targetLetters)) {
-          results.push(targetWord);
-        }
-      }
-      
+
+      const normalizedLetters = this.normalizeLetters(letters);
+      const spanishLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZÑÇ';
+      const alphagrams = Array.from(new Set(
+        [...spanishLetters].map((letter) =>
+          this.createAlphagram(normalizedLetters + letter)
+        )
+      ));
+
+      const results = await sqliteDB.findAnagramsByAlphagrams(alphagrams);
       console.log(`✅ SQLite found ${results.length} words with 1 additional letter`);
       return results;
-      
     } catch (error) {
       console.error('❌ SQLite additional letter search failed:', error);
       return [];
     }
-  }
-
-  /**
-   * Verificar si una palabra se puede formar con las letras disponibles + exactamente 1 letra adicional
-   */
-  private canMakeWordWithOneExtra(availableLetters: string[], targetLetters: string[]): boolean {
-    const available = [...availableLetters];
-    let extraLettersNeeded = 0;
-    
-    for (const letter of targetLetters) {
-      const index = available.indexOf(letter);
-      if (index !== -1) {
-        // Tenemos esta letra, usarla
-        available.splice(index, 1);
-      } else {
-        // No tenemos esta letra, necesitamos una adicional
-        extraLettersNeeded++;
-        if (extraLettersNeeded > 1) return false; // Más de 1 letra adicional requerida
-      }
-    }
-    
-    // Debe necesitar exactamente 1 letra adicional
-    return extraLettersNeeded === 1;
   }
 
   /**

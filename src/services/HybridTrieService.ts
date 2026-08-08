@@ -244,6 +244,40 @@ export class HybridTrieService {
   }
 
   /**
+   * Finds words made with exactly one additional tile. This uses alphagram
+   * lookups instead of scanning whole length shards.
+   */
+  async findAnagramsWithOneAdditionalLetter(letters: string): Promise<string[]> {
+    const processedLetters = processDigraphs(letters);
+    const spanishLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZÑÇ';
+
+    if (this.isTrieReady && this.actualTrie) {
+      const matches = new Set<string>();
+      for (const letter of spanishLetters) {
+        for (const word of this.actualTrie.findAnagrams(processedLetters + letter)) {
+          matches.add(word);
+        }
+      }
+      return [...matches].sort();
+    }
+
+    if (await this.checkSqliteAvailability()) {
+      try {
+        return await sqliteAnagramService.findWordsWithOneAdditionalLetter(letters);
+      } catch (error) {
+        console.warn('SQLite +1 search failed; falling back to Supabase.', error);
+        this.isSqliteAvailable = false;
+      }
+    }
+
+    if (await this.ensureSupabaseAvailability()) {
+      return supabaseWordService.findAnagramsWithAddedLetters(processedLetters, 1);
+    }
+
+    return [];
+  }
+
+  /**
    * 🎯 Método findAnagramsWithWildcards - Soporte para comodines (?)
    * Máximo 2 comodines permitidos, compatible con sistema legacy
    */
