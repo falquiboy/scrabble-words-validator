@@ -1,6 +1,6 @@
 
 import { Progress } from "@/components/ui/progress";
-import { LoadingStage } from "@/hooks/useWordDatabase";
+import type { LoadingStage } from '@/hooks/useWordTrie';
 
 interface LoadingIndicatorProps {
   progress: number;

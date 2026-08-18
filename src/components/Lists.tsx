@@ -7,12 +7,11 @@ import WordDetails from './lists/WordDetails';
 import WordPopup from './lists/WordPopup';
 import { fetchWordData, WordData } from '@/utils/wordDatabase';
 import { toDisplayFormat } from "@/utils/digraphs";
-import { findAnagrams } from "@/hooks/anagramSearch/utils";
-import { findPatternMatches } from "@/utils/pattern/matching";
-import { Trie } from "@/utils/trie/types";
+import type { WordSearchService } from '@/lexicon/types';
+import { useLexicon } from '@/lexicon/LexiconContext';
 
 interface ListsProps {
-  trie: Trie;
+  trie: WordSearchService;
 }
 
 // Query type detection and response types
@@ -27,6 +26,7 @@ interface WordInfo {
 }
 
 const Lists = ({ trie }: ListsProps) => {
+  const { sortWords } = useLexicon();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -39,7 +39,7 @@ const Lists = ({ trie }: ListsProps) => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 
   // Automatic query type detection
-  const detectQueryType = (input: string): QueryType => {
+  const detectQueryType = async (input: string): Promise<QueryType> => {
     const trimmed = input.trim().toLowerCase();
     
     // Pattern detection (contains *, . or _ or -)
@@ -51,7 +51,7 @@ const Lists = ({ trie }: ListsProps) => {
     if (!trimmed.includes(' ') && /^[a-záéíóúüñç*]+$/i.test(trimmed)) {
       // If it's a valid word, treat as word lookup
       const upperWord = trimmed.toUpperCase();
-      if (trie.search(upperWord)) {
+      if (await trie.searchAsync(upperWord)) {
         return 'word';
       }
       // Otherwise treat as anagram letters
@@ -65,13 +65,13 @@ const Lists = ({ trie }: ListsProps) => {
   // Word validation and analysis
   const analyzeWord = async (word: string): Promise<WordInfo> => {
     const upperWord = word.toUpperCase();
-    const isValid = trie.search(upperWord);
+    const isValid = await trie.searchAsync(upperWord);
     
     let anagrams: string[] = [];
     let subanagrams: string[] = [];
     
     if (isValid || word.length <= 8) { // Get anagrams even for invalid short words
-      const { exactMatches, shorterMatches } = findAnagrams(word, trie, true);
+      const { exactMatches, shorterMatches } = await trie.findAnagramsWithSubAnagrams(word, true);
       anagrams = exactMatches.filter(w => w !== upperWord).map(w => toDisplayFormat(w)).slice(0, 20);
       subanagrams = shorterMatches.map(w => toDisplayFormat(w)).slice(0, 30);
     }
@@ -119,7 +119,7 @@ const Lists = ({ trie }: ListsProps) => {
     setWordInfo(null);
     setResults([]);
     
-    const detectedType = detectQueryType(query);
+    const detectedType = await detectQueryType(query);
     setQueryType(detectedType);
     console.log('🎯 Tipo de consulta detectado:', detectedType);
     
@@ -140,15 +140,17 @@ const Lists = ({ trie }: ListsProps) => {
         
         case 'anagram': {
           console.log('🔤 Procesando como anagrama');
-          const { exactMatches, wildcardMatches, additionalWildcardMatches, shorterMatches } = findAnagrams(query.trim(), trie, true);
+          const { exactMatches, shorterMatches } = await trie.findAnagramsWithSubAnagrams(query.trim(), true);
+          const wildcardMatches: string[] = [];
+          const additionalWildcardMatches = await trie.findAnagramsWithOneAdditionalLetter(query.trim());
           
-          let allResults: string[] = [];
+          const allResults: string[] = [];
           if (exactMatches.length > 0) allResults.push(...exactMatches);
           if (wildcardMatches.length > 0) allResults.push(...wildcardMatches);
           if (additionalWildcardMatches.length > 0) allResults.push(...additionalWildcardMatches);
           if (shorterMatches.length > 0) allResults.push(...shorterMatches);
           
-          const formattedResults = allResults.map(w => toDisplayFormat(w)).slice(0, 100);
+          const formattedResults = sortWords(allResults).map(w => toDisplayFormat(w)).slice(0, 100);
           setResults(formattedResults);
           
           toast.success(`Encontrados ${formattedResults.length} anagramas${formattedResults.length === 100 ? ' (mostrando primeros 100)' : ''}`);
@@ -157,8 +159,8 @@ const Lists = ({ trie }: ListsProps) => {
         
         case 'pattern': {
           console.log('🎯 Procesando como patrón');
-          const patternMatches = await findPatternMatches(query.trim(), trie, false, 8, null);
-          const formattedResults = patternMatches.map(w => toDisplayFormat(w)).slice(0, 100);
+          const patternMatches = await trie.findPatternMatches(query.trim(), false, 8, null);
+          const formattedResults = sortWords(patternMatches).map(w => toDisplayFormat(w)).slice(0, 100);
           setResults(formattedResults);
           
           toast.success(`Encontradas ${formattedResults.length} palabras que coinciden con el patrón${formattedResults.length === 100 ? ' (mostrando primeras 100)' : ''}`);
@@ -187,7 +189,9 @@ const Lists = ({ trie }: ListsProps) => {
           if (processedQuery?.results && processedQuery.results.length > 0) {
             // Direct results from migrated database
             console.log('✅ Resultados de BD migrada:', processedQuery.results);
-            formattedResults = processedQuery.results.map((entry: { lemma: string }) => toDisplayFormat(entry.lemma));
+            const candidates = processedQuery.results.map((entry: { lemma: string }) => entry.lemma);
+            const validity = await Promise.all(candidates.map((candidate: string) => trie.searchAsync(candidate)));
+            formattedResults = sortWords(candidates.filter((_: string, index: number) => validity[index])).map(toDisplayFormat);
             setResults(formattedResults);
             
             if (processedQuery.message) {
@@ -208,7 +212,9 @@ const Lists = ({ trie }: ListsProps) => {
             }
 
             // Convert internal representation to display format
-            formattedResults = (words || []).map((w: { word: string }) => toDisplayFormat(w.word));
+            const candidates = (words || []).map((w: { word: string }) => w.word);
+            const validity = await Promise.all(candidates.map((candidate: string) => trie.searchAsync(candidate)));
+            formattedResults = sortWords(candidates.filter((_: string, index: number) => validity[index])).map(toDisplayFormat);
             setResults(formattedResults);
           } else {
             console.error('No se recibieron resultados ni SQL de process-natural-query');

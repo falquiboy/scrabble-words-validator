@@ -1,8 +1,14 @@
 import React, { useState } from 'react';
-import { Menu, X, Info, Anchor, ChevronDown, Copy, TrendingUp, Settings } from 'lucide-react';
+import { Menu, X, Info, Anchor, ChevronDown, Copy, TrendingUp, Settings, BookOpen, ArrowUp } from 'lucide-react';
+import { LEXICON_MODE_OPTIONS } from '@/lexicon/releases';
+import type { LexiconMode } from '@/lexicon/types';
 
 interface GlobalSettingsMenuProps {
   activeModule: 'judge' | 'anagram' | 'lists' | 'residues' | 'training';
+  lexiconMode: LexiconMode;
+  onLexiconModeChange: (mode: LexiconMode) => void;
+  newWordsFirst: boolean;
+  onNewWordsFirstChange: (value: boolean) => void;
   // Anagram-specific props (only used when activeModule === 'anagram')
   anagramSettings?: {
     showShorter: boolean;
@@ -21,7 +27,11 @@ interface GlobalSettingsMenuProps {
 
 const GlobalSettingsMenu: React.FC<GlobalSettingsMenuProps> = ({
   activeModule,
-  anagramSettings
+  anagramSettings,
+  lexiconMode,
+  onLexiconModeChange,
+  newWordsFirst,
+  onNewWordsFirstChange,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -157,7 +167,7 @@ const GlobalSettingsMenu: React.FC<GlobalSettingsMenuProps> = ({
           <div className="py-8 text-center">
             <Settings size={24} className="text-gray-400 mx-auto mb-3" />
             <p className="text-sm text-gray-500">
-              No hay opciones de configuración disponibles para el módulo de validación
+              No hay más opciones para el módulo de validación
             </p>
           </div>
         );
@@ -169,7 +179,7 @@ const GlobalSettingsMenu: React.FC<GlobalSettingsMenuProps> = ({
           <div className="py-8 text-center">
             <Settings size={24} className="text-gray-400 mx-auto mb-3" />
             <p className="text-sm text-gray-500">
-              No hay opciones de configuración disponibles para este módulo
+              No hay más opciones para este módulo
             </p>
           </div>
         );
@@ -258,6 +268,43 @@ const GlobalSettingsMenu: React.FC<GlobalSettingsMenuProps> = ({
           </div>
 
           {/* Module-specific content */}
+          <div className="mb-5 rounded-lg border border-gray-200 bg-gray-50 p-3">
+            <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-800">
+              <BookOpen size={16} className="text-amber-600" />
+              Lexicón de juego
+            </div>
+            <div className="space-y-2" role="radiogroup" aria-label="Lexicón de juego">
+              {LEXICON_MODE_OPTIONS.map((option) => (
+                <label key={option.value} className="flex cursor-pointer items-start gap-2 rounded-md p-2 hover:bg-white">
+                  <input
+                    type="radio"
+                    name="lexicon-mode"
+                    value={option.value}
+                    checked={lexiconMode === option.value}
+                    onChange={() => onLexiconModeChange(option.value)}
+                    className="mt-1"
+                  />
+                  <span>
+                    <span className="block text-sm font-medium text-gray-800">{option.label}</span>
+                    <span className="block text-xs text-gray-500">{option.help}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {activeModule === 'anagram' && lexiconMode === 'hybrid' && (
+            <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50">
+              {renderToggle(
+                'Palabras nuevas primero',
+                newWordsFirst,
+                onNewWordsFirstChange,
+                <ArrowUp size={16} className="text-amber-600" />,
+                !anagramSettings?.hasActiveSearch
+              )}
+            </div>
+          )}
+
           {renderModuleContent()}
 
           {/* Info Section for anagram module when no active search */}

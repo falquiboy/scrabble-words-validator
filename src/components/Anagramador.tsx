@@ -1,15 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import SearchContainer from "./anagramador/search/SearchContainer";
 import ResultsList from "./anagramador/ResultsList";
 import { useHybridAnagramSearch } from "@/hooks/useHybridAnagramSearch";
 import { highlightWildcardLetter } from "@/utils/wildcardHighlighting";
 import { useToast } from "@/hooks/use-toast";
 import { toDisplayFormat } from "@/utils/digraphs";
-import { HybridTrieService } from "@/services/HybridTrieService";
+import type { WordSearchService } from '@/lexicon/types';
+import { useLexicon } from '@/lexicon/LexiconContext';
 import { SearchResults } from "@/hooks/anagramSearch/types";
 
 interface AnagramadorProps {
-  trie: HybridTrieService;
+  trie: WordSearchService;
   // Settings props (controlled from parent)
   showShorter: boolean;
   onShowShorterChange: (show: boolean) => void;
@@ -47,6 +48,7 @@ const Anagramador = ({
   onPersistentSearchChange
 }: AnagramadorProps) => {
   const { toast } = useToast();
+  const { sortWords } = useLexicon();
   
   // Use persistent state from parent instead of local state
   const searchTerm = persistentSearchTerm;
@@ -59,6 +61,13 @@ const Anagramador = ({
     showShorter,
     targetLength
   );
+  const displayResults = useMemo(() => ({
+    exactMatches: sortWords(searchResults.exactMatches),
+    wildcardMatches: sortWords(searchResults.wildcardMatches),
+    additionalWildcardMatches: sortWords(searchResults.additionalWildcardMatches),
+    shorterMatches: sortWords(searchResults.shorterMatches),
+    patternMatches: sortWords(searchResults.patternMatches),
+  }), [searchResults, sortWords]);
 
   // Notify parent about search state changes
   useEffect(() => {
@@ -69,15 +78,6 @@ const Anagramador = ({
   useEffect(() => {
     onPatternWithoutRackChange(isPatternWithoutRack(searchTerm));
   }, [searchTerm, onPatternWithoutRackChange]);
-
-  // Provide copy callback to parent
-  useEffect(() => {
-    if (searchTerm) {
-      onCopyAllCallbackChange(() => handleCopyAll);
-    } else {
-      onCopyAllCallbackChange(undefined);
-    }
-  }, [searchTerm, searchResults, onCopyAllCallbackChange]);
 
   // Show error toast if there's an error
   useEffect(() => {
@@ -145,8 +145,8 @@ const Anagramador = ({
     return isPatternSearch && !hasRackRestriction;
   };
 
-  const handleCopyAll = () => {
-    if (!searchResults) return;
+  const handleCopyAll = useCallback(() => {
+    if (!displayResults) return;
 
     const isPatternSearch = searchTerm.includes('*') || 
                            searchTerm.includes('.') || 
@@ -154,27 +154,27 @@ const Anagramador = ({
                            searchTerm.includes('@') ||
                            searchTerm.includes('&') ||
                            searchTerm.includes('+') ||
-                           /[+\-]\d*[A-Za-z]/.test(searchTerm); // Numeric notation
+                           /[+-]\d*[A-Za-z]/.test(searchTerm); // Numeric notation
     const wildcardCount = (searchTerm.match(/\?/g) || []).length;
 
     let allWords: string[] = [];
 
     if (isPatternSearch) {
-      allWords = [...(searchResults.patternMatches || [])];
+      allWords = [...(displayResults.patternMatches || [])];
     } else {
       // Include exact/wildcard matches
       if (wildcardCount === 0) {
-        allWords = [...(searchResults.exactMatches || [])];
+        allWords = [...(displayResults.exactMatches || [])];
       } else {
-        allWords = [...(searchResults.wildcardMatches || [])];
+        allWords = [...(displayResults.wildcardMatches || [])];
       }
       
       // Include additional letter matches
-      const filteredAdditionalMatches = searchResults.additionalWildcardMatches.filter(word => {
+      const filteredAdditionalMatches = displayResults.additionalWildcardMatches.filter(word => {
         if (wildcardCount === 0) {
-          return !searchResults.exactMatches.includes(word);
+          return !displayResults.exactMatches.includes(word);
         } else {
-          return !searchResults.wildcardMatches.includes(word);
+          return !displayResults.wildcardMatches.includes(word);
         }
       });
       
@@ -183,8 +183,8 @@ const Anagramador = ({
       }
       
       // Include shorter matches if any
-      if (searchResults.shorterMatches?.length > 0) {
-        allWords = [...allWords, ...(searchResults.shorterMatches || [])];
+      if (displayResults.shorterMatches?.length > 0) {
+        allWords = [...allWords, ...(displayResults.shorterMatches || [])];
       }
     }
 
@@ -203,7 +203,16 @@ const Anagramador = ({
         variant: "destructive",
       });
     });
-  };
+  }, [displayResults, searchTerm, toast]);
+
+  // Provide copy callback to parent
+  useEffect(() => {
+    if (searchTerm) {
+      onCopyAllCallbackChange(() => handleCopyAll);
+    } else {
+      onCopyAllCallbackChange(undefined);
+    }
+  }, [handleCopyAll, onCopyAllCallbackChange, searchTerm]);
 
   return (
     <div className="relative h-full">
@@ -226,7 +235,7 @@ const Anagramador = ({
             <ResultsList
               isLoading={isLoading}
               searchTerm={searchTerm}
-              results={searchResults}
+              results={displayResults}
               highlightWildcardLetter={highlightWildcardLetter}
               isSearchAborted={false}
               showShorter={showShorter}

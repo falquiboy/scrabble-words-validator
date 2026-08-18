@@ -5,6 +5,7 @@ import { calculateWordScore } from "@/utils/scrabbleScore";
 import { calculatePotentialValue, calculateLeave, getBatchLeaveValues } from "@/utils/leavesData";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { highlightWildcardLetter } from "@/utils/wildcardHighlighting";
+import LexiconBadge from '@/components/LexiconBadge';
 
 // Utilidad para extraer información de búsqueda
 const parseSearchTerm = (searchTerm: string, title?: string) => {
@@ -125,7 +126,7 @@ const WordWithEquity: React.FC<{
     };
 
     calculateEquity();
-  }, [baseScore, searchTerm, displayWord, isSubanagram, showResidue]);
+  }, [baseScore, searchTerm, displayWord, isSubanagram, showResidue, title]);
 
   return (
     <div
@@ -148,6 +149,7 @@ const WordWithEquity: React.FC<{
             ? highlightWildcardLetter(displayWord, searchTerm)
             : displayWord}
         </a>
+        <LexiconBadge word={word} />
         {showResidue && (
           <span className={`text-sm ${isSubanagram && equity !== baseScore ? 'text-green-600 font-medium' : 'text-gray-500'}`}>
             ({isCalculating ? '...' : residue ? residue : equity || baseScore})
@@ -440,6 +442,7 @@ export const BaseResults = ({
                         ? highlightWildcardLetter(displayWord, searchTerm)
                         : displayWord}
                     </a>
+                    <LexiconBadge word={word} />
                     <span className="text-sm text-green-700">
                       ({residue})
                     </span>

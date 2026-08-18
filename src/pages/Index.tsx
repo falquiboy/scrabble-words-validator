@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import WordValidator from "@/components/WordValidator";
 import Anagramador from "@/components/Anagramador";
 import Lists from "@/components/Lists";
@@ -8,11 +8,24 @@ import NewModuleSelector from "@/components/NewModuleSelector";
 import GlobalSettingsMenu from "@/components/GlobalSettingsMenu";
 import { useWordTrie } from "@/hooks/useWordTrie";
 import Residues from "@/components/Residues";
+import { LexiconContext, createLexiconContextValue } from '@/lexicon/LexiconContext';
+import { normalizeLexiconMode } from '@/lexicon/policy.mjs';
+import type { LexiconMode } from '@/lexicon/types';
+
+const readStoredMode = (): LexiconMode => {
+  try { return normalizeLexiconMode(localStorage.getItem('maslexico:lexicon-mode')); }
+  catch { return '2017'; }
+};
 
 const Index = () => {
   const [activeModule, setActiveModule] = useState<'judge' | 'anagram' | 'lists' | 'residues' | 'training'>('judge');
   const [showTraining, setShowTraining] = useState(false);
   const [enableUltraFastMode] = useState(true);
+  const [lexiconMode, setLexiconMode] = useState<LexiconMode>(readStoredMode);
+  const [newWordsFirst, setNewWordsFirst] = useState(() => {
+    try { return localStorage.getItem('maslexico:new-words-first') === 'true'; }
+    catch { return false; }
+  });
   
   // States for anagram settings (lifted up from Anagramador)
   const [showShorter, setShowShorter] = useState(false);
@@ -39,7 +52,19 @@ const Index = () => {
     loadingProgress,
     stage: trieStage,
     wordCount
-  } = useWordTrie(enableUltraFastMode);
+  } = useWordTrie(enableUltraFastMode, lexiconMode);
+  const lexiconContext = useMemo(
+    () => createLexiconContextValue(lexiconMode, newWordsFirst),
+    [lexiconMode, newWordsFirst]
+  );
+
+  useEffect(() => {
+    try { localStorage.setItem('maslexico:lexicon-mode', lexiconMode); } catch { /* optional */ }
+  }, [lexiconMode]);
+
+  useEffect(() => {
+    try { localStorage.setItem('maslexico:new-words-first', String(newWordsFirst)); } catch { /* optional */ }
+  }, [newWordsFirst]);
   
   // Only SQLite startup blocks the controls; Trie promotion stays in background.
   const isDictionaryLoading = isTrieLoading;
@@ -94,6 +119,7 @@ const Index = () => {
   }, [showTraining]);
 
   return (
+    <LexiconContext.Provider value={lexiconContext}>
     <div
       className="h-screen bg-gray-50 flex flex-col overflow-hidden"
       style={{ height: '100dvh' }}
@@ -104,6 +130,10 @@ const Index = () => {
       />
       <GlobalSettingsMenu 
         activeModule={activeModule}
+        lexiconMode={lexiconMode}
+        onLexiconModeChange={setLexiconMode}
+        newWordsFirst={newWordsFirst}
+        onNewWordsFirstChange={setNewWordsFirst}
         anagramSettings={{
           showShorter,
           onShowShorterChange: setShowShorter,
@@ -160,6 +190,7 @@ const Index = () => {
                   wordCount={wordCount}
                   isTrieBuilding={isTrieBuilding}
                   isTrieReady={isTrieReady}
+                  mode={lexiconMode}
                 />
               ) : activeModule === 'anagram' ? (
                 <Anagramador 
@@ -191,6 +222,7 @@ const Index = () => {
         )}
       </div>
     </div>
+    </LexiconContext.Provider>
   );
 };
 

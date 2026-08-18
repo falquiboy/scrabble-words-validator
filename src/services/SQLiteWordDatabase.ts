@@ -23,7 +23,7 @@ interface DictionaryShard {
   sqliteBytes: number;
 }
 
-interface DictionaryManifest {
+export interface DictionaryManifest {
   version: number;
   format: string;
   wordCount: number;
@@ -38,22 +38,33 @@ interface OpenShard {
   lastUsed: number;
 }
 
-const MANIFEST_URL = '/lexicon/manifest.json';
-const MINIMUM_WORD_COUNT = 600_000;
 const MAX_OPEN_SHARDS = 4;
 
+export interface SQLiteWordDatabaseOptions {
+  manifestUrl?: string;
+  minimumWordCount?: number;
+  label?: string;
+}
+
 export class SQLiteWordDatabase {
-  private static instance: SQLiteWordDatabase;
   private SQL: SqlJsStatic | null = null;
   private manifest: DictionaryManifest | null = null;
   private shards = new Map<number, OpenShard>();
   private shardPromises = new Map<number, Promise<OpenShard>>();
   private isInitialized = false;
   private initPromise: Promise<void> | null = null;
+  private readonly manifestUrl: string;
+  private readonly minimumWordCount: number;
+  private readonly label: string;
 
-  constructor() {
-    if (SQLiteWordDatabase.instance) return SQLiteWordDatabase.instance;
-    SQLiteWordDatabase.instance = this;
+  constructor({
+    manifestUrl = '/lexicon/manifest.json',
+    minimumWordCount = 600_000,
+    label = '2017',
+  }: SQLiteWordDatabaseOptions = {}) {
+    this.manifestUrl = manifestUrl;
+    this.minimumWordCount = minimumWordCount;
+    this.label = label;
   }
 
   async init(): Promise<void> {
@@ -67,10 +78,10 @@ export class SQLiteWordDatabase {
   }
 
   private async initializeDatabase(): Promise<void> {
-    console.log('📚 Iniciando índice SQLite fragmentado…');
+    console.log(`📚 Iniciando índice SQLite ${this.label}…`);
     const [SQL, manifestResponse] = await Promise.all([
       initSqlJs({ locateFile: (file) => `/${file}` }),
-      fetch(MANIFEST_URL, { cache: 'force-cache' }),
+      fetch(this.manifestUrl, { cache: 'force-cache' }),
     ]);
 
     if (!manifestResponse.ok) {
@@ -80,7 +91,7 @@ export class SQLiteWordDatabase {
     const manifest = (await manifestResponse.json()) as DictionaryManifest;
     if (
       manifest.format !== 'sqlite-length-shards' ||
-      manifest.wordCount < MINIMUM_WORD_COUNT
+      manifest.wordCount < this.minimumWordCount
     ) {
       throw new Error(`Diccionario offline incompleto (${manifest.wordCount ?? 0})`);
     }
@@ -88,8 +99,7 @@ export class SQLiteWordDatabase {
     this.SQL = SQL;
     this.manifest = manifest;
     this.isInitialized = true;
-    await this.notifyHybridService();
-    console.log(`✅ Índice SQLite listo (${manifest.wordCount} palabras)`);
+    console.log(`✅ Índice SQLite ${this.label} listo (${manifest.wordCount} palabras)`);
   }
 
   private async withShard<T>(
@@ -273,15 +283,6 @@ export class SQLiteWordDatabase {
   async loadTrie(): Promise<null> { return null; }
   async clearTrie(): Promise<void> {}
   async saveToCache(): Promise<void> {}
-
-  private async notifyHybridService(): Promise<void> {
-    try {
-      const { hybridTrieService } = await import('./HybridTrieService');
-      hybridTrieService.notifySqliteReady();
-    } catch {
-      // La instancia usada por React también espera directamente a init().
-    }
-  }
 
   close(): void {
     for (const shard of this.shards.values()) shard.db.close();

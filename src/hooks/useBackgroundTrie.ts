@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Trie } from '@/utils/trie';
-import { sqliteDB } from '@/services/SQLiteWordDatabase';
+import { SQLiteWordDatabase } from '@/services/SQLiteWordDatabase';
+import { SqliteAnagramService } from '@/services/SqliteAnagramService';
 import { HybridTrieService } from '@/services/HybridTrieService';
+import type { LexiconReleaseDescriptor } from '@/lexicon/releases';
 import {
   getTrieBuildDecision,
   markTrieBuildFailed,
@@ -34,9 +36,27 @@ const waitForIdleTurn = (): Promise<void> => {
 };
 
 export const useBackgroundTrie = (
-  enableUltraFastMode = false
+  enableUltraFastMode: boolean,
+  release: LexiconReleaseDescriptor
 ): UseBackgroundTrieReturn => {
-  const [hybridService] = useState(() => new HybridTrieService(null));
+  const resources = useMemo(() => {
+    const database = new SQLiteWordDatabase({
+      manifestUrl: release.manifestUrl,
+      minimumWordCount: release.minimumWordCount,
+      label: release.publicLabel,
+    });
+    const sqliteService = new SqliteAnagramService(database);
+    return {
+      database,
+      hybridService: new HybridTrieService(null, sqliteService, release.allowSupabaseFallback),
+    };
+  }, [
+    release.allowSupabaseFallback,
+    release.manifestUrl,
+    release.minimumWordCount,
+    release.publicLabel,
+  ]);
+  const { database, hybridService } = resources;
   const [isTrieReady, setIsTrieReady] = useState(false);
   const [trieProgress, setTrieProgress] = useState<TrieProgress | null>(null);
   const [status, setStatus] =
@@ -60,7 +80,7 @@ export const useBackgroundTrie = (
       clearBuildTimeout();
       workerRef.current?.terminate();
       workerRef.current = null;
-      markTrieBuildFailed();
+      markTrieBuildFailed(release.key);
       trieBuildStarted = false;
       if (cause) console.error(message, cause);
       else console.warn(message);
@@ -72,9 +92,13 @@ export const useBackgroundTrie = (
 
     const initializeOfflineDictionary = async () => {
       try {
+        setIsTrieReady(false);
+        setTrieProgress(null);
+        setError(null);
         setStatus('loading');
-        await sqliteDB.init();
-        const wordCount = await sqliteDB.getWordCount();
+        await database.init();
+        hybridService.notifySqliteReady();
+        const wordCount = await database.getWordCount();
         if (cancelled) return;
 
         if (!enableUltraFastMode) {
@@ -83,7 +107,7 @@ export const useBackgroundTrie = (
           return;
         }
 
-        const decision = getTrieBuildDecision();
+        const decision = getTrieBuildDecision(release.key);
         if (!decision.shouldBuild) {
           console.info(`SQLite-only mode: ${decision.reason}`);
           setTrieProgress({ progress: 100, processed: wordCount, total: wordCount });
@@ -98,9 +122,9 @@ export const useBackgroundTrie = (
         await waitForIdleTurn();
         if (cancelled) return;
 
-        markTrieBuildStarted();
+        markTrieBuildStarted(release.key);
         trieBuildStarted = true;
-        const words = await sqliteDB.getAllWords();
+        const words = await database.getAllWords();
         if (cancelled) return;
         if (!words.length) throw new Error('No words found in database');
 
@@ -124,7 +148,7 @@ export const useBackgroundTrie = (
               trie.deserialize(serializedTrie);
               if (cancelled) return;
               hybridService.upgradeTrie(trie);
-              markTrieBuildSucceeded();
+              markTrieBuildSucceeded(release.key);
               trieBuildStarted = false;
               setIsTrieReady(true);
               setStatus('ready');
@@ -153,7 +177,7 @@ export const useBackgroundTrie = (
         workerRef.current.postMessage({ type: 'BUILD_TRIE', words });
       } catch (initializationError) {
         console.error('Offline dictionary initialization failed.', initializationError);
-        if (trieBuildStarted) markTrieBuildFailed();
+        if (trieBuildStarted) markTrieBuildFailed(release.key);
         trieBuildStarted = false;
         clearBuildTimeout();
         workerRef.current?.terminate();
@@ -177,8 +201,9 @@ export const useBackgroundTrie = (
       clearBuildTimeout();
       workerRef.current?.terminate();
       workerRef.current = null;
+      database.close();
     };
-  }, [enableUltraFastMode, hybridService]);
+  }, [database, enableUltraFastMode, hybridService, release.key]);
 
   return { hybridService, isTrieReady, trieProgress, status, error };
 };

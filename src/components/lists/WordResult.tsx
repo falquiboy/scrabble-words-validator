@@ -1,5 +1,6 @@
 
 import React from 'react';
+import LexiconBadge from '@/components/LexiconBadge';
 
 interface WordResultProps {
   word: string;
@@ -20,7 +21,10 @@ const WordResult = ({ word, onClick }: WordResultProps) => {
       className="bg-gray-50 hover:bg-gray-100 p-2 rounded text-center transition-colors font-semibold w-full"
       aria-label={`Ver información de "${word}"`}
     >
-      {word}
+      <span className="inline-flex items-center justify-center gap-1.5">
+        {word}
+        <LexiconBadge word={word} />
+      </span>
     </button>
   );
 };

@@ -1,8 +1,12 @@
 const POLICY_VERSION = '2026-08-06-v1';
-const KEY_PREFIX = `maslexico:full-trie:${POLICY_VERSION}`;
-const PENDING_KEY = `${KEY_PREFIX}:pending`;
-const FAILURE_UNTIL_KEY = `${KEY_PREFIX}:failure-until`;
-const SUCCESS_KEY = `${KEY_PREFIX}:success`;
+const keySet = (scope: string) => {
+  const prefix = `maslexico:full-trie:${POLICY_VERSION}:${scope}`;
+  return {
+    pending: `${prefix}:pending`,
+    failureUntil: `${prefix}:failure-until`,
+    success: `${prefix}:success`,
+  };
+};
 
 export const TRIE_BUILD_TIMEOUT_MS = 45_000;
 const FAILURE_COOLDOWN_MS = 24 * 60 * 60 * 1000;
@@ -61,9 +65,10 @@ const getStorages = (): {
   }
 };
 
-export const getTrieBuildDecision = (): TrieBuildDecision => {
+export const getTrieBuildDecision = (scope = '2017'): TrieBuildDecision => {
   const now = Date.now();
   const { local, session } = getStorages();
+  const keys = keySet(scope);
   const navigatorWithMemory = navigator as Navigator & { deviceMemory?: number };
 
   // Chromium exposes this hint. WebKit does not, and building the full trie
@@ -81,38 +86,41 @@ export const getTrieBuildDecision = (): TrieBuildDecision => {
     return { shouldBuild: false, reason: 'unknown-memory' };
   }
 
-  const pendingSince = readTimestamp(session, PENDING_KEY);
-  removeKey(session, PENDING_KEY);
+  const pendingSince = readTimestamp(session, keys.pending);
+  removeKey(session, keys.pending);
   if (pendingSince !== null && now - pendingSince <= RECENT_PENDING_MS) {
-    writeTimestamp(local, FAILURE_UNTIL_KEY, now + FAILURE_COOLDOWN_MS);
+    writeTimestamp(local, keys.failureUntil, now + FAILURE_COOLDOWN_MS);
     return { shouldBuild: false, reason: 'interrupted-build' };
   }
 
-  const failureUntil = readTimestamp(local, FAILURE_UNTIL_KEY);
+  const failureUntil = readTimestamp(local, keys.failureUntil);
   if (failureUntil !== null && failureUntil > now) {
     return { shouldBuild: false, reason: 'recent-failure' };
   }
-  removeKey(local, FAILURE_UNTIL_KEY);
+  removeKey(local, keys.failureUntil);
 
   return { shouldBuild: true, reason: 'capable' };
 };
 
-export const markTrieBuildStarted = (): void => {
+export const markTrieBuildStarted = (scope = '2017'): void => {
   const { local, session } = getStorages();
-  removeKey(local, SUCCESS_KEY);
-  writeTimestamp(session, PENDING_KEY, Date.now());
+  const keys = keySet(scope);
+  removeKey(local, keys.success);
+  writeTimestamp(session, keys.pending, Date.now());
 };
 
-export const markTrieBuildSucceeded = (): void => {
+export const markTrieBuildSucceeded = (scope = '2017'): void => {
   const { local, session } = getStorages();
-  removeKey(session, PENDING_KEY);
-  removeKey(local, FAILURE_UNTIL_KEY);
-  writeTimestamp(local, SUCCESS_KEY, Date.now());
+  const keys = keySet(scope);
+  removeKey(session, keys.pending);
+  removeKey(local, keys.failureUntil);
+  writeTimestamp(local, keys.success, Date.now());
 };
 
-export const markTrieBuildFailed = (): void => {
+export const markTrieBuildFailed = (scope = '2017'): void => {
   const { local, session } = getStorages();
-  removeKey(session, PENDING_KEY);
-  removeKey(local, SUCCESS_KEY);
-  writeTimestamp(local, FAILURE_UNTIL_KEY, Date.now() + FAILURE_COOLDOWN_MS);
+  const keys = keySet(scope);
+  removeKey(session, keys.pending);
+  removeKey(local, keys.success);
+  writeTimestamp(local, keys.failureUntil, Date.now() + FAILURE_COOLDOWN_MS);
 };

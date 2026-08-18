@@ -5,7 +5,7 @@ import {
   formatLeaveTokensFromInternalLetters
 } from "@/utils/leavesData";
 import { processDigraphs } from "@/utils/digraphs";
-import { HybridTrieService } from "@/services/HybridTrieService";
+import type { WordSearchService } from '@/lexicon/types';
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,6 +15,7 @@ import {
   DialogTitle
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import LexiconBadge from '@/components/LexiconBadge';
 
 interface ResidueResult {
   leave: string;
@@ -28,7 +29,7 @@ interface ResidueResult {
 const COMPARISON_GENERATION = 6;
 
 interface ResiduesProps {
-  trie: HybridTrieService;
+  trie: WordSearchService;
 }
 
 const normalizeInput = (input: string): string => {
@@ -521,8 +522,8 @@ const Residues = ({ trie }: ResiduesProps) => {
                   <ScrollArea className="h-40 border border-gray-200 rounded-md p-3">
                     <div className="flex flex-wrap gap-2">
                       {dialogState.exactWords.map((word) => (
-                        <span key={word} className="text-sm font-mono text-gray-800">
-                          {word}
+                        <span key={word} className="inline-flex items-center gap-1 text-sm font-mono text-gray-800">
+                          {word}<LexiconBadge word={word} />
                         </span>
                       ))}
                     </div>
@@ -545,8 +546,8 @@ const Residues = ({ trie }: ResiduesProps) => {
                         <div className="text-xs font-semibold text-blue-600 mb-1">+ {letter}</div>
                         <div className="flex flex-wrap gap-2">
                           {words.map((word) => (
-                            <span key={`${letter}_${word}`} className="text-sm font-mono text-gray-800">
-                              {word}
+                            <span key={`${letter}_${word}`} className="inline-flex items-center gap-1 text-sm font-mono text-gray-800">
+                              {word}<LexiconBadge word={word} />
                             </span>
                           ))}
                         </div>

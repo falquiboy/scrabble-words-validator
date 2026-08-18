@@ -1,0 +1,126 @@
+{
+  "version": 2,
+  "format": "sqlite-length-shards",
+  "releaseId": "lexicon-2027-rc1",
+  "publicLabel": "2027",
+  "wordCount": 650054,
+  "totalCompressedBytes": 11384127,
+  "totalSqliteBytes": 33984512,
+  "source": {
+    "filename": "FILE2027-RC1.txt",
+    "bytes": 7433680,
+    "sha256": "7a0f942fe8334a206f5914ea8593e57ab7c983f6d16d36204e1b7c7b0d73f6a8"
+  },
+  "deltaFrom2017": {
+    "additions": {
+      "url": "/lexicon/2027/new-words.json",
+      "count": 10975,
+      "sha256": "a6818e66d32337013fd101d2d0ab9b65fb7642cdbec77abd5758c56edf412e88"
+    },
+    "removals": {
+      "url": "/lexicon/2027/legacy-words.json",
+      "count": 214,
+      "sha256": "44dc188511b09b6af6a7a9952e11676fb8579858898f20933abeb65f859c3f0d"
+    }
+  },
+  "lengths": {
+    "2": {
+      "url": "/lexicon/2027/length-2.dbpack",
+      "wordCount": 95,
+      "compressedBytes": 1654,
+      "sqliteBytes": 16384,
+      "sha256": "7d0ffc6ca86a0f18a4200dece78f6d5e23d8983f9e437c4426f7007c5b2db2b5"
+    },
+    "3": {
+      "url": "/lexicon/2027/length-3.dbpack",
+      "wordCount": 555,
+      "compressedBytes": 10280,
+      "sqliteBytes": 36864,
+      "sha256": "32f8c03440b3984100f074403388da228abdb9b592d7b67d641f7f3fa285af00"
+    },
+    "4": {
+      "url": "/lexicon/2027/length-4.dbpack",
+      "wordCount": 3529,
+      "compressedBytes": 52203,
+      "sqliteBytes": 126976,
+      "sha256": "2e1ecfd4f1dbcc253800d37337b4d1d987b5be0e7910bba81ca2b5702bce6070"
+    },
+    "5": {
+      "url": "/lexicon/2027/length-5.dbpack",
+      "wordCount": 12382,
+      "compressedBytes": 185641,
+      "sqliteBytes": 458752,
+      "sha256": "1fa4d41415237df277383c81fe8b7862e99ab36ee0e1871155d507ba2f1e50df"
+    },
+    "6": {
+      "url": "/lexicon/2027/length-6.dbpack",
+      "wordCount": 28397,
+      "compressedBytes": 434109,
+      "sqliteBytes": 1114112,
+      "sha256": "3974a7a5b492eaa976fefcfbd7e0a7e2476a09241c50698693bfce2fc1e318c7"
+    },
+    "7": {
+      "url": "/lexicon/2027/length-7.dbpack",
+      "wordCount": 53612,
+      "compressedBytes": 878191,
+      "sqliteBytes": 2318336,
+      "sha256": "ad6218e28726ef4b5a3f0858b50419d86530788e1ecbbf7ddb69ac0ee1b256a6"
+    },
+    "8": {
+      "url": "/lexicon/2027/length-8.dbpack",
+      "wordCount": 79145,
+      "compressedBytes": 1328422,
+      "sqliteBytes": 3678208,
+      "sha256": "e9e89549b00dbebb017d13eaa40cf70a0895c6d90275f5559c5f84249f2bdaf2"
+    },
+    "9": {
+      "url": "/lexicon/2027/length-9.dbpack",
+      "wordCount": 99854,
+      "compressedBytes": 1706920,
+      "sqliteBytes": 4935680,
+      "sha256": "6a97bd7de3ebd12e577fd33ec10eafc1d33387f7a577d0d299d77cdcf78806e2"
+    },
+    "10": {
+      "url": "/lexicon/2027/length-10.dbpack",
+      "wordCount": 106661,
+      "compressedBytes": 1873717,
+      "sqliteBytes": 5599232,
+      "sha256": "d787ed5b48dadf7c162c930af5ab746a2ac7415e72a42d5be472a55110935158"
+    },
+    "11": {
+      "url": "/lexicon/2027/length-11.dbpack",
+      "wordCount": 95440,
+      "compressedBytes": 1703145,
+      "sqliteBytes": 5279744,
+      "sha256": "32115994b0073d5e33a0ba5014d019594d14c6a8a4f09b2b4b7cb3db0249c3a8"
+    },
+    "12": {
+      "url": "/lexicon/2027/length-12.dbpack",
+      "wordCount": 74338,
+      "compressedBytes": 1368597,
+      "sqliteBytes": 4325376,
+      "sha256": "f4a84a328ca4f49d5a844cf1a25e5d1764fb6328734eada61ce600e402bed1a4"
+    },
+    "13": {
+      "url": "/lexicon/2027/length-13.dbpack",
+      "wordCount": 50707,
+      "compressedBytes": 957266,
+      "sqliteBytes": 3125248,
+      "sha256": "8bc7817e3e08e5b906edf68ecfff0bfe75b287d1be4ada50c0e8d174cdcea8fe"
+    },
+    "14": {
+      "url": "/lexicon/2027/length-14.dbpack",
+      "wordCount": 29792,
+      "compressedBytes": 574200,
+      "sqliteBytes": 1929216,
+      "sha256": "b9e9c9148fa15c06d5509120f29c7029f212532583ed5de8e91a144bd7cf4065"
+    },
+    "15": {
+      "url": "/lexicon/2027/length-15.dbpack",
+      "wordCount": 15547,
+      "compressedBytes": 309782,
+      "sqliteBytes": 1040384,
+      "sha256": "a97998f2b3ade2b2a0b1a0a4ac6fceed4d6f98f8bf693e17e5dd4cdc9c2c311f"
+    }
+  }
+}

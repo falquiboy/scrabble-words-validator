@@ -5,7 +5,7 @@
  * ¡Bendecido con transacciones rápidas y queries poderosas! 🙏⚡
  */
 
-import { sqliteDB, WordEntry } from './SQLiteWordDatabase';
+import { SQLiteWordDatabase, sqliteDB, WordEntry } from './SQLiteWordDatabase';
 import { hasConstraints, parseConstraints, filterByConstraints } from '../utils/pattern/constraints';
 
 export interface AnagramResults {
@@ -14,6 +14,7 @@ export interface AnagramResults {
 }
 
 export class SqliteAnagramService {
+  constructor(private readonly database: SQLiteWordDatabase = sqliteDB) {}
   
   /**
    * Buscar anagramas exactos usando índice SQL nativo
@@ -25,7 +26,7 @@ export class SqliteAnagramService {
     const alphagram = this.createAlphagram(normalizedLetters);
 
     try {
-      const words = await sqliteDB.findAnagramsByAlphagram(alphagram);
+      const words = await this.database.findAnagramsByAlphagram(alphagram);
       return words;
     } catch (error) {
       console.error('❌ SQLite exact anagram search failed:', error);
@@ -48,7 +49,7 @@ export class SqliteAnagramService {
     try {
       // Buscar por cada longitud usando índice optimizado
       for (let len = minLength; len <= maxLength; len++) {
-        const words = await sqliteDB.findWordsByLength(len);
+        const words = await this.database.findWordsByLength(len);
         
         // Filtrar palabras que son subanagramas válidos
         const validSubanagrams = words
@@ -101,7 +102,7 @@ export class SqliteAnagramService {
         )
       ));
 
-      const results = await sqliteDB.findAnagramsByAlphagrams(alphagrams);
+      const results = await this.database.findAnagramsByAlphagrams(alphagrams);
       console.log(`✅ SQLite found ${results.length} words with 1 additional letter`);
       return results;
     } catch (error) {
@@ -164,7 +165,7 @@ export class SqliteAnagramService {
    */
   private async ensureDatabase(): Promise<void> {
     try {
-      await sqliteDB.init();
+      await this.database.init();
     } catch (error) {
       console.error('❌ Failed to initialize SQLite database:', error);
       throw new Error('SQLite database not available');
@@ -177,7 +178,7 @@ export class SqliteAnagramService {
   async isAvailable(): Promise<boolean> {
     try {
       await this.ensureDatabase();
-      const count = await sqliteDB.getWordCount();
+      const count = await this.database.getWordCount();
       return count > 0;
     } catch (error) {
       console.error('❌ SQLite availability check failed:', error);
@@ -221,25 +222,23 @@ export class SqliteAnagramService {
    * Crear un adapter que simule la interfaz del Trie usando SQLite
    */
   private createTrieAdapter() {
-    const self = this;
-    
     return {
       // Implementar métodos del Trie que usa la lógica de patterns
       search: async (word: string): Promise<boolean> => {
-        const results = await self.findExactAnagrams(word);
+        const results = await this.findExactAnagrams(word);
         return results.includes(word.toUpperCase());
       },
       
       getWordsStartingWith: async (prefix: string): Promise<string[]> => {
-        return await self.findWordsStartingWith(prefix);
+        return await this.findWordsStartingWith(prefix);
       },
       
       getAllWords: async (): Promise<string[]> => {
-        return await sqliteDB.getAllWords();
+        return await this.database.getAllWords();
       },
       
       getWordsOfLength: async (length: number): Promise<string[]> => {
-        const entries = await sqliteDB.findWordsByLength(length);
+        const entries = await this.database.findWordsByLength(length);
         return entries.map(entry => entry.word);
       },
       
@@ -251,7 +250,7 @@ export class SqliteAnagramService {
           children: new Map(),
           // Implementar método searchTrie directamente
           searchTrie: async (pattern: RegExp, rackLetters: string = ''): Promise<string[]> => {
-            return await self.searchTrieWithSQLite(pattern, rackLetters);
+            return await this.searchTrieWithSQLite(pattern, rackLetters);
           }
         };
       }
@@ -268,7 +267,7 @@ export class SqliteAnagramService {
     const hasRackLetters = rackLetters && rackLetters.trim().length > 0;
     
     // Obtener todas las palabras (esto es ineficiente, pero funcional para empezar)
-    const allWords = await sqliteDB.getAllWords();
+    const allWords = await this.database.getAllWords();
     
     for (const word of allWords) {
       // Probar cada palabra contra el patrón
@@ -397,7 +396,7 @@ export class SqliteAnagramService {
    */
   private async findPatternWithRack(pattern: string, rackLetters: string): Promise<string[]> {
     // Implementación básica - obtener todas las palabras y filtrar
-    const allWords = await sqliteDB.getAllWords();
+    const allWords = await this.database.getAllWords();
     const matches: string[] = [];
     
     // Crear un regex básico del patrón
@@ -449,7 +448,7 @@ export class SqliteAnagramService {
     // Buscar en múltiples longitudes
     const results: string[] = [];
     for (let len = normalizedPrefix.length; len <= 15; len++) {
-      const candidates = await sqliteDB.findWordsByLength(len);
+      const candidates = await this.database.findWordsByLength(len);
       const matches = this.applyLikeFilter(candidates, sqlPattern);
       results.push(...matches);
     }
@@ -495,7 +494,7 @@ export class SqliteAnagramService {
     
     if (targetLength) {
       // Buscar solo en la longitud específica
-      const candidates = await sqliteDB.findWordsByLength(targetLength);
+      const candidates = await this.database.findWordsByLength(targetLength);
       return this.applyLikeFilter(candidates, sqlPattern);
     } else {
       // Buscar en múltiples longitudes de manera eficiente
@@ -506,7 +505,7 @@ export class SqliteAnagramService {
       console.log(`🎯 Estimated pattern length: ${estimatedLength}, searching lengths ${minLength}-${maxLength}`);
       
       for (let len = minLength; len <= maxLength; len++) {
-        const candidates = await sqliteDB.findWordsByLength(len);
+        const candidates = await this.database.findWordsByLength(len);
         console.log(`📊 Length ${len}: ${candidates.length} candidates`);
         const matches = this.applyLikeFilter(candidates, sqlPattern);
         console.log(`✅ Length ${len}: ${matches.length} matches`);
@@ -779,7 +778,7 @@ export class SqliteAnagramService {
     
     console.log(`🔍 SQLite wildcards: searching length ${targetLength} (${lettersLength} letters + ${wildcardCount} wildcards)`);
     
-    const candidates = await sqliteDB.findWordsByLength(targetLength);
+    const candidates = await this.database.findWordsByLength(targetLength);
     console.log(`📊 Found ${candidates.length} candidates of length ${targetLength}`);
     
     for (const candidate of candidates) {
@@ -804,7 +803,7 @@ export class SqliteAnagramService {
     
     console.log(`🔍 SQLite additional: searching length ${targetLength} (${lettersLength} letters + ${totalWildcards} total wildcards)`);
     
-    const candidates = await sqliteDB.findWordsByLength(targetLength);
+    const candidates = await this.database.findWordsByLength(targetLength);
     console.log(`📊 Found ${candidates.length} candidates of length ${targetLength} for additional search`);
     
     for (const candidate of candidates) {
@@ -855,7 +854,7 @@ export class SqliteAnagramService {
   async getStats(): Promise<{ wordCount: number; isReady: boolean }> {
     try {
       await this.ensureDatabase();
-      const wordCount = await sqliteDB.getWordCount();
+      const wordCount = await this.database.getWordCount();
       return {
         wordCount,
         isReady: wordCount > 0

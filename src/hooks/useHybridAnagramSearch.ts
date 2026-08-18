@@ -5,14 +5,14 @@
 
 import { useState, useEffect, useRef } from 'react';
 // import { indexedDbAnagramService } from '@/services/IndexedDbAnagramService'; // Deprecated - using hybrid service
-import { HybridTrieService } from '@/services/HybridTrieService';
+import type { WordSearchService } from '@/lexicon/types';
 import { SearchResults } from "./anagramSearch/types";
 import { sortWordsByAddedLetter } from "@/utils/additionalLetterSort";
 // UserActivityContext removed - simplified approach
 
 export const useHybridAnagramSearch = (
   searchTerm: string,
-  hybridService: HybridTrieService,
+  hybridService: WordSearchService,
   showShorter: boolean,
   targetLength: number | null
 ) => {
@@ -33,9 +33,14 @@ export const useHybridAnagramSearch = (
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [currentProvider, setCurrentProvider] = useState<'none' | 'indexeddb' | 'trie'>('none');
+  const [currentProvider, setCurrentProvider] = useState<string>('none');
   const [lastSearchTerm, setLastSearchTerm] = useState<string>('');
   const searchGenerationRef = useRef(0);
+
+  useEffect(() => {
+    setLastSearchTerm('');
+    setFullResults({ exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [], shorterMatches: [], patternMatches: [] });
+  }, [hybridService]);
   
   // User activity signaling removed
 
@@ -131,7 +136,7 @@ export const useHybridAnagramSearch = (
                              searchTerm.includes('+') ||
                              searchTerm.includes('@') ||
                              searchTerm.includes('&') ||
-                             /[+\-]\d*[A-Za-z]/.test(searchTerm); // Numeric notation
+                             /[+-]\d*[A-Za-z]/.test(searchTerm); // Numeric notation
       
       // REMOVED: Minimum length validation for all searches
       // Spanish Scrabble has valid 1-letter words (A, E, O, Y)
@@ -157,7 +162,7 @@ export const useHybridAnagramSearch = (
                                trimmedTerm.includes('+') ||
                                trimmedTerm.includes('@') ||
                                trimmedTerm.includes('&') ||
-                               /[+\-]\d*[A-Za-z]/.test(trimmedTerm); // Numeric notation
+                               /[+-]\d*[A-Za-z]/.test(trimmedTerm); // Numeric notation
 
         // Check if it's a wildcard search (?)
         const isWildcardSearch = trimmedTerm.includes('?');
@@ -182,7 +187,7 @@ export const useHybridAnagramSearch = (
           // For patterns, use hybrid service with full fallback chain
           const patternMatches = await hybridService.findPatternMatches(cleanPattern, showShorter, 8, patternLength);
           if (cancelled || generation !== searchGenerationRef.current) return;
-          setCurrentProvider(hybridService.getCurrentProvider() as any);
+          setCurrentProvider(hybridService.getCurrentProvider());
 
           // Solo actualizar cuando tengamos los resultados completos
           const patternResults = {
@@ -213,7 +218,7 @@ export const useHybridAnagramSearch = (
           const sortedAdditionalMatches = sortWordsByAddedLetter(baseLetters, wildcardResults.additionalWildcardMatches);
           
           // Set provider based on what was actually used
-          setCurrentProvider(hybridService.getCurrentProvider() as any);
+          setCurrentProvider(hybridService.getCurrentProvider());
           
           // Para wildcards, los resultados son diferentes pero mantenemos cache
           const wildcardFullResults = {
@@ -406,7 +411,7 @@ export const useHybridAnagramSearch = (
     return () => {
       cancelled = true;
     };
-  }, [searchTerm, targetLength, hybridService]); // Remover showShorter de dependencias
+  }, [searchTerm, targetLength, hybridService, lastSearchTerm, showShorter]);
 
   return {
     results,

@@ -1,17 +1,18 @@
 
 import { useState, useEffect } from "react";
-import { HybridTrieService } from "@/services/HybridTrieService";
+import type { LexiconMode, WordSearchService } from '@/lexicon/types';
 import Header from "./word-validator/Header";
 import WordInput from "./word-validator/WordInput";
 import LoadingIndicator from "./word-validator/LoadingIndicator";
 import ValidationResult from "./word-validator/ValidationResult";
-import { LoadingStage } from "@/hooks/useWordDatabase";
+import type { LoadingStage } from '@/hooks/useWordTrie';
 import { Check, Database, Zap } from "lucide-react";
 
 interface WordValidatorProps {
   isDictionaryLoading: boolean;
   progress: number;
-  trie: HybridTrieService;
+  trie: WordSearchService;
+  mode: LexiconMode;
   stage?: LoadingStage;
   wordCount?: number;
   isTrieBuilding?: boolean;
@@ -26,6 +27,7 @@ const WordValidator = ({
   wordCount = 0,
   isTrieBuilding = false,
   isTrieReady = false
+  ,mode
 }: WordValidatorProps) => {
   const [word, setWord] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -36,6 +38,10 @@ const WordValidator = ({
     wordStatuses?: boolean[];
   }>({ isValid: false, checked: false, words: [] });
   const [currentProvider, setCurrentProvider] = useState<'trie' | 'sqlite' | 'supabase' | 'none'>('none');
+
+  useEffect(() => {
+    setResult({ isValid: false, checked: false, words: [] });
+  }, [mode]);
 
   // Actualizar provider status periódicamente
   useEffect(() => {
@@ -71,10 +77,6 @@ const WordValidator = ({
       // Split into individual words and process each one
       const words = word.trim().split(" ");
       console.log('Validating words:', words);
-      
-      // Get all words from trie for debugging
-      const allWords = trie.getAllWords();
-      console.log('Total words in trie:', allWords.length);
       
       // Get individual word validation results
       const wordResults = await Promise.all(words.map(async (w) => {

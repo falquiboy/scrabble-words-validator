@@ -1,6 +1,8 @@
 import React from 'react';
 import { AnagramWordInfo } from '@/utils/anagramWordData';
 import VerbWordView from './VerbWordView';
+import LexiconBadge from '@/components/LexiconBadge';
+import { useLexicon } from '@/lexicon/LexiconContext';
 
 interface ExtendedWordViewProps {
   word: string;
@@ -15,6 +17,8 @@ const ExtendedWordView: React.FC<ExtendedWordViewProps> = ({
   isLoading,
   highlightedWord
 }) => {
+  const { mode, membership } = useLexicon();
+  const isNew2027 = mode === 'hybrid' && membership(word) === 'new-2027';
   const handleRAEClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     window.open(`https://dle.rae.es/${word.toLowerCase()}`, '_blank');
@@ -148,18 +152,17 @@ const ExtendedWordView: React.FC<ExtendedWordViewProps> = ({
   // If this is a verb, use the specialized VerbWordView
   if (wordInfo?.isVerb && wordInfo.verbInfo) {
     return (
-      <VerbWordView
-        word={word}
-        wordInfo={wordInfo}
-        highlightedWord={highlightedWord}
-      />
+      <div className="space-y-1">
+        <LexiconBadge word={word} />
+        <VerbWordView word={word} wordInfo={wordInfo} highlightedWord={highlightedWord} />
+      </div>
     );
   }
 
   return (
     <div className="bg-white border rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow">
       {/* Clickable word */}
-      <div className="mb-2">
+      <div className="mb-2 flex items-center gap-2">
         <span 
           onClick={handleRAEClick}
           className="font-medium text-lg cursor-pointer hover:text-blue-600 transition-colors"
@@ -171,6 +174,7 @@ const ExtendedWordView: React.FC<ExtendedWordViewProps> = ({
             </span>
           )}
         </span>
+        <LexiconBadge word={word} />
       </div>
 
       {/* Word information */}
@@ -192,6 +196,9 @@ const ExtendedWordView: React.FC<ExtendedWordViewProps> = ({
           )}
         </div>
       ) : null}
+      {isNew2027 && !wordInfo?.shortDefinition && (
+        <div className="mt-2 text-xs italic text-amber-700">Definición muy pronto</div>
+      )}
     </div>
   );
 };

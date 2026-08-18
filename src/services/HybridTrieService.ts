@@ -6,7 +6,7 @@
  */
 
 import { Trie } from '@/utils/trie';
-import { sqliteAnagramService } from './SqliteAnagramService';
+import { SqliteAnagramService, sqliteAnagramService } from './SqliteAnagramService';
 import { supabaseWordService } from './SupabaseWordService';
 import { processDigraphs, generateAlphagram } from '@/utils/digraphs';
 
@@ -17,10 +17,18 @@ export class HybridTrieService {
   private isSupabaseAvailable: boolean = false;
   private supabaseAvailabilityPromise: Promise<boolean> | null = null;
   private sqliteAvailabilityPromise: Promise<boolean> | null = null;
+  private readonly sqliteService: SqliteAnagramService;
+  private readonly allowSupabase: boolean;
 
-  constructor(trie: Trie | null = null) {
+  constructor(
+    trie: Trie | null = null,
+    sqliteService: SqliteAnagramService = sqliteAnagramService,
+    allowSupabase = true,
+  ) {
     this.actualTrie = trie;
     this.isTrieReady = trie !== null;
+    this.sqliteService = sqliteService;
+    this.allowSupabase = allowSupabase;
     
     // Inicializar disponibilidad de servicios de fallback
     this.initializeFallbackServices();
@@ -44,14 +52,14 @@ export class HybridTrieService {
     // La SQLite llega preconstruida: abrirla ya no crea 639 mil filas ni
     // serializa un segundo diccionario dentro de Safari.
     void this.ensureSqliteAvailability();
-    void this.ensureSupabaseAvailability();
+    if (this.allowSupabase) void this.ensureSupabaseAvailability();
   }
 
   private async ensureSqliteAvailability(): Promise<boolean> {
     if (this.isSqliteAvailable) return true;
 
     if (!this.sqliteAvailabilityPromise) {
-      this.sqliteAvailabilityPromise = sqliteAnagramService.isAvailable()
+      this.sqliteAvailabilityPromise = this.sqliteService.isAvailable()
         .then((available) => {
           this.isSqliteAvailable = available;
           console.log(`📱 SQLite offline availability: ${available}`);
@@ -75,6 +83,7 @@ export class HybridTrieService {
    * cannot race the background initialization. Failed checks may retry.
    */
   private async ensureSupabaseAvailability(): Promise<boolean> {
+    if (!this.allowSupabase) return false;
     if (this.isSupabaseAvailable) return true;
 
     if (!this.supabaseAvailabilityPromise) {
@@ -115,7 +124,7 @@ export class HybridTrieService {
     if (!(await this.ensureSqliteAvailability())) return false;
 
     try {
-      const result = await sqliteAnagramService.findAnagrams('ES', 2, false);
+      const result = await this.sqliteService.findAnagrams('ES', 2, false);
       
       // Verificar si SQLite tiene datos suficientes
       if (result.exactMatches.length === 0) {
@@ -174,7 +183,7 @@ export class HybridTrieService {
     if (isSqliteReady) {
       console.log(`⚡ Level 2 - SQLite search: ${normalizedWord}`);
       try {
-        const results = await sqliteAnagramService.findAnagrams(normalizedWord, normalizedWord.length, false);
+        const results = await this.sqliteService.findAnagrams(normalizedWord, normalizedWord.length, false);
         return results.exactMatches.includes(normalizedWord.toUpperCase());
       } catch (error) {
         console.log(`⚠️ SQLite search failed, falling back: ${error}`);
@@ -225,7 +234,7 @@ export class HybridTrieService {
     if (isSqliteReady) {
       console.log(`⚡ Level 2 - SQLite anagrams: ${letters}`);
       try {
-        const results = await sqliteAnagramService.findAnagrams(letters, 2, false);
+        const results = await this.sqliteService.findAnagrams(letters, 2, false);
         return results.exactMatches;
       } catch (error) {
         console.log(`⚠️ SQLite anagrams failed, falling back: ${error}`);
@@ -263,7 +272,7 @@ export class HybridTrieService {
 
     if (await this.checkSqliteAvailability()) {
       try {
-        return await sqliteAnagramService.findWordsWithOneAdditionalLetter(letters);
+        return await this.sqliteService.findWordsWithOneAdditionalLetter(letters);
       } catch (error) {
         console.warn('SQLite +1 search failed; falling back to Supabase.', error);
         this.isSqliteAvailable = false;
@@ -331,8 +340,16 @@ export class HybridTrieService {
       // Usar método legacy del Trie que puede tener esta estructura
       console.log(`🚀 Using Trie sync anagrams: ${letters}`);
       // Intentar usar el método legacy si existe
-      if (typeof (this.actualTrie as any).findAnagramsLegacy === 'function') {
-        return (this.actualTrie as any).findAnagramsLegacy(letters);
+      const legacyTrie = this.actualTrie as Trie & {
+        findAnagramsLegacy?: (value: string) => {
+          exactMatches: string[];
+          wildcardMatches: string[];
+          additionalWildcardMatches: string[];
+          shorterMatches: string[];
+        };
+      };
+      if (typeof legacyTrie.findAnagramsLegacy === 'function') {
+        return legacyTrie.findAnagramsLegacy(letters);
       } else {
         // Fallback básico si no existe
         const exactMatches = this.actualTrie.findAnagrams(letters);
@@ -371,7 +388,7 @@ export class HybridTrieService {
       // Para subanagramas, usar SQLite ya que está optimizado para esto
       let shorterMatches: string[] = [];
       if (includeSubanagrams && this.isSqliteAvailable) {
-        const results = await sqliteAnagramService.findAnagrams(processedLetters, 2, true);
+        const results = await this.sqliteService.findAnagrams(processedLetters, 2, true);
         shorterMatches = results.partialMatches;
       }
       
@@ -381,7 +398,7 @@ export class HybridTrieService {
     // Nivel 2: SQLite completo
     if (this.isSqliteAvailable) {
       console.log(`⚡ Level 2 - SQLite extended anagrams: ${letters}`);
-      const results = await sqliteAnagramService.findAnagrams(letters, 2, includeSubanagrams);
+      const results = await this.sqliteService.findAnagrams(letters, 2, includeSubanagrams);
       return {
         exactMatches: results.exactMatches,
         shorterMatches: results.partialMatches
@@ -476,7 +493,7 @@ export class HybridTrieService {
     if (isSqliteReady) {
       console.log(`⚡ Level 2 - SQLite pattern search: ${pattern}`);
       try {
-        return await sqliteAnagramService.findPatternMatches(
+        return await this.sqliteService.findPatternMatches(
           pattern, 
           showLongerWords, 
           maxDefaultLength, 
@@ -514,7 +531,7 @@ export class HybridTrieService {
       provider: this.getCurrentProvider(),
       ready: this.isReady(),
       trieReady: this.isTrieReady,
-      indexedDbReady: this.isIndexedDbAvailable,
+      indexedDbReady: this.isSqliteAvailable,
       supabaseReady: this.isSupabaseAvailable
     };
   }
@@ -542,7 +559,7 @@ export class HybridTrieService {
     // Usar estrategia optimizada: búsqueda directa en lugar de generar todas las combinaciones
     const spanishLetters = ["A", "B", "C", "Ç", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "Ñ", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
     
-    let wildcardMatches: string[] = [];
+    const wildcardMatches: string[] = [];
     const additionalWildcardMatches: string[] = [];
 
     if (wildcardCount > 0) {
@@ -620,7 +637,7 @@ export class HybridTrieService {
     
     try {
       // Usar el nuevo método de SQLite que maneja wildcards completos
-      return await sqliteAnagramService.findAnagramsWithWildcards(letters, 2);
+      return await this.sqliteService.findAnagramsWithWildcards(letters, 2);
     } catch (error) {
       console.error('❌ SQLite wildcards search failed:', error);
       // Fallback to Supabase on error

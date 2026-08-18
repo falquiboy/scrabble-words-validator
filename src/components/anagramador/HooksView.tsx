@@ -3,6 +3,7 @@ import { Loader, ChevronDown, ChevronRight } from "lucide-react";
 import { toDisplayFormat, processDigraphs } from "@/utils/digraphs";
 import { HookInfo, processHooks } from '@/utils/hooksData';
 import { highlightWildcardLetter } from "@/utils/wildcardHighlighting";
+import LexiconBadge from '@/components/LexiconBadge';
 
 interface HooksViewProps {
   isLoading: boolean;
@@ -152,6 +153,7 @@ const HooksView: React.FC<HooksViewProps> = ({
               onClick={handleRAEClick}
             >
               {highlighted}
+              <LexiconBadge word={word} className="ml-1" />
             </span>
           </div>
           <div></div>
@@ -176,6 +178,7 @@ const HooksView: React.FC<HooksViewProps> = ({
             onClick={handleRAEClick}
           >
             {highlighted}
+            <LexiconBadge word={word} className="ml-1" />
           </span>
         </div>
 
