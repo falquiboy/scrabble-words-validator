@@ -5,6 +5,7 @@ import { toDisplayFormat } from "@/utils/digraphs";
 import { AnagramWordInfo } from '@/utils/anagramWordData';
 import { highlightPatternMatch } from '@/utils/wildcardHighlighting';
 import { isPatternQuery, parseUserQuery } from '@/utils/queryLanguage.mjs';
+import { getAnagramWordInfo } from '@/utils/anagramWordKeys';
 
 interface ExtendedResultsViewProps {
   isLoading: boolean;
@@ -114,7 +115,7 @@ const ExtendedResultsView: React.FC<ExtendedResultsViewProps> = ({
             <WordInfoRequester words={visibleWords} onRequestWords={onRequestWords} />
             {visibleWords.map((word) => {
               const displayWord = toDisplayFormat(word);
-              const wordInfo = wordsData.get(displayWord.toUpperCase());
+              const wordInfo = getAnagramWordInfo(wordsData, word);
               const highlighted = getHighlightedWord(displayWord, wordArray || words); // Use correct highlighting based on context
               
               return (

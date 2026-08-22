@@ -1,6 +1,10 @@
 import { supabase } from "@/integrations/supabase/client";
 import { fetchBatchVerbInfo, VerbInfo } from "./verbData";
 import { processDigraphs } from "./digraphs";
+import {
+  getAnagramWordKey,
+  setAnagramWordInfoAliases,
+} from "./anagramWordKeys";
 
 // Cache local para evitar queries repetidas de anagramWordData
 const anagramWordCache = new Map<string, AnagramWordInfo>();
@@ -47,8 +51,9 @@ interface AnagramWordInfoRpcRow {
 }
 
 const cacheWordInfo = (word: string, wordInfo: AnagramWordInfo): void => {
-  anagramWordCache.delete(word);
-  anagramWordCache.set(word, wordInfo);
+  const cacheKey = getAnagramWordKey(word);
+  anagramWordCache.delete(cacheKey);
+  anagramWordCache.set(cacheKey, wordInfo);
   while (anagramWordCache.size > MAX_CACHE_ENTRIES) {
     const oldestKey = anagramWordCache.keys().next().value;
     if (!oldestKey) break;
@@ -57,10 +62,11 @@ const cacheWordInfo = (word: string, wordInfo: AnagramWordInfo): void => {
 };
 
 const getCachedWordInfo = (word: string): AnagramWordInfo | undefined => {
-  const cached = anagramWordCache.get(word);
+  const cacheKey = getAnagramWordKey(word);
+  const cached = anagramWordCache.get(cacheKey);
   if (!cached) return undefined;
-  anagramWordCache.delete(word);
-  anagramWordCache.set(word, cached);
+  anagramWordCache.delete(cacheKey);
+  anagramWordCache.set(cacheKey, cached);
   return cached;
 };
 
@@ -117,7 +123,7 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
     const cached = getCachedWordInfo(word);
     if (cached) {
       ANAGRAM_CACHE_STATS.hits++;
-      results.set(word, cached);
+      setAnagramWordInfoAliases(results, word, cached);
     } else {
       missingWords.push(word);
     }
@@ -164,7 +170,7 @@ export async function fetchAnagramWordsData(words: string[]): Promise<Map<string
       for (const original of originals) {
         const wordInfo = { ...normalizedInfo, word: original };
         cacheWordInfo(original, wordInfo);
-        results.set(original, wordInfo);
+        setAnagramWordInfoAliases(results, original, wordInfo);
       }
     }
   }
@@ -186,7 +192,7 @@ async function fetchLegacyAnagramWordsData(words: string[]): Promise<Map<string,
     const cached = getCachedWordInfo(word);
     if (cached) {
       ANAGRAM_CACHE_STATS.hits++;
-      results.set(word, cached);
+      setAnagramWordInfoAliases(results, word, cached);
       console.log(`🎯 AnagramWord Cache HIT for: ${word}`);
     } else {
       uncachedWords.push(word);
@@ -399,7 +405,7 @@ async function fetchLegacyAnagramWordsData(words: string[]): Promise<Map<string,
                         parseKeys(scrabbleInfo.key_lemma);
         
         const entry = keyToEntry.get(primaryKey);
-        let lemmaToCheck = entry?.lemma || word.toLowerCase();
+        const lemmaToCheck = entry?.lemma || word.toLowerCase();
         
         // Normalize lemma by removing homonym digit for verb lookup
         const normalizedLemma = normalizeLemma(lemmaToCheck);
@@ -447,7 +453,7 @@ async function fetchLegacyAnagramWordsData(words: string[]): Promise<Map<string,
         console.log(`🔍 Available keys - conj: ${scrabbleInfo.key_conj}, fem: ${scrabbleInfo.key_feminine}, plural: ${scrabbleInfo.key_plural}, variant: ${scrabbleInfo.key_variant}, lemma: ${scrabbleInfo.key_lemma}`);
         
         // Get verb info from batch result (NO individual queries!)
-        let lemmaToCheck = entry?.lemma || word.toLowerCase();
+        const lemmaToCheck = entry?.lemma || word.toLowerCase();
         let verbInfo = null;
         
         // Normalize lemma for verb lookup (remove homonym digits like "ser2" → "ser")
@@ -507,7 +513,7 @@ async function fetchLegacyAnagramWordsData(words: string[]): Promise<Map<string,
         
         // Guardar en cache Y en results
         cacheWordInfo(word, wordInfo);
-        results.set(word, wordInfo);
+        setAnagramWordInfoAliases(results, word, wordInfo);
       } else {
         // Word not found in lexicon_keys
         const wordInfo: AnagramWordInfo = {
@@ -519,7 +525,7 @@ async function fetchLegacyAnagramWordsData(words: string[]): Promise<Map<string,
         
         // Guardar en cache Y en results (incluso invalid words para evitar re-queries)
         cacheWordInfo(word, wordInfo);
-        results.set(word, wordInfo);
+        setAnagramWordInfoAliases(results, word, wordInfo);
       }
     }
 
@@ -539,7 +545,7 @@ async function fetchLegacyAnagramWordsData(words: string[]): Promise<Map<string,
     // Return basic info for uncached words on error (cached already in results)
     uncachedWords.forEach(word => {
       const errorWordInfo: AnagramWordInfo = { word, isScrabbleValid: false };
-      results.set(word, errorWordInfo);
+      setAnagramWordInfoAliases(results, word, errorWordInfo);
     });
   }
 
