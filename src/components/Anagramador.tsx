@@ -8,6 +8,7 @@ import { toDisplayFormat } from "@/utils/digraphs";
 import type { WordSearchService } from '@/lexicon/types';
 import { useLexicon } from '@/lexicon/LexiconContext';
 import { SearchResults } from "@/hooks/anagramSearch/types";
+import { isPatternQuery, parseUserQuery } from "@/utils/queryLanguage.mjs";
 
 interface AnagramadorProps {
   trie: WordSearchService;
@@ -23,7 +24,7 @@ interface AnagramadorProps {
   // Callback props to communicate state changes to parent
   onSearchStateChange: (hasActiveSearch: boolean) => void;
   onCopyAllCallbackChange: (callback: (() => void) | undefined) => void;
-  onPatternWithoutRackChange: (isPatternWithoutRack: boolean) => void;
+  onPatternSearchChange: (isPatternSearch: boolean) => void;
   // Persistent search state (survives tab navigation)
   persistentSearchTerm: string;
   persistentTargetLength: number | null;
@@ -42,7 +43,7 @@ const Anagramador = ({
   onSortByEquityChange,
   onSearchStateChange,
   onCopyAllCallbackChange,
-  onPatternWithoutRackChange,
+  onPatternSearchChange,
   persistentSearchTerm,
   persistentTargetLength,
   onPersistentSearchChange
@@ -74,10 +75,10 @@ const Anagramador = ({
     onSearchStateChange(!!searchTerm);
   }, [searchTerm, onSearchStateChange]);
 
-  // Notify parent about pattern without rack state
+  // Notify parent so the shared toggle can use the right pattern wording.
   useEffect(() => {
-    onPatternWithoutRackChange(isPatternWithoutRack(searchTerm));
-  }, [searchTerm, onPatternWithoutRackChange]);
+    onPatternSearchChange(isPatternQuery(searchTerm));
+  }, [searchTerm, onPatternSearchChange]);
 
   // Show error toast if there's an error
   useEffect(() => {
@@ -131,31 +132,12 @@ const Anagramador = ({
     }
   };
 
-  // Utilidad para detectar patrones sin rack
-  const isPatternWithoutRack = (term: string) => {
-    const isPatternSearch = term.includes('*') || 
-                           term.includes('.') || 
-                           term.includes('-') || 
-                           term.includes('^') || 
-                           term.includes('$') || 
-                           term.includes(':') ||
-                           term.includes('@') ||
-                           term.includes('&');
-    const hasRackRestriction = isPatternSearch && term.includes(',');
-    return isPatternSearch && !hasRackRestriction;
-  };
-
   const handleCopyAll = useCallback(() => {
     if (!displayResults) return;
 
-    const isPatternSearch = searchTerm.includes('*') || 
-                           searchTerm.includes('.') || 
-                           searchTerm.includes('-') ||
-                           searchTerm.includes('@') ||
-                           searchTerm.includes('&') ||
-                           searchTerm.includes('+') ||
-                           /[+-]\d*[A-Za-z]/.test(searchTerm); // Numeric notation
-    const wildcardCount = (searchTerm.match(/\?/g) || []).length;
+    const query = parseUserQuery(searchTerm);
+    const isPatternSearch = query.kind === 'pattern';
+    const wildcardCount = query.wildcardCount;
 
     let allWords: string[] = [];
 

@@ -1,25 +1,51 @@
-const POLICY_VERSION = '2026-08-06-v1';
+const POLICY_VERSION = '2026-08-21-v2';
 const keySet = (scope: string) => {
   const prefix = `maslexico:full-trie:${POLICY_VERSION}:${scope}`;
   return {
     pending: `${prefix}:pending`,
-    failureUntil: `${prefix}:failure-until`,
+    sessionFailure: `${prefix}:session-failure`,
     success: `${prefix}:success`,
   };
 };
 
-export const TRIE_BUILD_TIMEOUT_MS = 45_000;
-const FAILURE_COOLDOWN_MS = 24 * 60 * 60 * 1000;
-const RECENT_PENDING_MS = 10 * 60 * 1000;
+export const TRIE_BUILD_STALL_TIMEOUT_MS = 30_000;
 
 type StorageLike = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
 export type TrieBuildDecision =
-  | { shouldBuild: true; reason: 'capable' }
+  | { shouldBuild: true; reason: 'capable' | 'proven-capable' }
   | {
       shouldBuild: false;
-      reason: 'low-memory' | 'unknown-memory' | 'recent-failure' | 'interrupted-build';
+      reason: 'low-memory' | 'session-failure' | 'interrupted-build';
     };
+
+export interface TrieBuildSnapshot {
+  deviceMemory?: number;
+  hasPreviousSuccess: boolean;
+  hasSessionFailure: boolean;
+  hasInterruptedBuild: boolean;
+}
+
+export const decideTrieBuild = ({
+  deviceMemory,
+  hasPreviousSuccess,
+  hasSessionFailure,
+  hasInterruptedBuild,
+}: TrieBuildSnapshot): TrieBuildDecision => {
+  // A successful build on this browser is stronger evidence than a coarse
+  // memory hint. The policy version changes whenever the Trie format changes.
+  if (hasInterruptedBuild) return { shouldBuild: false, reason: 'interrupted-build' };
+  if (hasSessionFailure) return { shouldBuild: false, reason: 'session-failure' };
+  if (hasPreviousSuccess) return { shouldBuild: true, reason: 'proven-capable' };
+
+  // Keep the explicit low-memory guard, but do not equate an unavailable hint
+  // (notably on WebKit and iOS browsers) with an incapable device.
+  if (deviceMemory !== undefined && deviceMemory <= 4) {
+    return { shouldBuild: false, reason: 'low-memory' };
+  }
+
+  return { shouldBuild: true, reason: 'capable' };
+};
 
 const readTimestamp = (storage: StorageLike | undefined, key: string): number | null => {
   if (!storage) return null;
@@ -66,46 +92,27 @@ const getStorages = (): {
 };
 
 export const getTrieBuildDecision = (scope = '2017'): TrieBuildDecision => {
-  const now = Date.now();
   const { local, session } = getStorages();
   const keys = keySet(scope);
   const navigatorWithMemory = navigator as Navigator & { deviceMemory?: number };
 
-  // Chromium exposes this hint. WebKit does not, and building the full trie
-  // duplicates the dictionary in memory while users are trying to search.
-  if (
-    navigatorWithMemory.deviceMemory !== undefined &&
-    navigatorWithMemory.deviceMemory <= 4
-  ) {
-    return { shouldBuild: false, reason: 'low-memory' };
-  }
-
-  const isWebKit = /AppleWebKit/i.test(navigator.userAgent) &&
-    !/(Chrome|Chromium|Edg)/i.test(navigator.userAgent);
-  if (navigatorWithMemory.deviceMemory === undefined && isWebKit) {
-    return { shouldBuild: false, reason: 'unknown-memory' };
-  }
-
   const pendingSince = readTimestamp(session, keys.pending);
   removeKey(session, keys.pending);
-  if (pendingSince !== null && now - pendingSince <= RECENT_PENDING_MS) {
-    writeTimestamp(local, keys.failureUntil, now + FAILURE_COOLDOWN_MS);
-    return { shouldBuild: false, reason: 'interrupted-build' };
+  if (pendingSince !== null) {
+    writeTimestamp(session, keys.sessionFailure, Date.now());
   }
 
-  const failureUntil = readTimestamp(local, keys.failureUntil);
-  if (failureUntil !== null && failureUntil > now) {
-    return { shouldBuild: false, reason: 'recent-failure' };
-  }
-  removeKey(local, keys.failureUntil);
-
-  return { shouldBuild: true, reason: 'capable' };
+  return decideTrieBuild({
+    deviceMemory: navigatorWithMemory.deviceMemory,
+    hasPreviousSuccess: readTimestamp(local, keys.success) !== null,
+    hasSessionFailure: readTimestamp(session, keys.sessionFailure) !== null,
+    hasInterruptedBuild: pendingSince !== null,
+  });
 };
 
 export const markTrieBuildStarted = (scope = '2017'): void => {
-  const { local, session } = getStorages();
+  const { session } = getStorages();
   const keys = keySet(scope);
-  removeKey(local, keys.success);
   writeTimestamp(session, keys.pending, Date.now());
 };
 
@@ -113,7 +120,7 @@ export const markTrieBuildSucceeded = (scope = '2017'): void => {
   const { local, session } = getStorages();
   const keys = keySet(scope);
   removeKey(session, keys.pending);
-  removeKey(local, keys.failureUntil);
+  removeKey(session, keys.sessionFailure);
   writeTimestamp(local, keys.success, Date.now());
 };
 
@@ -122,5 +129,10 @@ export const markTrieBuildFailed = (scope = '2017'): void => {
   const keys = keySet(scope);
   removeKey(session, keys.pending);
   removeKey(local, keys.success);
-  writeTimestamp(local, keys.failureUntil, Date.now() + FAILURE_COOLDOWN_MS);
+  writeTimestamp(session, keys.sessionFailure, Date.now());
+};
+
+export const markTrieBuildCancelled = (scope = '2017'): void => {
+  const { session } = getStorages();
+  removeKey(session, keySet(scope).pending);
 };

@@ -34,7 +34,7 @@ const Index = () => {
   const [sortByEquity, setSortByEquity] = useState(false);
   const [hasActiveAnagramSearch, setHasActiveAnagramSearch] = useState(false);
   const [anagramCopyAllCallback, setAnagramCopyAllCallback] = useState<(() => void) | undefined>(undefined);
-  const [isPatternWithoutRack, setIsPatternWithoutRack] = useState(false);
+  const [isPatternSearch, setIsPatternSearch] = useState(false);
   
   // Persistent anagram search state (survives tab navigation)
   const [persistentAnagramSearch, setPersistentAnagramSearch] = useState({
@@ -151,7 +151,7 @@ const Index = () => {
           onCopyAll: anagramCopyAllCallback,
           sortByEquity,
           onSortByEquityChange: setSortByEquity,
-          isPatternWithoutRack
+          isPatternSearch
         }}
       />
       <div className="mt-20 flex-1 w-full min-h-0">
@@ -205,7 +205,7 @@ const Index = () => {
                   onSortByEquityChange={setSortByEquity}
                   onSearchStateChange={setHasActiveAnagramSearch}
                   onCopyAllCallbackChange={setAnagramCopyAllCallback}
-                  onPatternWithoutRackChange={setIsPatternWithoutRack}
+                  onPatternSearchChange={setIsPatternSearch}
                   persistentSearchTerm={persistentAnagramSearch.searchTerm}
                   persistentTargetLength={persistentAnagramSearch.targetLength}
                   onPersistentSearchChange={setPersistentAnagramSearch}

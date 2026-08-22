@@ -4,6 +4,7 @@ import { Loader } from "lucide-react";
 import { ExactResults } from "../ExactResults";
 import { ShorterResults } from "../ShorterResults";
 import { PatternResults } from "../PatternResults";
+import { isPatternQuery } from "@/utils/queryLanguage.mjs";
 
 interface SearchResultsProps {
   isLoading: boolean;
@@ -29,13 +30,7 @@ const SearchResults = ({
   sortByEquity
 }: SearchResultsProps) => {
   const wildcardCount = (searchTerm.match(/\?/g) || []).length;
-  const isPatternSearch = searchTerm.includes('*') || 
-                         searchTerm.includes('.') || 
-                         searchTerm.includes('-') ||
-                         searchTerm.includes('@') ||
-                         searchTerm.includes('&') ||
-                         searchTerm.includes('+') ||
-                         /[+\-]\d*[A-Za-z]/.test(searchTerm); // Numeric notation
+  const isPatternSearch = isPatternQuery(searchTerm);
 
   const filteredAdditionalMatches = results.additionalWildcardMatches.filter(word => {
     if (wildcardCount === 0) {

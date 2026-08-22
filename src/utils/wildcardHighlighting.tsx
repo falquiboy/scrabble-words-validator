@@ -165,11 +165,6 @@ export const highlightPatternMatchEnhanced = (word: string, pattern: string, rac
   // Analyze pattern to identify fixed positions
   const fixedPositions = getFixedLetterPositions(word, workingPattern);
   
-  // Debug logging
-  console.log(`🔍 Pattern: "${pattern}" → "${workingPattern}"`);
-  console.log(`🔍 Word: "${word}"`);
-  console.log(`🔍 Fixed positions:`, fixedPositions);
-  
   return (
     <span className="inline-flex">
       {word.split('').map((char, index) => {
@@ -280,8 +275,6 @@ const getFixedLetterPositions = (word: string, pattern: string): number[] => {
 const matchPatternWithDots = (word: string, pattern: string): number[] => {
   const fixedPositions: number[] = [];
   
-  console.log(`🔍 Matching pattern "${pattern}" against word "${word}"`);
-  
   // Simple approach: if pattern and word have same length, map directly
   if (pattern.length === word.length) {
     // Direct position mapping for same-length patterns
@@ -293,7 +286,6 @@ const matchPatternWithDots = (word: string, pattern: string): number[] => {
         // This should be a fixed letter
         if (patternChar === wordChar) {
           fixedPositions.push(i);
-          console.log(`🔍 Fixed letter '${patternChar}' found at position ${i} in "${word}"`);
         } else {
           console.log(`🔍 Mismatch: expected '${patternChar}' at position ${i}, got '${wordChar}'`);
         }
@@ -302,7 +294,6 @@ const matchPatternWithDots = (word: string, pattern: string): number[] => {
       }
     }
   } else {
-    console.log(`🔍 Length mismatch: pattern "${pattern}" (${pattern.length}) vs word "${word}" (${word.length})`);
     
     // For different lengths, try to find the fixed letters in sequence
     let wordIndex = 0;
@@ -315,7 +306,6 @@ const matchPatternWithDots = (word: string, pattern: string): number[] => {
         if (foundIndex >= 0 && foundIndex >= wordIndex) {
           fixedPositions.push(foundIndex);
           wordIndex = foundIndex + 1;
-          console.log(`🔍 Fixed letter '${patternChar}' found at position ${foundIndex} in "${word}"`);
         }
       } else {
         // Skip one character for the wildcard
@@ -324,7 +314,6 @@ const matchPatternWithDots = (word: string, pattern: string): number[] => {
     }
   }
   
-  console.log(`🔍 Pattern "${pattern}" → Fixed positions:`, fixedPositions);
   return fixedPositions;
 };
 

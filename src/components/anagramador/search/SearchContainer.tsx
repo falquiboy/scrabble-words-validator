@@ -20,10 +20,10 @@ const SearchContainer = ({
 
   const handleInputChange = (value: string) => {
     let targetLength = null;
-    let cleanedValue = value;
+    const cleanedValue = value;
     
     // Extract target length if present using colon format
-    const lengthMatch = value.match(/\:(\d+)$/);
+    const lengthMatch = value.match(/:(\d+)$/);
     if (lengthMatch) {
       targetLength = parseInt(lengthMatch[1], 10);
       console.log('Target length extracted from colon format:', targetLength);

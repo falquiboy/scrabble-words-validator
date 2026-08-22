@@ -4,6 +4,8 @@ import { toDisplayFormat, processDigraphs } from "@/utils/digraphs";
 import { HookInfo, processHooks } from '@/utils/hooksData';
 import { highlightWildcardLetter } from "@/utils/wildcardHighlighting";
 import LexiconBadge from '@/components/LexiconBadge';
+import { isPatternQuery } from '@/utils/queryLanguage.mjs';
+import { compareSpanishWords } from '@/lexicon/policy.mjs';
 
 interface HooksViewProps {
   isLoading: boolean;
@@ -210,7 +212,7 @@ const HooksView: React.FC<HooksViewProps> = ({
 
       // Ordenar cada grupo alfabéticamente
       Object.keys(groupedWords).forEach(length => {
-        groupedWords[parseInt(length)].sort();
+        groupedWords[parseInt(length)].sort(compareSpanishWords);
       });
 
       // Obtener longitudes ordenadas (mayor a menor para subanagramas)
@@ -311,11 +313,7 @@ const HooksView: React.FC<HooksViewProps> = ({
     );
   }
 
-  const isPatternSearch = searchTerm.includes('*') || 
-                         searchTerm.includes('.') || 
-                         searchTerm.includes('-') ||
-                         searchTerm.includes('@') ||
-                         searchTerm.includes('&');
+  const isPatternSearch = isPatternQuery(searchTerm);
 
   return (
     <div className="space-y-6">

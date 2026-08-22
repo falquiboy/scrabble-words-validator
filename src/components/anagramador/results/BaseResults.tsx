@@ -6,21 +6,17 @@ import { calculatePotentialValue, calculateLeave, getBatchLeaveValues } from "@/
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { highlightWildcardLetter } from "@/utils/wildcardHighlighting";
 import LexiconBadge from '@/components/LexiconBadge';
+import { isPatternQuery, parseUserQuery } from '@/utils/queryLanguage.mjs';
+
+const LARGE_GROUP_BATCH_SIZE = 500;
 
 // Utilidad para extraer información de búsqueda
 const parseSearchTerm = (searchTerm: string, title?: string) => {
-  // Detectar si es búsqueda de patrón (contiene *, ., -, ^, $, :, @ o &)
-  const isPatternSearch = searchTerm.includes('*') || 
-                         searchTerm.includes('.') || 
-                         searchTerm.includes('-') || 
-                         searchTerm.includes('^') || 
-                         searchTerm.includes('$') || 
-                         searchTerm.includes(':') ||
-                         searchTerm.includes('@') ||
-                         searchTerm.includes('&');
+  const query = parseUserQuery(searchTerm);
+  const isPatternSearch = query.kind === 'pattern';
   
   // Detectar si tiene restricción de rack (patrón con coma)
-  const hasRackRestriction = isPatternSearch && searchTerm.includes(',');
+  const hasRackRestriction = isPatternSearch && !!query.rack;
   
   // Detectar si son subanagramas reales (palabras más cortas)
   const isShorterWords = title?.includes("más cortas") || 
@@ -31,11 +27,10 @@ const parseSearchTerm = (searchTerm: string, title?: string) => {
   let rack = '';
   if (hasRackRestriction) {
     // Extraer rack de patrón como ".R.Z*,AEEBRS"
-    const parts = searchTerm.split(',');
-    rack = parts[1] || '';
+    rack = query.rack;
   } else if (!isPatternSearch) {
     // Búsqueda de anagrama normal
-    rack = searchTerm;
+    rack = query.letters;
   }
   
   return {
@@ -72,13 +67,15 @@ const WordWithEquity: React.FC<{
   const [residue, setResidue] = useState<string>('');
   const [isCalculating, setIsCalculating] = useState(false);
   
-  const baseScore = calculateWordScore(displayWord, searchTerm);
-  const isSubanagram = searchTerm && displayWord.length < searchTerm.length;
+  const query = parseUserQuery(searchTerm || '');
+  const scoringRack = query.kind === 'anagram' ? query.letters : query.rack;
+  const baseScore = calculateWordScore(displayWord, scoringRack);
+  const isSubanagram = scoringRack && displayWord.length < scoringRack.replace(/\?/g, '').length;
 
   useEffect(() => {
     const calculateEquity = async () => {
       // Early return if search term contains pattern characters
-      if (searchTerm && (searchTerm.includes('*') || searchTerm.includes('.') || searchTerm.includes(',') || searchTerm.includes('-'))) {
+      if (searchTerm && isPatternQuery(searchTerm)) {
         setEquity(baseScore);
         if (showResidue) {
           setResidue('');
@@ -98,9 +95,9 @@ const WordWithEquity: React.FC<{
       try {
         const potentialValue = await calculatePotentialValue(
           baseScore, 
-          searchTerm, 
+          scoringRack,
           displayWord.toUpperCase(),
-          searchTerm
+          scoringRack
         );
         setEquity(potentialValue);
 
@@ -108,7 +105,7 @@ const WordWithEquity: React.FC<{
         if (showResidue) {
           const searchInfo = parseSearchTerm(searchTerm, title);
           if (searchInfo.shouldShowEquityAndResidue && searchInfo.rack) {
-            const leave = calculateLeave(searchInfo.rack, displayWord.toUpperCase(), searchTerm);
+            const leave = calculateLeave(searchInfo.rack, displayWord.toUpperCase(), scoringRack);
             setResidue(leave);
           } else {
             setResidue(''); // No residue for patterns without rack
@@ -126,7 +123,7 @@ const WordWithEquity: React.FC<{
     };
 
     calculateEquity();
-  }, [baseScore, searchTerm, displayWord, isSubanagram, showResidue, title]);
+  }, [baseScore, searchTerm, scoringRack, displayWord, isSubanagram, showResidue, title]);
 
   return (
     <div
@@ -173,6 +170,7 @@ export const BaseResults = ({
   const [equityValues, setEquityValues] = useState<Map<string, number>>(new Map());
   const [isCalculatingEquities, setIsCalculatingEquities] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set());
+  const [visibleWordCounts, setVisibleWordCounts] = useState<Record<string, number>>({});
 
   // Función para alternar expansión de grupos
   const toggleGroupExpansion = (length: number) => {
@@ -211,7 +209,7 @@ export const BaseResults = ({
     if ((!sortByEquity && !unifiedEquityView) || !searchTerm) return;
 
     // Early return if search term contains pattern characters
-    if (searchTerm.includes('*') || searchTerm.includes('.') || searchTerm.includes(',') || searchTerm.includes('-')) {
+    if (isPatternQuery(searchTerm)) {
       return;
     }
 
@@ -293,10 +291,13 @@ export const BaseResults = ({
 
   // Handle empty matches case - show only header
   if (matches.length === 0) {
+    const isPatternResult = !!searchTerm && isPatternQuery(searchTerm);
     return (
       <div className="space-y-4 pb-8">
         <h3 className="sticky top-0 z-20 bg-gray-50/95 backdrop-blur-sm font-semibold text-lg py-2 -mx-4 px-4 mb-2">
-          {title.includes("adicional") 
+          {isPatternResult
+            ? title
+            : title.includes("adicional")
             ? "0 palabras con letra adicional:" 
             : "0 palabras con todas las fichas:"
           }
@@ -375,6 +376,7 @@ export const BaseResults = ({
 
   // Create highest equity section for subanagrams
   const searchInfo = parseSearchTerm(searchTerm, title);
+  const isPatternResult = !!searchTerm && isPatternQuery(searchTerm);
   const isSubanagramView = searchInfo.shouldShowEquityAndResidue && matches.some(word => {
     const displayWord = toDisplayFormat(word);
     return searchTerm && displayWord.length < searchTerm.length;
@@ -457,7 +459,9 @@ export const BaseResults = ({
       )}
 
       <h3 className="sticky top-0 z-20 bg-gray-50/95 backdrop-blur-sm font-semibold text-lg py-2 -mx-4 px-4 mb-2">
-        {title.includes("adicional") 
+        {isPatternResult
+          ? title
+          : title.includes("adicional")
           ? `${matches.length} ${matches.length === 1 ? "palabra" : "palabras"} con letra adicional:` 
           : `${matches.length} ${matches.length === 1 ? "palabra" : "palabras"}${isShortMode ? "" : " con todas las fichas"}:`
         }
@@ -471,6 +475,13 @@ export const BaseResults = ({
         const searchInfo = parseSearchTerm(searchTerm, title);
         const isExpanded = expandedGroups.has(length);
         const groupWords = groupedByLength[length];
+        const visibilityKey = `${searchTerm || ''}:${length}:${groupWords.length}`;
+        const visibleWordCount = Math.min(
+          groupWords.length,
+          visibleWordCounts[visibilityKey] ?? LARGE_GROUP_BATCH_SIZE,
+        );
+        const visibleWords = groupWords.slice(0, visibleWordCount);
+        const remainingWords = groupWords.length - visibleWordCount;
         
         return (
           <div key={`length-${length}`} className="space-y-2">
@@ -488,7 +499,7 @@ export const BaseResults = ({
             
             {isExpanded && (
               <div className="flex flex-col gap-1 ml-6">
-                {groupWords.map((word, index) => {
+                {visibleWords.map((word, index) => {
                   const displayWord = toDisplayFormat(word);
                   return (
                     <WordWithEquity
@@ -504,6 +515,21 @@ export const BaseResults = ({
                     />
                   );
                 })}
+                {remainingWords > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setVisibleWordCounts((current) => ({
+                      ...current,
+                      [visibilityKey]: Math.min(
+                        groupWords.length,
+                        visibleWordCount + LARGE_GROUP_BATCH_SIZE,
+                      ),
+                    }))}
+                    className="mt-2 self-start rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100"
+                  >
+                    {`Mostrar ${Math.min(LARGE_GROUP_BATCH_SIZE, remainingWords)} más (${remainingWords} restantes)`}
+                  </button>
+                )}
               </div>
             )}
           </div>

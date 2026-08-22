@@ -2,11 +2,10 @@
 import { Trie } from "../trie/types";
 import { searchTrie } from "../trie/search";
 import { convertPatternToRegex } from "./conversion";
-import { translateHyphenPattern } from "./translation";
 import { processDigraphs } from "../digraphs";
 import { generatePatternCombinations } from "./combinations";
 import { SPANISH_LETTERS } from '@/hooks/anagramSearch/constants';
-import { parseConstraints, filterByConstraints, hasConstraints } from "./constraints";
+import { filterByQueryConstraints, parseUserQuery } from "../queryLanguage.mjs";
 
 // Variable para almacenar los patrones base generados
 const basePatches: string[] = [];
@@ -21,72 +20,48 @@ export const findPatternMatches = async (
   // Limpiar los patrones base de búsquedas anteriores
   basePatches.length = 0;
 
-  // Check if pattern has inclusion/exclusion constraints
-  const constraints = hasConstraints(pattern) ? parseConstraints(pattern) : null;
-  let actualPattern = constraints?.pattern || pattern;
+  const query = parseUserQuery(pattern);
+  const patternPart = query.pattern || '*';
+  const rackPart = query.rack;
+  const specifiedLength = query.length ?? targetLength;
   
-  // If there are constraints but no pattern, we need to search all words
-  if (constraints && !constraints.pattern) {
-    actualPattern = '*';  // Search all words and then filter
-  }
-
-  const patternParts = actualPattern.split(':');
-  let processedPattern = actualPattern;
-  let specifiedLength = targetLength;
-  
-  if (patternParts.length > 1) {
-    processedPattern = patternParts[0];
-    const lengthStr = patternParts[1];
-    if (lengthStr && /^\d+$/.test(lengthStr)) {
-      specifiedLength = parseInt(lengthStr, 10);
-      console.log('Length extracted from pattern with colon:', specifiedLength);
-    }
-  }
-  
-  const [patternPart, rackPart] = processedPattern.includes(',') ? 
-    processedPattern.split(',') : [processedPattern, ''];
-  
-  console.log('Processing pattern search:', { patternPart, rackPart, showLongerWords, specifiedLength, constraints });
-  
-  const translatedPattern = translateHyphenPattern(patternPart);
-  console.log('Translated pattern:', translatedPattern);
+  console.log('Processing pattern search:', { patternPart, rackPart, showLongerWords, specifiedLength, constraints: query.constraints });
   
   try {
     let matches: string[] = [];
     
-    const processedPatternWithDigraphs = processDigraphs(translatedPattern);
+    const processedPatternWithDigraphs = processDigraphs(patternPart);
     
     if (rackPart && rackPart.trim().length > 0) {
       console.log('Using rack letters for pattern:', rackPart.trim());
-      // Identificar si el patrón debe extenderse
-      const patternEndsWithHyphen = patternPart.endsWith('-');
-      const patternStartsWithHyphen = patternPart.startsWith('-');
-      
-      // Para patrones tipo -R-, necesitamos asegurarnos de que se buscan coincidencias en cualquier parte
-      const isContainsPattern = patternStartsWithHyphen && patternEndsWithHyphen;
-      
       matches = await findPatternMatchesWithRack(
         processedPatternWithDigraphs, 
         rackPart.trim(), 
         trie, 
-        patternEndsWithHyphen,
-        patternStartsWithHyphen && !patternEndsWithHyphen,
-        isContainsPattern
+        false,
+        false,
+        false
       );
     } else {
       // For patterns without rack letters, handle standard wildcards: . (one char) and * (zero or more)
       // . stays as . (single character), * becomes .* (zero or more characters)
-      const finalPattern = processedPatternWithDigraphs.replace(/\*/g, '.*');
-      const regexPattern = convertPatternToRegex(finalPattern);
-      console.log('Searching trie with:', { pattern: regexPattern.toString(), rackLetters: '', hasRackLetters: '' });
-      matches = await searchTrie(trie.getRoot(), regexPattern);
+      if (patternPart === '*' && specifiedLength !== null) {
+        // Bare length queries such as :5 can use the Trie's length index
+        // directly instead of materializing and filtering the full dictionary.
+        matches = trie.getWordsOfLength(specifiedLength);
+      } else {
+        const finalPattern = processedPatternWithDigraphs.replace(/\*/g, '.*');
+        const regexPattern = convertPatternToRegex(finalPattern);
+        console.log('Searching trie with:', { pattern: regexPattern.toString(), rackLetters: '', hasRackLetters: '' });
+        matches = await searchTrie(trie.getRoot(), regexPattern);
+      }
     }
     
     console.log(`Found ${matches.length} matches before filtering`);
     
     // Apply inclusion/exclusion constraints if present
-    if (constraints) {
-      matches = filterByConstraints(matches, constraints);
+    if (query.hasConstraints) {
+      matches = filterByQueryConstraints(matches, query.constraints);
       console.log(`After constraint filtering: ${matches.length} matches`);
     }
     
@@ -809,4 +784,3 @@ const generatePermutations = (letters: string[], targetLength: number): string[]
   generate('');
   return permutations.slice(0, 20); // Limitar para evitar explosion
 };
-

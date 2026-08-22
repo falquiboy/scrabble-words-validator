@@ -21,7 +21,7 @@ interface GlobalSettingsMenuProps {
     onCopyAll?: () => void;
     sortByEquity: boolean;
     onSortByEquityChange: (sort: boolean) => void;
-    isPatternWithoutRack?: boolean;
+    isPatternSearch?: boolean;
   };
 }
 
@@ -85,18 +85,18 @@ const GlobalSettingsMenu: React.FC<GlobalSettingsMenuProps> = ({
       onCopyAll,
       sortByEquity,
       onSortByEquityChange,
-      isPatternWithoutRack = false
+      isPatternSearch = false
     } = anagramSettings;
 
     return (
       <div className="space-y-1">
         {/* Shorter Words Toggle */}
         {renderToggle(
-          'Palabras más cortas',
+          isPatternSearch ? 'Palabras de más de 8 letras' : 'Palabras más cortas',
           showShorter,
           onShowShorterChange,
           <ChevronDown size={16} className="text-orange-500" />,
-          !hasActiveSearch || isPatternWithoutRack
+          !hasActiveSearch
         )}
 
         {/* Equity Sort Toggle - Only show when shorter words are enabled */}
@@ -302,6 +302,9 @@ const GlobalSettingsMenu: React.FC<GlobalSettingsMenuProps> = ({
                 <ArrowUp size={16} className="text-amber-600" />,
                 !anagramSettings?.hasActiveSearch
               )}
+              <p className="px-4 pb-3 text-xs text-amber-800">
+                Agrupa primero las voces nuevas; cada grupo conserva el orden alfabético tradicional.
+              </p>
             </div>
           )}
 

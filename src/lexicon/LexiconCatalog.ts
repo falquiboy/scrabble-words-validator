@@ -78,8 +78,7 @@ export class LexiconCatalog {
   }
 
   sort(words: string[], mode: LexiconMode, newFirst: boolean): string[] {
-    if (mode !== 'hybrid' || !newFirst) return words;
-    return sortNewWordsFirst(words, this.newWords, true);
+    return sortNewWordsFirst(words, this.newWords, mode === 'hybrid' && newFirst);
   }
 
   getLegacyWords(): string[] {

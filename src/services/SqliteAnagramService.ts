@@ -6,7 +6,7 @@
  */
 
 import { SQLiteWordDatabase, sqliteDB, WordEntry } from './SQLiteWordDatabase';
-import { hasConstraints, parseConstraints, filterByConstraints } from '../utils/pattern/constraints';
+import { filterByQueryConstraints, parseUserQuery } from '../utils/queryLanguage.mjs';
 
 export interface AnagramResults {
   exactMatches: string[];
@@ -301,53 +301,22 @@ export class SqliteAnagramService {
     targetLength?: number
   ): Promise<string[]> {
     
-    // Check if pattern has inclusion/exclusion constraints
-    const constraints = hasConstraints(pattern) ? parseConstraints(pattern) : null;
-    let actualPattern = constraints?.pattern || pattern;
-    
-    // If there are constraints but no pattern (or pattern is just ":number"), search all words
-    if (constraints && (!constraints.pattern || /^:\d+$/.test(constraints.pattern))) {
-      actualPattern = '*';  // Search all words and then filter
-      // If pattern was ":number", preserve the length specification
-      if (constraints.pattern && constraints.pattern.startsWith(':')) {
-        actualPattern = '*' + constraints.pattern;
-      }
-    }
-    
-    // Parsear el patrón (basado en matching.ts)
-    const patternParts = actualPattern.split(':');
-    let processedPattern = actualPattern;
-    let specifiedLength = targetLength;
-    
-    if (patternParts.length > 1) {
-      processedPattern = patternParts[0];
-      const lengthStr = patternParts[1];
-      if (lengthStr && /^\d+$/.test(lengthStr)) {
-        specifiedLength = parseInt(lengthStr, 10);
-      }
-    }
-    
-    const [patternPart, rackPart] = processedPattern.includes(',') ? 
-      processedPattern.split(',') : [processedPattern, ''];
-    
-    // If pattern is empty but we have constraints, use wildcard to search all
-    const effectivePattern = patternPart || '*';
+    const query = parseUserQuery(pattern);
+    const effectivePattern = query.pattern || '*';
+    const rackPart = query.rack;
+    const specifiedLength = query.length ?? targetLength;
     
     console.log('Processing SQLite pattern search:', { 
       patternPart: effectivePattern, 
       rackPart, 
       showLongerWords, 
       specifiedLength, 
-      constraints 
+      constraints: query.constraints
     });
-    
-    // Traducir patrón de guiones (basado en translation.ts)
-    const translatedPattern = this.translateHyphenPattern(effectivePattern);
-    console.log('Translated pattern:', translatedPattern);
     
     // Procesar digraphs
     const { processDigraphs } = await import('@/utils/digraphs');
-    const processedPatternWithDigraphs = processDigraphs(translatedPattern);
+    const processedPatternWithDigraphs = processDigraphs(effectivePattern);
     
     let matches: string[] = [];
     
@@ -357,19 +326,24 @@ export class SqliteAnagramService {
       matches = await this.findPatternWithRack(processedPatternWithDigraphs, rackPart.trim());
     } else {
       // Patrón sin rack - usar búsqueda directa con regex
-      const finalPattern = processedPatternWithDigraphs.replace(/\*/g, '.*');
-      const { convertPatternToRegex } = await import('@/utils/pattern/conversion');
-      const regexPattern = convertPatternToRegex(finalPattern);
-      
-      console.log('Searching SQLite with pattern:', regexPattern.toString());
-      matches = await this.searchTrieWithSQLite(regexPattern, '');
+      if (effectivePattern === '*' && specifiedLength !== null && specifiedLength !== undefined) {
+        const candidates = await this.database.findWordsByLength(specifiedLength);
+        matches = candidates.map((entry) => entry.word);
+      } else {
+        const finalPattern = processedPatternWithDigraphs.replace(/\*/g, '.*');
+        const { convertPatternToRegex } = await import('@/utils/pattern/conversion');
+        const regexPattern = convertPatternToRegex(finalPattern);
+
+        console.log('Searching SQLite with pattern:', regexPattern.toString());
+        matches = await this.searchTrieWithSQLite(regexPattern, '');
+      }
     }
     
     console.log(`Found ${matches.length} matches before filtering:`, matches.slice(0, 10));
     
     // Apply inclusion/exclusion constraints if present
-    if (constraints) {
-      matches = filterByConstraints(matches, constraints);
+    if (query.hasConstraints) {
+      matches = filterByQueryConstraints(matches, query.constraints);
       console.log(`After constraint filtering: ${matches.length} matches`);
     }
     

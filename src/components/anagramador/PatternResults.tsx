@@ -1,9 +1,7 @@
 
 import { BaseResults } from "./results/BaseResults";
-import { useState, useEffect } from "react";
 import { highlightPatternMatch } from "@/utils/wildcardHighlighting";
-import { translateHyphenPattern } from "@/utils/pattern/translation";
-import { processDigraphs } from "@/utils/digraphs";
+import { parseUserQuery } from "@/utils/queryLanguage.mjs";
 
 interface PatternResultsProps {
   matches: string[];
@@ -19,62 +17,24 @@ export const PatternResults = ({
   // Remove duplicates using Set
   const uniqueMatches = Array.from(new Set(matches));
   
-  // Check if this is a pattern with rack letters
-  const hasRackLetters = searchTerm.includes(',');
-  
-  // Prepare pattern and rack parts for highlighting
-  const [patternPart, rackPart] = hasRackLetters ? 
-    searchTerm.split(',') : [searchTerm, ''];
-  
-  // Remove length filter if present in the pattern
-  const cleanPatternPart = patternPart.replace(/:\d+$/, '');
-  
-  // For special patterns like -NAS, we need custom highlighting
-  const translatedPattern = translateHyphenPattern(cleanPatternPart);
-  
-  // Determine pattern types
-  const isEndPattern = translatedPattern.endsWith('$');
-  const isStartPattern = translatedPattern.startsWith('^');
-  const isContainsPattern = translatedPattern.includes('.*') && !isStartPattern && !isEndPattern;
-  
-  // Check if this is a compound pattern like "-PUCH-R"
-  const isCompoundEndPattern = cleanPatternPart.startsWith('-') && 
-                              cleanPatternPart.indexOf('-', 1) > 0 && 
-                              !cleanPatternPart.endsWith('-');
-  
-  // Extract the pattern parts for display purposes
-  let mainPattern = "";
-  let endPattern = "";
-  
-  if (isCompoundEndPattern) {
-    const parts = cleanPatternPart.split('-').filter(Boolean);
-    mainPattern = parts.slice(0, -1).join('');
-    endPattern = parts[parts.length - 1];
-  } else {
-    // Extract the actual pattern without hyphens for standard patterns
-    let cleanPattern = cleanPatternPart;
-    if (isEndPattern && !cleanPatternPart.endsWith('-')) {
-      cleanPattern = cleanPatternPart.slice(1);
-    }
-    if (isStartPattern && !cleanPatternPart.startsWith('-')) {
-      cleanPattern = cleanPattern.slice(0, -1);
-    }
-    if (cleanPatternPart.startsWith('-') && cleanPatternPart.endsWith('-')) {
-      cleanPattern = cleanPattern.slice(1, -1);
-    }
-    mainPattern = cleanPattern;
-  }
+  const query = parseUserQuery(searchTerm);
+  const patternPart = query.pattern;
+  const rackPart = query.rack;
+  const hasRackLetters = !!rackPart;
+  const visiblePattern = patternPart.replace(/^\*/, '').replace(/\*$/, '');
   
   // Determine title based on the pattern type
   let titleText = "";
-  if (isCompoundEndPattern) {
-    titleText = `${uniqueMatches.length} ${uniqueMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que contienen "${mainPattern}" y terminan con "${endPattern}"`;
-  } else if (cleanPatternPart.startsWith('-') && cleanPatternPart.endsWith('-')) {
-    titleText = `${uniqueMatches.length} ${uniqueMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que contienen "${mainPattern}"`;
-  } else if (isStartPattern || cleanPatternPart.endsWith('-')) {
-    titleText = `${uniqueMatches.length} ${uniqueMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que empiezan con "${mainPattern}"`;
-  } else if (isEndPattern || cleanPatternPart.startsWith('-')) {
-    titleText = `${uniqueMatches.length} ${uniqueMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que terminan con "${mainPattern}"`;
+  if (patternPart === '*' && !query.hasConstraints && query.length !== null) {
+    titleText = `${uniqueMatches.length} ${uniqueMatches.length === 1 ? "palabra" : "palabras"} de ${query.length} fichas`;
+  } else if (patternPart === '*') {
+    titleText = `${uniqueMatches.length} ${uniqueMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que cumplen las restricciones`;
+  } else if (patternPart.startsWith('*') && patternPart.endsWith('*') && patternPart.length > 1) {
+    titleText = `${uniqueMatches.length} ${uniqueMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que contienen "${visiblePattern}"`;
+  } else if (patternPart.endsWith('*')) {
+    titleText = `${uniqueMatches.length} ${uniqueMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que empiezan con "${visiblePattern}"`;
+  } else if (patternPart.startsWith('*')) {
+    titleText = `${uniqueMatches.length} ${uniqueMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que terminan con "${visiblePattern}"`;
   } else {
     titleText = `${uniqueMatches.length} ${uniqueMatches.length === 1 ? "palabra encontrada" : "palabras encontradas"} que coinciden con el patrón`;
   }

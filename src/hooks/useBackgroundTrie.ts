@@ -6,10 +6,11 @@ import { HybridTrieService } from '@/services/HybridTrieService';
 import type { LexiconReleaseDescriptor } from '@/lexicon/releases';
 import {
   getTrieBuildDecision,
+  markTrieBuildCancelled,
   markTrieBuildFailed,
   markTrieBuildStarted,
   markTrieBuildSucceeded,
-  TRIE_BUILD_TIMEOUT_MS,
+  TRIE_BUILD_STALL_TIMEOUT_MS,
 } from '@/utils/trieBuildPolicy';
 
 interface TrieProgress {
@@ -66,18 +67,24 @@ export const useBackgroundTrie = (
 
   useEffect(() => {
     let cancelled = false;
-    let buildTimeout: number | null = null;
+    let stallTimeout: number | null = null;
     let trieBuildStarted = false;
 
-    const clearBuildTimeout = () => {
-      if (buildTimeout !== null) {
-        window.clearTimeout(buildTimeout);
-        buildTimeout = null;
+    const clearStallTimeout = () => {
+      if (stallTimeout !== null) {
+        window.clearTimeout(stallTimeout);
+        stallTimeout = null;
       }
     };
 
+    const cancelPendingBuild = () => {
+      if (!trieBuildStarted) return;
+      markTrieBuildCancelled(release.key);
+      trieBuildStarted = false;
+    };
+
     const keepSQLiteActive = (message: string, cause?: unknown) => {
-      clearBuildTimeout();
+      clearStallTimeout();
       workerRef.current?.terminate();
       workerRef.current = null;
       markTrieBuildFailed(release.key);
@@ -129,18 +136,25 @@ export const useBackgroundTrie = (
         if (!words.length) throw new Error('No words found in database');
 
         workerRef.current = new Worker('/trie-builder.worker.js');
+        const armStallWatchdog = () => {
+          clearStallTimeout();
+          stallTimeout = window.setTimeout(() => {
+            keepSQLiteActive('Trie build stopped making progress; SQLite remains active.');
+          }, TRIE_BUILD_STALL_TIMEOUT_MS);
+        };
         workerRef.current.onmessage = (event) => {
           const { type, progress, processed, total, serializedTrie, wordCount: count } =
             event.data;
 
           if (type === 'PROGRESS') {
+            armStallWatchdog();
             setTrieProgress({ progress, processed, total });
             return;
           }
 
           if (type === 'COMPLETE') {
             if (cancelled) return;
-            clearBuildTimeout();
+            clearStallTimeout();
             workerRef.current?.terminate();
             workerRef.current = null;
             try {
@@ -171,15 +185,13 @@ export const useBackgroundTrie = (
           keepSQLiteActive('Trie worker failed; SQLite remains active.', workerError);
         };
 
-        buildTimeout = window.setTimeout(() => {
-          keepSQLiteActive('Trie build timed out; SQLite remains active.');
-        }, TRIE_BUILD_TIMEOUT_MS);
+        armStallWatchdog();
         workerRef.current.postMessage({ type: 'BUILD_TRIE', words });
       } catch (initializationError) {
         console.error('Offline dictionary initialization failed.', initializationError);
         if (trieBuildStarted) markTrieBuildFailed(release.key);
         trieBuildStarted = false;
-        clearBuildTimeout();
+        clearStallTimeout();
         workerRef.current?.terminate();
         workerRef.current = null;
         if (!cancelled) {
@@ -194,11 +206,14 @@ export const useBackgroundTrie = (
       }
     };
 
+    window.addEventListener('pagehide', cancelPendingBuild);
     void initializeOfflineDictionary();
 
     return () => {
       cancelled = true;
-      clearBuildTimeout();
+      window.removeEventListener('pagehide', cancelPendingBuild);
+      cancelPendingBuild();
+      clearStallTimeout();
       workerRef.current?.terminate();
       workerRef.current = null;
       database.close();

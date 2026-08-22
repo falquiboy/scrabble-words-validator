@@ -15,8 +15,12 @@ export const processDigraphs = (input: string): string => {
   // First convert to uppercase
   let result = input.toUpperCase();
   
-  // Special handling for Ñ to preserve it through normalization
-  result = result.replace(/Ñ/g, '#');
+  // Preserve Spanish letters and already-encoded CH tiles while accents are
+  // removed. Without protecting Ç, normalizing an internal word such as BAÇA
+  // turns it into BACA and breaks lexicon membership checks.
+  result = result
+    .replace(/Ñ/g, '\uE000')
+    .replace(/Ç/g, '\uE001');
   
   // Remove accents
   result = result
@@ -24,8 +28,10 @@ export const processDigraphs = (input: string): string => {
     .replace(/[\u0300-\u036f]/g, '')
     .normalize('NFC');
   
-  // Restore Ñ
-  result = result.replace(/#/g, 'Ñ');
+  // Restore the protected symbols.
+  result = result
+    .replace(/\uE000/g, 'Ñ')
+    .replace(/\uE001/g, 'Ç');
   
   // Process digraphs in a specific order
   Object.entries(DIGRAPHS).forEach(([digraph, replacement]) => {

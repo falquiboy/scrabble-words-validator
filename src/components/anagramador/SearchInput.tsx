@@ -1,9 +1,9 @@
 
 import { Input } from "@/components/ui/input";
 import { RefObject, useState, useEffect, useRef } from "react";
-import { SearchTooltip } from "./SearchTooltip";
-import { validateAndCleanAnagramInput, validateAndCleanPatternInput } from "@/utils/inputValidation";
+import { normalizeUserQueryInput, parseUserQuery } from "@/utils/queryLanguage.mjs";
 import SearchButton from "./search/SearchButton";
+import TooltipHelp from "./search/TooltipHelp";
 // UserActivityContext removed
 
 interface SearchInputProps {
@@ -24,27 +24,14 @@ const SearchInput = ({
   onClear
 }: SearchInputProps) => {
   const [isPatternMode, setIsPatternMode] = useState(false);
-  const [hasLengthSpecified, setHasLengthSpecified] = useState(false);
   const cursorPositionRef = useRef<number | null>(null);
   
   // User activity tracking removed
   
   // Auto-detect pattern mode and length specification based on input
   useEffect(() => {
-    const hasPatternChars = letters.includes('*') || 
-                           letters.includes('.') || 
-                           letters.includes('^') || 
-                           letters.includes('$') || 
-                           letters.includes('-') ||
-                           letters.includes('+') ||
-                           letters.includes('@') ||
-                           letters.includes('&') ||
-                           /[+\-]\d*[A-Za-z]/.test(letters); // Numeric notation
-    setIsPatternMode(hasPatternChars);
+    setIsPatternMode(parseUserQuery(letters).kind === 'pattern');
     
-    // Check if length is specified using colon
-    const hasLengthSpec = letters.includes(':') && /\:\d+/.test(letters);
-    setHasLengthSpecified(hasLengthSpec);
   }, [letters]);
 
   useEffect(() => {
@@ -71,35 +58,21 @@ const SearchInput = ({
       );
       cursorPositionRef.current = null;
     }
-  }, [letters]);
+  }, [letters, inputRef]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // 🎯 Signal user typing activity for smart Trie upgrade
     // Activity signaling removed
     
     cursorPositionRef.current = e.target.selectionStart;
-    let value = e.target.value.toUpperCase();
+    const value = e.target.value.toUpperCase();
     
     // Preserve cursor position for colon + number cases
     const hasColon = value.includes(':');
     const cursorPosition = e.target.selectionStart || 0;
     const isAfterColon = hasColon && cursorPosition > value.indexOf(':');
     
-    // Automatically determine which validation to use based on input
-    const hasPatternChars = value.includes('*') || 
-                           value.includes('.') || 
-                           value.includes('^') || 
-                           value.includes('$') || 
-                           value.includes('-') ||
-                           value.includes('+') ||
-                           value.includes('@') ||
-                           value.includes('&') ||
-                           /[+\-]\d*[A-Za-z]/.test(value); // Numeric notation
-    
-    // Apply the appropriate validation
-    const cleanedValue = hasPatternChars ? 
-      validateAndCleanPatternInput(value) : 
-      validateAndCleanAnagramInput(value);
+    const cleanedValue = normalizeUserQueryInput(value);
     
     // Adjust cursor position if we're after a colon and typing numbers
     if (isAfterColon && cleanedValue !== value) {
@@ -143,15 +116,15 @@ const SearchInput = ({
 
   return (
     <div className="space-y-2">
-      <SearchTooltip isPatternMode={isPatternMode}>
+      <div className="flex items-center gap-1">
         <div className="relative flex-1">
           <Input
             ref={inputRef}
             type="text"
             placeholder={
               isPatternMode 
-                ? "Ej: -AR (termina con AR), CO* (empieza con CO), .R.. (. = una letra, * = cero o más)" 
-                : "? es comodín"
+                ? "Ej: CO*, *AR, .R.., +4@:5"
+                : "Letras del atril; ? es comodín"
             }
             value={letters}
             onChange={handleInputChange}
@@ -174,7 +147,8 @@ const SearchInput = ({
             />
           </div>
         </div>
-      </SearchTooltip>
+        <TooltipHelp isPatternMode={isPatternMode} />
+      </div>
     </div>
   );
 };

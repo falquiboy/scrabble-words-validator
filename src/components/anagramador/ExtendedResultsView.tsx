@@ -4,6 +4,7 @@ import ExtendedWordView from './ExtendedWordView';
 import { toDisplayFormat } from "@/utils/digraphs";
 import { AnagramWordInfo } from '@/utils/anagramWordData';
 import { highlightPatternMatch } from '@/utils/wildcardHighlighting';
+import { isPatternQuery, parseUserQuery } from '@/utils/queryLanguage.mjs';
 
 interface ExtendedResultsViewProps {
   isLoading: boolean;
@@ -158,20 +159,15 @@ const ExtendedResultsView: React.FC<ExtendedResultsViewProps> = ({
     );
   }
 
-  const isPatternSearch = searchTerm.includes('*') || 
-                         searchTerm.includes('.') || 
-                         searchTerm.includes('-') ||
-                         searchTerm.includes('@') ||
-                         searchTerm.includes('&');
+  const isPatternSearch = isPatternQuery(searchTerm);
   
   // Helper function to get correct highlighting based on search type and word context
   const getHighlightedWord = (displayWord: string, currentWordArray: string[]) => {
     // For pattern matches, always use pattern highlighting
     if (currentWordArray === results.patternMatches) {
       // For pattern searches with rack letters, extract pattern and rack parts
-      const [patternPart, rackPart] = searchTerm.includes(',') ? 
-        searchTerm.split(',') : [searchTerm, ''];
-      return highlightPatternMatch(displayWord, patternPart, rackPart || '');
+      const query = parseUserQuery(searchTerm);
+      return highlightPatternMatch(displayWord, query.pattern, query.rack);
     } else {
       // For wildcard/exact matches, use wildcard highlighting
       return highlightWildcardLetter(displayWord, searchTerm);
