@@ -7,20 +7,17 @@ import { useToast } from "@/hooks/use-toast";
 import { toDisplayFormat } from "@/utils/digraphs";
 import type { WordSearchService } from '@/lexicon/types';
 import { useLexicon } from '@/lexicon/LexiconContext';
-import { SearchResults } from "@/hooks/anagramSearch/types";
 import { isPatternQuery, parseUserQuery } from "@/utils/queryLanguage.mjs";
+import { sortWordsByFirstWildcardTile } from '@/utils/wildcardSubanagrams';
+import type { AnagramResultView } from './anagramador/viewTypes';
 
 interface AnagramadorProps {
   trie: WordSearchService;
   // Settings props (controlled from parent)
   showShorter: boolean;
   onShowShorterChange: (show: boolean) => void;
-  showExtendedView: boolean;
-  onExtendedViewChange: (show: boolean) => void;
-  showHooksView: boolean;
-  onHooksViewChange: (show: boolean) => void;
-  sortByEquity: boolean;
-  onSortByEquityChange: (sort: boolean) => void;
+  view: AnagramResultView;
+  onViewChange: (view: AnagramResultView) => void;
   // Callback props to communicate state changes to parent
   onSearchStateChange: (hasActiveSearch: boolean) => void;
   onCopyAllCallbackChange: (callback: (() => void) | undefined) => void;
@@ -35,12 +32,8 @@ const Anagramador = ({
   trie, 
   showShorter, 
   onShowShorterChange,
-  showExtendedView, 
-  onExtendedViewChange,
-  showHooksView, 
-  onHooksViewChange,
-  sortByEquity, 
-  onSortByEquityChange,
+  view,
+  onViewChange,
   onSearchStateChange,
   onCopyAllCallbackChange,
   onPatternSearchChange,
@@ -62,13 +55,23 @@ const Anagramador = ({
     showShorter,
     targetLength
   );
-  const displayResults = useMemo(() => ({
-    exactMatches: sortWords(searchResults.exactMatches),
-    wildcardMatches: sortWords(searchResults.wildcardMatches),
-    additionalWildcardMatches: sortWords(searchResults.additionalWildcardMatches),
-    shorterMatches: sortWords(searchResults.shorterMatches),
-    patternMatches: sortWords(searchResults.patternMatches),
-  }), [searchResults, sortWords]);
+  const displayResults = useMemo(() => {
+    const query = parseUserQuery(searchTerm);
+    const wildcardMatches = query.kind === 'anagram' && query.wildcardCount > 0
+      ? sortWordsByFirstWildcardTile(searchResults.wildcardMatches, query.letters)
+      : sortWords(searchResults.wildcardMatches);
+    const additionalWildcardMatches = query.kind === 'anagram' && query.wildcardCount > 0
+      ? sortWordsByFirstWildcardTile(searchResults.additionalWildcardMatches, query.letters)
+      : sortWords(searchResults.additionalWildcardMatches);
+
+    return {
+      exactMatches: sortWords(searchResults.exactMatches),
+      wildcardMatches,
+      additionalWildcardMatches,
+      shorterMatches: sortWords(searchResults.shorterMatches),
+      patternMatches: sortWords(searchResults.patternMatches),
+    };
+  }, [searchResults, searchTerm, sortWords]);
 
   // Notify parent about search state changes
   useEffect(() => {
@@ -77,8 +80,10 @@ const Anagramador = ({
 
   // Notify parent so the shared toggle can use the right pattern wording.
   useEffect(() => {
-    onPatternSearchChange(isPatternQuery(searchTerm));
-  }, [searchTerm, onPatternSearchChange]);
+    const patternSearch = isPatternQuery(searchTerm);
+    onPatternSearchChange(patternSearch);
+    if (patternSearch && view === 'residues') onViewChange('anagrams');
+  }, [searchTerm, onPatternSearchChange, onViewChange, view]);
 
   // Show error toast if there's an error
   useEffect(() => {
@@ -92,7 +97,7 @@ const Anagramador = ({
   }, [error, toast]);
 
   const handleSearch = (letters: string, newTargetLength: number | null) => {
-    if (letters !== searchTerm) {
+    if (letters !== searchTerm && view !== 'residues') {
       onShowShorterChange(false);
     }
     
@@ -105,31 +110,13 @@ const Anagramador = ({
 
   const handleClear = () => {
     onShowShorterChange(false);
+    onViewChange('anagrams');
     // Clear persistent state
     onPersistentSearchChange({
       searchTerm: "",
       targetLength: null
     });
     // Note: searchResults will be cleared automatically by the hybrid hook
-  };
-
-  // Handle mutually exclusive view changes
-  const handleExtendedViewChange = (show: boolean) => {
-    console.log(`🔄 Extended view changing: ${show}, hooks currently: ${showHooksView}`);
-    onExtendedViewChange(show);
-    if (show) {
-      onHooksViewChange(false); // Mutually exclusive
-      console.log(`🔄 Disabled hooks view when enabling extended`);
-    }
-  };
-
-  const handleHooksViewChange = (show: boolean) => {
-    console.log(`🔄 Hooks view changing: ${show}, extended currently: ${showExtendedView}`);
-    onHooksViewChange(show);
-    if (show) {
-      onExtendedViewChange(false); // Mutually exclusive
-      console.log(`🔄 Disabled extended view when enabling hooks`);
-    }
   };
 
   const handleCopyAll = useCallback(() => {
@@ -144,29 +131,20 @@ const Anagramador = ({
     if (isPatternSearch) {
       allWords = [...(displayResults.patternMatches || [])];
     } else {
-      // Include exact/wildcard matches
-      if (wildcardCount === 0) {
-        allWords = [...(displayResults.exactMatches || [])];
+      if (showShorter) {
+        allWords = [
+          ...(displayResults.wildcardMatches || []),
+          ...(displayResults.shorterMatches || []),
+        ];
       } else {
-        allWords = [...(displayResults.wildcardMatches || [])];
-      }
-      
-      // Include additional letter matches
-      const filteredAdditionalMatches = displayResults.additionalWildcardMatches.filter(word => {
-        if (wildcardCount === 0) {
-          return !displayResults.exactMatches.includes(word);
-        } else {
-          return !displayResults.wildcardMatches.includes(word);
+        allWords = wildcardCount === 0
+          ? [...(displayResults.exactMatches || [])]
+          : [...(displayResults.wildcardMatches || [])];
+
+        if (view !== 'residues') {
+          const currentWords = new Set(allWords);
+          allWords.push(...displayResults.additionalWildcardMatches.filter((word) => !currentWords.has(word)));
         }
-      });
-      
-      if (filteredAdditionalMatches.length > 0) {
-        allWords = [...allWords, ...filteredAdditionalMatches];
-      }
-      
-      // Include shorter matches if any
-      if (displayResults.shorterMatches?.length > 0) {
-        allWords = [...allWords, ...(displayResults.shorterMatches || [])];
       }
     }
 
@@ -185,7 +163,7 @@ const Anagramador = ({
         variant: "destructive",
       });
     });
-  }, [displayResults, searchTerm, toast]);
+  }, [displayResults, searchTerm, showShorter, toast, view]);
 
   // Provide copy callback to parent
   useEffect(() => {
@@ -221,9 +199,7 @@ const Anagramador = ({
               highlightWildcardLetter={highlightWildcardLetter}
               isSearchAborted={false}
               showShorter={showShorter}
-              showExtendedView={showExtendedView}
-              showHooksView={showHooksView}
-              sortByEquity={sortByEquity}
+              view={view}
             />
           </div>
         </div>

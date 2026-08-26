@@ -194,7 +194,15 @@ const HooksView: React.FC<HooksViewProps> = ({
     );
   };
 
-  const renderWordSection = (sectionId: string, title: string, words: string[], color: string = 'blue', groupByLength: boolean = false, isAdditionalSection: boolean = false) => {
+  const renderWordSection = (
+    sectionId: string,
+    title: string,
+    words: string[],
+    color: string = 'blue',
+    groupByLength: boolean = false,
+    isAdditionalSection: boolean = false,
+    preserveWordOrder: boolean = false,
+  ) => {
     if (words.length === 0) return null;
 
     const isExpanded = expandedSections.has(sectionId);
@@ -202,7 +210,7 @@ const HooksView: React.FC<HooksViewProps> = ({
     if (groupByLength) {
       // Agrupar por longitud y ordenar
       const groupedWords = words.reduce((groups, word) => {
-        const length = word.length;
+        const length = processDigraphs(word).length;
         if (!groups[length]) {
           groups[length] = [];
         }
@@ -211,9 +219,11 @@ const HooksView: React.FC<HooksViewProps> = ({
       }, {} as Record<number, string[]>);
 
       // Ordenar cada grupo alfabéticamente
-      Object.keys(groupedWords).forEach(length => {
-        groupedWords[parseInt(length)].sort(compareSpanishWords);
-      });
+      if (!preserveWordOrder) {
+        Object.keys(groupedWords).forEach(length => {
+          groupedWords[parseInt(length)].sort(compareSpanishWords);
+        });
+      }
 
       // Obtener longitudes ordenadas (mayor a menor para subanagramas)
       const sortedLengths = Object.keys(groupedWords)
@@ -344,15 +354,18 @@ const HooksView: React.FC<HooksViewProps> = ({
       {/* Wildcard matches */}
       {!isPatternSearch && renderWordSection(
         "wildcard",
-        "Con comodines", 
+        showShorter ? "Resultados con comodín" : "Con comodines",
         results.wildcardMatches, 
-        "blue"
+        "blue",
+        showShorter,
+        false,
+        showShorter,
       )}
 
       {/* Additional wildcard matches */}
       {!isPatternSearch && renderWordSection(
         "additional",
-        "Comodines adicionales", 
+        "Con una ficha adicional",
         results.additionalWildcardMatches, 
         "indigo",
         false,
@@ -362,7 +375,7 @@ const HooksView: React.FC<HooksViewProps> = ({
       {/* Shorter matches - SIEMPRE agrupados por longitud */}
       {!isPatternSearch && showShorter && renderWordSection(
         "shorter",
-        "Subanagramas", 
+        results.wildcardMatches.length > 0 ? "Resultados sin comodín" : "Subanagramas",
         results.shorterMatches, 
         "orange",
         true // Activar agrupamiento por longitud

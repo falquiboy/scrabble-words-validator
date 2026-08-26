@@ -2,6 +2,7 @@ import { SPANISH_LETTERS } from './constants';
 import { processDigraphs, generateAlphagram } from '@/utils/digraphs';
 import { Trie } from '@/utils/trie/types';
 import { SearchResults } from './types';
+import { isAllowedShorterWordWithWildcards } from '@/utils/wildcardSubanagrams';
 
 // Helper function to generate wildcard combinations
 export const generateWildcardCombinations = (base: string, remainingWildcards: number): string[] => {
@@ -37,8 +38,20 @@ const findWildcardMatches = (processedInput: string, wildcardCount: number, trie
   return matches;
 };
 
-const findShorterMatches = (processedInput: string, trie: Trie): Set<string> => {
+const findShorterMatches = (processedInput: string, wildcardCount: number, trie: Trie): Set<string> => {
   const matches = new Set<string>();
+
+  if (wildcardCount > 0) {
+    const rack = `${processedInput}${'?'.repeat(wildcardCount)}`;
+    const maxLength = processedInput.length + wildcardCount - 1;
+    for (let len = 2; len <= maxLength; len++) {
+      for (const word of trie.getWordsOfLength(len)) {
+        if (isAllowedShorterWordWithWildcards(word, rack)) matches.add(word);
+      }
+    }
+    return matches;
+  }
+
   const letterArray = processedInput.split('');
   
   // Generate all possible combinations of letters
@@ -134,7 +147,9 @@ export const findAnagrams = (searchTerm: string, trie: Trie, showShorter: boolea
   const additionalWildcardMatches = Array.from(findAdditionalMatches(processedInput, wildcardCount, trie));
 
   // Find shorter matches if requested, using processed input
-  const shorterMatches = showShorter ? Array.from(findShorterMatches(processedInput, trie)) : [];
+  const shorterMatches = showShorter
+    ? Array.from(findShorterMatches(processedInput, wildcardCount, trie))
+    : [];
 
   return {
     exactMatches,

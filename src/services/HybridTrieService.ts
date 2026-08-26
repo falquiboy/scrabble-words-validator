@@ -9,6 +9,7 @@ import { Trie } from '@/utils/trie';
 import { SqliteAnagramService, sqliteAnagramService } from './SqliteAnagramService';
 import { supabaseWordService } from './SupabaseWordService';
 import { processDigraphs, generateAlphagram } from '@/utils/digraphs';
+import { isAllowedShorterWordWithWildcards } from '@/utils/wildcardSubanagrams';
 
 export class HybridTrieService {
   private actualTrie: Trie | null = null;
@@ -290,28 +291,29 @@ export class HybridTrieService {
    * 🎯 Método findAnagramsWithWildcards - Soporte para comodines (?)
    * Máximo 2 comodines permitidos, compatible con sistema legacy
    */
-  async findAnagramsWithWildcards(letters: string): Promise<{
+  async findAnagramsWithWildcards(letters: string, includeSubanagrams = false): Promise<{
     exactMatches: string[];
     wildcardMatches: string[];
     additionalWildcardMatches: string[];
+    shorterMatches: string[];
   }> {
     const wildcardCount = (letters.match(/\?/g) || []).length;
     
     if (wildcardCount > 2) {
       console.log(`❌ Too many wildcards (${wildcardCount}), max allowed: 2`);
-      return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [] };
+      return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [], shorterMatches: [] };
     }
 
     // Nivel 1: Trie + lógica de wildcards
     if (this.isTrieReady && this.actualTrie) {
-      return await this.processWildcardsWithTrie(letters, wildcardCount);
+      return await this.processWildcardsWithTrie(letters, wildcardCount, includeSubanagrams);
     }
 
     // Nivel 2: SQLite + wildcards
     const isSqliteReady = await this.checkSqliteAvailability();
     if (isSqliteReady) {
       try {
-        return await this.processWildcardsWithSQLite(letters, wildcardCount);
+        return await this.processWildcardsWithSQLite(letters, wildcardCount, includeSubanagrams);
       } catch (error) {
         this.isSqliteAvailable = false;
       }
@@ -319,11 +321,11 @@ export class HybridTrieService {
 
     // Nivel 3: Supabase + wildcards
     if (await this.ensureSupabaseAvailability()) {
-      return await this.processWildcardsWithSupabase(letters, wildcardCount);
+      return await this.processWildcardsWithSupabase(letters, wildcardCount, includeSubanagrams);
     }
 
     console.log(`❌ No services available for wildcards: ${letters}`);
-    return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [] };
+    return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [], shorterMatches: [] };
   }
 
   /**
@@ -539,13 +541,18 @@ export class HybridTrieService {
   /**
    * 🎯 Procesar wildcards usando Trie (legacy compatible)
    */
-  private async processWildcardsWithTrie(letters: string, wildcardCount: number): Promise<{
+  private async processWildcardsWithTrie(
+    letters: string,
+    wildcardCount: number,
+    includeSubanagrams: boolean,
+  ): Promise<{
     exactMatches: string[];
     wildcardMatches: string[];
     additionalWildcardMatches: string[];
+    shorterMatches: string[];
   }> {
     if (!this.actualTrie) {
-      return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [] };
+      return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [], shorterMatches: [] };
     }
 
     const lettersOnly = letters.replace(/\?/g, '');
@@ -561,6 +568,7 @@ export class HybridTrieService {
     
     const wildcardMatches: string[] = [];
     const additionalWildcardMatches: string[] = [];
+    const shorterMatches: string[] = [];
 
     if (wildcardCount > 0) {
       // Estrategia optimizada: buscar palabras por longitud específica
@@ -584,12 +592,25 @@ export class HybridTrieService {
           additionalWildcardMatches.push(word);
         }
       }
+
+      // Include every shorter word formable with the rack, but never spend
+      // both blanks on one of these plays.
+      if (includeSubanagrams) {
+        for (let length = 2; length < targetLength; length++) {
+          for (const word of this.actualTrie.getWordsOfLength(length)) {
+            if (isAllowedShorterWordWithWildcards(word, letters)) {
+              shorterMatches.push(word);
+            }
+          }
+        }
+      }
     }
 
     return {
       exactMatches: Array.from(new Set(exactMatches)),
       wildcardMatches: Array.from(new Set(wildcardMatches)),
-      additionalWildcardMatches: Array.from(new Set(additionalWildcardMatches))
+      additionalWildcardMatches: Array.from(new Set(additionalWildcardMatches)),
+      shorterMatches: Array.from(new Set(shorterMatches))
     };
   }
 
@@ -628,30 +649,40 @@ export class HybridTrieService {
   /**
    * 🎯 Procesar wildcards usando SQLite
    */
-  private async processWildcardsWithSQLite(letters: string, wildcardCount: number): Promise<{
+  private async processWildcardsWithSQLite(
+    letters: string,
+    wildcardCount: number,
+    includeSubanagrams: boolean,
+  ): Promise<{
     exactMatches: string[];
     wildcardMatches: string[];
     additionalWildcardMatches: string[];
+    shorterMatches: string[];
   }> {
     console.log(`🔍 SQLite: processing ${wildcardCount} wildcards for "${letters}"`);
     
     try {
       // Usar el nuevo método de SQLite que maneja wildcards completos
-      return await this.sqliteService.findAnagramsWithWildcards(letters, 2);
+      return await this.sqliteService.findAnagramsWithWildcards(letters, 2, includeSubanagrams);
     } catch (error) {
       console.error('❌ SQLite wildcards search failed:', error);
       // Fallback to Supabase on error
-      return this.processWildcardsWithSupabase(letters, wildcardCount);
+      return this.processWildcardsWithSupabase(letters, wildcardCount, includeSubanagrams);
     }
   }
 
   /**
    * 🎯 Procesar wildcards usando Supabase (legacy compatible)
    */
-  private async processWildcardsWithSupabase(letters: string, wildcardCount: number): Promise<{
+  private async processWildcardsWithSupabase(
+    letters: string,
+    wildcardCount: number,
+    includeSubanagrams: boolean,
+  ): Promise<{
     exactMatches: string[];
     wildcardMatches: string[];
     additionalWildcardMatches: string[];
+    shorterMatches: string[];
   }> {
     // Usar la lógica legacy de useAnagramSearch
     const lettersOnly = letters.replace(/\?/g, '');
@@ -659,6 +690,9 @@ export class HybridTrieService {
     let exactMatches: string[] = [];
     let wildcardMatches: string[] = [];
     const additionalWildcardMatches: string[] = [];
+    const shorterMatches = includeSubanagrams && wildcardCount > 0
+      ? await supabaseWordService.findSubanagramsWithWildcards(letters, 2, 1)
+      : [];
 
     if (wildcardCount === 0) {
       exactMatches = await supabaseWordService.findAnagrams(processedInput);
@@ -672,7 +706,8 @@ export class HybridTrieService {
     return {
       exactMatches: Array.from(new Set(exactMatches)),
       wildcardMatches: Array.from(new Set(wildcardMatches)),
-      additionalWildcardMatches: Array.from(new Set(additionalWildcardMatches))
+      additionalWildcardMatches: Array.from(new Set(additionalWildcardMatches)),
+      shorterMatches: Array.from(new Set(shorterMatches))
     };
   }
 }

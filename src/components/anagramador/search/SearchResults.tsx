@@ -1,5 +1,4 @@
 
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader } from "lucide-react";
 import { ExactResults } from "../ExactResults";
 import { ShorterResults } from "../ShorterResults";
@@ -18,7 +17,6 @@ interface SearchResultsProps {
   };
   highlightWildcardLetter: (word: string, originalWord: string) => React.ReactNode;
   showShorter: boolean;
-  sortByEquity?: boolean;
 }
 
 const SearchResults = ({ 
@@ -26,21 +24,13 @@ const SearchResults = ({
   searchTerm, 
   results,
   highlightWildcardLetter,
-  showShorter,
-  sortByEquity
+  showShorter
 }: SearchResultsProps) => {
   const wildcardCount = (searchTerm.match(/\?/g) || []).length;
   const isPatternSearch = isPatternQuery(searchTerm);
-
-  const filteredAdditionalMatches = results.additionalWildcardMatches.filter(word => {
-    if (wildcardCount === 0) {
-      return !results.exactMatches.includes(word);
-    } else {
-      return !results.wildcardMatches.includes(word);
-    }
-  });
-
-  const hasExactMatches = wildcardCount === 0 ? results.exactMatches?.length > 0 : results.wildcardMatches?.length > 0;
+  const fullRackMatches = wildcardCount === 0 ? results.exactMatches : results.wildcardMatches;
+  const fullRackSet = new Set(fullRackMatches);
+  const additionalMatches = results.additionalWildcardMatches.filter((word) => !fullRackSet.has(word));
 
   if (isLoading) {
     console.log('🔄 SearchResults: Showing loading spinner');
@@ -58,7 +48,6 @@ const SearchResults = ({
 
   const hasResults = results.exactMatches?.length > 0 || 
     results.wildcardMatches?.length > 0 || 
-    filteredAdditionalMatches.length > 0 ||
     results.shorterMatches?.length > 0 ||
     results.patternMatches?.length > 0;
 
@@ -86,39 +75,37 @@ const SearchResults = ({
           {!showShorter && (
             <>
               <ExactResults
-                matches={wildcardCount === 0 ? results.exactMatches : results.wildcardMatches}
+                matches={fullRackMatches}
                 wildcardCount={wildcardCount}
                 highlightWildcardLetter={highlightWildcardLetter}
                 searchTerm={searchTerm}
               />
-              {filteredAdditionalMatches.length > 0 ? (
-                <ShorterResults
-                  matches={filteredAdditionalMatches}
-                  highlightWildcardLetter={highlightWildcardLetter}
-                  searchTerm={searchTerm}
-                  title="palabras con letra adicional"
-                  sortByEquity={sortByEquity}
-                  unifiedEquityView={false} // Keep grouped view, just sort within groups
-                />
-              ) : (
-                <ShorterResults
-                  matches={[]}
-                  highlightWildcardLetter={highlightWildcardLetter}
-                  searchTerm={searchTerm}
-                  title="palabras con letra adicional"
-                  sortByEquity={sortByEquity}
-                  unifiedEquityView={false}
-                />
-              )}
+              <ShorterResults
+                matches={additionalMatches}
+                highlightWildcardLetter={highlightWildcardLetter}
+                searchTerm={searchTerm}
+                title="Resultados con ficha adicional"
+                unifiedEquityView={false}
+              />
             </>
+          )}
+          {showShorter && results.wildcardMatches?.length > 0 && (
+            <ShorterResults
+              matches={results.wildcardMatches}
+              highlightWildcardLetter={highlightWildcardLetter}
+              searchTerm={searchTerm}
+              title="Resultados con comodín"
+              unifiedEquityView={false}
+            />
           )}
           {results.shorterMatches?.length > 0 && (
             <ShorterResults
               matches={results.shorterMatches}
               highlightWildcardLetter={highlightWildcardLetter}
               searchTerm={searchTerm}
-              title="palabras más cortas encontradas"
-              sortByEquity={sortByEquity}
+              title={showShorter && results.wildcardMatches.length > 0
+                ? "Resultados sin comodín"
+                : "palabras más cortas encontradas"}
               unifiedEquityView={false} // Keep grouped view, just sort within groups
             />
           )}

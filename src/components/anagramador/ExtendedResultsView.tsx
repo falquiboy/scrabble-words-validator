@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Loader, ChevronDown, ChevronRight } from "lucide-react";
 import ExtendedWordView from './ExtendedWordView';
-import { toDisplayFormat } from "@/utils/digraphs";
+import { getInternalLength, toDisplayFormat } from "@/utils/digraphs";
 import { AnagramWordInfo } from '@/utils/anagramWordData';
 import { highlightPatternMatch } from '@/utils/wildcardHighlighting';
 import { isPatternQuery, parseUserQuery } from '@/utils/queryLanguage.mjs';
@@ -81,7 +81,15 @@ const ExtendedResultsView: React.FC<ExtendedResultsViewProps> = ({
     );
   }
 
-  const renderWordSection = (title: string, words: string[], color: string = 'blue', sectionId?: string, collapsible: boolean = false, wordArray?: string[]) => {
+  const renderWordSection = (
+    title: string,
+    words: string[],
+    color: string = 'blue',
+    sectionId?: string,
+    collapsible: boolean = false,
+    wordArray?: string[],
+    groupByLength: boolean = false,
+  ) => {
     if (words.length === 0) return null;
 
     const isCollapsed = sectionId ? collapsedSections.has(sectionId) : false;
@@ -89,10 +97,33 @@ const ExtendedResultsView: React.FC<ExtendedResultsViewProps> = ({
     const visibleCount = visibleCounts[visibilityKey] || INITIAL_VISIBLE_WORDS;
     const visibleWords = words.slice(0, visibleCount);
     const remainingWords = words.length - visibleWords.length;
+    const visibleGroups = visibleWords.reduce((groups, word) => {
+      const length = getInternalLength(word);
+      if (!groups[length]) groups[length] = [];
+      groups[length].push(word);
+      return groups;
+    }, {} as Record<number, string[]>);
+    const visibleLengths = Object.keys(visibleGroups).map(Number).sort((a, b) => b - a);
+
+    const renderWords = (sectionWords: string[]) => sectionWords.map((word) => {
+      const displayWord = toDisplayFormat(word);
+      const wordInfo = getAnagramWordInfo(wordsData, word);
+      const highlighted = getHighlightedWord(displayWord, wordArray || words);
+
+      return (
+        <ExtendedWordView
+          key={`${visibilityKey}:${word}`}
+          word={displayWord}
+          wordInfo={wordInfo}
+          isLoading={isLoadingData && !wordInfo}
+          highlightedWord={highlighted}
+        />
+      );
+    });
 
     return (
       <div className="space-y-3">
-        {collapsible && sectionId ? (
+        {sectionId ? (
           <button
             onClick={() => toggleSection(sectionId)}
             className={`sticky top-0 z-20 bg-gray-50/95 backdrop-blur-sm flex items-center gap-2 font-semibold text-${color}-600 text-sm hover:text-${color}-700 transition-colors py-2 -mx-4 px-4 mb-2`}
@@ -113,21 +144,30 @@ const ExtendedResultsView: React.FC<ExtendedResultsViewProps> = ({
         {!isCollapsed && (
           <div className="grid gap-3 grid-cols-1">
             <WordInfoRequester words={visibleWords} onRequestWords={onRequestWords} />
-            {visibleWords.map((word) => {
-              const displayWord = toDisplayFormat(word);
-              const wordInfo = getAnagramWordInfo(wordsData, word);
-              const highlighted = getHighlightedWord(displayWord, wordArray || words); // Use correct highlighting based on context
-              
-              return (
-                <ExtendedWordView
-                  key={`${visibilityKey}:${word}`}
-                  word={displayWord} // Use display format for user-facing display
-                  wordInfo={wordInfo}
-                  isLoading={isLoadingData && !wordInfo}
-                  highlightedWord={highlighted} // Already converted by highlightWildcardLetter
-                />
-              );
-            })}
+            {groupByLength
+              ? visibleLengths.map((length) => {
+                  const lengthSectionId = `${visibilityKey}:length:${length}`;
+                  const isLengthCollapsed = collapsedSections.has(lengthSectionId);
+                  return (
+                    <div key={lengthSectionId} className="space-y-2">
+                      <button
+                        type="button"
+                        onClick={() => toggleSection(lengthSectionId)}
+                        aria-expanded={!isLengthCollapsed}
+                        className={`flex items-center gap-2 text-xs font-medium text-${color}-500 uppercase tracking-wide`}
+                      >
+                        {isLengthCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+                        {length} fichas ({visibleGroups[length].length})
+                      </button>
+                      {!isLengthCollapsed && (
+                        <div className="grid gap-3 grid-cols-1">
+                          {renderWords(visibleGroups[length])}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              : renderWords(visibleWords)}
             {remainingWords > 0 && (
               <button
                 type="button"
@@ -210,26 +250,27 @@ const ExtendedResultsView: React.FC<ExtendedResultsViewProps> = ({
       {!isPatternSearch && (
         <div style={{position: 'relative', zIndex: 24}}>
           {renderWordSection(
-            "Con comodines", 
+            showShorter ? "Resultados con comodín" : "Con comodines",
             results.wildcardMatches, 
             "blue",
             "wildcard-matches",
-            results.wildcardMatches.length > 10,
-            results.wildcardMatches
+            showShorter || results.wildcardMatches.length > 10,
+            results.wildcardMatches,
+            showShorter,
           )}
         </div>
       )}
 
-      {/* Additional wildcard matches - Collapsible if many results */}
-      {!isPatternSearch && (
+      {/* The same additional-tile result class, enriched with word information. */}
+      {!isPatternSearch && !showShorter && (
         <div style={{position: 'relative', zIndex: 23}}>
           {renderWordSection(
-            "Comodines adicionales", 
-            results.additionalWildcardMatches, 
+            "Resultados con ficha adicional",
+            results.additionalWildcardMatches,
             "indigo",
             "additional-wildcard-matches",
             results.additionalWildcardMatches.length > 10,
-            results.additionalWildcardMatches
+            results.additionalWildcardMatches,
           )}
         </div>
       )}
@@ -238,12 +279,13 @@ const ExtendedResultsView: React.FC<ExtendedResultsViewProps> = ({
       {!isPatternSearch && showShorter && (
         <div style={{position: 'relative', zIndex: 22}}>
           {renderWordSection(
-            "Palabras más cortas", 
+            results.wildcardMatches.length > 0 ? "Resultados sin comodín" : "Palabras más cortas",
             results.shorterMatches, 
             "orange",
             "shorter-matches",
             true,
-            results.shorterMatches
+            results.shorterMatches,
+            true,
           )}
         </div>
       )}

@@ -81,13 +81,14 @@ export class HybridLexiconSearchService implements WordSearchService {
     return this.merge(primary, legacy);
   }
 
-  async findAnagramsWithWildcards(letters: string): Promise<{
+  async findAnagramsWithWildcards(letters: string, includeSubanagrams = false): Promise<{
     exactMatches: string[];
     wildcardMatches: string[];
     additionalWildcardMatches: string[];
+    shorterMatches: string[];
   }> {
-    const primary = await this.primary.findAnagramsWithWildcards(letters);
-    const legacy = findAnagrams(letters, this.legacyTrie, false);
+    const primary = await this.primary.findAnagramsWithWildcards(letters, includeSubanagrams);
+    const legacy = findAnagrams(letters, this.legacyTrie, includeSubanagrams);
     return {
       exactMatches: this.merge(primary.exactMatches, legacy.exactMatches),
       wildcardMatches: this.merge(primary.wildcardMatches, legacy.wildcardMatches),
@@ -95,6 +96,7 @@ export class HybridLexiconSearchService implements WordSearchService {
         primary.additionalWildcardMatches,
         legacy.additionalWildcardMatches,
       ),
+      shorterMatches: this.merge(primary.shorterMatches, legacy.shorterMatches),
     };
   }
 

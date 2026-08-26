@@ -1,14 +1,15 @@
 
 import { useToast } from "@/hooks/use-toast";
 import SearchResults from "./search/SearchResults";
-import ExtendedWordView from "./ExtendedWordView";
 import ExtendedResultsView from "./ExtendedResultsView";
 import HooksView from "./HooksView";
+import ResidueResultsView from './ResidueResultsView';
 import { toDisplayFormat } from "@/utils/digraphs";
 import { fetchAnagramWordsData, AnagramWordInfo } from "@/utils/anagramWordData";
 import { fetchHooksData, HookInfo } from "@/utils/hooksData";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Loader } from "lucide-react";
+import type { AnagramResultView } from './viewTypes';
 
 interface ResultsListProps {
   isLoading: boolean;
@@ -23,9 +24,7 @@ interface ResultsListProps {
   highlightWildcardLetter: (word: string, originalWord: string) => React.ReactNode;
   isSearchAborted?: boolean;
   showShorter: boolean;
-  showExtendedView?: boolean;
-  showHooksView?: boolean;
-  sortByEquity?: boolean;
+  view: AnagramResultView;
 }
 
 const ResultsList = ({ 
@@ -35,9 +34,7 @@ const ResultsList = ({
   highlightWildcardLetter,
   isSearchAborted,
   showShorter,
-  showExtendedView,
-  showHooksView,
-  sortByEquity
+  view,
 }: ResultsListProps) => {
   const { toast } = useToast();
   const [wordsData, setWordsData] = useState<Map<string, AnagramWordInfo>>(new Map());
@@ -47,7 +44,7 @@ const ResultsList = ({
   const dataGenerationRef = useRef(0);
   const pendingWordsRef = useRef(new Set<string>());
   const loadedWordsRef = useRef(new Set<string>());
-  const dataScope = `${searchTerm}\u0000${showExtendedView}\u0000${showHooksView}`;
+  const dataScope = `${searchTerm}\u0000${view}`;
   const dataScopeRef = useRef(dataScope);
 
   // Reset synchronously when the query/view changes so child effects cannot
@@ -96,17 +93,17 @@ const ResultsList = ({
       });
   }, [toast]);
 
-  // Clear extended data when hooks view becomes active
+  // Clear extended data when another view becomes active.
   useEffect(() => {
-    if (showHooksView) {
+    if (view !== 'extended') {
       setWordsData(new Map());
       setIsLoadingData(false);
     }
-  }, [showHooksView]);
+  }, [view]);
 
   // Load hooks data when hooks view is enabled and we have results
   useEffect(() => {
-    if (showHooksView && results && !isLoading) {
+    if (view === 'hooks' && results && !isLoading) {
       // Use results as-is - they're already filtered by showShorter in the hook
       const allWordsRaw = [
         ...results.exactMatches,
@@ -133,25 +130,15 @@ const ResultsList = ({
           });
       }
     }
-  }, [showHooksView, results, isLoading, toast]);
+  }, [view, results, isLoading, toast]);
 
-  // Clear hooks data when extended view becomes active
+  // Clear hooks data when another view becomes active.
   useEffect(() => {
-    if (showExtendedView) {
+    if (view !== 'hooks') {
       setHooksData(new Map());
       setIsLoadingHooks(false);
     }
-  }, [showExtendedView]);
-
-
-  // Check if we have any results to show the toggle
-  const hasResults = results && (
-    results.exactMatches.length > 0 ||
-    results.wildcardMatches.length > 0 ||
-    results.additionalWildcardMatches.length > 0 ||
-    results.shorterMatches.length > 0 ||
-    results.patternMatches.length > 0
-  );
+  }, [view]);
 
   return (
     <div className="space-y-4 pb-4">
@@ -166,7 +153,7 @@ const ResultsList = ({
         {/* Results (only show when not loading) */}
         {!isLoading && (
           <>
-            {showHooksView ? (
+            {view === 'hooks' ? (
               <HooksView
                 isLoading={isLoading}
                 searchTerm={searchTerm}
@@ -176,7 +163,7 @@ const ResultsList = ({
                 hooksData={hooksData}
                 isLoadingHooks={isLoadingHooks}
               />
-            ) : showExtendedView ? (
+            ) : view === 'extended' ? (
               <ExtendedResultsView
                 isLoading={isLoading}
                 searchTerm={searchTerm}
@@ -187,6 +174,12 @@ const ResultsList = ({
                 isLoadingData={isLoadingData}
                 onRequestWords={requestWordInfo}
               />
+            ) : view === 'residues' ? (
+              <ResidueResultsView
+                searchTerm={searchTerm}
+                results={results}
+                highlightWildcardLetter={highlightWildcardLetter}
+              />
             ) : (
               <SearchResults
                 isLoading={isLoading}
@@ -194,7 +187,6 @@ const ResultsList = ({
                 results={results}
                 highlightWildcardLetter={highlightWildcardLetter}
                 showShorter={showShorter}
-                sortByEquity={sortByEquity}
               />
             )}
           </>

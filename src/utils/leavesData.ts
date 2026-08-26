@@ -11,6 +11,7 @@ export interface LeaveInfo {
 const leavesCache = new Map<string, number | null>();
 const generationLeavesCache = new Map<number, Map<string, number | null>>();
 const CACHE_STATS = { hits: 0, misses: 0 };
+export const CURRENT_LEAVE_GENERATION = 6;
 
 // Orden ALFABÉTICO correcto para Scrabble español (según user)
 // ?ABC[CH]DEFGHIJL[LL]MNÑOPQR[RR]STUVXYZ
@@ -294,7 +295,7 @@ export async function getBatchGenerationLeaveValues(
   const results = new Map<string, number | null>();
   const uncachedLeaves: string[] = [];
 
-  for (const leaveStr of leaveStrings) {
+  for (const leaveStr of new Set(leaveStrings)) {
     if (cache.has(leaveStr)) {
       results.set(leaveStr, cache.get(leaveStr)!);
     } else {
@@ -355,10 +356,13 @@ export async function calculatePotentialValue(
   wordValue: number, 
   rack: string, 
   word: string,
-  searchTerm?: string
+  searchTerm?: string,
+  generation?: number,
 ): Promise<number> {
   const leave = calculateLeave(rack, word, searchTerm);
-  const leaveValue = await getLeaveValue(leave);
+  const leaveValue = generation === undefined
+    ? await getLeaveValue(leave)
+    : (await getBatchGenerationLeaveValues(generation, [leave])).get(leave) ?? null;
   
   if (leaveValue === null) {
     console.warn(`No se encontró valor para residuo "${leave}"`);

@@ -7,6 +7,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { getWildcardRackProfile } from '@/utils/wildcardSubanagrams';
 
 export interface SupabaseWordEntry {
   alphagram: string;
@@ -162,6 +163,76 @@ export class SupabaseWordService {
 
     } catch (error) {
       console.error('❌ Supabase subanagram error:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Supabase fallback for shorter plays made with zero or one blank. Querying
+   * exact alphagrams avoids downloading every word in several length shards.
+   */
+  async findSubanagramsWithWildcards(
+    letters: string,
+    minLength: number = 2,
+    maxWildcards: number = 1,
+  ): Promise<string[]> {
+    try {
+      const profile = getWildcardRackProfile(letters);
+      const usableWildcards = Math.min(profile.usableWildcardCount, maxWildcards);
+      const maxLength = profile.totalTileCount - 1;
+      const subsets = new Set<string>(['']);
+
+      for (const tile of profile.realTiles) {
+        for (const subset of [...subsets]) {
+          if (subset.length < maxLength) subsets.add(subset + tile);
+        }
+      }
+
+      const alphagrams = new Set<string>();
+      const spanishTiles = [...'ABCDEFGHIJKLMNÑOPQRSTUVWXYZÇ'];
+      for (const subset of subsets) {
+        if (subset.length >= minLength && subset.length <= maxLength) {
+          alphagrams.add(this.createAlphagram(subset));
+        }
+        if (
+          usableWildcards > 0
+          && subset.length + 1 >= minLength
+          && subset.length + 1 <= maxLength
+        ) {
+          for (const tile of spanishTiles) {
+            alphagrams.add(this.createAlphagram(subset + tile));
+          }
+        }
+      }
+
+      const keys = [...alphagrams];
+      const batches: string[][] = [];
+      for (let index = 0; index < keys.length; index += 75) {
+        batches.push(keys.slice(index, index + 75));
+      }
+
+      const responses = await Promise.all(
+        batches.map((batch) =>
+          supabase
+            .from(this.tableName)
+            .select('norm_word')
+            .in('norm_alph', batch)
+            .order('norm_word')
+        )
+      );
+
+      const words: string[] = [];
+      for (const { data, error } of responses) {
+        if (error) {
+          console.error('❌ Supabase wildcard subanagram batch error:', error);
+          continue;
+        }
+        words.push(...(data?.map((entry) => entry.norm_word) || []));
+      }
+
+      return Array.from(new Set(words)).sort();
+    } catch (error) {
+      console.error('❌ Supabase wildcard subanagram search error:', error);
       return [];
     }
   }

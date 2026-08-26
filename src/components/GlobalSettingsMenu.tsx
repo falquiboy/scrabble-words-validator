@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Menu, X, Info, Anchor, ChevronDown, Copy, TrendingUp, Settings, BookOpen, ArrowUp } from 'lucide-react';
+import { Menu, X, Info, Anchor, ChevronDown, Copy, Settings, BookOpen, ArrowUp, List, ChartNoAxesCombined } from 'lucide-react';
 import { LEXICON_MODE_OPTIONS } from '@/lexicon/releases';
 import type { LexiconMode } from '@/lexicon/types';
+import type { AnagramResultView } from '@/components/anagramador/viewTypes';
 
 interface GlobalSettingsMenuProps {
   activeModule: 'judge' | 'anagram' | 'lists' | 'residues' | 'training';
@@ -13,14 +14,10 @@ interface GlobalSettingsMenuProps {
   anagramSettings?: {
     showShorter: boolean;
     onShowShorterChange: (show: boolean) => void;
-    showExtendedView: boolean;
-    onExtendedViewChange: (show: boolean) => void;
-    showHooksView: boolean;
-    onHooksViewChange: (show: boolean) => void;
+    view: AnagramResultView;
+    onViewChange: (view: AnagramResultView) => void;
     hasActiveSearch: boolean;
     onCopyAll?: () => void;
-    sortByEquity: boolean;
-    onSortByEquityChange: (sort: boolean) => void;
     isPatternSearch?: boolean;
   };
 }
@@ -77,16 +74,31 @@ const GlobalSettingsMenu: React.FC<GlobalSettingsMenuProps> = ({
     const {
       showShorter,
       onShowShorterChange,
-      showExtendedView,
-      onExtendedViewChange,
-      showHooksView,
-      onHooksViewChange,
+      view,
+      onViewChange,
       hasActiveSearch,
       onCopyAll,
-      sortByEquity,
-      onSortByEquityChange,
       isPatternSearch = false
     } = anagramSettings;
+
+    const viewOptions: Array<{
+      value: AnagramResultView;
+      label: string;
+      help: string;
+      icon: React.ReactNode;
+      disabled?: boolean;
+    }> = [
+      { value: 'anagrams', label: 'Anagramas', help: 'Lista limpia de palabras', icon: <List size={16} className="text-slate-600" /> },
+      { value: 'extended', label: 'Vista extendida', help: 'Información lingüística', icon: <Info size={16} className="text-blue-500" /> },
+      { value: 'hooks', label: 'Ganchos', help: 'Extensiones y ficha adicional', icon: <Anchor size={16} className="text-green-500" /> },
+      {
+        value: 'residues',
+        label: 'Residuos',
+        help: isPatternSearch ? 'Solo disponible para subanagramas' : 'Equity y residuo, solo palabras más cortas',
+        icon: <ChartNoAxesCombined size={16} className="text-purple-500" />,
+        disabled: isPatternSearch,
+      },
+    ];
 
     return (
       <div className="space-y-1">
@@ -99,41 +111,36 @@ const GlobalSettingsMenu: React.FC<GlobalSettingsMenuProps> = ({
           !hasActiveSearch
         )}
 
-        {/* Equity Sort Toggle - Only show when shorter words are enabled */}
-        {showShorter && hasActiveSearch && (
-          <>
-            <div className="border-t border-gray-100" />
-            {renderToggle(
-              'Ordenar por equity',
-              sortByEquity,
-              onSortByEquityChange,
-              <TrendingUp size={16} className="text-purple-500" />,
-              false
-            )}
-          </>
-        )}
-
         <div className="border-t border-gray-100" />
 
-        {/* Extended View Toggle */}
-        {renderToggle(
-          'Vista extendida',
-          showExtendedView,
-          onExtendedViewChange,
-          <Info size={16} className="text-blue-500" />,
-          !hasActiveSearch
-        )}
-
-        <div className="border-t border-gray-100" />
-
-        {/* Hooks View Toggle */}
-        {renderToggle(
-          'Vista de ganchos',
-          showHooksView,
-          onHooksViewChange,
-          <Anchor size={16} className="text-green-500" />,
-          !hasActiveSearch
-        )}
+        <div className="px-4 py-3">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Presentación</p>
+          <div className="space-y-1" role="radiogroup" aria-label="Vista de resultados">
+            {viewOptions.map((option) => {
+              const disabled = !hasActiveSearch || option.disabled;
+              const selected = view === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  disabled={disabled}
+                  onClick={() => onViewChange(option.value)}
+                  className={`flex w-full items-start gap-3 rounded-lg border px-3 py-2 text-left transition-colors ${
+                    selected ? 'border-blue-300 bg-blue-50' : 'border-transparent hover:bg-white'
+                  } ${disabled ? 'cursor-not-allowed opacity-45' : ''}`}
+                >
+                  <span className="mt-0.5">{option.icon}</span>
+                  <span>
+                    <span className="block text-sm font-medium text-gray-800">{option.label}</span>
+                    <span className="block text-xs text-gray-500">{option.help}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         {/* Copy Button */}
         {hasActiveSearch && onCopyAll && (
@@ -194,17 +201,19 @@ const GlobalSettingsMenu: React.FC<GlobalSettingsMenuProps> = ({
       return null;
     }
 
-    const { showHooksView, showExtendedView, showShorter } = anagramSettings;
+    const { view, showShorter } = anagramSettings;
+    const viewLabels: Record<AnagramResultView, string> = {
+      anagrams: '📝 Anagramas',
+      extended: '📖 Vista extendida',
+      hooks: '🎣 Ganchos',
+      residues: '📊 Residuos',
+    };
 
     return (
       <div className="mt-8 p-4 bg-blue-50 rounded-lg">
         <h3 className="text-sm font-medium text-blue-800 mb-2">Vista actual:</h3>
         <p className="text-xs text-blue-600">
-          {showHooksView
-            ? '🎣 Vista de ganchos activa'
-            : showExtendedView
-            ? '📖 Vista extendida activa'
-            : '📝 Vista normal activa'}
+          {viewLabels[view]}
         </p>
         {showShorter && (
           <p className="text-xs text-orange-600 mt-1">

@@ -9,6 +9,7 @@ import type { WordSearchService } from '@/lexicon/types';
 import { SearchResults } from "./anagramSearch/types";
 import { sortWordsByAddedLetter } from "@/utils/additionalLetterSort";
 import { parseUserQuery } from "@/utils/queryLanguage.mjs";
+import { partitionShorterWordsWithWildcards } from '@/utils/wildcardSubanagrams';
 // UserActivityContext removed - simplified approach
 
 export const useHybridAnagramSearch = (
@@ -102,7 +103,7 @@ export const useHybridAnagramSearch = (
             throw new Error(`Máximo 2 comodines permitidos, encontrados: ${wildcardCount}`);
           }
           
-          const wildcardResults = await hybridService.findAnagramsWithWildcards(query.letters);
+          const wildcardResults = await hybridService.findAnagramsWithWildcards(query.letters, showShorter);
           if (cancelled || generation !== searchGenerationRef.current) return;
           
           // Ordenar palabras con letra adicional según la letra añadida
@@ -111,15 +112,28 @@ export const useHybridAnagramSearch = (
           
           // Set provider based on what was actually used
           setCurrentProvider(hybridService.getCurrentProvider());
+
+          const shorterGroups = showShorter
+            ? partitionShorterWordsWithWildcards(wildcardResults.shorterMatches, query.letters)
+            : { relevantWithWildcard: [], withoutWildcard: [] };
           
-          // Para wildcards, los resultados son diferentes pero mantenemos cache
-          const wildcardFullResults = {
-            exactMatches: wildcardResults.exactMatches,
-            wildcardMatches: wildcardResults.wildcardMatches,
-            additionalWildcardMatches: sortedAdditionalMatches,
-            shorterMatches: [], // Los wildcards no tienen subanagramas tradicionales
-            patternMatches: []
-          };
+          // La vista de palabras más cortas sigue siendo excluyente y admite
+          // resultados formados con cero o un comodín, nunca con dos.
+          const wildcardFullResults = showShorter
+            ? {
+                exactMatches: [],
+                wildcardMatches: shorterGroups.relevantWithWildcard,
+                additionalWildcardMatches: [],
+                shorterMatches: shorterGroups.withoutWildcard,
+                patternMatches: []
+              }
+            : {
+                exactMatches: wildcardResults.exactMatches,
+                wildcardMatches: wildcardResults.wildcardMatches,
+                additionalWildcardMatches: sortedAdditionalMatches,
+                shorterMatches: [],
+                patternMatches: []
+              };
           setResults(wildcardFullResults);
           console.log('✅ Setting loading to FALSE (wildcard search)');
           setIsLoading(false);

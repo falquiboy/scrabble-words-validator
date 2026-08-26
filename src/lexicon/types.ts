@@ -26,10 +26,11 @@ export interface WordSearchService {
     maxDefaultLength?: number,
     targetLength?: number | null,
   ): Promise<string[]>;
-  findAnagramsWithWildcards(letters: string): Promise<{
+  findAnagramsWithWildcards(letters: string, includeSubanagrams?: boolean): Promise<{
     exactMatches: string[];
     wildcardMatches: string[];
     additionalWildcardMatches: string[];
+    shorterMatches: string[];
   }>;
   getAllWords(): string[];
   getCurrentProvider(): 'trie' | 'sqlite' | 'supabase' | 'none';

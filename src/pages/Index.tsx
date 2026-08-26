@@ -11,6 +11,7 @@ import Residues from "@/components/Residues";
 import { LexiconContext, createLexiconContextValue } from '@/lexicon/LexiconContext';
 import { normalizeLexiconMode } from '@/lexicon/policy.mjs';
 import type { LexiconMode } from '@/lexicon/types';
+import type { AnagramResultView } from '@/components/anagramador/viewTypes';
 
 const readStoredMode = (): LexiconMode => {
   try { return normalizeLexiconMode(localStorage.getItem('maslexico:lexicon-mode')); }
@@ -29,12 +30,20 @@ const Index = () => {
   
   // States for anagram settings (lifted up from Anagramador)
   const [showShorter, setShowShorter] = useState(false);
-  const [showExtendedView, setShowExtendedView] = useState(false);
-  const [showHooksView, setShowHooksView] = useState(false);
-  const [sortByEquity, setSortByEquity] = useState(false);
+  const [anagramView, setAnagramView] = useState<AnagramResultView>('anagrams');
   const [hasActiveAnagramSearch, setHasActiveAnagramSearch] = useState(false);
   const [anagramCopyAllCallback, setAnagramCopyAllCallback] = useState<(() => void) | undefined>(undefined);
   const [isPatternSearch, setIsPatternSearch] = useState(false);
+
+  const handleAnagramViewChange = (view: AnagramResultView) => {
+    setAnagramView(view);
+    if (view === 'residues') setShowShorter(true);
+  };
+
+  const handleShowShorterChange = (show: boolean) => {
+    setShowShorter(show);
+    if (!show && anagramView === 'residues') setAnagramView('anagrams');
+  };
   
   // Persistent anagram search state (survives tab navigation)
   const [persistentAnagramSearch, setPersistentAnagramSearch] = useState({
@@ -136,21 +145,11 @@ const Index = () => {
         onNewWordsFirstChange={setNewWordsFirst}
         anagramSettings={{
           showShorter,
-          onShowShorterChange: setShowShorter,
-          showExtendedView,
-          onExtendedViewChange: (show: boolean) => {
-            setShowExtendedView(show);
-            if (show) setShowHooksView(false);
-          },
-          showHooksView,
-          onHooksViewChange: (show: boolean) => {
-            setShowHooksView(show);
-            if (show) setShowExtendedView(false);
-          },
+          onShowShorterChange: handleShowShorterChange,
+          view: anagramView,
+          onViewChange: handleAnagramViewChange,
           hasActiveSearch: hasActiveAnagramSearch,
           onCopyAll: anagramCopyAllCallback,
-          sortByEquity,
-          onSortByEquityChange: setSortByEquity,
           isPatternSearch
         }}
       />
@@ -196,13 +195,9 @@ const Index = () => {
                 <Anagramador 
                   trie={trie}
                   showShorter={showShorter}
-                  onShowShorterChange={setShowShorter}
-                  showExtendedView={showExtendedView}
-                  onExtendedViewChange={setShowExtendedView}
-                  showHooksView={showHooksView}
-                  onHooksViewChange={setShowHooksView}
-                  sortByEquity={sortByEquity}
-                  onSortByEquityChange={setSortByEquity}
+                  onShowShorterChange={handleShowShorterChange}
+                  view={anagramView}
+                  onViewChange={handleAnagramViewChange}
                   onSearchStateChange={setHasActiveAnagramSearch}
                   onCopyAllCallbackChange={setAnagramCopyAllCallback}
                   onPatternSearchChange={setIsPatternSearch}

@@ -7,6 +7,10 @@
 
 import { SQLiteWordDatabase, sqliteDB, WordEntry } from './SQLiteWordDatabase';
 import { filterByQueryConstraints, parseUserQuery } from '../utils/queryLanguage.mjs';
+import {
+  getWildcardRackProfile,
+  isAllowedShorterWordWithWildcards,
+} from '../utils/wildcardSubanagrams';
 
 export interface AnagramResults {
   exactMatches: string[];
@@ -63,6 +67,34 @@ export class SqliteAnagramService {
       return results.sort();
     } catch (error) {
       console.error('❌ SQLite subanagram search failed:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Find shorter rack plays while allowing zero or one blank. A second blank
+   * may remain on the rack, but is never consumed by a shorter result.
+   */
+  async findSubAnagramsWithWildcards(letters: string, minLength: number = 2): Promise<string[]> {
+    await this.ensureDatabase();
+
+    const profile = getWildcardRackProfile(letters);
+    const maxLength = profile.totalTileCount - 1;
+    const results: string[] = [];
+
+    try {
+      for (let length = minLength; length <= maxLength; length++) {
+        const words = await this.database.findWordsByLength(length);
+        for (const entry of words) {
+          if (isAllowedShorterWordWithWildcards(entry.word, letters, minLength)) {
+            results.push(entry.word);
+          }
+        }
+      }
+
+      return Array.from(new Set(results)).sort();
+    } catch (error) {
+      console.error('❌ SQLite wildcard subanagram search failed:', error);
       return [];
     }
   }
@@ -686,16 +718,21 @@ export class SqliteAnagramService {
   /**
    * Buscar anagramas con wildcards (?). Soporta hasta 2 wildcards.
    */
-  async findAnagramsWithWildcards(letters: string, maxWildcards: number = 2): Promise<{
+  async findAnagramsWithWildcards(
+    letters: string,
+    maxWildcards: number = 2,
+    includeSubanagrams = false,
+  ): Promise<{
     exactMatches: string[];
     wildcardMatches: string[];
     additionalWildcardMatches: string[];
+    shorterMatches: string[];
   }> {
     const wildcardCount = (letters.match(/\?/g) || []).length;
     
     if (wildcardCount > maxWildcards) {
       console.log(`❌ Too many wildcards (${wildcardCount}), max allowed: ${maxWildcards}`);
-      return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [] };
+      return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [], shorterMatches: [] };
     }
 
     const lettersOnly = letters.replace(/\?/g, '');
@@ -706,6 +743,7 @@ export class SqliteAnagramService {
     let exactMatches: string[] = [];
     let wildcardMatches: string[] = [];
     let additionalWildcardMatches: string[] = [];
+    let shorterMatches: string[] = [];
 
     try {
       await this.ensureDatabase();
@@ -724,6 +762,9 @@ export class SqliteAnagramService {
       // Palabras con una letra adicional (longitud: letras + wildcards + 1)
       if (wildcardCount >= 1) {
         additionalWildcardMatches = await this.findWordsWithWildcardsAdditional(processedInput, wildcardCount + 1);
+        if (includeSubanagrams) {
+          shorterMatches = await this.findSubAnagramsWithWildcards(letters, 2);
+        }
       }
 
       console.log(`✅ SQLite wildcards found: exact=${exactMatches.length}, wildcards=${wildcardMatches.length}, additional=${additionalWildcardMatches.length}`);
@@ -731,12 +772,13 @@ export class SqliteAnagramService {
       return {
         exactMatches: Array.from(new Set(exactMatches)),
         wildcardMatches: Array.from(new Set(wildcardMatches)),
-        additionalWildcardMatches: Array.from(new Set(additionalWildcardMatches))
+        additionalWildcardMatches: Array.from(new Set(additionalWildcardMatches)),
+        shorterMatches: Array.from(new Set(shorterMatches))
       };
 
     } catch (error) {
       console.error('❌ SQLite wildcards search failed:', error);
-      return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [] };
+      return { exactMatches: [], wildcardMatches: [], additionalWildcardMatches: [], shorterMatches: [] };
     }
   }
 
