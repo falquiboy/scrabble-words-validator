@@ -93,7 +93,7 @@ const GlobalSettingsMenu: React.FC<GlobalSettingsMenuProps> = ({
       { value: 'hooks', label: 'Ganchos', help: 'Extensiones y ficha adicional', icon: <Anchor size={16} className="text-green-500" /> },
       {
         value: 'residues',
-        label: 'Residuos',
+        label: 'Equity / residuos',
         help: isPatternSearch ? 'Solo disponible para subanagramas' : 'Equity y residuo, solo palabras más cortas',
         icon: <ChartNoAxesCombined size={16} className="text-purple-500" />,
         disabled: isPatternSearch,
@@ -167,7 +167,6 @@ const GlobalSettingsMenu: React.FC<GlobalSettingsMenuProps> = ({
   const renderModuleContent = () => {
     switch (activeModule) {
       case 'anagram':
-      case 'residues':
         return renderAnagramSettings();
       
       case 'judge':
@@ -181,6 +180,7 @@ const GlobalSettingsMenu: React.FC<GlobalSettingsMenuProps> = ({
         );
       
       case 'lists':
+      case 'residues':
       case 'training':
         return (
           <div className="py-8 text-center">
@@ -197,7 +197,7 @@ const GlobalSettingsMenu: React.FC<GlobalSettingsMenuProps> = ({
   };
 
   const renderStatusSection = () => {
-    if ((activeModule !== 'anagram' && activeModule !== 'residues') || !anagramSettings?.hasActiveSearch) {
+    if (activeModule !== 'anagram' || !anagramSettings?.hasActiveSearch) {
       return null;
     }
 
@@ -206,7 +206,7 @@ const GlobalSettingsMenu: React.FC<GlobalSettingsMenuProps> = ({
       anagrams: '📝 Anagramas',
       extended: '📖 Vista extendida',
       hooks: '🎣 Ganchos',
-      residues: '📊 Residuos',
+      residues: '📊 Equity / residuos',
     };
 
     return (
@@ -303,7 +303,7 @@ const GlobalSettingsMenu: React.FC<GlobalSettingsMenuProps> = ({
             </div>
           </div>
 
-          {(activeModule === 'anagram' || activeModule === 'residues') && lexiconMode === 'hybrid' && (
+          {activeModule === 'anagram' && lexiconMode === 'hybrid' && (
             <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50">
               {renderToggle(
                 'Palabras nuevas primero',
@@ -321,7 +321,7 @@ const GlobalSettingsMenu: React.FC<GlobalSettingsMenuProps> = ({
           {renderModuleContent()}
 
           {/* Info Section for anagram module when no active search */}
-          {(activeModule === 'anagram' || activeModule === 'residues') && !anagramSettings?.hasActiveSearch && (
+          {activeModule === 'anagram' && !anagramSettings?.hasActiveSearch && (
             <div className="mt-8 p-4 bg-gray-50 rounded-lg">
               <p className="text-xs text-gray-600 text-center">
                 Realiza una búsqueda para activar las opciones de visualización

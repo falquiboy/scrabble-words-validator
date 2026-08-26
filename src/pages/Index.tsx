@@ -7,6 +7,7 @@ import Lists from "@/components/Lists";
 import NewModuleSelector from "@/components/NewModuleSelector";
 import GlobalSettingsMenu from "@/components/GlobalSettingsMenu";
 import { useWordTrie } from "@/hooks/useWordTrie";
+import Residues from "@/components/Residues";
 import { LexiconContext, createLexiconContextValue } from '@/lexicon/LexiconContext';
 import { normalizeLexiconMode } from '@/lexicon/policy.mjs';
 import type { LexiconMode } from '@/lexicon/types';
@@ -36,29 +37,17 @@ const Index = () => {
 
   const handleModuleChange = useCallback((module: 'judge' | 'anagram' | 'lists' | 'residues' | 'training') => {
     setActiveModule(module);
-    if (module === 'residues') {
-      setAnagramView('residues');
-      setShowShorter(true);
-    } else if (module === 'anagram') {
-      setAnagramView((current) => current === 'residues' ? 'anagrams' : current);
-    }
   }, []);
 
   const handleAnagramViewChange = useCallback((view: AnagramResultView) => {
     setAnagramView(view);
-    if (view === 'residues') {
-      setShowShorter(true);
-      setActiveModule('residues');
-    } else {
-      setActiveModule((current) => current === 'residues' ? 'anagram' : current);
-    }
+    if (view === 'residues') setShowShorter(true);
   }, []);
 
   const handleShowShorterChange = useCallback((show: boolean) => {
     setShowShorter(show);
     if (!show) {
       setAnagramView((current) => current === 'residues' ? 'anagrams' : current);
-      setActiveModule((current) => current === 'residues' ? 'anagram' : current);
     }
   }, []);
   
@@ -202,7 +191,7 @@ const Index = () => {
                   isTrieReady={isTrieReady}
                   mode={lexiconMode}
                 />
-              ) : activeModule === 'anagram' || activeModule === 'residues' ? (
+              ) : activeModule === 'anagram' ? (
                 <Anagramador 
                   trie={trie}
                   showShorter={showShorter}
@@ -218,6 +207,8 @@ const Index = () => {
                 />
               ) : activeModule === 'lists' ? (
                 <Lists trie={trie} />
+              ) : activeModule === 'residues' ? (
+                <Residues trie={trie} />
               ) : (
                 null
               )}
