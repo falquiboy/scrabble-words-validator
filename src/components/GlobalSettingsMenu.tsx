@@ -167,6 +167,7 @@ const GlobalSettingsMenu: React.FC<GlobalSettingsMenuProps> = ({
   const renderModuleContent = () => {
     switch (activeModule) {
       case 'anagram':
+      case 'residues':
         return renderAnagramSettings();
       
       case 'judge':
@@ -180,7 +181,6 @@ const GlobalSettingsMenu: React.FC<GlobalSettingsMenuProps> = ({
         );
       
       case 'lists':
-      case 'residues':
       case 'training':
         return (
           <div className="py-8 text-center">
@@ -197,7 +197,7 @@ const GlobalSettingsMenu: React.FC<GlobalSettingsMenuProps> = ({
   };
 
   const renderStatusSection = () => {
-    if (activeModule !== 'anagram' || !anagramSettings?.hasActiveSearch) {
+    if ((activeModule !== 'anagram' && activeModule !== 'residues') || !anagramSettings?.hasActiveSearch) {
       return null;
     }
 
@@ -228,6 +228,7 @@ const GlobalSettingsMenu: React.FC<GlobalSettingsMenuProps> = ({
     switch (activeModule) {
       case 'judge': return 'Configuración - Juez';
       case 'anagram': return 'Configuración - Anagramas';
+      case 'residues': return 'Configuración - Residuos';
       case 'lists': return 'Configuración - Listas';
       default: return 'Configuración';
     }
@@ -302,7 +303,7 @@ const GlobalSettingsMenu: React.FC<GlobalSettingsMenuProps> = ({
             </div>
           </div>
 
-          {activeModule === 'anagram' && lexiconMode === 'hybrid' && (
+          {(activeModule === 'anagram' || activeModule === 'residues') && lexiconMode === 'hybrid' && (
             <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50">
               {renderToggle(
                 'Palabras nuevas primero',
@@ -320,7 +321,7 @@ const GlobalSettingsMenu: React.FC<GlobalSettingsMenuProps> = ({
           {renderModuleContent()}
 
           {/* Info Section for anagram module when no active search */}
-          {activeModule === 'anagram' && !anagramSettings?.hasActiveSearch && (
+          {(activeModule === 'anagram' || activeModule === 'residues') && !anagramSettings?.hasActiveSearch && (
             <div className="mt-8 p-4 bg-gray-50 rounded-lg">
               <p className="text-xs text-gray-600 text-center">
                 Realiza una búsqueda para activar las opciones de visualización

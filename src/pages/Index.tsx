@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import WordValidator from "@/components/WordValidator";
 import Anagramador from "@/components/Anagramador";
 import Lists from "@/components/Lists";
@@ -7,7 +7,6 @@ import Lists from "@/components/Lists";
 import NewModuleSelector from "@/components/NewModuleSelector";
 import GlobalSettingsMenu from "@/components/GlobalSettingsMenu";
 import { useWordTrie } from "@/hooks/useWordTrie";
-import Residues from "@/components/Residues";
 import { LexiconContext, createLexiconContextValue } from '@/lexicon/LexiconContext';
 import { normalizeLexiconMode } from '@/lexicon/policy.mjs';
 import type { LexiconMode } from '@/lexicon/types';
@@ -35,15 +34,33 @@ const Index = () => {
   const [anagramCopyAllCallback, setAnagramCopyAllCallback] = useState<(() => void) | undefined>(undefined);
   const [isPatternSearch, setIsPatternSearch] = useState(false);
 
-  const handleAnagramViewChange = (view: AnagramResultView) => {
-    setAnagramView(view);
-    if (view === 'residues') setShowShorter(true);
-  };
+  const handleModuleChange = useCallback((module: 'judge' | 'anagram' | 'lists' | 'residues' | 'training') => {
+    setActiveModule(module);
+    if (module === 'residues') {
+      setAnagramView('residues');
+      setShowShorter(true);
+    } else if (module === 'anagram') {
+      setAnagramView((current) => current === 'residues' ? 'anagrams' : current);
+    }
+  }, []);
 
-  const handleShowShorterChange = (show: boolean) => {
+  const handleAnagramViewChange = useCallback((view: AnagramResultView) => {
+    setAnagramView(view);
+    if (view === 'residues') {
+      setShowShorter(true);
+      setActiveModule('residues');
+    } else {
+      setActiveModule((current) => current === 'residues' ? 'anagram' : current);
+    }
+  }, []);
+
+  const handleShowShorterChange = useCallback((show: boolean) => {
     setShowShorter(show);
-    if (!show && anagramView === 'residues') setAnagramView('anagrams');
-  };
+    if (!show) {
+      setAnagramView((current) => current === 'residues' ? 'anagrams' : current);
+      setActiveModule((current) => current === 'residues' ? 'anagram' : current);
+    }
+  }, []);
   
   // Persistent anagram search state (survives tab navigation)
   const [persistentAnagramSearch, setPersistentAnagramSearch] = useState({
@@ -103,29 +120,23 @@ const Index = () => {
       // Verificar Ctrl + AvPág (Page Down)
       if (e.ctrlKey && e.key === 'PageDown') {
         e.preventDefault();
-        setActiveModule((current) => {
-          const currentIndex = moduleOrder.indexOf(current as typeof moduleOrder[number]);
-          if (currentIndex === -1) return current;
-          const nextIndex = (currentIndex + 1) % moduleOrder.length;
-          return moduleOrder[nextIndex];
-        });
+        const currentIndex = moduleOrder.indexOf(activeModule as typeof moduleOrder[number]);
+        if (currentIndex !== -1) handleModuleChange(moduleOrder[(currentIndex + 1) % moduleOrder.length]);
       }
       
       // Verificar Ctrl + RePág (Page Up)
       if (e.ctrlKey && e.key === 'PageUp') {
         e.preventDefault();
-        setActiveModule((current) => {
-          const currentIndex = moduleOrder.indexOf(current as typeof moduleOrder[number]);
-          if (currentIndex === -1) return current;
-          const previousIndex = (currentIndex - 1 + moduleOrder.length) % moduleOrder.length;
-          return moduleOrder[previousIndex];
-        });
+        const currentIndex = moduleOrder.indexOf(activeModule as typeof moduleOrder[number]);
+        if (currentIndex !== -1) {
+          handleModuleChange(moduleOrder[(currentIndex - 1 + moduleOrder.length) % moduleOrder.length]);
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showTraining]);
+  }, [activeModule, handleModuleChange, showTraining]);
 
   return (
     <LexiconContext.Provider value={lexiconContext}>
@@ -135,7 +146,7 @@ const Index = () => {
     >
       <NewModuleSelector 
         activeModule={activeModule} 
-        onModuleChange={setActiveModule}
+        onModuleChange={handleModuleChange}
       />
       <GlobalSettingsMenu 
         activeModule={activeModule}
@@ -191,7 +202,7 @@ const Index = () => {
                   isTrieReady={isTrieReady}
                   mode={lexiconMode}
                 />
-              ) : activeModule === 'anagram' ? (
+              ) : activeModule === 'anagram' || activeModule === 'residues' ? (
                 <Anagramador 
                   trie={trie}
                   showShorter={showShorter}
@@ -207,8 +218,6 @@ const Index = () => {
                 />
               ) : activeModule === 'lists' ? (
                 <Lists trie={trie} />
-              ) : activeModule === 'residues' ? (
-                <Residues trie={trie} />
               ) : (
                 null
               )}
