@@ -4,7 +4,7 @@ import ResultsList from "./anagramador/ResultsList";
 import { useHybridAnagramSearch } from "@/hooks/useHybridAnagramSearch";
 import { highlightWildcardLetter } from "@/utils/wildcardHighlighting";
 import { useToast } from "@/hooks/use-toast";
-import { toDisplayFormat } from "@/utils/digraphs";
+import { getInternalLength, toDisplayFormat } from "@/utils/digraphs";
 import type { WordSearchService } from '@/lexicon/types';
 import { useLexicon } from '@/lexicon/LexiconContext';
 import { isPatternQuery, parseUserQuery } from "@/utils/queryLanguage.mjs";
@@ -97,7 +97,16 @@ const Anagramador = ({
   }, [error, toast]);
 
   const handleSearch = (letters: string, newTargetLength: number | null) => {
-    if (letters !== searchTerm && view !== 'residues') {
+    const query = parseUserQuery(letters);
+    const requestsShorterLength = query.kind === 'anagram'
+      && newTargetLength !== null
+      && newTargetLength < getInternalLength(query.letters);
+
+    if (requestsShorterLength) {
+      // A pool followed by a shorter target (for example, unseen tiles + :7)
+      // explicitly asks for subanagrams, so no settings detour is necessary.
+      onShowShorterChange(true);
+    } else if (letters !== searchTerm && view !== 'residues') {
       onShowShorterChange(false);
     }
     

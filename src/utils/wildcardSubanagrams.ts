@@ -70,11 +70,15 @@ export const usesRealValuableTile = (word: string, rack: string): boolean => {
   return false;
 };
 
+export const requiresValuableTileForWildcardSubanagrams = (rack: string): boolean =>
+  getWildcardRackProfile(rack).totalTileCount <= 7;
+
 export const partitionShorterWordsWithWildcards = (
   words: readonly string[],
   rack: string,
 ): ShorterWildcardGroups => {
   const profile = getWildcardRackProfile(rack);
+  const requiresValuableTile = requiresValuableTileForWildcardSubanagrams(rack);
   const relevantWithWildcard: string[] = [];
   const withoutWildcard: string[] = [];
 
@@ -82,7 +86,10 @@ export const partitionShorterWordsWithWildcards = (
     const requiredWildcards = countRequiredWildcards(word, profile.realTiles);
     if (requiredWildcards === 0) {
       withoutWildcard.push(word);
-    } else if (requiredWildcards === 1 && usesRealValuableTile(word, rack)) {
+    } else if (
+      requiredWildcards === 1 &&
+      (!requiresValuableTile || usesRealValuableTile(word, rack))
+    ) {
       relevantWithWildcard.push(word);
     }
   }

@@ -10,6 +10,7 @@ import { SearchResults } from "./anagramSearch/types";
 import { sortWordsByAddedLetter } from "@/utils/additionalLetterSort";
 import { parseUserQuery } from "@/utils/queryLanguage.mjs";
 import { partitionShorterWordsWithWildcards } from '@/utils/wildcardSubanagrams';
+import { getInternalLength } from '@/utils/digraphs';
 // UserActivityContext removed - simplified approach
 
 export const useHybridAnagramSearch = (
@@ -134,7 +135,24 @@ export const useHybridAnagramSearch = (
                 shorterMatches: [],
                 patternMatches: []
               };
-          setResults(wildcardFullResults);
+          const displayedWildcardResults = effectiveTargetLength === null
+            ? wildcardFullResults
+            : {
+                exactMatches: wildcardFullResults.exactMatches.filter(
+                  word => getInternalLength(word) === effectiveTargetLength
+                ),
+                wildcardMatches: wildcardFullResults.wildcardMatches.filter(
+                  word => getInternalLength(word) === effectiveTargetLength
+                ),
+                additionalWildcardMatches: wildcardFullResults.additionalWildcardMatches.filter(
+                  word => getInternalLength(word) === effectiveTargetLength
+                ),
+                shorterMatches: wildcardFullResults.shorterMatches.filter(
+                  word => getInternalLength(word) === effectiveTargetLength
+                ),
+                patternMatches: []
+              };
+          setResults(displayedWildcardResults);
           console.log('✅ Setting loading to FALSE (wildcard search)');
           setIsLoading(false);
 
@@ -255,11 +273,11 @@ export const useHybridAnagramSearch = (
           // Filter by target length if specified (ANTES de setIsLoading)
           if (effectiveTargetLength !== null) {
             setResults(prev => ({
-              exactMatches: prev.exactMatches.filter(word => word.length === effectiveTargetLength),
-              wildcardMatches: prev.wildcardMatches.filter(word => word.length === effectiveTargetLength),
-              additionalWildcardMatches: prev.additionalWildcardMatches.filter(word => word.length === effectiveTargetLength),
-              shorterMatches: [], // Clear shorter when filtering by specific length
-              patternMatches: prev.patternMatches.filter(word => word.length === effectiveTargetLength)
+              exactMatches: prev.exactMatches.filter(word => getInternalLength(word) === effectiveTargetLength),
+              wildcardMatches: prev.wildcardMatches.filter(word => getInternalLength(word) === effectiveTargetLength),
+              additionalWildcardMatches: prev.additionalWildcardMatches.filter(word => getInternalLength(word) === effectiveTargetLength),
+              shorterMatches: prev.shorterMatches.filter(word => getInternalLength(word) === effectiveTargetLength),
+              patternMatches: prev.patternMatches.filter(word => getInternalLength(word) === effectiveTargetLength)
             }));
           }
           

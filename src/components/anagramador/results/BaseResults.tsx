@@ -84,6 +84,15 @@ const WordWithEquity: React.FC<{
 
   useEffect(() => {
     const calculateEquity = async () => {
+      // La lista simple sólo muestra palabras. Equity y residuo pertenecen a
+      // su vista exclusiva y no deben calcularse ni filtrarse por el título.
+      if (!showResidue) {
+        setEquity(baseScore);
+        setResidue('');
+        setIsCalculating(false);
+        return;
+      }
+
       // Early return if search term contains pattern characters
       if (searchTerm && isPatternQuery(searchTerm)) {
         setEquity(baseScore);
@@ -367,7 +376,7 @@ export const BaseResults = ({
                 highlightWildcardLetter={highlightWildcardLetter}
                 index={index}
                 length={length}
-                showResidue={searchInfo.shouldShowEquityAndResidue} // Show residue only for anagrams and patterns with rack
+                showResidue={searchInfo.shouldShowEquityAndResidue}
               />
             );
           })}
@@ -550,7 +559,7 @@ export const BaseResults = ({
                       highlightWildcardLetter={highlightWildcardLetter}
                       index={index}
                       length={length}
-                      showResidue={searchInfo.shouldShowEquityAndResidue}
+                      showResidue={(sortByEquity || unifiedEquityView) && searchInfo.shouldShowEquityAndResidue}
                     />
                   );
                 })}

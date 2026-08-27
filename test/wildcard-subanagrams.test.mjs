@@ -6,6 +6,7 @@ import {
   getWildcardRackProfile,
   isAllowedShorterWordWithWildcards,
   partitionShorterWordsWithWildcards,
+  requiresValuableTileForWildcardSubanagrams,
   sortRelevantWildcardSubanagrams,
   sortWordsByFirstWildcardTile,
   usesRealValuableTile,
@@ -60,6 +61,39 @@ test('groups relevant one-blank plays before every no-blank subanagram', () => {
       withoutWildcard: ['AB'],
     },
   );
+});
+
+test('letter pools over seven tiles may use one blank without a valuable real tile', () => {
+  assert.deepEqual(
+    partitionShorterWordsWithWildcards(['AGUA', 'GUSTA'], 'ASSNTUGGN?'),
+    {
+      relevantWithWildcard: ['AGUA'],
+      withoutWildcard: ['GUSTA'],
+    },
+  );
+  assert.deepEqual(
+    partitionShorterWordsWithWildcards(['AGUA', 'GUSTA'], 'ASNTUG?'),
+    {
+      relevantWithWildcard: [],
+      withoutWildcard: ['GUSTA'],
+    },
+  );
+});
+
+test('unseen-tile inventory includes TANGUES as a possible seven-tile opponent rack', () => {
+  assert.deepEqual(
+    partitionShorterWordsWithWildcards(['TANGUES'], 'ASSNTUGGN?'),
+    {
+      relevantWithWildcard: ['TANGUES'],
+      withoutWildcard: [],
+    },
+  );
+  assert.equal(countRequiredWildcards('TANGUES', 'ASSNTUGGN'), 1);
+});
+
+test('digraphs count as one tile when applying the seven-tile threshold', () => {
+  assert.equal(requiresValuableTileForWildcardSubanagrams('CHAAAAA?'), true);
+  assert.equal(requiresValuableTileForWildcardSubanagrams('CHAAAAAA?'), false);
 });
 
 test('orders relevant plays by wildcard tile and then by the remaining word', () => {
