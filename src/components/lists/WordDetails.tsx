@@ -78,7 +78,7 @@ const WordDetails: React.FC<WordDetailsProps> = ({ wordInfo, onWordClick }) => {
 
       {/* Helper text */}
       <div className="text-xs text-gray-500 border-t pt-2">
-        💡 Haz clic en cualquier palabra para ver su definición en el DLE
+        💡 Haz clic en cualquier palabra para consultar su fuente lexicográfica
       </div>
     </div>
   );

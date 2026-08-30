@@ -11,6 +11,7 @@ import {
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { highlightWildcardLetter } from "@/utils/wildcardHighlighting";
 import LexiconBadge from '@/components/LexiconBadge';
+import LexiconSourceLink from '@/components/LexiconSourceLink';
 import { isPatternQuery, parseUserQuery } from '@/utils/queryLanguage.mjs';
 
 const LARGE_GROUP_BATCH_SIZE = 500;
@@ -156,16 +157,14 @@ const WordWithEquity: React.FC<{
             {isCalculating ? '...' : equity || baseScore}
           </span>
         )}
-        <a
-          href={`https://dle.rae.es/?w=${displayWord}`}
-          target="_blank"
-          rel="noopener noreferrer"
+        <LexiconSourceLink
+          word={word}
           className="hover:text-blue-600 transition-colors"
         >
           {highlightWildcardLetter && searchTerm 
             ? highlightWildcardLetter(displayWord, searchTerm)
             : displayWord}
-        </a>
+        </LexiconSourceLink>
         <LexiconBadge word={word} />
         {showResidue && (
           <span className={`text-sm ${isSubanagram && equity !== baseScore ? 'text-green-600 font-medium' : 'text-gray-500'}`}>
@@ -496,16 +495,14 @@ export const BaseResults = ({
                         <span className="text-sm font-medium text-green-700 min-w-[60px]">
                           {lengthNum} {lengthNum === 1 ? 'letra' : 'letras'}:
                         </span>
-                        <a
-                          href={`https://dle.rae.es/?w=${displayWord}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        <LexiconSourceLink
+                          word={word}
                           className="font-medium text-green-900 hover:text-green-600 transition-colors flex-grow"
                         >
                           {highlightWildcardLetter && searchTerm
                             ? highlightWildcardLetter(displayWord, searchTerm)
                             : displayWord}
-                        </a>
+                        </LexiconSourceLink>
                         <LexiconBadge word={word} />
                         <span className="text-sm text-green-700">
                           ({residue})

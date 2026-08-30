@@ -26,6 +26,6 @@ export const createLexiconContextValue = (
 ): LexiconContextValue => ({
   mode,
   newWordsFirst,
-  membership: (word) => mode === 'hybrid' ? lexiconCatalog.membership(word) : 'shared',
+  membership: (word) => lexiconCatalog.membership(word, mode),
   sortWords: (words) => lexiconCatalog.sort(words, mode, newWordsFirst),
 });

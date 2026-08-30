@@ -2,6 +2,7 @@ import React from 'react';
 import { AnagramWordInfo } from '@/utils/anagramWordData';
 import VerbWordView from './VerbWordView';
 import LexiconBadge from '@/components/LexiconBadge';
+import LexiconSourceLink from '@/components/LexiconSourceLink';
 import { useLexicon } from '@/lexicon/LexiconContext';
 
 interface ExtendedWordViewProps {
@@ -18,11 +19,9 @@ const ExtendedWordView: React.FC<ExtendedWordViewProps> = ({
   highlightedWord
 }) => {
   const { mode, membership } = useLexicon();
-  const isNew2027 = mode === 'hybrid' && membership(word) === 'new-2027';
-  const handleRAEClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    window.open(`https://dle.rae.es/${word.toLowerCase()}`, '_blank');
-  };
+  const wordMembership = membership(word);
+  const isNew2027 = mode === 'hybrid' && wordMembership === 'new-2027';
+  const isNewDem = mode === 'dem' && wordMembership === 'new-dem';
 
   const getWordTypeColor = (type?: string) => {
     switch (type) {
@@ -163,9 +162,10 @@ const ExtendedWordView: React.FC<ExtendedWordViewProps> = ({
     <div className="bg-white border rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow">
       {/* Clickable word */}
       <div className="mb-2 flex items-center gap-2">
-        <span 
-          onClick={handleRAEClick}
+        <LexiconSourceLink
+          word={word}
           className="font-medium text-lg cursor-pointer hover:text-blue-600 transition-colors"
+          onClick={(event) => event.stopPropagation()}
         >
           {highlightedWord || word}
           {wordInfo?.wordType && (
@@ -173,7 +173,7 @@ const ExtendedWordView: React.FC<ExtendedWordViewProps> = ({
               ({getWordTypeLabel(wordInfo.wordType, wordInfo.lemma, wordInfo.partOfSpeech)})
             </span>
           )}
-        </span>
+        </LexiconSourceLink>
         <LexiconBadge word={word} />
       </div>
 
@@ -198,6 +198,11 @@ const ExtendedWordView: React.FC<ExtendedWordViewProps> = ({
       ) : null}
       {isNew2027 && !wordInfo?.shortDefinition && (
         <div className="mt-2 text-xs italic text-amber-700">Definición muy pronto</div>
+      )}
+      {isNewDem && !wordInfo?.shortDefinition && (
+        <div className="mt-2 text-xs italic text-rose-700">
+          Información lexicográfica local pendiente · consulta disponible en el DEM
+        </div>
       )}
     </div>
   );

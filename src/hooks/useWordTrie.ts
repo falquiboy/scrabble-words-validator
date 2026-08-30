@@ -15,6 +15,7 @@ export const useWordTrie = (
   enableUltraFastMode: boolean = false,
   mode: LexiconMode = '2017'
 ) => {
+  const modeNeedsCatalog = mode === 'hybrid' || mode === 'dem';
   const release = releaseForMode(mode);
   const { hybridService, isTrieReady, trieProgress, status, error } =
     useBackgroundTrie(enableUltraFastMode, release);
@@ -22,17 +23,17 @@ export const useWordTrie = (
     mode: LexiconMode;
     status: 'ready' | 'loading' | 'error';
     error: string | null;
-  }>({ mode, status: mode === '2017' ? 'ready' : 'loading', error: null });
+  }>({ mode, status: modeNeedsCatalog ? 'loading' : 'ready', error: null });
 
   useEffect(() => {
-    if (mode === '2017') {
+    if (!modeNeedsCatalog) {
       setCatalogState({ mode, status: 'ready', error: null });
       return;
     }
 
     let cancelled = false;
     setCatalogState({ mode, status: 'loading', error: null });
-    void lexiconCatalog.load().then(() => {
+    void lexiconCatalog.load(mode).then(() => {
       if (!cancelled) setCatalogState({ mode, status: 'ready', error: null });
     }).catch((catalogError) => {
       if (!cancelled) {
@@ -44,7 +45,7 @@ export const useWordTrie = (
       }
     });
     return () => { cancelled = true; };
-  }, [mode]);
+  }, [mode, modeNeedsCatalog]);
 
   const catalogReady = catalogState.mode === mode && catalogState.status === 'ready';
   const searchService = useMemo<WordSearchService>(() => {

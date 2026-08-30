@@ -303,17 +303,20 @@ const GlobalSettingsMenu: React.FC<GlobalSettingsMenuProps> = ({
             </div>
           </div>
 
-          {activeModule === 'anagram' && lexiconMode === 'hybrid' && (
+          {(activeModule === 'anagram' || activeModule === 'lists') &&
+            (lexiconMode === 'hybrid' || lexiconMode === 'dem') && (
             <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50">
               {renderToggle(
-                'Palabras nuevas primero',
+                lexiconMode === 'dem' ? 'Aportaciones DEM primero' : 'Novedades 2027 primero',
                 newWordsFirst,
                 onNewWordsFirstChange,
                 <ArrowUp size={16} className="text-amber-600" />,
-                !anagramSettings?.hasActiveSearch
+                activeModule === 'anagram' && !anagramSettings?.hasActiveSearch
               )}
               <p className="px-4 pb-3 text-xs text-amber-800">
-                Agrupa primero las voces nuevas; cada grupo conserva el orden alfabético tradicional.
+                {lexiconMode === 'dem'
+                  ? 'Agrupa primero las grafías aportadas por el DEM; cada grupo conserva el orden alfabético tradicional.'
+                  : 'Agrupa primero las voces nuevas; cada grupo conserva el orden alfabético tradicional.'}
               </p>
             </div>
           )}

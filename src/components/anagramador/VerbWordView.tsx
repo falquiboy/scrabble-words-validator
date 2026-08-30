@@ -1,6 +1,7 @@
 import React from 'react';
 import { AnagramWordInfo } from '@/utils/anagramWordData';
 import { getVerbForms, getVerbTypeLabel, getRegularityLabel, VerbForms } from '@/utils/verbData';
+import LexiconSourceLink from '@/components/LexiconSourceLink';
 
 interface VerbWordViewProps {
   word: string;
@@ -13,11 +14,6 @@ const VerbWordView: React.FC<VerbWordViewProps> = ({
   wordInfo,
   highlightedWord
 }) => {
-  const handleRAEClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    window.open(`https://dle.rae.es/${word.toLowerCase()}`, '_blank');
-  };
-
   const formatLemmaWithSuperscript = (lemma: string) => {
     // Check if lemma ends with a digit for homonymy
     const match = lemma.match(/^(.+?)(\d+)$/);
@@ -82,15 +78,16 @@ const VerbWordView: React.FC<VerbWordViewProps> = ({
     <div className="bg-white border rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow">
       {/* Clickable word with verb info */}
       <div className="mb-3">
-        <span 
-          onClick={handleRAEClick}
+        <LexiconSourceLink
+          word={word}
           className="font-medium text-lg cursor-pointer hover:text-blue-600 transition-colors"
+          onClick={(event) => event.stopPropagation()}
         >
           {highlightedWord || word}
           <span className="text-sm font-normal text-blue-600 ml-1">
             ({wordInfo.wordType === 'conjugación' ? 'conjug.' : wordInfo.wordType} de <strong>"{formatLemmaWithSuperscript(wordInfo.lemma || verbInfo.norm_lemma)}"</strong>, <span className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${getVerbTypeColor(verbTypeLabel)}`}>verbo {verbTypeLabel}</span>, {regularityLabel})
           </span>
-        </span>
+        </LexiconSourceLink>
       </div>
 
       {/* Verb definition */}

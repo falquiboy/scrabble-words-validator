@@ -4,6 +4,7 @@ import { toDisplayFormat, processDigraphs } from "@/utils/digraphs";
 import { HookInfo, processHooks } from '@/utils/hooksData';
 import { highlightWildcardLetter } from "@/utils/wildcardHighlighting";
 import LexiconBadge from '@/components/LexiconBadge';
+import LexiconSourceLink from '@/components/LexiconSourceLink';
 import { isPatternQuery } from '@/utils/queryLanguage.mjs';
 import { compareSpanishWords } from '@/lexicon/policy.mjs';
 
@@ -139,24 +140,20 @@ const HooksView: React.FC<HooksViewProps> = ({
       ? enhanceWithHookColors(baseHighlighted as React.ReactElement)
       : baseHighlighted;
 
-    const handleRAEClick = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      window.open(`https://dle.rae.es/${displayWord.toLowerCase()}`, '_blank');
-    };
-
     if (!hookInfo || (!hookInfo.hasExternalHooks && !hookInfo.hasInternalHooks)) {
       // No hooks available - use normal color, not gray
       return (
         <div className="grid grid-cols-3 items-center py-1.5 px-3">
           <div></div>
           <div className="text-center">
-            <span 
+            <LexiconSourceLink
+              word={word}
               className="text-lg cursor-pointer hover:text-blue-600 transition-colors"
-              onClick={handleRAEClick}
+              onClick={(event) => event.stopPropagation()}
             >
               {highlighted}
               <LexiconBadge word={word} className="ml-1" />
-            </span>
+            </LexiconSourceLink>
           </div>
           <div></div>
         </div>
@@ -175,13 +172,14 @@ const HooksView: React.FC<HooksViewProps> = ({
 
         {/* Center: The word itself with integrated internal indicators */}
         <div className="text-center">
-          <span 
+          <LexiconSourceLink
+            word={word}
             className="font-semibold text-lg cursor-pointer hover:text-blue-600 transition-colors inline-flex items-center"
-            onClick={handleRAEClick}
+            onClick={(event) => event.stopPropagation()}
           >
             {highlighted}
             <LexiconBadge word={word} className="ml-1" />
-          </span>
+          </LexiconSourceLink>
         </div>
 
         {/* Right side: External hooks */}

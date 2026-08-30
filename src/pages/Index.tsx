@@ -18,15 +18,30 @@ const readStoredMode = (): LexiconMode => {
   catch { return '2017'; }
 };
 
+const readStoredNewWordsFirst = (): Record<'dem' | 'hybrid', boolean> => {
+  try {
+    return {
+      dem: localStorage.getItem('maslexico:new-words-first:dem') === 'true',
+      hybrid: localStorage.getItem('maslexico:new-words-first') === 'true',
+    };
+  } catch {
+    return { dem: false, hybrid: false };
+  }
+};
+
 const Index = () => {
   const [activeModule, setActiveModule] = useState<'judge' | 'anagram' | 'lists' | 'residues' | 'training'>('judge');
   const [showTraining, setShowTraining] = useState(false);
   const [enableUltraFastMode] = useState(true);
   const [lexiconMode, setLexiconMode] = useState<LexiconMode>(readStoredMode);
-  const [newWordsFirst, setNewWordsFirst] = useState(() => {
-    try { return localStorage.getItem('maslexico:new-words-first') === 'true'; }
-    catch { return false; }
-  });
+  const [newWordsFirstByMode, setNewWordsFirstByMode] = useState(readStoredNewWordsFirst);
+  const newWordsFirst = lexiconMode === 'dem' || lexiconMode === 'hybrid'
+    ? newWordsFirstByMode[lexiconMode]
+    : false;
+  const setNewWordsFirst = useCallback((value: boolean) => {
+    if (lexiconMode !== 'dem' && lexiconMode !== 'hybrid') return;
+    setNewWordsFirstByMode((current) => ({ ...current, [lexiconMode]: value }));
+  }, [lexiconMode]);
   
   // States for anagram settings (lifted up from Anagramador)
   const [showShorter, setShowShorter] = useState(false);
@@ -78,8 +93,11 @@ const Index = () => {
   }, [lexiconMode]);
 
   useEffect(() => {
-    try { localStorage.setItem('maslexico:new-words-first', String(newWordsFirst)); } catch { /* optional */ }
-  }, [newWordsFirst]);
+    try {
+      localStorage.setItem('maslexico:new-words-first:dem', String(newWordsFirstByMode.dem));
+      localStorage.setItem('maslexico:new-words-first', String(newWordsFirstByMode.hybrid));
+    } catch { /* optional */ }
+  }, [newWordsFirstByMode]);
   
   // Only SQLite startup blocks the controls; Trie promotion stays in background.
   const isDictionaryLoading = isTrieLoading;

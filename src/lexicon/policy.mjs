@@ -1,8 +1,10 @@
 export const LEXICON_MODE_2017 = '2017';
+export const LEXICON_MODE_DEM = 'dem';
 export const LEXICON_MODE_HYBRID = 'hybrid';
 export const LEXICON_MODE_2027 = '2027';
 export const LEXICON_MODES = Object.freeze([
   LEXICON_MODE_2017,
+  LEXICON_MODE_DEM,
   LEXICON_MODE_HYBRID,
   LEXICON_MODE_2027,
 ]);
@@ -86,7 +88,8 @@ export function normalizeLexiconMode(value) {
 }
 
 export function primaryReleaseForMode(mode) {
-  return normalizeLexiconMode(mode) === LEXICON_MODE_2017 ? '2017' : '2027';
+  const normalized = normalizeLexiconMode(mode);
+  return normalized === LEXICON_MODE_HYBRID ? '2027' : normalized;
 }
 
 export function mergeUniqueWords(primary, additions) {
@@ -108,4 +111,8 @@ export function classifyDeltaWord(word, newWords, legacyWords) {
   if (newWords.has(word)) return 'new-2027';
   if (legacyWords.has(word)) return 'only-2017';
   return 'shared';
+}
+
+export function classifyDemWord(word, demWords) {
+  return demWords.has(word) ? 'new-dem' : 'shared';
 }

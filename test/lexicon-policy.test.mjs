@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   classifyDeltaWord,
+  classifyDemWord,
   compareSpanishWords,
   mergeUniqueWords,
   normalizeLexiconMode,
@@ -13,7 +14,9 @@ import {
 test('unknown stored modes safely fall back to 2017', () => {
   assert.equal(normalizeLexiconMode('future'), '2017');
   assert.equal(normalizeLexiconMode('hybrid'), 'hybrid');
+  assert.equal(normalizeLexiconMode('dem'), 'dem');
   assert.equal(primaryReleaseForMode('2017'), '2017');
+  assert.equal(primaryReleaseForMode('dem'), 'dem');
   assert.equal(primaryReleaseForMode('hybrid'), '2027');
   assert.equal(primaryReleaseForMode('2027'), '2027');
 });
@@ -46,4 +49,9 @@ test('delta membership distinguishes both releases', () => {
   assert.equal(classifyDeltaWord('ABASIDA', new Set(['ABASIDA']), new Set()), 'new-2027');
   assert.equal(classifyDeltaWord('VIEJA', new Set(), new Set(['VIEJA'])), 'only-2017');
   assert.equal(classifyDeltaWord('CASA', new Set(), new Set()), 'shared');
+});
+
+test('DEM membership distinguishes its additions from the FILE2017 base', () => {
+  assert.equal(classifyDemWord('ÇONÇO', new Set(['ÇONÇO'])), 'new-dem');
+  assert.equal(classifyDemWord('CASA', new Set(['ÇONÇO'])), 'shared');
 });

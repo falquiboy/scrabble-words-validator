@@ -1,6 +1,6 @@
-export type LexiconMode = '2017' | 'hybrid' | '2027';
-export type LexiconReleaseKey = '2017' | '2027';
-export type LexiconMembership = 'shared' | 'new-2027' | 'only-2017';
+export type LexiconMode = '2017' | 'dem' | 'hybrid' | '2027';
+export type LexiconReleaseKey = '2017' | 'dem' | '2027';
+export type LexiconMembership = 'shared' | 'new-dem' | 'new-2027' | 'only-2017';
 
 export interface WordSearchResultSet {
   exactMatches: string[];

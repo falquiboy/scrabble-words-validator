@@ -37,6 +37,9 @@ const ValidationResult = ({
   
   const wordClass = (index: number, currentWord: string) => {
     if (!result.wordStatuses?.[index]) return 'bg-scrabble-invalid text-white';
+    if (mode === 'dem' && membership(currentWord) === 'new-dem') {
+      return 'border border-rose-400 bg-rose-100 text-rose-950';
+    }
     if (mode === 'hybrid' && membership(currentWord) === 'new-2027') {
       return 'border border-amber-400 bg-amber-100 text-amber-950';
     }

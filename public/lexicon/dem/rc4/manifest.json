@@ -1,0 +1,133 @@
+{
+  "version": 2,
+  "format": "sqlite-length-shards",
+  "releaseId": "lexicon-dle23-dem-femelex-rc4",
+  "publicLabel": "DLE + DEM",
+  "wordCount": 659883,
+  "totalCompressedBytes": 11528212,
+  "totalSqliteBytes": 34508800,
+  "source": {
+    "filename": "FILE2017-DEM-FEMELEX-RC4.txt",
+    "bytes": 7545591,
+    "sha256": "fb726669d6fc91c0aa851de401a1075a85166da730214c9427483ed3af3bda46"
+  },
+  "companionKwg": {
+    "filename": "FILE2017-DEM-FEMELEX-RC4.kwg",
+    "bytes": 4506184,
+    "sha256": "200fd8a693b177abbdec2893ea91857fd7b366d2b77ede94f96c17aad1090efb"
+  },
+  "baseline": {
+    "releaseId": "lexicon-dle23-fise2016",
+    "wordCount": 639293
+  },
+  "deltaFrom2017": {
+    "additions": {
+      "url": "/lexicon/dem/rc4/new-words.json",
+      "count": 20590,
+      "sha256": "85471e8e6b5b648a09556db169e24da237109513399ecb52c53d4ed9fba67dd4"
+    },
+    "removals": {
+      "count": 0
+    }
+  },
+  "lengths": {
+    "2": {
+      "url": "/lexicon/dem/rc4/length-2.dbpack",
+      "wordCount": 98,
+      "compressedBytes": 1647,
+      "sqliteBytes": 16384,
+      "sha256": "e67e06ce64468c728f48d221333aef370ce73e7ce6761bf377493d3b2bed20b8"
+    },
+    "3": {
+      "url": "/lexicon/dem/rc4/length-3.dbpack",
+      "wordCount": 586,
+      "compressedBytes": 10534,
+      "sqliteBytes": 36864,
+      "sha256": "114199672c6acadb196e58f05b634b9630de02a51f437b5cae32e396b67af214"
+    },
+    "4": {
+      "url": "/lexicon/dem/rc4/length-4.dbpack",
+      "wordCount": 3629,
+      "compressedBytes": 54129,
+      "sqliteBytes": 135168,
+      "sha256": "abf0a131a3f24a61296cb879c19fb561ad38206ea36e0bf1a8228337361d2104"
+    },
+    "5": {
+      "url": "/lexicon/dem/rc4/length-5.dbpack",
+      "wordCount": 12588,
+      "compressedBytes": 186388,
+      "sqliteBytes": 458752,
+      "sha256": "234dffb95891ab9b4bcc005425270ac39269579a572587cf2fec66e90ff584c9"
+    },
+    "6": {
+      "url": "/lexicon/dem/rc4/length-6.dbpack",
+      "wordCount": 28882,
+      "compressedBytes": 442667,
+      "sqliteBytes": 1130496,
+      "sha256": "621554fe97842ee7c1e654bcf01fd99961607a49715081731ce43f190081c022"
+    },
+    "7": {
+      "url": "/lexicon/dem/rc4/length-7.dbpack",
+      "wordCount": 54535,
+      "compressedBytes": 886248,
+      "sqliteBytes": 2351104,
+      "sha256": "599105b8822c51bcd14890961a573ef631f0cd796d1f0cd627470f8de25cedc1"
+    },
+    "8": {
+      "url": "/lexicon/dem/rc4/length-8.dbpack",
+      "wordCount": 80446,
+      "compressedBytes": 1343072,
+      "sqliteBytes": 3723264,
+      "sha256": "7c26c1e1b38aafcf79c5bfd00d49fe1fa0e923a14e04a31c8f018d7e64d3b87f"
+    },
+    "9": {
+      "url": "/lexicon/dem/rc4/length-9.dbpack",
+      "wordCount": 101493,
+      "compressedBytes": 1723161,
+      "sqliteBytes": 5001216,
+      "sha256": "9e3c6e7bbd0c2f69fbab71d5c0b3161135386c14f05c4e61ac7d02ac59a20e78"
+    },
+    "10": {
+      "url": "/lexicon/dem/rc4/length-10.dbpack",
+      "wordCount": 108403,
+      "compressedBytes": 1906922,
+      "sqliteBytes": 5701632,
+      "sha256": "d2387bb411f88a105483f4fe014cff1c8620b621db1a6fb740bbba4f83c329a9"
+    },
+    "11": {
+      "url": "/lexicon/dem/rc4/length-11.dbpack",
+      "wordCount": 96886,
+      "compressedBytes": 1730308,
+      "sqliteBytes": 5394432,
+      "sha256": "5173ab99caf2f1c48c4d01e9008d511884ff01477eac691cda431942a3435028"
+    },
+    "12": {
+      "url": "/lexicon/dem/rc4/length-12.dbpack",
+      "wordCount": 75338,
+      "compressedBytes": 1390688,
+      "sqliteBytes": 4423680,
+      "sha256": "2551c70491cacef6d087f8cd63c4d33616a0e5f07a3a6bfd7c119f8c3cc585c8"
+    },
+    "13": {
+      "url": "/lexicon/dem/rc4/length-13.dbpack",
+      "wordCount": 51289,
+      "compressedBytes": 963659,
+      "sqliteBytes": 3145728,
+      "sha256": "da7798d90a09d2e43ad26f9de614a73aee27ec2e1266d828f99243b0e5abfb5a"
+    },
+    "14": {
+      "url": "/lexicon/dem/rc4/length-14.dbpack",
+      "wordCount": 30090,
+      "compressedBytes": 580840,
+      "sqliteBytes": 1941504,
+      "sha256": "40ebde13a3078516cc6d4607e53c9dcffaaff99388a53012c088891b44bd02df"
+    },
+    "15": {
+      "url": "/lexicon/dem/rc4/length-15.dbpack",
+      "wordCount": 15620,
+      "compressedBytes": 307949,
+      "sqliteBytes": 1048576,
+      "sha256": "590c8f7029c056646dd5d2fdf67a49a312ee7f82be4dbd3f4f4b6a619b399ba6"
+    }
+  }
+}

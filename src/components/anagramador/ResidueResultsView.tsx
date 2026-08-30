@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight, Loader } from 'lucide-react';
 import LexiconBadge from '@/components/LexiconBadge';
+import LexiconSourceLink from '@/components/LexiconSourceLink';
 import { getInternalLength, toDisplayFormat } from '@/utils/digraphs';
 import { calculateWordScore } from '@/utils/scrabbleScore';
 import {
@@ -182,14 +183,12 @@ const ResidueResultsView: React.FC<ResidueResultsViewProps> = ({
                   {grouped[length].map((row) => (
                     <div key={`${id}:${row.word}`} className="flex items-center justify-between gap-3 px-3 py-2">
                       <div className="min-w-0 text-lg">
-                        <a
-                          href={`https://dle.rae.es/?w=${row.displayWord}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        <LexiconSourceLink
+                          word={row.word}
                           className="hover:text-blue-600"
                         >
                           {highlightWildcardLetter(row.displayWord, searchTerm)}
-                        </a>
+                        </LexiconSourceLink>
                         <LexiconBadge word={row.word} className="ml-1" />
                       </div>
                       <div className="shrink-0 text-right text-xs text-gray-500">

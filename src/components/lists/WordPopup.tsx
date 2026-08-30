@@ -1,5 +1,7 @@
 import React from 'react';
 import { X, ExternalLink } from 'lucide-react';
+import { useLexicon } from '@/lexicon/LexiconContext';
+import { sourceLinkForWord } from '@/lexicon/sourceLinks';
 
 interface WordData {
   word: string;
@@ -22,6 +24,10 @@ interface WordPopupProps {
 }
 
 const WordPopup: React.FC<WordPopupProps> = ({ wordData, isOpen, onClose }) => {
+  const { mode, membership } = useLexicon();
+  const lexiconSource = wordData
+    ? sourceLinkForWord(wordData.word, mode, membership(wordData.word))
+    : null;
   if (!isOpen) return null;
 
   // Process definition to create a shorter version
@@ -43,8 +49,8 @@ const WordPopup: React.FC<WordPopupProps> = ({ wordData, isOpen, onClose }) => {
     return result.trim();
   };
 
-  const handleRAEClick = () => {
-    window.open(`https://dle.rae.es/${wordData.word.toLowerCase()}`, '_blank');
+  const handleSourceClick = () => {
+    if (lexiconSource) window.open(lexiconSource.url, '_blank');
   };
 
   return (
@@ -152,10 +158,10 @@ const WordPopup: React.FC<WordPopupProps> = ({ wordData, isOpen, onClose }) => {
           </button>
           {wordData && (
             <button
-              onClick={handleRAEClick}
+              onClick={handleSourceClick}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
             >
-              <span>Ver en RAE</span>
+              <span>Ver en {lexiconSource?.label ?? 'diccionario'}</span>
               <ExternalLink size={16} />
             </button>
           )}

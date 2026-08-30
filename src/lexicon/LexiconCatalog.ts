@@ -1,5 +1,5 @@
 import { processDigraphs } from '@/utils/digraphs';
-import { classifyDeltaWord, sortNewWordsFirst } from './policy.mjs';
+import { classifyDeltaWord, classifyDemWord, sortNewWordsFirst } from './policy.mjs';
 import type { LexiconMembership, LexiconMode } from './types';
 
 interface WordSetPayload {
@@ -10,33 +10,71 @@ interface WordSetPayload {
   words: string[];
 }
 
-const NEW_WORDS_URL = '/lexicon/2027/new-words.json';
+const NEW_2027_WORDS_URL = '/lexicon/2027/new-words.json';
 const LEGACY_WORDS_URL = '/lexicon/2027/legacy-words.json';
-const EXPECTED_NEW_WORDS = 10_975;
+const NEW_DEM_WORDS_URL = '/lexicon/dem/rc4/new-words.json';
+const EXPECTED_NEW_2027_WORDS = 10_975;
 const EXPECTED_LEGACY_WORDS = 214;
+const EXPECTED_NEW_DEM_WORDS = 20_590;
+
+type CatalogKey = 'hybrid' | 'dem';
 
 const normalizeWord = (word: string): string => processDigraphs(word.toUpperCase());
 
-export class LexiconCatalog {
-  private newWords = new Set<string>();
-  private legacyWords = new Set<string>();
-  private loadPromise: Promise<void> | null = null;
+const assertPayload = (
+  payload: WordSetPayload,
+  expectedCount: number,
+  label: string,
+): void => {
+  if (
+    payload.count !== expectedCount ||
+    payload.words.length !== expectedCount ||
+    new Set(payload.words).size !== expectedCount
+  ) {
+    throw new Error(`El índice de ${label} está incompleto`);
+  }
+};
 
-  async load(): Promise<void> {
-    if (this.newWords.size === EXPECTED_NEW_WORDS && this.legacyWords.size === EXPECTED_LEGACY_WORDS) {
-      return;
-    }
-    if (this.loadPromise) return this.loadPromise;
-    this.loadPromise = this.loadIndexes().catch((error) => {
-      this.loadPromise = null;
-      throw error;
-    });
-    return this.loadPromise;
+export class LexiconCatalog {
+  private new2027Words = new Set<string>();
+  private legacyWords = new Set<string>();
+  private newDemWords = new Set<string>();
+  private loadPromises = new Map<CatalogKey, Promise<void>>();
+
+  async load(mode: LexiconMode): Promise<void> {
+    if (mode !== 'hybrid' && mode !== 'dem') return;
+    if (this.isLoaded(mode)) return;
+    const pending = this.loadPromises.get(mode);
+    if (pending) return pending;
+
+    const promise = (mode === 'dem' ? this.loadDemIndex() : this.load2027Indexes())
+      .catch((error) => {
+        this.loadPromises.delete(mode);
+        throw error;
+      });
+    this.loadPromises.set(mode, promise);
+    return promise;
   }
 
-  private async loadIndexes(): Promise<void> {
+  private isLoaded(mode: CatalogKey): boolean {
+    if (mode === 'dem') return this.newDemWords.size === EXPECTED_NEW_DEM_WORDS;
+    return (
+      this.new2027Words.size === EXPECTED_NEW_2027_WORDS &&
+      this.legacyWords.size === EXPECTED_LEGACY_WORDS
+    );
+  }
+
+  private async loadDemIndex(): Promise<void> {
+    const response = await fetch(NEW_DEM_WORDS_URL, { cache: 'force-cache' });
+    if (!response.ok) throw new Error('No se pudo cargar el índice de aportaciones DEM');
+    const payload = await response.json() as WordSetPayload;
+    assertPayload(payload, EXPECTED_NEW_DEM_WORDS, 'aportaciones DEM');
+    this.newDemWords = new Set(payload.words);
+  }
+
+  private async load2027Indexes(): Promise<void> {
     const [newResponse, legacyResponse] = await Promise.all([
-      fetch(NEW_WORDS_URL, { cache: 'force-cache' }),
+      fetch(NEW_2027_WORDS_URL, { cache: 'force-cache' }),
       fetch(LEGACY_WORDS_URL, { cache: 'force-cache' }),
     ]);
     if (!newResponse.ok || !legacyResponse.ok) {
@@ -46,39 +84,35 @@ export class LexiconCatalog {
       newResponse.json() as Promise<WordSetPayload>,
       legacyResponse.json() as Promise<WordSetPayload>,
     ]);
-    if (
-      newPayload.count !== EXPECTED_NEW_WORDS ||
-      newPayload.words.length !== EXPECTED_NEW_WORDS ||
-      legacyPayload.count !== EXPECTED_LEGACY_WORDS ||
-      legacyPayload.words.length !== EXPECTED_LEGACY_WORDS
-    ) {
-      throw new Error('Los índices de diferencias 2017/2027 están incompletos');
-    }
-    this.newWords = new Set(newPayload.words);
+    assertPayload(newPayload, EXPECTED_NEW_2027_WORDS, 'novedades 2027');
+    assertPayload(legacyPayload, EXPECTED_LEGACY_WORDS, 'formas exclusivas de 2017');
+    this.new2027Words = new Set(newPayload.words);
     this.legacyWords = new Set(legacyPayload.words);
   }
 
-  isNew2027(word: string): boolean {
-    return this.newWords.has(normalizeWord(word));
-  }
-
-  isOnly2017(word: string): boolean {
-    return this.legacyWords.has(normalizeWord(word));
-  }
-
-  membership(word: string): LexiconMembership {
-    return classifyDeltaWord(normalizeWord(word), this.newWords, this.legacyWords);
+  membership(word: string, mode: LexiconMode): LexiconMembership {
+    const normalized = normalizeWord(word);
+    if (mode === 'dem') return classifyDemWord(normalized, this.newDemWords);
+    if (mode === 'hybrid') {
+      return classifyDeltaWord(normalized, this.new2027Words, this.legacyWords);
+    }
+    return 'shared';
   }
 
   isValidForMode(word: string, mode: LexiconMode): boolean {
     const normalized = normalizeWord(word);
-    if (mode === '2017') return !this.newWords.has(normalized);
+    if (mode === '2017') return !this.new2027Words.has(normalized);
     if (mode === '2027') return !this.legacyWords.has(normalized);
     return true;
   }
 
   sort(words: string[], mode: LexiconMode, newFirst: boolean): string[] {
-    return sortNewWordsFirst(words, this.newWords, mode === 'hybrid' && newFirst);
+    const newWords = mode === 'dem' ? this.newDemWords : this.new2027Words;
+    return sortNewWordsFirst(
+      words,
+      newWords,
+      (mode === 'dem' || mode === 'hybrid') && newFirst,
+    );
   }
 
   getLegacyWords(): string[] {
