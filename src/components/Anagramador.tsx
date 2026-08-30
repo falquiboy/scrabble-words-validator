@@ -198,7 +198,7 @@ const Anagramador = ({
       </div>
       
       {/* Scrollable Results Only */}
-      <div className="pt-20 h-full overflow-y-auto">
+      <div className="pt-24 h-full overflow-y-auto">
         <div className="w-full max-w-2xl mx-auto px-4 pb-4">
           <div className="w-full max-w-md mx-auto">
             <ResultsList
