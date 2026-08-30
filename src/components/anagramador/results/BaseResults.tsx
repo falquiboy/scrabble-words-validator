@@ -11,8 +11,8 @@ import {
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { highlightWildcardLetter } from "@/utils/wildcardHighlighting";
 import LexiconBadge from '@/components/LexiconBadge';
-import LexiconSourceLink from '@/components/LexiconSourceLink';
 import { isPatternQuery, parseUserQuery } from '@/utils/queryLanguage.mjs';
+import DefinitionTooltipLink from './DefinitionTooltipLink';
 
 const LARGE_GROUP_BATCH_SIZE = 500;
 
@@ -157,14 +157,11 @@ const WordWithEquity: React.FC<{
             {isCalculating ? '...' : equity || baseScore}
           </span>
         )}
-        <LexiconSourceLink
-          word={word}
-          className="hover:text-blue-600 transition-colors"
-        >
+        <DefinitionTooltipLink word={word}>
           {highlightWildcardLetter && searchTerm 
             ? highlightWildcardLetter(displayWord, searchTerm)
             : displayWord}
-        </LexiconSourceLink>
+        </DefinitionTooltipLink>
         <LexiconBadge word={word} />
         {showResidue && (
           <span className={`text-sm ${isSubanagram && equity !== baseScore ? 'text-green-600 font-medium' : 'text-gray-500'}`}>

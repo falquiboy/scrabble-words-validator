@@ -106,8 +106,6 @@ const Anagramador = ({
       // A pool followed by a shorter target (for example, unseen tiles + :7)
       // explicitly asks for subanagrams, so no settings detour is necessary.
       onShowShorterChange(true);
-    } else if (letters !== searchTerm && view !== 'residues') {
-      onShowShorterChange(false);
     }
     
     // Update persistent state instead of local state
@@ -192,6 +190,8 @@ const Anagramador = ({
             <SearchContainer
               onSearch={handleSearch}
               onClear={handleClear}
+              showShorter={showShorter}
+              onShowShorterChange={onShowShorterChange}
             />
           </div>
         </div>

@@ -6,11 +6,15 @@ import { useToast } from "@/hooks/use-toast";
 interface SearchContainerProps {
   onSearch: (letters: string, targetLength: number | null) => void;
   onClear: () => void;
+  showShorter: boolean;
+  onShowShorterChange: (show: boolean) => void;
 }
 
 const SearchContainer = ({ 
   onSearch, 
-  onClear
+  onClear,
+  showShorter,
+  onShowShorterChange,
 }: SearchContainerProps) => {
   const [letters, setLetters] = useState("");
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
@@ -91,6 +95,8 @@ const SearchContainer = ({
       onClear={handleClear}
       onKeyPress={handleKeyPress}
       inputRef={inputRef}
+      showShorter={showShorter}
+      onShowShorterChange={onShowShorterChange}
     />
   );
 };

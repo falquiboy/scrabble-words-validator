@@ -1,35 +1,36 @@
-import type { MouseEvent, ReactNode } from 'react';
+import { forwardRef, type AnchorHTMLAttributes, type ReactNode } from 'react';
 import { useLexicon } from '@/lexicon/LexiconContext';
 import { sourceLinkForWord } from '@/lexicon/sourceLinks';
 
-interface LexiconSourceLinkProps {
+interface LexiconSourceLinkProps extends Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href'> {
   word: string;
   children: ReactNode;
-  className?: string;
-  onClick?: (event: MouseEvent<HTMLAnchorElement>) => void;
 }
 
-const LexiconSourceLink = ({
+const LexiconSourceLink = forwardRef<HTMLAnchorElement, LexiconSourceLinkProps>(({
   word,
   children,
   className = '',
-  onClick,
-}: LexiconSourceLinkProps) => {
+  ...anchorProps
+}, ref) => {
   const { mode, membership } = useLexicon();
   const source = sourceLinkForWord(word, mode, membership(word));
 
   return (
     <a
+      ref={ref}
       href={source.url}
       target="_blank"
       rel="noopener noreferrer"
       className={className}
       title={source.title}
-      onClick={onClick}
+      {...anchorProps}
     >
       {children}
     </a>
   );
-};
+});
+
+LexiconSourceLink.displayName = 'LexiconSourceLink';
 
 export default LexiconSourceLink;

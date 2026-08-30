@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, Info, Anchor, ChevronDown, Copy, Settings, BookOpen, ArrowUp, List, ChartNoAxesCombined } from 'lucide-react';
+import { Menu, X, Info, Anchor, Copy, Settings, BookOpen, ArrowUp, List, ChartNoAxesCombined } from 'lucide-react';
 import { LEXICON_MODE_OPTIONS } from '@/lexicon/releases';
 import type { LexiconMode } from '@/lexicon/types';
 import type { AnagramResultView } from '@/components/anagramador/viewTypes';
@@ -72,8 +72,6 @@ const GlobalSettingsMenu: React.FC<GlobalSettingsMenuProps> = ({
     if (!anagramSettings) return null;
 
     const {
-      showShorter,
-      onShowShorterChange,
       view,
       onViewChange,
       hasActiveSearch,
@@ -102,17 +100,6 @@ const GlobalSettingsMenu: React.FC<GlobalSettingsMenuProps> = ({
 
     return (
       <div className="space-y-1">
-        {/* Shorter Words Toggle */}
-        {renderToggle(
-          isPatternSearch ? 'Palabras de más de 8 letras' : 'Palabras más cortas',
-          showShorter,
-          onShowShorterChange,
-          <ChevronDown size={16} className="text-orange-500" />,
-          !hasActiveSearch
-        )}
-
-        <div className="border-t border-gray-100" />
-
         <div className="px-4 py-3">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Presentación</p>
           <div className="space-y-1" role="radiogroup" aria-label="Vista de resultados">

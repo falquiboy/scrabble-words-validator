@@ -4,6 +4,7 @@ import { RefObject, useState, useEffect, useRef } from "react";
 import { normalizeUserQueryInput, parseUserQuery } from "@/utils/queryLanguage.mjs";
 import SearchButton from "./search/SearchButton";
 import TooltipHelp from "./search/TooltipHelp";
+import { Switch } from "@/components/ui/switch";
 // UserActivityContext removed
 
 interface SearchInputProps {
@@ -13,6 +14,8 @@ interface SearchInputProps {
   onKeyPress: (e: React.KeyboardEvent) => void;
   inputRef: RefObject<HTMLInputElement>;
   onClear?: () => void;
+  showShorter: boolean;
+  onShowShorterChange: (show: boolean) => void;
 }
 
 const SearchInput = ({ 
@@ -21,7 +24,9 @@ const SearchInput = ({
   onSearch,
   onKeyPress, 
   inputRef,
-  onClear
+  onClear,
+  showShorter,
+  onShowShorterChange,
 }: SearchInputProps) => {
   const [isPatternMode, setIsPatternMode] = useState(false);
   const cursorPositionRef = useRef<number | null>(null);
@@ -149,6 +154,17 @@ const SearchInput = ({
         </div>
         <TooltipHelp isPatternMode={isPatternMode} />
       </div>
+      <label className="flex cursor-pointer items-center justify-end gap-2 py-0.5 pr-11 text-sm font-normal text-gray-500">
+        <span>
+          {isPatternMode ? 'Palabras de más de 8 letras' : 'Palabras más cortas'}
+        </span>
+        <Switch
+          checked={showShorter}
+          onCheckedChange={onShowShorterChange}
+          aria-label={isPatternMode ? 'Palabras de más de 8 letras' : 'Palabras más cortas'}
+          className="origin-right scale-[0.82]"
+        />
+      </label>
     </div>
   );
 };
