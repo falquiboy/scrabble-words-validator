@@ -2,7 +2,8 @@
  * Utilidades para ordenar palabras con letra adicional según la letra añadida
  */
 
-import { processDigraphs } from './digraphs';
+import { processDigraphs } from './digraphs.ts';
+import { compareSpanishTiles, compareSpanishWords } from '../lexicon/policy.mjs';
 
 /**
  * Determina qué letra fue añadida a una palabra base para formar una palabra más larga
@@ -70,18 +71,7 @@ export function sortWordsByAddedLetter(
   const groups = groupWordsByAddedLetter(baseWord, wordsWithAdditionalLetter);
   
   // Obtener letras ordenadas alfabéticamente usando el orden español
-  const sortedLetters = Array.from(groups.keys()).sort((a, b) => {
-    // Use the same custom alphabet as digraphs for consistency
-    const CUSTOM_ALPHABET = "AEIOUBCÇDFGHJLKMNÑPQRWSTVXYZ";
-    const posA = CUSTOM_ALPHABET.indexOf(a);
-    const posB = CUSTOM_ALPHABET.indexOf(b);
-    
-    // If letter not found in alphabet, put it at the end
-    if (posA === -1) return 1;
-    if (posB === -1) return -1;
-    
-    return posA - posB;
-  });
+  const sortedLetters = Array.from(groups.keys()).sort(compareSpanishTiles);
   
   // Construir array final ordenado
   const result: string[] = [];
@@ -89,7 +79,7 @@ export function sortWordsByAddedLetter(
   for (const letter of sortedLetters) {
     const wordsForLetter = groups.get(letter) || [];
     // Ordenar palabras dentro del grupo alfabéticamente
-    wordsForLetter.sort((a, b) => a.localeCompare(b));
+    wordsForLetter.sort(compareSpanishWords);
     result.push(...wordsForLetter);
   }
   

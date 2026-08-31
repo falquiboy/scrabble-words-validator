@@ -5,6 +5,7 @@ import { normalizeUserQueryInput, parseUserQuery } from "@/utils/queryLanguage.m
 import SearchButton from "./search/SearchButton";
 import TooltipHelp from "./search/TooltipHelp";
 import { Switch } from "@/components/ui/switch";
+import { canOrderShorterWordsByEquity } from '@/utils/equitySearch';
 // UserActivityContext removed
 
 interface SearchInputProps {
@@ -16,6 +17,8 @@ interface SearchInputProps {
   onClear?: () => void;
   showShorter: boolean;
   onShowShorterChange: (show: boolean) => void;
+  sortByEquity: boolean;
+  onSortByEquityChange: (sort: boolean) => void;
 }
 
 const SearchInput = ({ 
@@ -27,9 +30,12 @@ const SearchInput = ({
   onClear,
   showShorter,
   onShowShorterChange,
+  sortByEquity,
+  onSortByEquityChange,
 }: SearchInputProps) => {
   const [isPatternMode, setIsPatternMode] = useState(false);
   const cursorPositionRef = useRef<number | null>(null);
+  const canSortByEquity = !isPatternMode && canOrderShorterWordsByEquity(letters);
   
   // User activity tracking removed
   
@@ -165,6 +171,17 @@ const SearchInput = ({
           className="origin-right scale-[0.82]"
         />
       </label>
+      {showShorter && canSortByEquity && (
+        <label className="flex cursor-pointer items-center justify-end gap-2 py-0.5 pr-11 text-sm font-normal text-purple-700">
+          <span>Ordenar por equity</span>
+          <Switch
+            checked={sortByEquity}
+            onCheckedChange={onSortByEquityChange}
+            aria-label="Ordenar palabras más cortas por equity"
+            className="origin-right scale-[0.82]"
+          />
+        </label>
+      )}
     </div>
   );
 };

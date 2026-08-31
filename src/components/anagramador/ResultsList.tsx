@@ -24,6 +24,7 @@ interface ResultsListProps {
   highlightWildcardLetter: (word: string, originalWord: string) => React.ReactNode;
   isSearchAborted?: boolean;
   showShorter: boolean;
+  sortByEquity: boolean;
   view: AnagramResultView;
 }
 
@@ -34,6 +35,7 @@ const ResultsList = ({
   highlightWildcardLetter,
   isSearchAborted,
   showShorter,
+  sortByEquity,
   view,
 }: ResultsListProps) => {
   const { toast } = useToast();
@@ -174,7 +176,7 @@ const ResultsList = ({
                 isLoadingData={isLoadingData}
                 onRequestWords={requestWordInfo}
               />
-            ) : view === 'residues' ? (
+            ) : sortByEquity && showShorter ? (
               <ResidueResultsView
                 searchTerm={searchTerm}
                 results={results}

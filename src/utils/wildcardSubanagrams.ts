@@ -1,5 +1,5 @@
 import { processDigraphs } from './digraphs.ts';
-import { compareSpanishWords } from '../lexicon/policy.mjs';
+import { compareSpanishTiles, compareSpanishWords } from '../lexicon/policy.mjs';
 
 export const MIN_SHORTER_WORD_TILES = 2;
 
@@ -131,7 +131,7 @@ export const sortWordsByFirstWildcardTile = (
   return [...words].sort((left, right) => {
     const leftKeys = keys.get(left)!;
     const rightKeys = keys.get(right)!;
-    const wildcardComparison = compareSpanishWords(
+    const wildcardComparison = compareSpanishTiles(
       leftKeys.wildcardTile,
       rightKeys.wildcardTile,
     );

@@ -1,1 +1,1 @@
-export type AnagramResultView = 'anagrams' | 'extended' | 'hooks' | 'residues';
+export type AnagramResultView = 'anagrams' | 'extended' | 'hooks';

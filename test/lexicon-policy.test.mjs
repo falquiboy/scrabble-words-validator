@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   classifyDeltaWord,
   classifyDemWord,
+  compareSpanishTiles,
   compareSpanishWords,
   mergeUniqueWords,
   normalizeLexiconMode,
@@ -43,6 +44,13 @@ test('traditional Spanish word order places digraphs and eñe after their base l
   ]);
   assert.ok(compareSpanishWords('BACHA', 'BADA') < 0);
   assert.ok(compareSpanishWords('BACA', 'BACHA') < 0);
+});
+
+test('tile grouping puts vowels first and keeps traditional consonant order', () => {
+  const tiles = ['Z', 'RR', 'U', 'CH', 'A', 'Ñ', 'E', 'LL', 'C'];
+  assert.deepEqual(tiles.sort(compareSpanishTiles), [
+    'A', 'E', 'U', 'C', 'CH', 'LL', 'Ñ', 'RR', 'Z',
+  ]);
 });
 
 test('delta membership distinguishes both releases', () => {

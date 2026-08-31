@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight, Loader } from 'lucide-react';
 import LexiconBadge from '@/components/LexiconBadge';
-import LexiconSourceLink from '@/components/LexiconSourceLink';
 import { getInternalLength, toDisplayFormat } from '@/utils/digraphs';
 import { calculateWordScore } from '@/utils/scrabbleScore';
 import {
@@ -10,7 +9,9 @@ import {
   getBatchGenerationLeaveValues,
 } from '@/utils/leavesData';
 import { parseUserQuery } from '@/utils/queryLanguage.mjs';
-import { compareSpanishWords } from '@/lexicon/policy.mjs';
+import { compareSpanishTiles, compareSpanishWords } from '@/lexicon/policy.mjs';
+import { getWildcardWordSortKeys } from '@/utils/wildcardSubanagrams';
+import DefinitionTooltipLink from './results/DefinitionTooltipLink';
 
 interface ResidueResultsViewProps {
   searchTerm: string;
@@ -49,6 +50,10 @@ const ResidueResultsView: React.FC<ResidueResultsViewProps> = ({
     ...results.wildcardMatches.map((word) => ({ word, usesWildcard: true })),
     ...results.shorterMatches.map((word) => ({ word, usesWildcard: false })),
   ], [results.shorterMatches, results.wildcardMatches]);
+  const rack = useMemo(() => {
+    const query = parseUserQuery(searchTerm);
+    return query.kind === 'anagram' ? query.letters : '';
+  }, [searchTerm]);
 
   useEffect(() => {
     let cancelled = false;
@@ -60,8 +65,6 @@ const ResidueResultsView: React.FC<ResidueResultsViewProps> = ({
       }
 
       setIsLoading(true);
-      const query = parseUserQuery(searchTerm);
-      const rack = query.kind === 'anagram' ? query.letters : '';
       const baseRows = candidates.map(({ word, usesWildcard }) => {
         const displayWord = toDisplayFormat(word);
         return {
@@ -73,15 +76,19 @@ const ResidueResultsView: React.FC<ResidueResultsViewProps> = ({
           usesWildcard,
         };
       });
+      const plainRows = baseRows.filter((row) => !row.usesWildcard);
 
       try {
         const leaveValues = await getBatchGenerationLeaveValues(
           CURRENT_LEAVE_GENERATION,
-          baseRows.map((row) => row.leave),
+          plainRows.map((row) => row.leave),
         );
         if (cancelled) return;
 
         setRows(baseRows.map((row) => {
+          if (row.usesWildcard) {
+            return { ...row, leaveValue: null, equity: row.score };
+          }
           const leaveValue = leaveValues.get(row.leave) ?? null;
           return {
             ...row,
@@ -101,7 +108,7 @@ const ResidueResultsView: React.FC<ResidueResultsViewProps> = ({
 
     void loadRows();
     return () => { cancelled = true; };
-  }, [candidates, searchTerm]);
+  }, [candidates, rack, searchTerm]);
 
   useEffect(() => {
     const lengths = [...new Set(candidates.map(({ word }) => getInternalLength(word)))]
@@ -114,8 +121,19 @@ const ResidueResultsView: React.FC<ResidueResultsViewProps> = ({
     setIsSummaryExpanded(true);
   }, [candidates]);
 
-  const compareRows = (left: ResidueRow, right: ResidueRow) =>
+  const compareRowsByEquity = (left: ResidueRow, right: ResidueRow) =>
     right.equity - left.equity || compareSpanishWords(left.word, right.word);
+
+  const compareRowsForDisplay = (left: ResidueRow, right: ResidueRow) => {
+    if (left.usesWildcard && right.usesWildcard) {
+      const leftKeys = getWildcardWordSortKeys(left.word, rack);
+      const rightKeys = getWildcardWordSortKeys(right.word, rack);
+      return compareSpanishTiles(leftKeys.wildcardTile, rightKeys.wildcardTile)
+        || compareSpanishWords(leftKeys.remainingWord, rightKeys.remainingWord)
+        || compareSpanishWords(left.word, right.word);
+    }
+    return compareRowsByEquity(left, right);
+  };
 
   const toggleSetValue = (
     setter: React.Dispatch<React.SetStateAction<Set<string>>>,
@@ -127,22 +145,15 @@ const ResidueResultsView: React.FC<ResidueResultsViewProps> = ({
     return next;
   });
 
-  const lengths = [...new Set(rows.map((row) => row.length))].sort((left, right) => right - left);
-  const bestByLength = lengths.map((length) => {
-    const best = (usesWildcard: boolean) => rows
-      .filter((row) => row.length === length && row.usesWildcard === usesWildcard)
-      .sort(compareRows)[0] ?? null;
-    return { length, wildcard: best(true), plain: best(false) };
-  });
-
-  const renderBest = (row: ResidueRow | null) => row ? (
-    <div className="min-w-[8rem]">
-      <div className="font-semibold text-gray-900">{row.displayWord}</div>
-      <div className="text-xs text-gray-500">
-        {row.leave || '∅'} · equity {formatNumber(row.equity)}
-      </div>
-    </div>
-  ) : <span className="text-gray-400">—</span>;
+  const plainRows = rows.filter((row) => !row.usesWildcard);
+  const plainLengths = [...new Set(plainRows.map((row) => row.length))]
+    .sort((left, right) => right - left);
+  const bestByLength = plainLengths.map((length) => ({
+    length,
+    row: plainRows
+      .filter((row) => row.length === length)
+      .sort(compareRowsByEquity)[0] ?? null,
+  }));
 
   const renderSection = (id: 'wildcard' | 'plain', title: string, sectionRows: ResidueRow[]) => {
     if (sectionRows.length === 0) return null;
@@ -151,7 +162,7 @@ const ResidueResultsView: React.FC<ResidueResultsViewProps> = ({
       (groups[row.length] ||= []).push(row);
       return groups;
     }, {});
-    Object.values(grouped).forEach((group) => group.sort(compareRows));
+    Object.values(grouped).forEach((group) => group.sort(compareRowsForDisplay));
 
     return (
       <section className="space-y-3">
@@ -183,21 +194,20 @@ const ResidueResultsView: React.FC<ResidueResultsViewProps> = ({
                   {grouped[length].map((row) => (
                     <div key={`${id}:${row.word}`} className="flex items-center justify-between gap-3 px-3 py-2">
                       <div className="min-w-0 text-lg">
-                        <LexiconSourceLink
-                          word={row.word}
-                          className="hover:text-blue-600"
-                        >
+                        <DefinitionTooltipLink word={row.word}>
                           {highlightWildcardLetter(row.displayWord, searchTerm)}
-                        </LexiconSourceLink>
+                        </DefinitionTooltipLink>
                         <LexiconBadge word={row.word} className="ml-1" />
                       </div>
-                      <div className="shrink-0 text-right text-xs text-gray-500">
-                        <div>residuo {row.leave || '∅'}</div>
-                        <div>
-                          {row.score} + {row.leaveValue === null ? '—' : formatNumber(row.leaveValue)} ={' '}
-                          <span className="font-semibold text-purple-700">{formatNumber(row.equity)}</span>
+                      {!row.usesWildcard && (
+                        <div className="shrink-0 text-right text-xs text-gray-500">
+                          <div>residuo {row.leave || '∅'}</div>
+                          <div>
+                            {row.score} + {row.leaveValue === null ? '—' : formatNumber(row.leaveValue)} ={' '}
+                            <span className="font-semibold text-purple-700">{formatNumber(row.equity)}</span>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -224,7 +234,7 @@ const ResidueResultsView: React.FC<ResidueResultsViewProps> = ({
 
   return (
     <div className="space-y-6 pb-6">
-      <div className="rounded-lg border border-purple-200 bg-purple-50 p-3">
+      {bestByLength.length > 0 && <div className="rounded-lg border border-purple-200 bg-purple-50 p-3">
         <button
           type="button"
           onClick={() => setIsSummaryExpanded((expanded) => !expanded)}
@@ -235,20 +245,25 @@ const ResidueResultsView: React.FC<ResidueResultsViewProps> = ({
           Mayor equity por longitud
         </button>
         {isSummaryExpanded && <div className="overflow-x-auto">
-          <table className="w-full min-w-[28rem] text-left text-sm">
+          <table className="w-full min-w-[22rem] text-left text-sm">
             <thead className="text-xs uppercase tracking-wide text-purple-700">
               <tr>
                 <th className="pb-2 pr-3">Fichas</th>
-                <th className="pb-2 pr-3">Con comodín</th>
-                <th className="pb-2">Sin comodín</th>
+                <th className="pb-2 pr-3">Palabra</th>
+                <th className="pb-2 pr-3">Residuo</th>
+                <th className="pb-2 text-right">Equity</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-purple-100">
-              {bestByLength.map(({ length, wildcard, plain }) => (
+              {bestByLength.map(({ length, row }) => row && (
                 <tr key={length}>
                   <th className="py-2 pr-3 font-semibold text-purple-900">{length}</th>
-                  <td className="py-2 pr-3">{renderBest(wildcard)}</td>
-                  <td className="py-2">{renderBest(plain)}</td>
+                  <td className="py-2 pr-3 font-semibold text-gray-900">
+                    <DefinitionTooltipLink word={row.word}>{row.displayWord}</DefinitionTooltipLink>
+                    <LexiconBadge word={row.word} className="ml-1" />
+                  </td>
+                  <td className="py-2 pr-3 text-gray-600">{row.leave || '∅'}</td>
+                  <td className="py-2 text-right font-semibold text-purple-800">{formatNumber(row.equity)}</td>
                 </tr>
               ))}
             </tbody>
@@ -257,7 +272,7 @@ const ResidueResultsView: React.FC<ResidueResultsViewProps> = ({
         {isSummaryExpanded && (
           <p className="mt-2 text-xs text-purple-700">Valores de residuo: generación {CURRENT_LEAVE_GENERATION}.</p>
         )}
-      </div>
+      </div>}
 
       {renderSection('wildcard', 'Resultados con comodín', rows.filter((row) => row.usesWildcard))}
       {renderSection('plain', 'Resultados sin comodín', rows.filter((row) => !row.usesWildcard))}

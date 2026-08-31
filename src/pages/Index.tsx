@@ -45,6 +45,7 @@ const Index = () => {
   
   // States for anagram settings (lifted up from Anagramador)
   const [showShorter, setShowShorter] = useState(false);
+  const [sortShorterByEquity, setSortShorterByEquity] = useState(false);
   const [anagramView, setAnagramView] = useState<AnagramResultView>('anagrams');
   const [hasActiveAnagramSearch, setHasActiveAnagramSearch] = useState(false);
   const [anagramCopyAllCallback, setAnagramCopyAllCallback] = useState<(() => void) | undefined>(undefined);
@@ -56,14 +57,17 @@ const Index = () => {
 
   const handleAnagramViewChange = useCallback((view: AnagramResultView) => {
     setAnagramView(view);
-    if (view === 'residues') setShowShorter(true);
+    if (view !== 'anagrams') setSortShorterByEquity(false);
   }, []);
 
   const handleShowShorterChange = useCallback((show: boolean) => {
     setShowShorter(show);
-    if (!show) {
-      setAnagramView((current) => current === 'residues' ? 'anagrams' : current);
-    }
+    if (!show) setSortShorterByEquity(false);
+  }, []);
+
+  const handleSortShorterByEquityChange = useCallback((sort: boolean) => {
+    setSortShorterByEquity(sort);
+    if (sort) setAnagramView('anagrams');
   }, []);
   
   // Persistent anagram search state (survives tab navigation)
@@ -214,6 +218,8 @@ const Index = () => {
                   trie={trie}
                   showShorter={showShorter}
                   onShowShorterChange={handleShowShorterChange}
+                  sortShorterByEquity={sortShorterByEquity}
+                  onSortShorterByEquityChange={handleSortShorterByEquityChange}
                   view={anagramView}
                   onViewChange={handleAnagramViewChange}
                   onSearchStateChange={setHasActiveAnagramSearch}

@@ -103,6 +103,13 @@ test('orders relevant plays by wildcard tile and then by the remaining word', ()
   );
 });
 
+test('orders represented blank tiles with vowels first', () => {
+  assert.deepEqual(
+    sortWordsByFirstWildcardTile(['BC', 'BU', 'BA', 'BO', 'BE', 'BI'], 'B?'),
+    ['BA', 'BE', 'BI', 'BO', 'BU', 'BC'],
+  );
+});
+
 test('uses the first represented tile for two blanks and additional-letter results', () => {
   assert.deepEqual(
     sortWordsByFirstWildcardTile(['CAB', 'BAC'], 'A??'),

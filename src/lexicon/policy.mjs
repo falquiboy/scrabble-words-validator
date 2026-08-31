@@ -21,6 +21,17 @@ const TRADITIONAL_SPANISH_ORDER = new Map(
   TRADITIONAL_SPANISH_ALPHABET.map((letter, index) => [letter, index]),
 );
 
+// When a tile is the primary grouping key (blank representation or added
+// tile), vowels are shown first; consonants retain traditional Spanish order.
+const SPANISH_TILE_GROUP_ALPHABET = Object.freeze([
+  'A', 'E', 'I', 'O', 'U',
+  'B', 'C', 'Ç', 'D', 'F', 'G', 'H', 'J', 'L', 'K',
+  'M', 'N', 'Ñ', 'P', 'Q', 'R', 'W', 'S', 'T', 'V', 'X', 'Y', 'Z',
+]);
+const SPANISH_TILE_GROUP_ORDER = new Map(
+  SPANISH_TILE_GROUP_ALPHABET.map((letter, index) => [letter, index]),
+);
+
 function normalizeForTraditionalSpanishSort(word) {
   return String(word ?? '')
     .toUpperCase()
@@ -64,6 +75,18 @@ export function compareSpanishWords(left, right) {
     left,
     right,
   );
+}
+
+export function compareSpanishTiles(left, right) {
+  const normalizedLeft = normalizeForTraditionalSpanishSort(left);
+  const normalizedRight = normalizeForTraditionalSpanishSort(right);
+  const leftOrder = SPANISH_TILE_GROUP_ORDER.get(normalizedLeft);
+  const rightOrder = SPANISH_TILE_GROUP_ORDER.get(normalizedRight);
+
+  if (leftOrder === rightOrder) return compareSpanishWords(left, right);
+  if (leftOrder === undefined) return 1;
+  if (rightOrder === undefined) return -1;
+  return leftOrder - rightOrder;
 }
 
 export function sortSpanishWords(words) {

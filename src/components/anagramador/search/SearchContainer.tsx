@@ -8,6 +8,8 @@ interface SearchContainerProps {
   onClear: () => void;
   showShorter: boolean;
   onShowShorterChange: (show: boolean) => void;
+  sortByEquity: boolean;
+  onSortByEquityChange: (sort: boolean) => void;
 }
 
 const SearchContainer = ({ 
@@ -15,6 +17,8 @@ const SearchContainer = ({
   onClear,
   showShorter,
   onShowShorterChange,
+  sortByEquity,
+  onSortByEquityChange,
 }: SearchContainerProps) => {
   const [letters, setLetters] = useState("");
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
@@ -97,6 +101,8 @@ const SearchContainer = ({
       inputRef={inputRef}
       showShorter={showShorter}
       onShowShorterChange={onShowShorterChange}
+      sortByEquity={sortByEquity}
+      onSortByEquityChange={onSortByEquityChange}
     />
   );
 };

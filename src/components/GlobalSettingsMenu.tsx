@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, Info, Anchor, Copy, Settings, BookOpen, ArrowUp, List, ChartNoAxesCombined } from 'lucide-react';
+import { Menu, X, Info, Anchor, Copy, Settings, BookOpen, ArrowUp, List } from 'lucide-react';
 import { LEXICON_MODE_OPTIONS } from '@/lexicon/releases';
 import type { LexiconMode } from '@/lexicon/types';
 import type { AnagramResultView } from '@/components/anagramador/viewTypes';
@@ -76,7 +76,6 @@ const GlobalSettingsMenu: React.FC<GlobalSettingsMenuProps> = ({
       onViewChange,
       hasActiveSearch,
       onCopyAll,
-      isPatternSearch = false
     } = anagramSettings;
 
     const viewOptions: Array<{
@@ -89,13 +88,6 @@ const GlobalSettingsMenu: React.FC<GlobalSettingsMenuProps> = ({
       { value: 'anagrams', label: 'Anagramas', help: 'Lista limpia de palabras', icon: <List size={16} className="text-slate-600" /> },
       { value: 'extended', label: 'Vista extendida', help: 'Información lingüística', icon: <Info size={16} className="text-blue-500" /> },
       { value: 'hooks', label: 'Ganchos', help: 'Extensiones y ficha adicional', icon: <Anchor size={16} className="text-green-500" /> },
-      {
-        value: 'residues',
-        label: 'Equity / residuos',
-        help: isPatternSearch ? 'Solo disponible para subanagramas' : 'Equity y residuo, solo palabras más cortas',
-        icon: <ChartNoAxesCombined size={16} className="text-purple-500" />,
-        disabled: isPatternSearch,
-      },
     ];
 
     return (
@@ -193,7 +185,6 @@ const GlobalSettingsMenu: React.FC<GlobalSettingsMenuProps> = ({
       anagrams: '📝 Anagramas',
       extended: '📖 Vista extendida',
       hooks: '🎣 Ganchos',
-      residues: '📊 Equity / residuos',
     };
 
     return (

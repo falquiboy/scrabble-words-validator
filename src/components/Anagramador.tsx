@@ -9,6 +9,8 @@ import type { WordSearchService } from '@/lexicon/types';
 import { useLexicon } from '@/lexicon/LexiconContext';
 import { isPatternQuery, parseUserQuery } from "@/utils/queryLanguage.mjs";
 import { sortWordsByFirstWildcardTile } from '@/utils/wildcardSubanagrams';
+import { sortWordsByAddedLetter } from '@/utils/additionalLetterSort';
+import { canOrderShorterWordsByEquity } from '@/utils/equitySearch';
 import type { AnagramResultView } from './anagramador/viewTypes';
 
 interface AnagramadorProps {
@@ -16,6 +18,8 @@ interface AnagramadorProps {
   // Settings props (controlled from parent)
   showShorter: boolean;
   onShowShorterChange: (show: boolean) => void;
+  sortShorterByEquity: boolean;
+  onSortShorterByEquityChange: (sort: boolean) => void;
   view: AnagramResultView;
   onViewChange: (view: AnagramResultView) => void;
   // Callback props to communicate state changes to parent
@@ -32,6 +36,8 @@ const Anagramador = ({
   trie, 
   showShorter, 
   onShowShorterChange,
+  sortShorterByEquity,
+  onSortShorterByEquityChange,
   view,
   onViewChange,
   onSearchStateChange,
@@ -47,6 +53,7 @@ const Anagramador = ({
   // Use persistent state from parent instead of local state
   const searchTerm = persistentSearchTerm;
   const targetLength = persistentTargetLength;
+  const showsEquityToggle = showShorter && canOrderShorterWordsByEquity(searchTerm);
 
   // Use hybrid anagram search - ALWAYS AVAILABLE! 🌍
   const { results: searchResults, isLoading, error, currentProvider } = useHybridAnagramSearch(
@@ -60,8 +67,10 @@ const Anagramador = ({
     const wildcardMatches = query.kind === 'anagram' && query.wildcardCount > 0
       ? sortWordsByFirstWildcardTile(searchResults.wildcardMatches, query.letters)
       : sortWords(searchResults.wildcardMatches);
-    const additionalWildcardMatches = query.kind === 'anagram' && query.wildcardCount > 0
-      ? sortWordsByFirstWildcardTile(searchResults.additionalWildcardMatches, query.letters)
+    const additionalWildcardMatches = query.kind === 'anagram'
+      ? query.wildcardCount > 0
+        ? sortWordsByFirstWildcardTile(searchResults.additionalWildcardMatches, query.letters)
+        : sortWordsByAddedLetter(query.letters, searchResults.additionalWildcardMatches)
       : sortWords(searchResults.additionalWildcardMatches);
 
     return {
@@ -82,8 +91,10 @@ const Anagramador = ({
   useEffect(() => {
     const patternSearch = isPatternQuery(searchTerm);
     onPatternSearchChange(patternSearch);
-    if (patternSearch && view === 'residues') onViewChange('anagrams');
-  }, [searchTerm, onPatternSearchChange, onViewChange, view]);
+    if (sortShorterByEquity && (!showShorter || !canOrderShorterWordsByEquity(searchTerm))) {
+      onSortShorterByEquityChange(false);
+    }
+  }, [searchTerm, onPatternSearchChange, onSortShorterByEquityChange, showShorter, sortShorterByEquity]);
 
   // Show error toast if there's an error
   useEffect(() => {
@@ -97,6 +108,8 @@ const Anagramador = ({
   }, [error, toast]);
 
   const handleSearch = (letters: string, newTargetLength: number | null) => {
+    if (letters !== searchTerm) onSortShorterByEquityChange(false);
+
     const query = parseUserQuery(letters);
     const requestsShorterLength = query.kind === 'anagram'
       && newTargetLength !== null
@@ -106,6 +119,8 @@ const Anagramador = ({
       // A pool followed by a shorter target (for example, unseen tiles + :7)
       // explicitly asks for subanagrams, so no settings detour is necessary.
       onShowShorterChange(true);
+    } else if (letters !== searchTerm) {
+      onShowShorterChange(false);
     }
     
     // Update persistent state instead of local state
@@ -117,6 +132,7 @@ const Anagramador = ({
 
   const handleClear = () => {
     onShowShorterChange(false);
+    onSortShorterByEquityChange(false);
     onViewChange('anagrams');
     // Clear persistent state
     onPersistentSearchChange({
@@ -148,10 +164,8 @@ const Anagramador = ({
           ? [...(displayResults.exactMatches || [])]
           : [...(displayResults.wildcardMatches || [])];
 
-        if (view !== 'residues') {
-          const currentWords = new Set(allWords);
-          allWords.push(...displayResults.additionalWildcardMatches.filter((word) => !currentWords.has(word)));
-        }
+        const currentWords = new Set(allWords);
+        allWords.push(...displayResults.additionalWildcardMatches.filter((word) => !currentWords.has(word)));
       }
     }
 
@@ -170,7 +184,7 @@ const Anagramador = ({
         variant: "destructive",
       });
     });
-  }, [displayResults, searchTerm, showShorter, toast, view]);
+  }, [displayResults, searchTerm, showShorter, toast]);
 
   // Provide copy callback to parent
   useEffect(() => {
@@ -192,13 +206,15 @@ const Anagramador = ({
               onClear={handleClear}
               showShorter={showShorter}
               onShowShorterChange={onShowShorterChange}
+              sortByEquity={sortShorterByEquity}
+              onSortByEquityChange={onSortShorterByEquityChange}
             />
           </div>
         </div>
       </div>
       
       {/* Scrollable Results Only */}
-      <div className="pt-24 h-full overflow-y-auto">
+      <div className={`${showsEquityToggle ? 'pt-32' : 'pt-24'} h-full overflow-y-auto`}>
         <div className="w-full max-w-2xl mx-auto px-4 pb-4">
           <div className="w-full max-w-md mx-auto">
             <ResultsList
@@ -208,6 +224,7 @@ const Anagramador = ({
               highlightWildcardLetter={highlightWildcardLetter}
               isSearchAborted={false}
               showShorter={showShorter}
+              sortByEquity={sortShorterByEquity}
               view={view}
             />
           </div>
