@@ -11,6 +11,9 @@ const anagramWordCache = new Map<string, AnagramWordInfo>();
 const ANAGRAM_CACHE_STATS = { hits: 0, misses: 0 };
 const MAX_CACHE_ENTRIES = 1_500;
 const WORD_INFO_BATCH_SIZE = 100;
+// Tope de palabras precargadas por consulta: cubre lo que el usuario alcanza a
+// tocar sin agotar la caché ni disparar decenas de lotes por búsqueda.
+const PREFETCH_WORD_LIMIT = 600;
 const inFlightBatches = new Map<string, Promise<Map<string, AnagramWordInfo>>>();
 
 export interface AnagramWordInfo {
@@ -69,6 +72,63 @@ const getCachedWordInfo = (word: string): AnagramWordInfo | undefined => {
   anagramWordCache.set(cacheKey, cached);
   return cached;
 };
+
+export const getCachedAnagramWordInfo = (word: string): AnagramWordInfo | undefined =>
+  getCachedWordInfo(word);
+
+const scheduleIdleTask = (task: () => void): void => {
+  if (typeof requestIdleCallback === 'function') {
+    requestIdleCallback(() => task(), { timeout: 1_000 });
+    return;
+  }
+  setTimeout(task, 0);
+};
+
+/**
+ * Precarga en segundo plano la información de las palabras de una consulta para
+ * que la definición ya esté en caché cuando el usuario mantenga pulsada una.
+ * Devuelve una función para cancelar los lotes pendientes.
+ */
+export function prefetchAnagramWordsData(
+  words: string[],
+  limit: number = PREFETCH_WORD_LIMIT,
+): () => void {
+  const pending: string[] = [];
+  const seen = new Set<string>();
+
+  for (const word of words) {
+    if (!word) continue;
+    const cacheKey = getAnagramWordKey(word);
+    // Se consulta la caché sin getCachedWordInfo para no alterar el orden LRU:
+    // la precarga no debe desplazar a las palabras que el usuario sí abrió.
+    if (!cacheKey || seen.has(cacheKey) || anagramWordCache.has(cacheKey)) continue;
+    seen.add(cacheKey);
+    pending.push(word);
+    if (pending.length >= limit) break;
+  }
+
+  if (pending.length === 0) return () => undefined;
+
+  let cancelled = false;
+
+  const runChunk = (start: number): void => {
+    if (cancelled || start >= pending.length) return;
+    const chunk = pending.slice(start, start + WORD_INFO_BATCH_SIZE);
+    void fetchAnagramWordsData(chunk)
+      .catch((error) => {
+        console.warn('No se pudieron precargar las definiciones de la consulta:', error);
+      })
+      .finally(() => {
+        scheduleIdleTask(() => runChunk(start + WORD_INFO_BATCH_SIZE));
+      });
+  };
+
+  scheduleIdleTask(() => runChunk(0));
+
+  return () => {
+    cancelled = true;
+  };
+}
 
 const toVerbInfo = (row: AnagramWordInfoRpcRow): VerbInfo | undefined => {
   if (!row.is_verb || !row.norm_lemma || row.entry_key === null) return undefined;

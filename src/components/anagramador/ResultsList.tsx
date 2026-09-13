@@ -5,7 +5,7 @@ import ExtendedResultsView from "./ExtendedResultsView";
 import HooksView from "./HooksView";
 import ResidueResultsView from './ResidueResultsView';
 import { toDisplayFormat } from "@/utils/digraphs";
-import { fetchAnagramWordsData, AnagramWordInfo } from "@/utils/anagramWordData";
+import { fetchAnagramWordsData, prefetchAnagramWordsData, AnagramWordInfo } from "@/utils/anagramWordData";
 import { fetchHooksData, HookInfo } from "@/utils/hooksData";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Loader } from "lucide-react";
@@ -94,6 +94,24 @@ const ResultsList = ({
         setIsLoadingData(pendingWordsRef.current.size > 0);
       });
   }, [toast]);
+
+  // Cachea las definiciones de la consulta apenas llegan los resultados para
+  // que la pulsación larga sobre una palabra las muestre sin esperar a la red.
+  useEffect(() => {
+    if (isLoading || !results) return;
+
+    const words = [
+      ...results.exactMatches,
+      ...results.wildcardMatches,
+      ...results.additionalWildcardMatches,
+      ...results.shorterMatches,
+      ...results.patternMatches,
+    ].map((word) => toDisplayFormat(word).toUpperCase());
+
+    if (words.length === 0) return;
+
+    return prefetchAnagramWordsData(words);
+  }, [isLoading, results]);
 
   // Clear extended data when another view becomes active.
   useEffect(() => {

@@ -11,6 +11,7 @@ import {
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { highlightWildcardLetter } from "@/utils/wildcardHighlighting";
 import LexiconBadge from '@/components/LexiconBadge';
+import LexiconSourceLink from '@/components/LexiconSourceLink';
 import { isPatternQuery, parseUserQuery } from '@/utils/queryLanguage.mjs';
 import DefinitionTooltipLink from './DefinitionTooltipLink';
 
