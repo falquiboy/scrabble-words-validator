@@ -10,6 +10,7 @@ import { SqliteAnagramService, sqliteAnagramService } from './SqliteAnagramServi
 import { supabaseWordService } from './SupabaseWordService';
 import { processDigraphs, generateAlphagram } from '@/utils/digraphs';
 import { isAllowedShorterWordWithWildcards } from '@/utils/wildcardSubanagrams';
+import { enumerateLetterSubsets } from '@/utils/shorterMatches.mjs';
 
 export class HybridTrieService {
   private actualTrie: Trie | null = null;
@@ -381,19 +382,15 @@ export class HybridTrieService {
     exactMatches: string[];
     shorterMatches: string[];
   }> {
-    // Nivel 1: Trie + IndexedDB para subanagramas (híbrido óptimo)
+    // Nivel 1: Trie para exactos y subanagramas (todo en memoria)
     if (this.isTrieReady && this.actualTrie) {
-      const processedLetters = processDigraphs(letters);
-      console.log(`🚀 Level 1 - Trie + IndexedDB hybrid anagrams: ${letters} → ${processedLetters}`);
+      const processedLetters = processDigraphs(letters.replace(/\?/g, ''));
+      console.log(`🚀 Level 1 - Trie anagrams: ${letters} → ${processedLetters}`);
       const exactMatches = this.actualTrie.findAnagrams(processedLetters);
-      
-      // Para subanagramas, usar SQLite ya que está optimizado para esto
-      let shorterMatches: string[] = [];
-      if (includeSubanagrams && this.isSqliteAvailable) {
-        const results = await this.sqliteService.findAnagrams(processedLetters, 2, true);
-        shorterMatches = results.partialMatches;
-      }
-      
+      const shorterMatches = includeSubanagrams
+        ? this.findShorterMatchesWithTrie(letters, 2)
+        : [];
+
       return { exactMatches, shorterMatches };
     }
 
@@ -422,6 +419,37 @@ export class HybridTrieService {
 
     console.log(`❌ No services available for extended anagrams: ${letters}`);
     return { exactMatches: [], shorterMatches: [] };
+  }
+
+  /**
+   * Subanagramas calculados sobre el Trie en memoria.
+   *
+   * Sin comodines: una consulta de alfagrama por cada subconjunto distinto del
+   * atril (a lo sumo 2^n - n - 2 consultas). Con comodines: barrido por
+   * longitud, con la misma regla que el resto de la app (nunca se gastan los
+   * dos comodines en una jugada más corta).
+   */
+  private findShorterMatchesWithTrie(letters: string, minLength: number = 2): string[] {
+    if (!this.actualTrie) return [];
+
+    const wildcardCount = (letters.match(/\?/g) || []).length;
+    const processedLetters = processDigraphs(letters.replace(/\?/g, ''));
+    const matches = new Set<string>();
+
+    if (wildcardCount > 0) {
+      const maxLength = processedLetters.length + wildcardCount - 1;
+      for (let length = minLength; length <= maxLength; length++) {
+        for (const word of this.actualTrie.getWordsOfLength(length)) {
+          if (isAllowedShorterWordWithWildcards(word, letters, minLength)) matches.add(word);
+        }
+      }
+      return Array.from(matches).sort();
+    }
+
+    for (const subset of enumerateLetterSubsets(processedLetters, minLength)) {
+      for (const word of this.actualTrie.findAnagrams(subset)) matches.add(word);
+    }
+    return Array.from(matches).sort();
   }
 
   /**
