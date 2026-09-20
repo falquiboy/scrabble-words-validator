@@ -1,0 +1,194 @@
+{
+  "version": 1,
+  "descripcion": "Anotaciones normativas para el plural de lemas en vocal + Y. La fuente de autoridad es la Nueva gramatica (NGLE 3.4) y, como suplente, el Diccionario panhispanico de dudas. Todo lema no anotado cae en la regla por defecto y el auditor lo reporta como pendiente.",
+  "listas": {
+    "ngle_es": {
+      "fuente": "NGLE 3.4h: lista explicita de comunes no extranjeros o plenamente castellanizados",
+      "lemas": [
+        "AY",
+        "BALAY",
+        "BEY",
+        "BOCOY",
+        "BUEY",
+        "CANEY",
+        "CAREY",
+        "CONVOY",
+        "GREY",
+        "LEY",
+        "MAGUEY",
+        "MAMEY",
+        "MEREY",
+        "PEJERREY",
+        "REY",
+        "SIBONEY",
+        "TARAY",
+        "VERDEGAY",
+        "VIRREY"
+      ]
+    },
+    "ngle_doble": {
+      "fuente": "NGLE 3.4h: admiten las dos variantes, con preferencia por la que anade solo -s",
+      "lemas": [
+        "COY",
+        "ESTAY",
+        "GUIRIGAY",
+        "NORAY"
+      ]
+    },
+    "ngle_is": {
+      "fuente": "NGLE 3.4j-k: extranjerismos y segundos elementos de diptongo que mudan la Y en I",
+      "lemas": [
+        "ESPRAY",
+        "GAY",
+        "PAIPAY",
+        "SAMURAY",
+        "PONEY",
+        "YOQUEY"
+      ]
+    }
+  },
+  "lemas": {
+    "BALAY": {
+      "marca": "lista",
+      "homografos": {
+        "BALAIS": "2PL.PRES.IND de balar"
+      }
+    },
+    "BEY": {
+      "marca": "lista",
+      "homografos": {
+        "BEIS": "lema propio: beis, color"
+      }
+    },
+    "GAY": {
+      "marca": "lista",
+      "homografos": {
+        "GAYES": "2SG.PRES.SUBJ de gayar"
+      }
+    },
+    "MAMEY": {
+      "marca": "lista",
+      "homografos": {
+        "MAMEIS": "2PL.PRES.IND de mamar"
+      }
+    },
+    "MEREY": {
+      "marca": "lista",
+      "homografos": {
+        "MEREIS": "2PL.PRES.SUBJ de merar"
+      }
+    },
+    "REY": {
+      "marca": "lista",
+      "homografos": {
+        "REIS": "2PL.PRES.IND de reir"
+      }
+    },
+    "TARAY": {
+      "marca": "lista",
+      "homografos": {
+        "TARAIS": "2PL.PRES.IND de tarar"
+      }
+    },
+    "VERDEGAY": {
+      "marca": "lista",
+      "nota": "Explicito en NGLE con plural unico en -es; verdegais no tiene fuente verbal (no existe verdegar) ni respaldo normativo."
+    },
+    "ACROY": {
+      "marca": "extranjerismo",
+      "origen": "fr. acroy",
+      "nota": "Voz francesa nunca castellanizada; documentada 8 veces entre finales del XVI y 1656. Solo procede el plural en -is."
+    },
+    "BOCOY": {
+      "marca": "lista",
+      "nota": "Explicito en NGLE."
+    },
+    "BOY": {
+      "marca": "extranjerismo",
+      "origen": "ingl. boy",
+      "homografos": {
+        "BOYES": "2SG.PRES.SUBJ de boyar"
+      }
+    },
+    "COICOY": {
+      "marca": "analogia",
+      "modelo": "CHOROY",
+      "revision": "pendiente",
+      "nota": "Fauna chilena sin respaldo en NGLE ni DPD. Mismo perfil que CHOROY y PITOITOY: o los tres llevan doble plural o ninguno. Conviene oir a hablantes de Chile antes de cerrar el criterio."
+    },
+    "CONVOY": {
+      "marca": "lista",
+      "nota": "Explicito en NGLE."
+    },
+    "CORDEROY": {
+      "marca": "extranjerismo",
+      "origen": "ingl. corduroy"
+    },
+    "COY": {
+      "marca": "lista",
+      "nota": "Explicito en NGLE como doble."
+    },
+    "CHOROY": {
+      "marca": "doble_uso",
+      "revision": "pendiente",
+      "nota": "Sin respaldo en NGLE ni DPD. Se admite -es por uso documentado en autores chilenos, y -is por regla general de voz no patrimonial."
+    },
+    "DESDOY": {
+      "marca": "no_lema",
+      "nota": "Forma verbal de desdar."
+    },
+    "DOY": {
+      "marca": "no_lema",
+      "nota": "Forma verbal de dar."
+    },
+    "ESTOY": {
+      "marca": "no_lema",
+      "nota": "Forma verbal de estar."
+    },
+    "HOY": {
+      "marca": "sin_plural",
+      "motivo": "uso",
+      "nota": "Sustantivo con plural teorico pero sin uso.",
+      "homografos": {
+        "HOYES": "2SG.PRES.SUBJ de hoyar"
+      }
+    },
+    "PITOITOY": {
+      "marca": "analogia",
+      "modelo": "CHOROY",
+      "revision": "pendiente",
+      "nota": "Mismo caso que CHOROY y COICOY."
+    },
+    "PLAYBOY": {
+      "marca": "sin_plural",
+      "motivo": "cursiva",
+      "nota": "Entra en cursiva en el DLE; el lexicon no le reconoce flexion."
+    },
+    "RENTOY": {
+      "marca": "patrimonial",
+      "nota": "No consta como extranjerismo; procede solo el plural en -es."
+    },
+    "SOY": {
+      "marca": "no_lema",
+      "nota": "Forma verbal de ser."
+    },
+    "TIMBOY": {
+      "marca": "doble_uso",
+      "revision": "pendiente",
+      "nota": "Voz boliviana ausente de CORDE, CREA y NTLLE. La RAE sugirio timbois remitiendo a timbo; por analogia con TIPOY procede admitir tambien timboyes."
+    },
+    "TIPOY": {
+      "marca": "doble_uso",
+      "nota": "Variantes graficas tipoy y tipoi, con los dos plurales admitidos."
+    },
+    "TROY": {
+      "marca": "sin_plural",
+      "motivo": "locucion",
+      "nota": "Solo en onza troy / onzas troy, donde flexiona unicamente el primer elemento."
+    },
+    "VOY": {
+      "marca": "no_lema",
+      "nota": "Forma verbal de ir."
+    }
+  }
+}
