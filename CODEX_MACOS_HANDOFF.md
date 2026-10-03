@@ -227,7 +227,12 @@ No aplicar a ciegas; decidir después de leer el error real:
 
 ## Despliegue
 
-Después de modificar y verificar:
+Hay un flujo de GitHub Actions (`.github/workflows/deploy-pages.yml`) que
+construye, ejecuta las pruebas y publica en Cloudflare Pages en cada push a
+`main`, o a mano desde la pestaña Actions. Necesita los secretos
+`CLOUDFLARE_API_TOKEN` y `CLOUDFLARE_ACCOUNT_ID` en el repositorio.
+
+Si se prefiere desplegar a mano, después de modificar y verificar:
 
 ```bash
 npm run build
