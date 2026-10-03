@@ -88,8 +88,16 @@ function parseConstraintSection(section) {
     const count = countText ? Number.parseInt(countText, 10) : null;
     const symbols = encodeQueryDigraphs(rawSymbols);
 
+    // Without an explicit count, repeated symbols inside one token add up,
+    // mirroring how a rack is read: +UUF asks for two U and one F, and -UU
+    // allows at most one U (writing a letter N times forbids the N-th one).
+    const occurrences = new Map();
     for (const symbol of symbols) {
-      const amount = count ?? (operator === '+' ? 1 : 0);
+      occurrences.set(symbol, (occurrences.get(symbol) || 0) + 1);
+    }
+
+    for (const [symbol, repeats] of occurrences) {
+      const amount = count ?? (operator === '+' ? repeats : repeats - 1);
       if (symbol === '@') {
         if (operator === '+') minimumVowels = Math.max(minimumVowels ?? 0, amount);
         else maximumVowels = Math.min(maximumVowels ?? Number.POSITIVE_INFINITY, amount);

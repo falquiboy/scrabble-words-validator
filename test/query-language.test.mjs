@@ -69,3 +69,34 @@ test('treats Spanish digraphs as single tiles in counted constraints', () => {
   assert.equal(satisfiesQueryConstraints('LLALLA', query.constraints), true);
   assert.equal(satisfiesQueryConstraints('LLAMA', query.constraints), false);
 });
+
+test('adds up repeated letters inside a constraint without an explicit count', () => {
+  const twoU = parseUserQuery('+UUF');
+  assert.equal(twoU.constraints.minimum.get('U'), 2);
+  assert.equal(twoU.constraints.minimum.get('F'), 1);
+  assert.equal(satisfiesQueryConstraints('FUTURO', twoU.constraints), true);
+  assert.equal(satisfiesQueryConstraints('FRUTABA', twoU.constraints), false);
+  assert.deepEqual(parseUserQuery('+UUF').constraints.minimum, parseUserQuery('+2U+F').constraints.minimum);
+
+  const digraphs = parseUserQuery('+LLLL');
+  assert.equal(satisfiesQueryConstraints('LLALLA', digraphs.constraints), true);
+  assert.equal(satisfiesQueryConstraints('LLAMA', digraphs.constraints), false);
+
+  const vowels = parseUserQuery('+@@@');
+  assert.equal(satisfiesQueryConstraints('AMIGO', vowels.constraints), true);
+  assert.equal(satisfiesQueryConstraints('CASAS', vowels.constraints), false);
+});
+
+test('repeated letters after a minus cap the count below the repetitions', () => {
+  const atMostOneU = parseUserQuery('-UU');
+  assert.equal(atMostOneU.constraints.maximum.get('U'), 1);
+  assert.equal(satisfiesQueryConstraints('FRUTA', atMostOneU.constraints), true);
+  assert.equal(satisfiesQueryConstraints('FUTURO', atMostOneU.constraints), false);
+
+  const noU = parseUserQuery('-U');
+  assert.equal(noU.constraints.maximum.get('U'), 0);
+  assert.equal(satisfiesQueryConstraints('FRUTA', noU.constraints), false);
+
+  const explicitCount = parseUserQuery('-2UU');
+  assert.equal(explicitCount.constraints.maximum.get('U'), 2);
+});
