@@ -228,9 +228,11 @@ No aplicar a ciegas; decidir después de leer el error real:
 ## Despliegue
 
 Hay un flujo de GitHub Actions (`.github/workflows/deploy-pages.yml`) que
-construye, ejecuta las pruebas y publica en Cloudflare Pages en cada push a
-`main`, o a mano desde la pestaña Actions. Necesita los secretos
-`CLOUDFLARE_API_TOKEN` y `CLOUDFLARE_ACCOUNT_ID` en el repositorio.
+ejecuta las pruebas y construye el sitio en cada push a `main`, en cada pull
+request y a mano desde la pestaña Actions. En los push a `main` y en los
+lanzamientos manuales además publica en Cloudflare Pages, siempre que existan
+los secretos `CLOUDFLARE_API_TOKEN` y `CLOUDFLARE_ACCOUNT_ID` en el
+repositorio; si faltan, omite el despliegue con un aviso en lugar de fallar.
 
 Si se prefiere desplegar a mano, después de modificar y verificar:
 
