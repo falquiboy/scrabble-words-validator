@@ -25,6 +25,7 @@ const TooltipHelp = ({
           <li><code>.</code>: exactamente una letra; <code>*</code>: cero o más</li>
           <li><code>@</code>: una vocal; <code>&amp;</code>: una consonante</li>
           <li><code>+ABC</code>: exige A, B y C; <code>-ABC</code>: las excluye</li>
+          <li><code>+UUF</code>: exige dos U y una F; <code>-UU</code>: como mucho una U</li>
           <li><code>+4@</code>: al menos 4 vocales</li>
           <li><code>:4</code>: todas las palabras de 4 fichas</li>
           <li><code>.R.Z*,AEEBRS:5</code>: patrón, atril y longitud</li>
